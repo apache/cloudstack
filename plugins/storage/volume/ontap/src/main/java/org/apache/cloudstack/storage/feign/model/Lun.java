@@ -86,6 +86,9 @@ public class Lun {
     @JsonProperty("clone")
     private Clone clone = null;
 
+    @JsonProperty("copy")
+    private Copy copy = null;
+
     /**
      * The operating system type of the LUN.&lt;br/&gt; Required in POST when creating a LUN that is not a clone of another. Disallowed in POST when creating a LUN clone.
      */
@@ -260,6 +263,14 @@ public class Lun {
         this.clone = clone;
     }
 
+    public Copy getCopy() {
+        return copy;
+    }
+
+    public void setCopy(Copy copy) {
+        this.copy = copy;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -319,11 +330,31 @@ public class Lun {
         }
     }
 
+<<<<<<< HEAD
+=======
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Copy {
+        @JsonProperty("source")
+        private Source source = null;
+
+        public Source getSource() {
+            return source;
+        }
+
+        public void setSource(Source source) {
+            this.source = source;
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+>>>>>>> 9f3896e79d (CSTACKEX-262: Support for Compute + Volume migration and Volume migration  (#112))
     public static class Source {
         @JsonProperty("name")
         private String name = null;
         @JsonProperty("uuid")
         private String uuid = null;
+        @JsonProperty("progress")
+        private Progress progress = null;
 
         public String getName() {
             return name;
@@ -336,6 +367,33 @@ public class Lun {
         }
         public void setUuid(String uuid) {
             this.uuid = uuid;
+        }
+        public Progress getProgress() {
+            return progress;
+        }
+        public void setProgress(Progress progress) {
+            this.progress = progress;
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Progress {
+        @JsonProperty("percent_complete")
+        private Integer percentComplete = null;
+        @JsonProperty("state")
+        private String state = null;
+
+        public Integer getPercentComplete() {
+            return percentComplete;
+        }
+        public void setPercentComplete(Integer percentComplete) {
+            this.percentComplete = percentComplete;
+        }
+        public String getState() {
+            return state;
+        }
+        public void setState(String state) {
+            this.state = state;
         }
     }
 }

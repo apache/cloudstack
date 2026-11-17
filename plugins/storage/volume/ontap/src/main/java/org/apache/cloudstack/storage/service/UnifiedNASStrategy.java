@@ -30,18 +30,24 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.feign.model.CliSnapshotRestoreRequest;
 import org.apache.cloudstack.storage.feign.model.ExportPolicy;
 import org.apache.cloudstack.storage.feign.model.ExportRule;
+import org.apache.cloudstack.storage.feign.model.FileCloneRequest;
 import org.apache.cloudstack.storage.feign.model.FileInfo;
 import org.apache.cloudstack.storage.feign.model.Job;
 import org.apache.cloudstack.storage.feign.model.Nas;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
 import org.apache.cloudstack.storage.feign.model.Svm;
 import org.apache.cloudstack.storage.feign.model.Volume;
+import org.apache.cloudstack.storage.feign.model.VolumeQosPolicy;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
@@ -49,13 +55,14 @@ import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.apache.cloudstack.storage.utils.OntapStorageUtils;
 import org.apache.cloudstack.storage.volume.VolumeObject;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.host.HostVO;
+import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -68,6 +75,7 @@ public class UnifiedNASStrategy extends NASStrategy {
     @Inject private VolumeDao volumeDao;
     @Inject private EndPointSelector epSelector;
     @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
+    @Inject private PrimaryDataStoreDao primaryDataStoreDao;
 
     public UnifiedNASStrategy(OntapStorage ontapStorage) {
         super(ontapStorage);
@@ -90,16 +98,67 @@ public class UnifiedNASStrategy extends NASStrategy {
                 logger.error("createCloudStackVolume: " + errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
+            if (cloudstackVolume.getFile() != null && cloudstackVolume.getFile().getQosPolicy() != null) {
+                try {
+                    updateCloudStackVolume(cloudstackVolume);
+                } catch (RuntimeException qosError) {
+                    logger.error("createCloudStackVolume: QoS attach failed; deleting leftover NFS volume file", qosError);
+                    try {
+                        Answer cleanup = deleteVolumeOnKVMHost(cloudstackVolume.getVolumeInfo());
+                        if (cleanup == null || !cleanup.getResult()) {
+                            logger.error("createCloudStackVolume: leftover NFS file may remain after QoS attach failure: {}",
+                                    cleanup != null ? cleanup.getDetails() : "null answer");
+                        }
+                    } catch (Exception cleanupError) {
+                        logger.error("createCloudStackVolume: failed to delete leftover NFS volume file after QoS attach failure",
+                                cleanupError);
+                    }
+                    throw qosError;
+                }
+            }
             return cloudstackVolume;
-        }catch (Exception e) {
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
             logger.error("createCloudStackVolume: error occured " + e);
             throw new CloudRuntimeException(e);
         }
     }
 
+    /**
+     * NFS template cache: nothing is pre-created on the array. The KVM agent writes the qcow2
+     * into the mounted FlexVolume; the framework records {@code install_path} afterward.
+     */
     @Override
-    CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
+    public CloudStackVolume createTemplateCache(StoragePoolVO storagePool, TemplateInfo templateInfo,
+                                                Map<String, String> details, long sizeInBytes) {
+        logger.info("createTemplateCache: NFS pool [{}], template [{}] will be written directly to the mounted FlexVolume",
+                storagePool.getId(), templateInfo.getId());
         return null;
+    }
+
+    @Override
+    public CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
+        if (cloudstackVolume == null || cloudstackVolume.getVolumeInfo() == null
+                || cloudstackVolume.getFlexVolumeUuid() == null || cloudstackVolume.getFile() == null) {
+            throw new CloudRuntimeException("Invalid NFS volume request");
+        }
+        VolumeQosPolicy qosPolicy = cloudstackVolume.getFile().getQosPolicy();
+        if (qosPolicy == null) {
+            return cloudstackVolume;
+        }
+        FileInfo fileInfo = new FileInfo();
+        fileInfo.setQosPolicy(qosPolicy);
+        String filePath = cloudstackVolume.getVolumeInfo().getUuid();
+        try {
+            nasFeignClient.updateFile(getAuthHeader(), cloudstackVolume.getFlexVolumeUuid(), filePath, fileInfo);
+        } catch (FeignException e) {
+            throw new CloudRuntimeException("Failed to update NFS volume file: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to update NFS volume file: " + e.getMessage(), e);
+        }
+        logger.info("Updated NFS volume file [{}] with QoS policy [{}]", filePath, qosPolicy.getName());
+        return cloudstackVolume;
     }
 
     @Override
@@ -119,9 +178,120 @@ public class UnifiedNASStrategy extends NASStrategy {
         }
     }
 
+    /**
+     * Clones a file inside the FlexVolume using ONTAP's file clone API.
+     *
+     * <p>The source is taken from {@code file.path} and the destination from
+     * {@code destinationPath}, both relative to the root of the FlexVolume backing the pool.</p>
+     */
     @Override
-    public void copyCloudStackVolume(CloudStackVolume cloudstackVolume) {
+    public CloudStackVolume cloneCloudStackVolume(CloudStackVolume cloudstackVolume) {
+        if (cloudstackVolume == null || cloudstackVolume.getFile() == null
+                || cloudstackVolume.getFile().getPath() == null || cloudstackVolume.getDestinationPath() == null) {
+            logger.error("cloneCloudStackVolume: File clone failed. Invalid request: {}", cloudstackVolume);
+            throw new CloudRuntimeException("Failed to clone file, invalid request");
+        }
+        if (cloudstackVolume.getDatastoreId() == null) {
+            throw new CloudRuntimeException("Failed to clone file, no datastore id in the request");
+        }
 
+        Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(Long.parseLong(cloudstackVolume.getDatastoreId()));
+        String flexVolUuid = details.get(OntapStorageConstants.VOLUME_UUID);
+        String flexVolName = details.get(OntapStorageConstants.VOLUME_NAME);
+        if (flexVolUuid == null || flexVolUuid.isEmpty()) {
+            throw new CloudRuntimeException("Failed to clone file, FlexVolume uuid is missing from pool poolDetails");
+        }
+        String sourcePath = cloudstackVolume.getFile().getPath();
+        String destinationPath = cloudstackVolume.getDestinationPath();
+
+        logger.info("cloneCloudStackVolume: Cloning file [{}] to [{}] in FlexVol [{}]",
+                sourcePath, destinationPath, flexVolName);
+        try {
+            FileCloneRequest request = new FileCloneRequest(flexVolUuid, flexVolName, sourcePath, destinationPath);
+            JobResponse jobResponse = nasFeignClient.cloneFile(getAuthHeader(), request);
+            pollJobIfPresent(jobResponse, "clone file [" + sourcePath + "] to [" + destinationPath + "]");
+
+            updateCloudStackVolumeMetadata(cloudstackVolume.getDatastoreId(), cloudstackVolume.getVolumeInfo());
+
+            FileInfo clonedFile = new FileInfo();
+            clonedFile.setPath(destinationPath);
+
+            CloudStackVolume clonedCloudStackVolume = new CloudStackVolume();
+            clonedCloudStackVolume.setFile(clonedFile);
+            clonedCloudStackVolume.setDatastoreId(cloudstackVolume.getDatastoreId());
+            clonedCloudStackVolume.setVolumeInfo(cloudstackVolume.getVolumeInfo());
+            return clonedCloudStackVolume;
+        } catch (FeignException e) {
+            logger.error("FeignException occurred while cloning file [{}], Status: {}, Exception: {}",
+                    sourcePath, e.status(), e.getMessage());
+            throw new CloudRuntimeException("Failed to clone file: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Exception occurred while cloning file [{}], Exception: {}", sourcePath, e.getMessage());
+            throw new CloudRuntimeException("Failed to clone file: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public CloudStackVolume copyCloudStackVolume(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo,
+            StoragePoolVO destStoragePool, Map<String, String> destDetails, int timeoutSeconds) {
+        throw new UnsupportedOperationException("ONTAP NFS3 volume copy is not supported yet");
+    }
+
+    /**
+     * Grows the cloned qcow2 to the requested size via a host-side {@code qemu-img resize}.
+     */
+    @Override
+    public void resizeCloudStackVolume(CloudStackVolume cloudstackVolume, long sizeInBytes) {
+        if (cloudstackVolume == null || cloudstackVolume.getVolumeInfo() == null) {
+            logger.error("resizeCloudStackVolume: Resize failed. Invalid request: {}", cloudstackVolume);
+            throw new CloudRuntimeException("Failed to resize file, invalid request");
+        }
+        if (sizeInBytes <= 0) {
+            throw new CloudRuntimeException("Failed to resize file, invalid size " + sizeInBytes);
+        }
+
+        DataObject volumeInfo = cloudstackVolume.getVolumeInfo();
+        Answer answer = resizeVolumeOnKVMHost(volumeInfo, sizeInBytes);
+        if (answer == null || !answer.getResult()) {
+            String errMsg = answer != null ? answer.getDetails() : "Failed to resize qcow2 on KVM host";
+            logger.error("resizeCloudStackVolume: " + errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
+        if (cloudstackVolume.getFile() != null && cloudstackVolume.getFile().getQosPolicy() != null) {
+            updateCloudStackVolume(cloudstackVolume);
+        }
+        logger.info("resizeCloudStackVolume: Resized volume [{}] to {} bytes", volumeInfo.getUuid(), sizeInBytes);
+    }
+
+    private Answer resizeVolumeOnKVMHost(DataObject volumeInfo, long sizeInBytes) {
+        VolumeObject volumeObject = (VolumeObject) volumeInfo;
+        VolumeVO volume = volumeDao.findById(volumeObject.getId());
+        if (volume == null) {
+            throw new CloudRuntimeException("Volume not found with id: " + volumeObject.getId());
+        }
+
+        StoragePoolVO storagePool = primaryDataStoreDao.findById(volume.getPoolId());
+        if (storagePool == null) {
+            throw new CloudRuntimeException("Storage Pool not found for id: " + volume.getPoolId());
+        }
+
+        // instanceName is set by VolumeApiServiceImpl.orchestrateResizeVolume() before calling the
+        // driver — it is the VM instance name when attached, or "none" when the volume is detached.
+        ResizeVolumePayload resizePayload = volumeObject.getpayload() instanceof ResizeVolumePayload
+        ? (ResizeVolumePayload) volumeObject.getpayload()
+        : null;
+       String instanceName = resizePayload != null ? resizePayload.instanceName : "none";
+       ResizeVolumeCommand cmd = new ResizeVolumeCommand(volume.getPath(), new StorageFilerTO(storagePool),
+        volume.getSize(), sizeInBytes, false, instanceName);
+
+        EndPoint ep = epSelector.select(volumeInfo);
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send ResizeVolumeCommand, check if host is up";
+            logger.error(errMsg);
+            return new Answer(cmd, false, errMsg);
+        }
+        logger.info("resizeVolumeOnKVMHost: Sending command to endpoint: {}", ep.getHostAddr());
+        return ep.sendMessage(cmd);
     }
 
     @Override
@@ -155,7 +325,7 @@ public class UnifiedNASStrategy extends NASStrategy {
             logger.info("createAccessGroup: ExportPolicy created: {}, now attaching this policy to storage pool volume", createdPolicy.getName());
             // attach export policy to volume of storage pool
             assignExportPolicyToVolume(volumeUUID,createdPolicy.getName());
-            // save the export policy details in storage pool details
+            // save the export policy poolDetails in storage pool poolDetails
             storagePoolDetailsDao.addDetail(accessGroup.getStoragePoolId(), OntapStorageConstants.EXPORT_POLICY_ID, String.valueOf(createdPolicy.getId()), true);
             storagePoolDetailsDao.addDetail(accessGroup.getStoragePoolId(), OntapStorageConstants.EXPORT_POLICY_NAME, createdPolicy.getName(), true);
             logger.info("Successfully assigned exportPolicy {} to volume {}", policyRequest.getName(), volumeName);
@@ -215,11 +385,11 @@ public class UnifiedNASStrategy extends NASStrategy {
         }
 
         Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(accessGroup.getStoragePoolId());
-        if (MapUtils.isEmpty(details)) {
-            throw new CloudRuntimeException("No storage pool details found for storagePoolId: " + accessGroup.getStoragePoolId());
+        if (details == null || details.isEmpty()) {
+            throw new CloudRuntimeException("No storage pool poolDetails found for storagePoolId: " + accessGroup.getStoragePoolId());
         }
         String exportPolicyId = details.get(OntapStorageConstants.EXPORT_POLICY_ID);
-        if (StringUtils.isBlank(exportPolicyId)) {
+        if (exportPolicyId == null || exportPolicyId.isEmpty()) {
             throw new CloudRuntimeException("No export policy found for storagePoolId: " + accessGroup.getStoragePoolId());
         }
 
@@ -393,7 +563,7 @@ public class UnifiedNASStrategy extends NASStrategy {
             volumeUpdate.setNas(nas);
 
             try {
-                JobResponse jobResponse = volumeFeignClient.updateVolumeRebalancing(authHeader, volumeUuid, volumeUpdate);
+                JobResponse jobResponse = volumeFeignClient.updateVolume(authHeader, volumeUuid, volumeUpdate);
                 if (jobResponse == null || jobResponse.getJob() == null) {
                     throw new CloudRuntimeException("Failed to attach policy " + policyName + "to volume " + volumeUuid);
                 }
@@ -448,10 +618,6 @@ public class UnifiedNASStrategy extends NASStrategy {
             String ip = (hostStorageIp != null && !hostStorageIp.isEmpty())
                     ? hostStorageIp
                     : (host.getPrivateIpAddress() != null ? host.getPrivateIpAddress().trim() : null);
-            if (StringUtils.isBlank(ip)) {
-                logger.warn("Skipping host {} while creating export policy because it has no storage or private IP address", host.getId());
-                continue;
-            }
             String ipToUse = ip + "/32";
             ExportRule.ExportClient exportClient = new ExportRule.ExportClient();
             exportClient.setMatch(ipToUse);
@@ -547,6 +713,28 @@ public class UnifiedNASStrategy extends NASStrategy {
         } catch (Exception e) {
             logger.error("deleteVolumeOnKVMHost: Exception sending DeleteCommand", e);
             return new Answer(null, false, e.toString());
+        }
+    }
+
+    /**
+     * Deletes a file from a FlexVolume, treating an already-absent file as success.
+     */
+    public void deleteFileByPath(String flexVolUuid, String filePath) {
+        logger.info("deleteFileByPath: Deleting file [{}] from FlexVol [{}]", filePath, flexVolUuid);
+        try {
+            nasFeignClient.deleteFile(getAuthHeader(), flexVolUuid, filePath);
+            logger.debug("deleteFileByPath: Deleted file [{}]", filePath);
+        } catch (FeignException e) {
+            if (e.status() == 404) {
+                logger.warn("deleteFileByPath: File [{}] does not exist (status 404), skipping deletion", filePath);
+                return;
+            }
+            logger.error("FeignException occurred while deleting file [{}], Status: {}, Exception: {}",
+                    filePath, e.status(), e.getMessage());
+            throw new CloudRuntimeException("Failed to delete file: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Exception occurred while deleting file [{}], Exception: {}", filePath, e.getMessage());
+            throw new CloudRuntimeException("Failed to delete file: " + e.getMessage());
         }
     }
 

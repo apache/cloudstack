@@ -87,6 +87,16 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-storage-datamotion</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-cluster</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-annotations</artifactId>
             <version>${swagger-annotations.version}</version>
@@ -168,4 +178,42 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <!-- Unit-test coverage of this plugin, produced by the same build that runs
+                 the tests: mvn -Dontap.coverage=true install. The report is written to
+                 target/site/jacoco/jacoco.xml. The surefire run is bound to the
+                 integration-test phase, so the report is bound to verify. -->
+            <id>ontap-coverage</id>
+            <activation>
+                <property>
+                    <name>ontap.coverage</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${cs.jacoco-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>ontap-coverage-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>ontap-coverage-report</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

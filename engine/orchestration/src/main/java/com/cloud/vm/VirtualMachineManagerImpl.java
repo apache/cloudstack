@@ -19,6 +19,7 @@ package com.cloud.vm;
 
 import static com.cloud.configuration.ConfigurationManagerImpl.EXPOSE_ERRORS_TO_USER;
 import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.lang.reflect.Field;
 import java.net.URI;
@@ -320,6 +321,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public static final String VM_WORK_JOB_HANDLER = VirtualMachineManagerImpl.class.getSimpleName();
 
     private static final String VM_SYNC_ALERT_SUBJECT = "VM state sync alert";
+    private static final String ONTAP_SVM_NAME_DETAIL = "svmName";
+    private static final String ONTAP_SVM_UUID_DETAIL = "svmUUID";
+    private static final String ONTAP_STORAGE_IP_DETAIL = "storageIP";
+    private static final String ONTAP_PROTOCOL_DETAIL = "protocol";
 
     @Inject
     private UserVmManager _userVmMgr;
@@ -3567,13 +3572,61 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (currentPool.getId() == targetPool.getId()) {
             return;
         }
+        if (isSupportedOntapLiveStorageMigration(currentPool, targetPool)) {
+            return;
+        }
 
         Map<String, String> details = _storagePoolDao.getDetails(currentPool.getId());
         if (details != null && Boolean.parseBoolean(details.get(Storage.Capability.ALLOW_MIGRATE_OTHER_POOLS.toString()))) {
             return;
         }
+        if (DataStoreProvider.ONTAP_PLUGIN_NAME.equals(currentPool.getStorageProviderName())
+                && DataStoreProvider.ONTAP_PLUGIN_NAME.equals(targetPool.getStorageProviderName())) {
+            Map<String, String> targetDetails = _storagePoolDao.getDetails(targetPool.getId());
+            throw new CloudRuntimeException(String.format("ONTAP migration requires matching storageIP, SVM, protocol, and pool type "
+                            + "[source: storageIP=%s, svmUUID=%s, svmName=%s, protocol=%s, type=%s; destination: storageIP=%s, svmUUID=%s, svmName=%s, protocol=%s, type=%s].",
+                    details != null ? details.get(ONTAP_STORAGE_IP_DETAIL) : null,
+                    details != null ? details.get(ONTAP_SVM_UUID_DETAIL) : null,
+                    details != null ? details.get(ONTAP_SVM_NAME_DETAIL) : null, details != null ? details.get(ONTAP_PROTOCOL_DETAIL) : null,
+                    currentPool.getPoolType(), targetDetails != null ? targetDetails.get(ONTAP_STORAGE_IP_DETAIL) : null,
+                    targetDetails != null ? targetDetails.get(ONTAP_SVM_UUID_DETAIL) : null,
+                    targetDetails != null ? targetDetails.get(ONTAP_SVM_NAME_DETAIL) : null,
+                    targetDetails != null ? targetDetails.get(ONTAP_PROTOCOL_DETAIL) : null, targetPool.getPoolType()));
+        }
         throw new CloudRuntimeException(String.format("Currently, a volume on managed storage can only be 'migrated' to itself " + "[volumeId=%s, currentStoragePoolId=%s, targetStoragePoolId=%s].",
                 volume.getUuid(), currentPool.getUuid(), targetPool.getUuid()));
+    }
+
+    protected boolean isSupportedOntapLiveStorageMigration(StoragePoolVO currentPool, StoragePoolVO targetPool) {
+        if (!DataStoreProvider.ONTAP_PLUGIN_NAME.equals(currentPool.getStorageProviderName())
+                || !DataStoreProvider.ONTAP_PLUGIN_NAME.equals(targetPool.getStorageProviderName())) {
+            return false;
+        }
+
+        Map<String, String> currentDetails = _storagePoolDao.getDetails(currentPool.getId());
+        Map<String, String> targetDetails = _storagePoolDao.getDetails(targetPool.getId());
+        if (currentDetails == null || targetDetails == null) {
+            return false;
+        }
+
+        String currentSvmName = currentDetails.get(ONTAP_SVM_NAME_DETAIL);
+        String targetSvmName = targetDetails.get(ONTAP_SVM_NAME_DETAIL);
+        String currentSvmUuid = currentDetails.get(ONTAP_SVM_UUID_DETAIL);
+        String targetSvmUuid = targetDetails.get(ONTAP_SVM_UUID_DETAIL);
+        String currentStorageIp = currentDetails.get(ONTAP_STORAGE_IP_DETAIL);
+        String targetStorageIp = targetDetails.get(ONTAP_STORAGE_IP_DETAIL);
+        String currentProtocol = currentDetails.get(ONTAP_PROTOCOL_DETAIL);
+        String targetProtocol = targetDetails.get(ONTAP_PROTOCOL_DETAIL);
+        boolean isSameSvm = isNotBlank(currentSvmUuid) || isNotBlank(targetSvmUuid)
+                ? isNotBlank(currentSvmUuid) && currentSvmUuid.equals(targetSvmUuid)
+                : isNotBlank(currentSvmName) && currentSvmName.equals(targetSvmName);
+        return isNotBlank(currentStorageIp)
+                && currentStorageIp.equals(targetStorageIp)
+                && isSameSvm
+                && isNotBlank(currentProtocol)
+                && currentProtocol.equalsIgnoreCase(targetProtocol)
+                && currentPool.getPoolType() != null
+                && currentPool.getPoolType() == targetPool.getPoolType();
     }
 
     /**

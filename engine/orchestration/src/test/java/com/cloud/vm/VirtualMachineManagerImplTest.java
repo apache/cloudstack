@@ -568,6 +568,62 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
+    public void allowVolumeMigrationBetweenOntapPoolsOnSameSvmAndProtocol() {
+        StoragePoolVO targetPool = Mockito.mock(StoragePoolVO.class);
+        Mockito.doReturn(true).when(storagePoolVoMock).isManaged();
+        Mockito.doReturn(Storage.StoragePoolType.OntapiSCSI).when(storagePoolVoMock).getPoolType();
+        Mockito.doReturn(org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.ONTAP_PLUGIN_NAME)
+                .when(storagePoolVoMock).getStorageProviderName();
+        Mockito.doReturn(12L).when(targetPool).getId();
+        Mockito.doReturn(Storage.StoragePoolType.OntapiSCSI).when(targetPool).getPoolType();
+        Mockito.doReturn(org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.ONTAP_PLUGIN_NAME)
+                .when(targetPool).getStorageProviderName();
+        Mockito.doReturn(Map.of("storageIP", "10.0.0.1", "svmName", "svm1", "protocol", "ISCSI"))
+                .when(storagePoolDaoMock).getDetails(storagePoolVoMockId);
+        Mockito.doReturn(Map.of("storageIP", "10.0.0.1", "svmName", "svm1", "protocol", "ISCSI"))
+                .when(storagePoolDaoMock).getDetails(12L);
+
+        virtualMachineManagerImpl.executeManagedStorageChecksWhenTargetStoragePoolProvided(storagePoolVoMock, volumeVoMock, targetPool);
+    }
+
+    @Test
+    public void rejectVolumeMigrationBetweenOntapPoolsUsingDifferentProtocols() {
+        StoragePoolVO targetPool = Mockito.mock(StoragePoolVO.class);
+        Mockito.doReturn(true).when(storagePoolVoMock).isManaged();
+        Mockito.doReturn(Storage.StoragePoolType.OntapiSCSI).when(storagePoolVoMock).getPoolType();
+        Mockito.doReturn(org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.ONTAP_PLUGIN_NAME)
+                .when(storagePoolVoMock).getStorageProviderName();
+        Mockito.doReturn(12L).when(targetPool).getId();
+        Mockito.doReturn(org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.ONTAP_PLUGIN_NAME)
+                .when(targetPool).getStorageProviderName();
+        Mockito.doReturn(Map.of("storageIP", "10.0.0.1", "svmName", "svm1", "protocol", "ISCSI"))
+                .when(storagePoolDaoMock).getDetails(storagePoolVoMockId);
+        Mockito.doReturn(Map.of("storageIP", "10.0.0.1", "svmName", "svm1", "protocol", "NFS3"))
+                .when(storagePoolDaoMock).getDetails(12L);
+
+        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
+                () -> virtualMachineManagerImpl.executeManagedStorageChecksWhenTargetStoragePoolProvided(storagePoolVoMock, volumeVoMock, targetPool));
+        assertTrue(exception.getMessage().contains("protocol=ISCSI"));
+        assertTrue(exception.getMessage().contains("protocol=NFS3"));
+    }
+
+    @Test
+    public void rejectOntapPoolsWithSameSvmNameOnDifferentStorageSystems() {
+        StoragePoolVO targetPool = Mockito.mock(StoragePoolVO.class);
+        Mockito.doReturn(org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.ONTAP_PLUGIN_NAME)
+                .when(storagePoolVoMock).getStorageProviderName();
+        Mockito.doReturn(12L).when(targetPool).getId();
+        Mockito.doReturn(org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.ONTAP_PLUGIN_NAME)
+                .when(targetPool).getStorageProviderName();
+        Mockito.doReturn(Map.of("storageIP", "10.0.0.1", "svmName", "svm1", "protocol", "NFS3"))
+                .when(storagePoolDaoMock).getDetails(storagePoolVoMockId);
+        Mockito.doReturn(Map.of("storageIP", "10.0.0.2", "svmName", "svm1", "protocol", "NFS3"))
+                .when(storagePoolDaoMock).getDetails(12L);
+
+        assertFalse(virtualMachineManagerImpl.isSupportedOntapLiveStorageMigration(storagePoolVoMock, targetPool));
+    }
+
+    @Test
     public void executeManagedStorageChecksWhenTargetStoragePoolProvidedTestCurrentStoragePoolEqualsTargetPool() {
         Mockito.doReturn(true).when(storagePoolVoMock).isManaged();
         // return any storage type except powerflex/scaleio

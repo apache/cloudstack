@@ -29,10 +29,14 @@ import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Volume;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImageOptions;
@@ -49,6 +53,7 @@ import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
 import org.mockito.InjectMocks;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
@@ -160,6 +165,237 @@ public class KVMStorageProcessorTest {
             boolean result = storageProcessor.isEnoughSpaceForDownloadTemplateOnTemporaryLocation(templateSize);
             Assert.assertTrue(result);
         }
+    }
+
+    @Test
+    public void copyManagedVolumeWithoutTargetReturnsCopiedDiskPath() {
+        CopyCommand command = Mockito.mock(CopyCommand.class);
+        VolumeObjectTO sourceVolume = Mockito.mock(VolumeObjectTO.class);
+        VolumeObjectTO destinationVolume = Mockito.mock(VolumeObjectTO.class);
+        PrimaryDataStoreTO sourceStore = Mockito.mock(PrimaryDataStoreTO.class);
+        PrimaryDataStoreTO destinationStore = Mockito.mock(PrimaryDataStoreTO.class);
+        KVMStoragePool destinationPool = Mockito.mock(KVMStoragePool.class);
+        KVMPhysicalDisk sourceDisk = Mockito.mock(KVMPhysicalDisk.class);
+        KVMPhysicalDisk copiedDisk = Mockito.mock(KVMPhysicalDisk.class);
+        Map<String, String> destinationDetails = Map.of();
+
+        Mockito.when(command.getSrcTO()).thenReturn(sourceVolume);
+        Mockito.when(command.getDestTO()).thenReturn(destinationVolume);
+        Mockito.when(command.getWaitInMillSeconds()).thenReturn(60);
+        Mockito.when(sourceVolume.getDataStore()).thenReturn(sourceStore);
+        Mockito.when(destinationVolume.getDataStore()).thenReturn(destinationStore);
+        Mockito.when(sourceVolume.getPath()).thenReturn("source-path");
+        Mockito.when(destinationVolume.getPath()).thenReturn("destination-path");
+        Mockito.when(sourceVolume.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        Mockito.when(destinationVolume.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        Mockito.when(sourceVolume.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+        Mockito.when(sourceStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(destinationStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(sourceStore.getUuid()).thenReturn("source-pool");
+        Mockito.when(destinationStore.getUuid()).thenReturn("destination-pool");
+        Mockito.when(destinationStore.getHost()).thenReturn("destination-host");
+        Mockito.when(destinationStore.getPort()).thenReturn(2049);
+        Mockito.when(destinationStore.getPath()).thenReturn("/destination-export");
+        Mockito.when(sourceStore.isManaged()).thenReturn(true);
+        Mockito.when(destinationStore.isManaged()).thenReturn(true);
+        Mockito.when(destinationStore.getDetails()).thenReturn(destinationDetails);
+        Mockito.when(storagePoolManager.getStoragePool(
+                Storage.StoragePoolType.NetworkFilesystem,
+                "destination-pool")).thenThrow(new CloudRuntimeException("not found"));
+        Mockito.when(storagePoolManager.createStoragePool(
+                "destination-pool", "destination-host", 2049, "/destination-export", null,
+                Storage.StoragePoolType.NetworkFilesystem, destinationDetails)).thenReturn(destinationPool);
+        Mockito.when(storagePoolManager.getPhysicalDisk(
+                Storage.StoragePoolType.NetworkFilesystem,
+                "source-pool", "source-path")).thenReturn(sourceDisk);
+        Mockito.when(storagePoolManager.copyPhysicalDisk(
+                Mockito.eq(sourceDisk), Mockito.eq("destination-path"),
+                Mockito.eq(destinationPool), Mockito.eq(60))).thenReturn(copiedDisk);
+        Mockito.when(copiedDisk.getFormat()).thenReturn(QemuImg.PhysicalDiskFormat.QCOW2);
+
+        CopyCmdAnswer answer = (CopyCmdAnswer)storageProcessor.copyVolumeFromPrimaryToPrimary(command);
+
+        InOrder destinationPoolSetup = Mockito.inOrder(storagePoolManager);
+        destinationPoolSetup.verify(storagePoolManager).getStoragePool(
+                Storage.StoragePoolType.NetworkFilesystem, "destination-pool");
+        destinationPoolSetup.verify(storagePoolManager).createStoragePool(
+                "destination-pool", "destination-host", 2049, "/destination-export", null,
+                Storage.StoragePoolType.NetworkFilesystem, destinationDetails);
+        destinationPoolSetup.verify(storagePoolManager).connectPhysicalDisk(
+                Storage.StoragePoolType.NetworkFilesystem,
+                "destination-pool", "destination-path", destinationStore.getDetails());
+        Assert.assertTrue(answer.getResult());
+        Assert.assertEquals("destination-path", answer.getNewData().getPath());
+    }
+
+    @Test
+    public void copyVolumeFromPrimaryToPrimaryUsesCommandOptionsWhenStoreDetailsAreNull() {
+        CopyCommand command = Mockito.mock(CopyCommand.class);
+        VolumeObjectTO sourceVolume = Mockito.mock(VolumeObjectTO.class);
+        VolumeObjectTO destinationVolume = Mockito.mock(VolumeObjectTO.class);
+        PrimaryDataStoreTO sourceStore = Mockito.mock(PrimaryDataStoreTO.class);
+        PrimaryDataStoreTO destinationStore = Mockito.mock(PrimaryDataStoreTO.class);
+        KVMStoragePool destinationPool = Mockito.mock(KVMStoragePool.class);
+        KVMPhysicalDisk sourceDisk = Mockito.mock(KVMPhysicalDisk.class);
+        KVMPhysicalDisk copiedDisk = Mockito.mock(KVMPhysicalDisk.class);
+        Map<String, String> sourceDetails = Map.of("iqn", "/iqn.source/7");
+        Map<String, String> destinationDetails = Map.of();
+
+        Mockito.when(command.getSrcTO()).thenReturn(sourceVolume);
+        Mockito.when(command.getDestTO()).thenReturn(destinationVolume);
+        Mockito.when(command.getWaitInMillSeconds()).thenReturn(60);
+        Mockito.when(command.getOptions()).thenReturn(sourceDetails);
+        Mockito.when(sourceVolume.getDataStore()).thenReturn(sourceStore);
+        Mockito.when(destinationVolume.getDataStore()).thenReturn(destinationStore);
+        Mockito.when(sourceVolume.getPath()).thenReturn("source-path");
+        Mockito.when(destinationVolume.getPath()).thenReturn("destination-path");
+        Mockito.when(sourceVolume.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        Mockito.when(destinationVolume.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        Mockito.when(sourceVolume.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+        Mockito.when(sourceStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(destinationStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(sourceStore.getUuid()).thenReturn("source-pool");
+        Mockito.when(destinationStore.getUuid()).thenReturn("destination-pool");
+        Mockito.when(sourceStore.isManaged()).thenReturn(true);
+        Mockito.when(destinationStore.isManaged()).thenReturn(true);
+        Mockito.when(sourceStore.getDetails()).thenReturn(null);
+        Mockito.when(destinationStore.getDetails()).thenReturn(destinationDetails);
+        Mockito.when(storagePoolManager.getStoragePool(
+                Storage.StoragePoolType.NetworkFilesystem,
+                "destination-pool")).thenReturn(destinationPool);
+        Mockito.when(storagePoolManager.getPhysicalDisk(
+                Storage.StoragePoolType.NetworkFilesystem,
+                "source-pool", "source-path")).thenReturn(sourceDisk);
+        Mockito.when(storagePoolManager.copyPhysicalDisk(
+                Mockito.eq(sourceDisk), Mockito.eq("destination-path"),
+                Mockito.eq(destinationPool), Mockito.eq(60))).thenReturn(copiedDisk);
+        Mockito.when(copiedDisk.getFormat()).thenReturn(QemuImg.PhysicalDiskFormat.QCOW2);
+
+        CopyCmdAnswer answer = (CopyCmdAnswer)storageProcessor.copyVolumeFromPrimaryToPrimary(command);
+
+        Mockito.verify(storagePoolManager).connectPhysicalDisk(
+                Storage.StoragePoolType.NetworkFilesystem,
+                "source-pool", "source-path", sourceDetails);
+        Assert.assertTrue(answer.getResult());
+        Assert.assertEquals("destination-path", answer.getNewData().getPath());
+    }
+
+    @Test
+    public void copyVolumeFromPrimaryToPrimaryUsesCommandOptions2WhenStoreDetailsAreNull() {
+        CopyCommand command = Mockito.mock(CopyCommand.class);
+        VolumeObjectTO sourceVolume = Mockito.mock(VolumeObjectTO.class);
+        VolumeObjectTO destinationVolume = Mockito.mock(VolumeObjectTO.class);
+        PrimaryDataStoreTO sourceStore = Mockito.mock(PrimaryDataStoreTO.class);
+        PrimaryDataStoreTO destinationStore = Mockito.mock(PrimaryDataStoreTO.class);
+        KVMStoragePool destinationPool = Mockito.mock(KVMStoragePool.class);
+        KVMPhysicalDisk sourceDisk = Mockito.mock(KVMPhysicalDisk.class);
+        KVMPhysicalDisk copiedDisk = Mockito.mock(KVMPhysicalDisk.class);
+        Map<String, String> destinationDetails = Map.of("managedStoreTarget", "destination-iqn-path");
+
+        Mockito.when(command.getSrcTO()).thenReturn(sourceVolume);
+        Mockito.when(command.getDestTO()).thenReturn(destinationVolume);
+        Mockito.when(command.getWaitInMillSeconds()).thenReturn(60);
+        Mockito.when(command.getOptions2()).thenReturn(destinationDetails);
+        Mockito.when(sourceVolume.getDataStore()).thenReturn(sourceStore);
+        Mockito.when(destinationVolume.getDataStore()).thenReturn(destinationStore);
+        Mockito.when(sourceVolume.getPath()).thenReturn("source-path");
+        Mockito.when(destinationVolume.getPath()).thenReturn("destination-path");
+        Mockito.when(sourceVolume.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        Mockito.when(destinationVolume.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        Mockito.when(sourceVolume.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+        Mockito.when(sourceStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(destinationStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(sourceStore.getUuid()).thenReturn("source-pool");
+        Mockito.when(destinationStore.getUuid()).thenReturn("destination-pool");
+        Mockito.when(destinationStore.getHost()).thenReturn("destination-host");
+        Mockito.when(destinationStore.getPort()).thenReturn(2049);
+        Mockito.when(destinationStore.getPath()).thenReturn("/destination-export");
+        Mockito.when(sourceStore.isManaged()).thenReturn(true);
+        Mockito.when(destinationStore.isManaged()).thenReturn(true);
+        Mockito.when(destinationStore.getDetails()).thenReturn(null);
+        Mockito.when(storagePoolManager.getStoragePool(
+                Storage.StoragePoolType.NetworkFilesystem,
+                "destination-pool")).thenThrow(new CloudRuntimeException("not found"));
+        Mockito.when(storagePoolManager.createStoragePool(
+                "destination-pool", "destination-host", 2049, "/destination-export", null,
+                Storage.StoragePoolType.NetworkFilesystem, destinationDetails)).thenReturn(destinationPool);
+        Mockito.when(storagePoolManager.getPhysicalDisk(
+                Storage.StoragePoolType.NetworkFilesystem,
+                "source-pool", "source-path")).thenReturn(sourceDisk);
+        Mockito.when(storagePoolManager.copyPhysicalDisk(
+                Mockito.eq(sourceDisk), Mockito.eq("destination-iqn-path"),
+                Mockito.eq(destinationPool), Mockito.eq(60))).thenReturn(copiedDisk);
+        Mockito.when(copiedDisk.getFormat()).thenReturn(QemuImg.PhysicalDiskFormat.QCOW2);
+
+        CopyCmdAnswer answer = (CopyCmdAnswer)storageProcessor.copyVolumeFromPrimaryToPrimary(command);
+
+        Mockito.verify(storagePoolManager).createStoragePool(
+                "destination-pool", "destination-host", 2049, "/destination-export", null,
+                Storage.StoragePoolType.NetworkFilesystem, destinationDetails);
+        Mockito.verify(storagePoolManager).connectPhysicalDisk(
+                Storage.StoragePoolType.NetworkFilesystem,
+                "destination-pool", "destination-path", destinationDetails);
+        Assert.assertTrue(answer.getResult());
+        Assert.assertEquals("destination-iqn-path", answer.getNewData().getPath());
+    }
+
+    @Test
+    public void copyVolumeFromPrimaryToPrimaryPrefersStoreDetailsOverCommandOptions() {
+        CopyCommand command = Mockito.mock(CopyCommand.class);
+        VolumeObjectTO sourceVolume = Mockito.mock(VolumeObjectTO.class);
+        VolumeObjectTO destinationVolume = Mockito.mock(VolumeObjectTO.class);
+        PrimaryDataStoreTO sourceStore = Mockito.mock(PrimaryDataStoreTO.class);
+        PrimaryDataStoreTO destinationStore = Mockito.mock(PrimaryDataStoreTO.class);
+        KVMStoragePool destinationPool = Mockito.mock(KVMStoragePool.class);
+        KVMPhysicalDisk sourceDisk = Mockito.mock(KVMPhysicalDisk.class);
+        KVMPhysicalDisk copiedDisk = Mockito.mock(KVMPhysicalDisk.class);
+        Map<String, String> sourceStoreDetails = Map.of("iqn", "/iqn.store/1");
+        Map<String, String> destinationStoreDetails = Map.of("nfsMountOpts", "vers=3");
+
+        Mockito.when(command.getSrcTO()).thenReturn(sourceVolume);
+        Mockito.when(command.getDestTO()).thenReturn(destinationVolume);
+        Mockito.when(command.getWaitInMillSeconds()).thenReturn(60);
+        Mockito.when(command.getOptions()).thenReturn(Map.of("iqn", "/iqn.command/9"));
+        Mockito.when(command.getOptions2()).thenReturn(Map.of("managedStoreTarget", "command-target"));
+        Mockito.when(sourceVolume.getDataStore()).thenReturn(sourceStore);
+        Mockito.when(destinationVolume.getDataStore()).thenReturn(destinationStore);
+        Mockito.when(sourceVolume.getPath()).thenReturn("source-path");
+        Mockito.when(destinationVolume.getPath()).thenReturn("destination-path");
+        Mockito.when(sourceVolume.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        Mockito.when(destinationVolume.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        Mockito.when(sourceVolume.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+        Mockito.when(sourceStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(destinationStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(sourceStore.getUuid()).thenReturn("source-pool");
+        Mockito.when(destinationStore.getUuid()).thenReturn("destination-pool");
+        Mockito.when(sourceStore.isManaged()).thenReturn(true);
+        Mockito.when(destinationStore.isManaged()).thenReturn(true);
+        Mockito.when(sourceStore.getDetails()).thenReturn(sourceStoreDetails);
+        Mockito.when(destinationStore.getDetails()).thenReturn(destinationStoreDetails);
+        Mockito.when(storagePoolManager.getStoragePool(
+                Storage.StoragePoolType.NetworkFilesystem,
+                "destination-pool")).thenReturn(destinationPool);
+        Mockito.when(storagePoolManager.getPhysicalDisk(
+                Storage.StoragePoolType.NetworkFilesystem,
+                "source-pool", "source-path")).thenReturn(sourceDisk);
+        Mockito.when(storagePoolManager.copyPhysicalDisk(
+                Mockito.eq(sourceDisk), Mockito.eq("destination-path"),
+                Mockito.eq(destinationPool), Mockito.eq(60))).thenReturn(copiedDisk);
+        Mockito.when(copiedDisk.getFormat()).thenReturn(QemuImg.PhysicalDiskFormat.QCOW2);
+
+        CopyCmdAnswer answer = (CopyCmdAnswer)storageProcessor.copyVolumeFromPrimaryToPrimary(command);
+
+        Mockito.verify(storagePoolManager).connectPhysicalDisk(
+                Storage.StoragePoolType.NetworkFilesystem,
+                "source-pool", "source-path", sourceStoreDetails);
+        Mockito.verify(storagePoolManager).connectPhysicalDisk(
+                Storage.StoragePoolType.NetworkFilesystem,
+                "destination-pool", "destination-path", destinationStoreDetails);
+        Mockito.verify(storagePoolManager, Mockito.never()).createStoragePool(
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(),
+                Mockito.nullable(String.class), Mockito.any(Storage.StoragePoolType.class), Mockito.any());
+        Assert.assertTrue(answer.getResult());
+        Assert.assertEquals("destination-path", answer.getNewData().getPath());
     }
 
     @Test
