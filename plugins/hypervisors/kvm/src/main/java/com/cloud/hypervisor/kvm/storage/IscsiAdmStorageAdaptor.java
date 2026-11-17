@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
@@ -52,6 +54,9 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
 
     /** iscsiadm's ISCSI_ERR_SESS_EXISTS: returned by "--login" when the session is already logged in (e.g. Ubuntu). */
     private static final int ISCSI_SESSION_EXISTS_CODE = 15;
+
+    private static final Pattern ISCSI_BY_PATH_PATTERN =
+            Pattern.compile("^/dev/disk/by-path/ip-(.+?):(\\d{1,5})-iscsi-(.+)-lun-(\\d+)$");
 
     @Override
     public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details, boolean isPrimaryStorage) {
@@ -478,7 +483,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    private boolean disconnectPhysicalDisk(String host, int port, String iqn, String lun) {
+    boolean disconnectPhysicalDisk(String host, int port, String iqn, String lun) {
         // Check if other LUNs on the same IQN target are still in use.
         // ONTAP (and similar) uses a single IQN per SVM with multiple LUNs.
         // Doing iscsiadm --logout tears down the ENTIRE target session,
@@ -563,30 +568,11 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDiskByPath(String localPath) {
-        String search1 = "/dev/disk/by-path/ip-";
-        String search2 = ":";
-        String search3 = "-iscsi-";
-        String search4 = "-lun-";
-
-        if (!localPath.contains(search3)) {
+        Matcher matcher = ISCSI_BY_PATH_PATTERN.matcher(localPath == null ? "" : localPath);
+        if (!matcher.matches()) {
             return false;
         }
-
-        int index = localPath.indexOf(search2);
-
-        String host = localPath.substring(search1.length(), index);
-
-        int index2 = localPath.indexOf(search3);
-
-        String port = localPath.substring(index + search2.length(), index2);
-
-        index = localPath.indexOf(search4);
-
-        String iqn = localPath.substring(index2 + search3.length(), index);
-
-        String lun = localPath.substring(index + search4.length());
-
-        return disconnectPhysicalDisk(host, Integer.parseInt(port), iqn, lun);
+        return disconnectPhysicalDisk(matcher.group(1), Integer.parseInt(matcher.group(2)), matcher.group(3), matcher.group(4));
     }
 
     @Override
