@@ -72,3 +72,7 @@ JOIN cloud.vm_template vt ON vt.cross_zones = 1 AND vt.removed IS NULL
 WHERE dc.type = 'Edge' AND dc.removed IS NULL
   AND NOT EXISTS (SELECT 1 FROM cloud.template_zone_ref tzr
                   WHERE tzr.zone_id = dc.id AND tzr.template_id = vt.id AND tzr.removed IS NULL);
+
+-- Widen vm_template.url to match the url parameter of registerTemplate/registerIso and the VO (2048), like the
+-- sibling url columns. A URL of 1025 to 2048 characters, such as an S3 presigned URL, failed on insert. See #14715.
+ALTER TABLE `cloud`.`vm_template` MODIFY COLUMN `url` VARCHAR(2048) DEFAULT NULL COMMENT 'the url where the template exists externally';
