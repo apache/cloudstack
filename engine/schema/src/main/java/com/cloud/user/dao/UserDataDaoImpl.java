@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.user.dao;
 
+import java.util.Objects;
+
 import com.cloud.user.UserDataVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -34,7 +36,6 @@ public class UserDataDaoImpl extends GenericDaoBase<UserDataVO, Long> implements
         userdataSearch = createSearchBuilder();
         userdataSearch.and("accountId", userdataSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         userdataSearch.and("domainId", userdataSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        userdataSearch.and("userData", userdataSearch.entity().getUserData(), SearchCriteria.Op.EQ);
         userdataSearch.done();
 
         userdataByNameSearch = createSearchBuilder();
@@ -49,9 +50,9 @@ public class UserDataDaoImpl extends GenericDaoBase<UserDataVO, Long> implements
         SearchCriteria<UserDataVO> sc = userdataSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("domainId", domainId);
-        sc.setParameters("userData", userData);
 
-        return findOneBy(sc);
+        // user_data is encrypted non-deterministically, so compare the decrypted values
+        return listBy(sc).stream().filter(vo -> Objects.equals(vo.getUserData(), userData)).findFirst().orElse(null);
     }
 
     @Override

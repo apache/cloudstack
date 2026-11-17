@@ -28,6 +28,7 @@ import javax.persistence.Table;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.db.Encrypt;
 import org.apache.commons.lang3.StringUtils;
 
 @Entity
@@ -39,6 +40,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name = "iso_id", nullable = true, length = 17)
     private Long isoId = null;
 
+    @Encrypt
     @Column(name = "user_data", updatable = true, nullable = true, length = 1048576)
     @Basic(fetch = FetchType.LAZY)
     private String userData;

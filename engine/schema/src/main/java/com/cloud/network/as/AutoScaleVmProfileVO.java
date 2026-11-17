@@ -42,6 +42,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
 
@@ -85,6 +86,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     @Column(name = "counter_params", updatable = true)
     private String counterParams;
 
+    @Encrypt
     @Column(name = "user_data", updatable = true, nullable = true, length = 1048576)
     @Basic(fetch = FetchType.LAZY)
     private String userData;
