@@ -291,3 +291,6 @@ WHERE   sp.`storage_provider_name` = 'NetApp ONTAP'
   AND   sp.`pool_type`             IN ('Iscsi', 'OntapiSCSI')
   AND   (v.`format` IS NULL OR v.`format` <> 'RAW');
 
+
+-- Rename persisted FlashArray provider name (plugin getName() changed from 'Flash Array' to 'FlashArray')
+UPDATE `cloud`.`storage_pool` SET `storage_provider_name` = 'FlashArray' WHERE `storage_provider_name` = 'Flash Array';
