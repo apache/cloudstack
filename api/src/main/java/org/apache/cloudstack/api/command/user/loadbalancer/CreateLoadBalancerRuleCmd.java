@@ -329,6 +329,8 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     @Override
     public void create() {
         try {
+            // Check the settings before the rule exists: a refused create must leave no rule behind
+            _lbService.validateLoadBalancerConnectionSettings(getIdleTimeout(), getKeepAliveTimeout());
             LoadBalancer result =
                 _lbService.createPublicLoadBalancerRule(getXid(), getName(), getDescription(), getSourcePortStart(), getSourcePortEnd(), getDefaultPortStart(),
                     getDefaultPortEnd(), getSourceIpAddressId(), getProtocol(), getAlgorithm(), getNetworkId(), getEntityOwnerId(), getOpenFirewall(), getLbProtocol(), isDisplay(),

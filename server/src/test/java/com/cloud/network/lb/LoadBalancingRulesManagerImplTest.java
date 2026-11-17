@@ -415,6 +415,21 @@ public class LoadBalancingRulesManagerImplTest{
         lbr.validateConnectionTimeout(ApiConstants.IDLE_TIMEOUT, -1L);
     }
 
+    @Test
+    public void testValidateConnectionTimeoutAcceptsHaproxyMaximum() {
+        lbr.validateConnectionTimeout(ApiConstants.IDLE_TIMEOUT, (long) Integer.MAX_VALUE);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateConnectionTimeoutRejectsAboveHaproxyMaximum() {
+        lbr.validateConnectionTimeout(ApiConstants.IDLE_TIMEOUT, 99999999999L);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateLoadBalancerConnectionSettingsChecksKeepAliveTimeout() {
+        lbr.validateLoadBalancerConnectionSettings(600000L, -1L);
+    }
+
     private void stubConnectionSettings(String keepAlive, String idleTimeout, String keepAliveTimeout) {
         stubConnectionSetting(LoadBalancer.KEEPALIVE, keepAlive);
         stubConnectionSetting(LoadBalancer.IDLE_TIMEOUT, idleTimeout);

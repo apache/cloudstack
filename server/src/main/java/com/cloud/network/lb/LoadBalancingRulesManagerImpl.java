@@ -2302,19 +2302,32 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     }
 
     /**
-     * Haproxy rejects a negative timeout, and a rejected file leaves every rule on the router
-     * running its previous config. Refuse the value here rather than let it reach the VR.
+     * Haproxy rejects a negative timeout, and one above 2147483647 ms ("timer overflow"). A
+     * rejected file leaves every rule on the router running its previous config, so refuse the
+     * value here rather than let it reach the VR.
      */
     protected void validateConnectionTimeout(String name, Long value) {
-        if (value != null && value < 0) {
+        if (value == null) {
+            return;
+        }
+        if (value < 0) {
             throw new InvalidParameterValueException(String.format("%s must be 0 or greater, got [%s]. 0 means no timeout.", name, value));
+        }
+        if (value > Integer.MAX_VALUE) {
+            throw new InvalidParameterValueException(String.format("%s must be at most %d milliseconds, the largest timeout HAProxy accepts, got [%s].",
+                    name, Integer.MAX_VALUE, value));
         }
     }
 
     @Override
-    public boolean updateLoadBalancerConnectionSettings(long lbRuleId, Boolean keepAlive, Long idleTimeout, Long keepAliveTimeout, boolean cleanup) {
+    public void validateLoadBalancerConnectionSettings(Long idleTimeout, Long keepAliveTimeout) {
         validateConnectionTimeout(ApiConstants.IDLE_TIMEOUT, idleTimeout);
         validateConnectionTimeout(ApiConstants.KEEPALIVE_TIMEOUT, keepAliveTimeout);
+    }
+
+    @Override
+    public boolean updateLoadBalancerConnectionSettings(long lbRuleId, Boolean keepAlive, Long idleTimeout, Long keepAliveTimeout, boolean cleanup) {
+        validateLoadBalancerConnectionSettings(idleTimeout, keepAliveTimeout);
 
         Map<String, String> current = getConnectionSettings(lbRuleId);
         Map<String, String> wanted = cleanup ? new HashMap<>() : new HashMap<>(current);

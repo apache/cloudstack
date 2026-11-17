@@ -78,6 +78,12 @@ public interface LoadBalancingRulesService {
      */
     boolean updateLoadBalancerConnectionSettings(long lbRuleId, Boolean keepAlive, Long idleTimeout, Long keepAliveTimeout, boolean cleanup);
 
+    /**
+     * Checks the per rule timeouts without storing them, so a create can refuse a bad value
+     * before the rule exists. A null is not checked.
+     */
+    void validateLoadBalancerConnectionSettings(Long idleTimeout, Long keepAliveTimeout);
+
     boolean deleteLoadBalancerRule(long lbRuleId, boolean apply);
 
     /**
