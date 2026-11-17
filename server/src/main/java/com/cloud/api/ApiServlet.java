@@ -20,6 +20,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -85,6 +86,8 @@ public class ApiServlet extends HttpServlet {
     private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServlet.class.getName());
     private static final String REPLACEMENT = "_";
     private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
+    private static final Pattern SENSITIVE_QUERY_PARAMETER = Pattern.compile(
+            ".*(?:password|privatekey|accesskey|secretkey)|sessionkey|secretcode|token|userdata", Pattern.DOTALL);
     private static final Pattern GET_REQUEST_COMMANDS = Pattern.compile("^(get|list|query|find)(\\w+)+$");
     private static final HashSet<String> GET_REQUEST_COMMANDS_LIST = new HashSet<>(Set.of("isaccountallowedtocreateofferingswithtags",
             "readyforshutdown", "cloudianisenabled", "quotabalance", "quotasummary", "quotatarifflist", "quotaisenabled", "quotastatement", "verifyoauthcodeandgetuser"));
@@ -100,6 +103,7 @@ public class ApiServlet extends HttpServlet {
             "updaterolepermission",
             "updateprojectrolepermission",
             "createstoragepool",
+            "addobjectstoragepool",
             "addhost",
             "updatehostpassword",
             "addcluster",
@@ -172,7 +176,7 @@ public class ApiServlet extends HttpServlet {
                     String value = decodeUtf8(paramTokens[1]);
                     params.put(name, new String[] {value});
                 } else {
-                    LOGGER.debug("Invalid parameter in URL found. param: " + param);
+                    LOGGER.debug("Invalid parameter in URL found (missing equals sign).");
                 }
             }
         }
@@ -199,8 +203,8 @@ public class ApiServlet extends HttpServlet {
     private void checkSingleQueryParameterValue(Map<String, String[]> params) {
         params.forEach((k, v) -> {
             if (v.length > 1) {
-                String message = String.format("Query parameter '%s' has multiple values %s. Only the last value will be respected." +
-                    "It is advised to pass only a single parameter", k, Arrays.toString(v));
+                String message = String.format("Query parameter '%s' has %d values. Only the last value will be respected. " +
+                    "It is advised to pass only a single parameter", saveLogString(k), v.length);
                 LOGGER.warn(message);
             }
         });
@@ -237,17 +241,15 @@ public class ApiServlet extends HttpServlet {
 
         // logging the request start and end in management log for easy debugging
         String reqStr = "";
-        String cleanQueryString = StringUtils.cleanString(req.getQueryString());
+        String cleanQueryString = getCleanQueryString(command, req.getQueryString(), reqParams);
         if (LOGGER.isDebugEnabled()) {
             reqStr = auditTrailSb.toString() + " " + cleanQueryString;
             if (req.getMethod().equalsIgnoreCase("POST") && org.apache.commons.lang3.StringUtils.isNotBlank(command)) {
-                if (!POST_REQUESTS_TO_DISABLE_LOGGING.contains(command.toLowerCase()) && !reqParams.containsKey(ApiConstants.USER_DATA)) {
+                if (shouldLogRequestParameters(command, reqParams)) {
                     String cleanParamsString = getCleanParamsString(reqParams);
                     if (org.apache.commons.lang3.StringUtils.isNotBlank(cleanParamsString)) {
                         reqStr += "\n" + cleanParamsString;
                     }
-                } else {
-                    reqStr += " " + command;
                 }
             }
             LOGGER.debug("===START=== " + reqStr);
@@ -580,7 +582,7 @@ public class ApiServlet extends HttpServlet {
 
     @Nullable
     private String saveLogString(String stringToLog) {
-        return stringToLog == null ? null : stringToLog.replace(LOGGER_REPLACEMENTS, REPLACEMENT);
+        return stringToLog == null ? null : stringToLog.replaceAll(LOGGER_REPLACEMENTS, REPLACEMENT);
     }
 
     /**
@@ -778,5 +780,53 @@ public class ApiServlet extends HttpServlet {
         }
 
         return cleanParamsString.toString();
+    }
+
+    protected boolean shouldLogRequestParameters(String command, Map<String, String[]> reqParams) {
+        return (org.apache.commons.lang3.StringUtils.isBlank(command)
+                || !POST_REQUESTS_TO_DISABLE_LOGGING.contains(command.toLowerCase(java.util.Locale.ROOT)))
+                && !reqParams.containsKey(ApiConstants.USER_DATA);
+    }
+
+    protected String getCleanQueryString(String command, String queryString, Map<String, String[]> reqParams) {
+        boolean sensitiveRequest = !shouldLogRequestParameters(command, reqParams);
+        boolean includeCommand = sensitiveRequest && org.apache.commons.lang3.StringUtils.isNotBlank(command);
+        if (org.apache.commons.lang3.StringUtils.isEmpty(queryString)) {
+            return includeCommand ? "command=" + saveLogString(command) : "";
+        }
+
+        List<String> cleanParameters = new ArrayList<>();
+        try {
+            // Split before decoding so an encoded ampersand remains part of its original value.
+            // Read the query only: reqParams also contains the POST body.
+            for (String parameter : queryString.split("&", -1)) {
+                int separator = parameter.indexOf('=');
+                if (separator < 0) {
+                    continue;
+                }
+                String name = decodeUtf8(parameter.substring(0, separator));
+                if (ApiConstants.COMMAND.equals(name)) {
+                    includeCommand = false;
+                }
+                String lowerName = name.toLowerCase(java.util.Locale.ROOT);
+                if (SENSITIVE_QUERY_PARAMETER.matcher(lowerName).matches()) {
+                    continue;
+                }
+                // Sensitive requests can carry credentials in indexed maps. Omit those entries
+                // rather than trust descriptors that may be in the POST body or use different case.
+                if (sensitiveRequest && (name.indexOf('[') >= 0 || ApiConstants.DETAILS.equals(lowerName))) {
+                    continue;
+                }
+                cleanParameters.add(parameter);
+            }
+        } catch (IllegalArgumentException e) {
+            // Formatting must not expose an undecodable query or change request processing.
+            return includeCommand ? "command=" + saveLogString(command) : "";
+        }
+        if (includeCommand) {
+            cleanParameters.add(0, "command=" + saveLogString(command));
+        }
+        // Preserve the existing cleaning of nested URLs and JSON in the retained query fields.
+        return StringUtils.cleanString(String.join("&", cleanParameters));
     }
 }

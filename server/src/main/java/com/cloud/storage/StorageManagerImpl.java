@@ -1846,6 +1846,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (CollectionUtils.isEmpty(hostIds)) {
             return;
         }
+        Map<Long, HostVO> hostMap = new HashMap<>();
+        for (HostVO h : _hostDao.listByIds(hostIds)) {
+            hostMap.put(h.getId(), h);
+        }
         CopyOnWriteArrayList<Long> poolHostIds = new CopyOnWriteArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(Math.max(1, Math.min(hostIds.size(),
                 StoragePoolHostConnectWorkers.value())));
@@ -1856,10 +1860,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 if (exceptionOccurred.get()) {
                     return null;
                 }
+                HostVO host = hostMap.get(hostId);
+                if (host == null) {
+                    logger.warn("Host [{}] not found, skipping pool connection for {}", hostId, primaryStore);
+                    return null;
+                }
                 Transaction.execute(new TransactionCallbackWithExceptionNoReturn<Exception>() {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) throws Exception {
-                        HostVO host = _hostDao.findById(hostId);
                         try {
                             connectHostToSharedPool(host, primaryStore.getId());
                             poolHostIds.add(hostId);
@@ -2126,9 +2134,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     cleanupSecondaryStorage(recurring);
 
                     List<VolumeVO> vols = volumeDao.listVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long)StorageCleanupDelay.value() << 10)));
+                    List<Long> rootVolumeVmIds = vols.stream()
+                            .filter(v -> Type.ROOT.equals(v.getVolumeType()) && v.getInstanceId() != null)
+                            .map(VolumeVO::getInstanceId)
+                            .distinct()
+                            .collect(Collectors.toList());
+                    Map<Long, VMInstanceVO> vmMap = new HashMap<>();
+                    for (VMInstanceVO vm : _vmInstanceDao.listByIds(rootVolumeVmIds)) {
+                        vmMap.put(vm.getId(), vm);
+                    }
                     for (VolumeVO vol : vols) {
                         if (Type.ROOT.equals(vol.getVolumeType())) {
-                             VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(vol.getInstanceId());
+                            VMInstanceVO vmInstanceVO = vol.getInstanceId() != null ? vmMap.get(vol.getInstanceId()) : null;
                              if (vmInstanceVO != null && vmInstanceVO.getState() == State.Destroyed) {
                                  logger.debug("ROOT volume [{}] will not be expunged because the VM is [{}], therefore this volume will be expunged with the VM"
                                          + " cleanup job.", vol, vmInstanceVO.getState());
@@ -4240,9 +4257,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     private void associateCrosszoneTemplatesToZone(Long zoneId) {
-        VMTemplateZoneVO tmpltZone;
-
-        List<VMTemplateVO> allTemplates = _vmTemplateDao.listAll();
         List<Long> dcIds = new ArrayList<>();
         if (zoneId != null) {
             dcIds.add(zoneId);
@@ -4255,16 +4269,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
 
-        for (VMTemplateVO vt : allTemplates) {
-            if (vt.isCrossZones()) {
-                for (Long dcId : dcIds) {
-                    tmpltZone = _vmTemplateZoneDao.findByZoneTemplate(dcId, vt.getId());
-                    if (tmpltZone == null) {
-                        VMTemplateZoneVO vmTemplateZone = new VMTemplateZoneVO(dcId, vt.getId(), new Date());
-                        _vmTemplateZoneDao.persist(vmTemplateZone);
-                    }
-                }
-            }
+        for (Long dcId : dcIds) {
+            _imageSrv.associateCrossZoneTemplatesToZone(dcId);
         }
     }
 

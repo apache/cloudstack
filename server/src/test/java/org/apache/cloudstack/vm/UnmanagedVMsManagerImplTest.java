@@ -63,6 +63,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.volume.VolumeImportUnmanageService;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
@@ -253,6 +254,8 @@ public class UnmanagedVMsManagerImplTest {
     private ImportVmTasksManager importVmTasksManager;
     @Mock
     private SnapshotDao snapshotDao;
+    @Mock
+    private VolumeImportUnmanageService volumeImportUnmanageService;
 
     @Mock
     private VMInstanceVO virtualMachine;
@@ -1015,6 +1018,8 @@ public class UnmanagedVMsManagerImplTest {
         DiskProfile diskProfile = Mockito.mock(DiskProfile.class);
         when(volumeManager.allocateRawVolume(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean()))
                         .thenReturn(diskProfile);
+        when(volumeManager.updateImportedVolume(any(), any(), any(), any(), anyLong(), anyLong(), any(), anyString(), any(), any(), any()))
+                        .thenReturn(diskProfile);
         Map<Volume, StoragePool> storage = new HashMap<>();
         VolumeVO volume = Mockito.mock(VolumeVO.class);
         StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
@@ -1044,6 +1049,9 @@ public class UnmanagedVMsManagerImplTest {
         // not the hypervisor default, so an RBD image is stored as RAW
         verify(volumeManager).updateImportedVolume(any(), any(), any(), any(), anyLong(), anyLong(), Mockito.eq(poolType),
                 Mockito.eq(diskPath), Mockito.isNull(), any(), Mockito.eq(expectedFormat));
+
+        // the storage driver must be told the volume is now imported, so e.g. StorPool can tag it
+        verify(volumeImportUnmanageService).notifyStorageDriverOfVolumeManagementChange(storagePool, volume, true);
 
         // the plan must be confined to the pod and cluster of the pool the caller asked for, so that the
         // volume check cannot land on a host in another cluster that has no access to that pool

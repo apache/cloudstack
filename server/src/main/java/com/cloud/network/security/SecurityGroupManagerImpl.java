@@ -356,7 +356,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                             cidr = cidr + "/32";
                             cidrs.add(cidr);
                             if (defaultNic.getIPv6Address() != null) {
-                                cidrs.add(defaultNic.getIPv6Address() + "/64");
+                                cidrs.add(defaultNic.getIPv6Address() + "/128");
                             }
                         }
                     }

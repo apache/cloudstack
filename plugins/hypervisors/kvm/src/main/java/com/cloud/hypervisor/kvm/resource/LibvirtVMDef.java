@@ -391,12 +391,18 @@ public class LibvirtVMDef {
         private final List<String> _features = new ArrayList<String>();
 
         private HyperVEnlightenmentFeatureDef hyperVEnlightenmentFeatureDef = null;
+        private boolean kvmHintDedicated = false;
+
         public void addFeatures(String feature) {
             _features.add(feature);
         }
 
         public void addHyperVFeature(HyperVEnlightenmentFeatureDef hyperVEnlightenmentFeatureDef) {
             this.hyperVEnlightenmentFeatureDef = hyperVEnlightenmentFeatureDef;
+        }
+
+        public void setKvmHintDedicated(boolean kvmHintDedicated) {
+            this.kvmHintDedicated = kvmHintDedicated;
         }
 
         @Override
@@ -415,6 +421,9 @@ public class LibvirtVMDef {
                 if (!hpervF.isEmpty()) {
                     feaBuilder.append(hpervF);
                 }
+            }
+            if (kvmHintDedicated) {
+                feaBuilder.append("<kvm><hint-dedicated state='on'/></kvm>\n");
             }
             feaBuilder.append("</features>\n");
             return feaBuilder.toString();

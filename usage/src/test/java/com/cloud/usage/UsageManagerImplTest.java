@@ -17,9 +17,11 @@
 package com.cloud.usage;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import com.cloud.event.dao.UsageEventDetailsDao;
+import com.cloud.usage.dao.UsageBackupDao;
 import com.cloud.usage.dao.UsageVMSnapshotDao;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,6 +59,9 @@ public class UsageManagerImplTest {
 
     @Mock
     private AccountDao accountDaoMock;
+
+    @Mock
+    private UsageBackupDao usageBackupDaoMock;
 
     @Mock
     private UsageVPNUserVO vpnUserMock;
@@ -242,5 +247,47 @@ public class UsageManagerImplTest {
 
         Mockito.verify(usageManagerImpl, Mockito.never()).createUsageVpnUser(usageEventVOMock,accountMock);
         Mockito.verify(usageManagerImpl, Mockito.never()).deleteUsageVpnUser(usageEventVOMock, accountMock);
+    }
+
+    private void mockBackupEvent(String type) {
+        Mockito.when(usageEventVOMock.getType()).thenReturn(type);
+        Mockito.when(usageEventVOMock.getResourceId()).thenReturn(10L);
+        Mockito.when(usageEventVOMock.getZoneId()).thenReturn(1L);
+        Mockito.when(usageEventVOMock.getAccountId()).thenReturn(accountMockId);
+        Mockito.when(usageEventVOMock.getOfferingId()).thenReturn(20L);
+    }
+
+    @Test
+    public void createBackupEventTestAssignCreatesUsage() {
+        mockBackupEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN);
+        Mockito.when(usageEventVOMock.getCreateDate()).thenReturn(new Date());
+        Mockito.when(usageBackupDaoMock.listActiveUsage(10L, 20L)).thenReturn(new ArrayList<>());
+
+        usageManagerImpl.createBackupEvent(usageEventVOMock);
+
+        Mockito.verify(usageBackupDaoMock).persist(Mockito.any(UsageBackupVO.class));
+    }
+
+    @Test
+    public void createBackupEventTestAssignSkipsWhenUsageIsActive() {
+        mockBackupEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN);
+        Mockito.when(usageBackupDaoMock.listActiveUsage(10L, 20L)).thenReturn(List.of(Mockito.mock(UsageBackupVO.class)));
+
+        usageManagerImpl.createBackupEvent(usageEventVOMock);
+
+        Mockito.verify(usageBackupDaoMock, Mockito.never()).persist(Mockito.any(UsageBackupVO.class));
+    }
+
+    @Test
+    public void createBackupEventTestMetricPassesEventDate() {
+        Date eventDate = new Date();
+        mockBackupEvent(EventTypes.EVENT_VM_BACKUP_USAGE_METRIC);
+        Mockito.when(usageEventVOMock.getCreateDate()).thenReturn(eventDate);
+        Mockito.when(usageEventVOMock.getSize()).thenReturn(100L);
+        Mockito.when(usageEventVOMock.getVirtualSize()).thenReturn(1000L);
+
+        usageManagerImpl.createBackupEvent(usageEventVOMock);
+
+        Mockito.verify(usageBackupDaoMock).updateMetrics(10L, 20L, 100L, 1000L, eventDate);
     }
 }
