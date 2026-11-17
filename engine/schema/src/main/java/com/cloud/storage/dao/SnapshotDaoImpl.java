@@ -255,10 +255,15 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 
     @Override
     public List<SnapshotVO> listByStatus(long volumeId, Snapshot.State... status) {
+        return listByStatus(null, volumeId, status);
+    }
+
+    @Override
+    public List<SnapshotVO> listByStatus(Filter filter, long volumeId, Snapshot.State... status) {
         SearchCriteria<SnapshotVO> sc = StatusSearch.create();
         sc.setParameters(VOLUME_ID, volumeId);
         sc.setParameters(STATUS, (Object[])status);
-        return listBy(sc, null);
+        return listBy(sc, filter);
     }
 
     @Override

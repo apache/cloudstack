@@ -48,4 +48,11 @@ public interface EventDao extends GenericDao<EventVO, Long> {
 
     public void archiveEvents(List<EventVO> events);
 
+    /**
+     * Returns the most recent outcome events (state Created or Completed) of the given type for a resource, newest first.
+     * Scheduled and Started events are left out, as they precede every attempt and say nothing about how it ended.
+     * Used to derive how many consecutive attempts have failed for that resource without a dedicated counter column.
+     */
+    List<EventVO> listLatestOutcomeEventsByResource(long resourceId, String resourceType, String type, int limit);
+
 }
