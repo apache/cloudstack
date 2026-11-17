@@ -46,6 +46,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -106,6 +107,51 @@ public class ResourceDetailsDaoBaseTest {
         verify(searchCriteria).setParameters("name", keys.toArray());
         verify(testDetailsDao).search(searchCriteria, null);
         assertTrue(result.isEmpty());
+    }
+
+    private TestDetailVO mockDetail(String name, String value, boolean display) {
+        TestDetailVO detail = mock(TestDetailVO.class);
+        when(detail.getName()).thenReturn(name);
+        when(detail.getValue()).thenReturn(value);
+        when(detail.isDisplay()).thenReturn(display);
+        return detail;
+    }
+
+    @Test
+    public void testListDetailsKeyPairsWithNameStoredTwice() {
+        // A VM can end up with two kvm.vnc.address rows, which made the console endpoint fail with "Duplicate key"
+        List<TestDetailVO> mockResults = Arrays.asList(mockDetail("kvm.vnc.address", "10.0.0.1", true),
+                mockDetail("kvm.vnc.port", "5900", true), mockDetail("kvm.vnc.address", "10.0.0.1", true));
+        doReturn(mockResults).when(testDetailsDao).search(any(SearchCriteria.class), isNull());
+
+        Map<String, String> result = testDetailsDao.listDetailsKeyPairs(1L, Arrays.asList("kvm.vnc.address", "kvm.vnc.port"));
+
+        assertEquals(2, result.size());
+        assertEquals("10.0.0.1", result.get("kvm.vnc.address"));
+        assertEquals("5900", result.get("kvm.vnc.port"));
+    }
+
+    @Test
+    public void testListDetailsKeyPairsKeepsLastValueOfNameStoredTwice() {
+        List<TestDetailVO> mockResults = Arrays.asList(mockDetail("key1", "old", true), mockDetail("key1", "new", true));
+        doReturn(mockResults).when(testDetailsDao).search(any(SearchCriteria.class), isNull());
+
+        Map<String, String> result = testDetailsDao.listDetailsKeyPairs(1L, Arrays.asList("key1"));
+
+        assertEquals("new", result.get("key1"));
+    }
+
+    @Test
+    public void testListDetailsKeyPairsWithVisibilityWithNameStoredTwice() {
+        List<TestDetailVO> mockResults = Arrays.asList(mockDetail("key1", "old", true), mockDetail("key2", "value2", false),
+                mockDetail("key1", "new", true));
+        doReturn(mockResults).when(testDetailsDao).search(any(SearchCriteria.class), isNull());
+
+        Pair<Map<String, String>, Map<String, String>> result = testDetailsDao.listDetailsKeyPairsWithVisibility(1L);
+
+        assertEquals(1, result.first().size());
+        assertEquals("new", result.first().get("key1"));
+        assertEquals("value2", result.second().get("key2"));
     }
 
     protected static class TestDetailsDao extends ResourceDetailsDaoBase<TestDetailVO> {
