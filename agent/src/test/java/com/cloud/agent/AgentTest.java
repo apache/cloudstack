@@ -268,31 +268,20 @@ public class AgentTest {
         spyAgent.waitForCommandsAndReconnect(mockLink);
 
         verify(spyAgent).reconnect(mockLink);
-        verify(logger).info(eq("Reconnecting instead of exiting to avoid losing in-flight work (e.g. snapshot overlays)."));
     }
 
     @Test
-    public void testWaitForCommandsAndReconnectCommandsCompleteBeforeTimeout() throws ConfigurationException {
+    public void testWaitForCommandsAndReconnectWithCommandsInProgress() throws ConfigurationException {
         Agent spyAgent = spy(new Agent(shell, 1, serverResource));
         ReflectionTestUtils.setField(spyAgent, "logger", logger);
         doNothing().when(spyAgent).reconnect(any(Link.class));
 
         Link mockLink = mock(Link.class);
-        spyAgent.commandsInProgress.set(1);
-
-        Thread decrementThread = new Thread(() -> {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            spyAgent.commandsInProgress.set(0);
-        });
-        decrementThread.start();
-
+        spyAgent.commandsInProgress.set(3);
         spyAgent.waitForCommandsAndReconnect(mockLink);
 
         verify(spyAgent).reconnect(mockLink);
-        verify(logger).info(eq("All in-progress commands completed. Proceeding with reconnect."));
+        verify(logger).warn(eq("Agent disconnected with {} command(s) still in progress. Reconnecting — local operations (e.g. blockcommit) will continue in their threads."),
+                eq(3));
     }
 }

@@ -302,6 +302,9 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         incrementalSnapshotTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.INCREMENTAL_SNAPSHOT_TIMEOUT) * 1000;
         incrementalSnapshotRetryRebaseWait = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.INCREMENTAL_SNAPSHOT_RETRY_REBASE_WAIT) * 1000;
+
+        reconcileSnapshotMarkers();
+
         return true;
     }
 
@@ -2587,7 +2590,6 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             validateConvertResult(convertResult, snapshotPath);
         } catch (LibvirtException e) {
-            removeSnapshotMarker(primaryPool, diskPath, snapshotName);
             if (!e.getMessage().contains(LIBVIRT_OPERATION_NOT_SUPPORTED_MESSAGE)) {
                 throw e;
             }
@@ -3780,7 +3782,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             if (StringUtils.isNotEmpty(vmName)) {
-                if (reconcileWithRunningDomain(vmName, diskLabel, volumePath, overlayPath, marker)) {
+                if (reconcileWithRunningDomain(vmName, diskLabel, volumePath, overlayPath, snapshotName, marker)) {
                     return;
                 }
             }
@@ -3793,7 +3795,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     private boolean reconcileWithRunningDomain(String vmName, String diskLabel, String volumePath,
-                                               String overlayPath, File marker) {
+                                               String overlayPath, String snapshotName, File marker) {
         try {
             Connect conn = LibvirtConnection.getConnection();
             Domain vm = conn.domainLookupByName(vmName);
@@ -3813,7 +3815,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
                     String actualDiskLabel = StringUtils.isNotEmpty(diskLabel) ? diskLabel : disk.getDiskLabel();
                     try {
-                        resource.mergeDeltaIntoBaseFile(vm, actualDiskLabel, volumePath, null, true, "reconcile", null, conn);
+                        resource.mergeDeltaIntoBaseFile(vm, actualDiskLabel, volumePath, null, true, snapshotName, null, conn);
                         logger.info("Successfully reconciled overlay [{}] back to base [{}] for VM [{}].", overlayPath, volumePath, vmName);
                         marker.delete();
                         return true;
@@ -3825,8 +3827,13 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
 
                 if (currentSource != null && currentSource.equals(volumePath)) {
-                    logger.info("VM [{}] disk [{}] is already on base [{}]. Overlay [{}] is orphaned. Removing marker.",
+                    logger.info("VM [{}] disk [{}] is already on base [{}]. Overlay [{}] is orphaned. Cleaning up.",
                             vmName, disk.getDiskLabel(), volumePath, overlayPath);
+                    File orphanOverlay = new File(overlayPath);
+                    if (orphanOverlay.exists()) {
+                        orphanOverlay.delete();
+                        logger.debug("Deleted orphaned overlay file [{}].", overlayPath);
+                    }
                     marker.delete();
                     return true;
                 }
@@ -3854,21 +3861,11 @@ public class KVMStorageProcessor implements StorageProcessor {
             return;
         }
 
-        long markerTimestamp = 0;
-        try {
-            String content = new String(Files.readAllBytes(marker.toPath())).trim();
-            String[] parts = content.split("\\|", -1);
-            if (parts.length > 6) {
-                markerTimestamp = Long.parseLong(parts[6]);
-            }
-        } catch (Exception e) {
-            logger.debug("Could not parse marker timestamp", e);
-        }
-
-        if (markerTimestamp > 0 && baseFile.lastModified() > markerTimestamp) {
-            logger.error("Base file [{}] has been modified since snapshot marker was written (base modified={}, marker={}). "
-                    + "The overlay [{}] cannot be safely committed. Manual intervention required — keeping marker.",
-                    volumePath, baseFile.lastModified(), markerTimestamp, overlayPath);
+        long overlayLastModified = overlayFile.lastModified();
+        if (overlayLastModified > 0 && baseFile.lastModified() > overlayLastModified) {
+            logger.error("Base file [{}] was modified after overlay [{}] was created (base mtime={}, overlay mtime={}). "
+                    + "Cannot safely commit — another process may have written to the base. Manual intervention required, keeping marker.",
+                    volumePath, overlayPath, baseFile.lastModified(), overlayLastModified);
             return;
         }
 

@@ -666,29 +666,9 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     protected void waitForCommandsAndReconnect(final Link link) {
         int inProgress = commandsInProgress.get();
         if (inProgress > 0) {
-            logger.warn("Agent disconnected with {} command(s) still in progress. Waiting for them to complete before reconnecting.", inProgress);
-
-            long maxWaitMs = 300000;
-            long waitedMs = 0;
-            while (commandsInProgress.get() > 0 && waitedMs < maxWaitMs) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-                waitedMs += 1000;
-            }
-
-            if (commandsInProgress.get() > 0) {
-                logger.warn("Timed out waiting for {} command(s) to complete after {} ms. Proceeding with reconnect — "
-                        + "in-progress commands (e.g. snapshot merges) may not have completed.", commandsInProgress.get(), waitedMs);
-            } else {
-                logger.info("All in-progress commands completed. Proceeding with reconnect.");
-            }
+            logger.warn("Agent disconnected with {} command(s) still in progress. Reconnecting — local operations (e.g. blockcommit) will continue in their threads.",
+                    inProgress);
         }
-
-        logger.info("Reconnecting instead of exiting to avoid losing in-flight work (e.g. snapshot overlays).");
         reconnect(link);
     }
 

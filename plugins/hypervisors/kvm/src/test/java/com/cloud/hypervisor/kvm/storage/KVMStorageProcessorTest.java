@@ -899,25 +899,21 @@ public class KVMStorageProcessorTest {
     }
 
     @Test
-    public void testReconcileOfflineBaseModifiedSinceMarker() throws Exception {
+    public void testReconcileOfflineBaseModifiedAfterOverlay() throws Exception {
         File tempDir = Files.createTempDirectory("reconcile_offline_test").toFile();
         try {
             File baseFile = new File(tempDir, "base.qcow2");
             File overlayFile = new File(tempDir, "overlay.qcow2");
 
-            try (FileOutputStream fos = new FileOutputStream(baseFile)) { fos.write("base".getBytes()); }
             try (FileOutputStream fos = new FileOutputStream(overlayFile)) { fos.write("overlay".getBytes()); }
+            overlayFile.setLastModified(System.currentTimeMillis() - 60000);
 
-            long markerTimestamp = System.currentTimeMillis() - 60000;
-
+            try (FileOutputStream fos = new FileOutputStream(baseFile)) { fos.write("base".getBytes()); }
             baseFile.setLastModified(System.currentTimeMillis());
 
             File marker = new File(tempDir, ".snapshot_marker_test");
-            String content = String.join("|",
-                    "pool-uuid", baseFile.getAbsolutePath(), "snap", "vm1", "vda",
-                    overlayFile.getAbsolutePath(), String.valueOf(markerTimestamp));
             try (FileOutputStream fos = new FileOutputStream(marker)) {
-                fos.write(content.getBytes());
+                fos.write("marker".getBytes());
             }
 
             java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
@@ -925,7 +921,7 @@ public class KVMStorageProcessorTest {
             method.setAccessible(true);
             method.invoke(storageProcessorSpy, baseFile.getAbsolutePath(), overlayFile.getAbsolutePath(), marker);
 
-            Assert.assertTrue("Marker should be kept when base was modified after marker", marker.exists());
+            Assert.assertTrue("Marker should be kept when base was modified after overlay was created", marker.exists());
         } finally {
             File[] files = tempDir.listFiles();
             if (files != null) for (File f : files) f.delete();
