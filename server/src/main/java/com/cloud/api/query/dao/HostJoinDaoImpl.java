@@ -41,6 +41,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.ha.HAResource;
 import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
+import org.apache.cloudstack.utils.NumberFormatUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -184,7 +185,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             }
         }
 
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        DecimalFormat decimalFormat = NumberFormatUtils.decimalFormat("#.##");
         if (host.getType() == Host.Type.Routing) {
             float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
             if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity)) {
@@ -369,7 +370,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     }
 
     private String calculateResourceAllocatedPercentage(float resource, float resourceWithOverProvision) {
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        DecimalFormat decimalFormat = NumberFormatUtils.decimalFormat("#.##");
         return decimalFormat.format(((float)resource / resourceWithOverProvision * 100.0f)) + "%";
     }
 

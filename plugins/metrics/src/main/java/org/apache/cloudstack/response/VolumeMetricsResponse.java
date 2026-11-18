@@ -19,6 +19,7 @@ package org.apache.cloudstack.response;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.utils.NumberFormatUtils;
 
 import com.cloud.serializer.Param;
 import org.apache.commons.lang3.StringUtils;
@@ -41,7 +42,7 @@ public class VolumeMetricsResponse extends VolumeResponse {
 
     public void setDiskSizeGB(final Long size) {
         if (size != null) {
-            this.diskSizeGB = String.format("%.2f GiB", size / (1024.0 * 1024.0 * 1024.0));
+            this.diskSizeGB = NumberFormatUtils.format("%.2f GiB", size / (1024.0 * 1024.0 * 1024.0));
         }
     }
 

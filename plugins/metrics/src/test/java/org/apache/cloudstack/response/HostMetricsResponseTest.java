@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.response;
 
-import java.text.DecimalFormat;
+import java.util.Locale;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,13 +26,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class HostMetricsResponseTest {
 
-    final char decimalSeparator = ((DecimalFormat) DecimalFormat.getInstance()).getDecimalFormatSymbols().getDecimalSeparator();
-
     @Test
     public void testSetCpuAllocatedWithZeroCpu() {
         final HostMetricsResponse hostResponse = new HostMetricsResponse();
-        hostResponse.setCpuAllocated(String.format("50%s25%%", decimalSeparator), 0, 1000L);
-        Assert.assertEquals(String.format("0%s00 Ghz", decimalSeparator), hostResponse.getCpuAllocatedGhz());
+        hostResponse.setCpuAllocated("50.25%", 0, 1000L);
+        Assert.assertEquals("0.00 Ghz", hostResponse.getCpuAllocatedGhz());
     }
 
     @Test
@@ -50,10 +48,22 @@ public class HostMetricsResponseTest {
 
     @Test
     public void testSetCpuAllocatedWithValidCpu() {
-        String expected = String.format("5%s03 Ghz", decimalSeparator);
         final HostMetricsResponse hostResponse = new HostMetricsResponse();
-        hostResponse.setCpuAllocated(String.format("50%s25%%", decimalSeparator), 10, 1000L);
-        Assert.assertEquals(expected, hostResponse.getCpuAllocatedGhz());
+        hostResponse.setCpuAllocated("50.25%", 10, 1000L);
+        Assert.assertEquals("5.03 Ghz", hostResponse.getCpuAllocatedGhz());
+    }
+
+    @Test
+    public void testSetCpuAllocatedUsesDotAsDecimalSeparatorRegardlessOfDefaultLocale() {
+        Locale originalLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.GERMANY);
+            final HostMetricsResponse hostResponse = new HostMetricsResponse();
+            hostResponse.setCpuAllocated("50.25%", 10, 1000L);
+            Assert.assertEquals("5.03 Ghz", hostResponse.getCpuAllocatedGhz());
+        } finally {
+            Locale.setDefault(originalLocale);
+        }
     }
 
 }

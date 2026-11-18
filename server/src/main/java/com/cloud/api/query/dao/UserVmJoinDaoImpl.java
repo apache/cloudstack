@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,6 +42,7 @@ import org.apache.cloudstack.api.response.VnfNicResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.utils.NumberFormatUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -257,7 +257,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             // stats calculation
             VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId(), accumulateStats);
             if (vmStats != null) {
-                userVmResponse.setCpuUsed(new DecimalFormat("#.##").format(vmStats.getCPUUtilization()) + "%");
+                userVmResponse.setCpuUsed(NumberFormatUtils.decimalFormat("#.##").format(vmStats.getCPUUtilization()) + "%");
                 userVmResponse.setNetworkKbsRead((long)vmStats.getNetworkReadKBs());
                 userVmResponse.setNetworkKbsWrite((long)vmStats.getNetworkWriteKBs());
                 userVmResponse.setDiskKbsRead((long)vmStats.getDiskReadKBs());
