@@ -42,6 +42,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
@@ -1433,5 +1434,75 @@ public class ResourceLimitManagerImplTest extends TestCase {
                 offering, Mockito.mock(VirtualMachineTemplate.class), null);
         Mockito.verify(resourceLimitManager, Mockito.times(1))
                 .decrementResourceCountWithTag(accountId, Resource.ResourceType.memory, tag, Long.valueOf(memory));
+    }
+
+    private void mockDomainRecalculation(long domainId, Resource.ResourceType type, String tag,
+            ResourceCountVO domainRC, long accountCount) {
+        long accountId = 2L;
+        AccountVO account = Mockito.mock(AccountVO.class);
+        Mockito.when(account.getId()).thenReturn(accountId);
+        Mockito.when(accountDao.findActiveAccountsForDomain(domainId)).thenReturn(List.of(account));
+        Mockito.when(domainDao.findImmediateChildrenForParent(domainId)).thenReturn(new ArrayList<>());
+        Mockito.doReturn(accountCount).when(resourceLimitManager).recalculateAccountResourceCount(accountId, type, tag);
+
+        ResourceCountVO accountRC = new ResourceCountVO(type, accountCount, accountId, Resource.ResourceOwnerType.Account, tag);
+        accountRC.setId(20L);
+        List<ResourceCountVO> domainRCs = domainRC == null ? new ArrayList<>() : List.of(domainRC);
+        Mockito.when(resourceCountDao.findByOwnersAndTypeAndTag(Mockito.anyList(), Mockito.eq(Resource.ResourceOwnerType.Domain), Mockito.eq(type), Mockito.eq(tag)))
+                .thenReturn(domainRCs);
+        Mockito.when(resourceCountDao.findByOwnersAndTypeAndTag(Mockito.anyList(), Mockito.eq(Resource.ResourceOwnerType.Account), Mockito.eq(type), Mockito.eq(tag)))
+                .thenReturn(List.of(accountRC));
+        List<ResourceCountVO> locked = new ArrayList<>(domainRCs);
+        locked.add(accountRC);
+        Mockito.when(resourceCountDao.lockRows(Mockito.anySet())).thenReturn(locked);
+    }
+
+    private void verifyDomainResourceCountPersisted(long domainId, Resource.ResourceType type, String tag, long count) {
+        ArgumentCaptor<ResourceCountVO> captor = ArgumentCaptor.forClass(ResourceCountVO.class);
+        Mockito.verify(resourceCountDao, Mockito.times(1)).persist(captor.capture());
+        ResourceCountVO persisted = captor.getValue();
+        Assert.assertEquals(Resource.ResourceOwnerType.Domain, persisted.getResourceOwnerType());
+        Assert.assertEquals(Long.valueOf(domainId), persisted.getDomainId());
+        Assert.assertEquals(type, persisted.getType());
+        Assert.assertEquals(tag, persisted.getTag());
+        Assert.assertEquals(count, persisted.getCount());
+        Mockito.verify(resourceCountDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any(ResourceCountVO.class));
+    }
+
+    @Test
+    public void testRecalculateDomainResourceCountCreatesMissingTaggedRow() {
+        long domainId = 1L;
+        Resource.ResourceType type = Resource.ResourceType.volume;
+        String tag = storageTags.get(0);
+        mockDomainRecalculation(domainId, type, tag, null, 10L);
+
+        Assert.assertEquals(10L, resourceLimitManager.recalculateDomainResourceCount(domainId, type, tag));
+        verifyDomainResourceCountPersisted(domainId, type, tag, 10L);
+    }
+
+    @Test
+    public void testRecalculateDomainResourceCountCreatesMissingTaggedRowWithZeroCount() {
+        long domainId = 1L;
+        Resource.ResourceType type = Resource.ResourceType.volume;
+        String tag = storageTags.get(0);
+        mockDomainRecalculation(domainId, type, tag, null, 0L);
+
+        Assert.assertEquals(0L, resourceLimitManager.recalculateDomainResourceCount(domainId, type, tag));
+        verifyDomainResourceCountPersisted(domainId, type, tag, 0L);
+    }
+
+    @Test
+    public void testRecalculateDomainResourceCountUpdatesExistingRow() {
+        long domainId = 1L;
+        Resource.ResourceType type = Resource.ResourceType.volume;
+        String tag = storageTags.get(0);
+        ResourceCountVO domainRC = new ResourceCountVO(type, 5L, domainId, Resource.ResourceOwnerType.Domain, tag);
+        domainRC.setId(10L);
+        mockDomainRecalculation(domainId, type, tag, domainRC, 10L);
+
+        Assert.assertEquals(10L, resourceLimitManager.recalculateDomainResourceCount(domainId, type, tag));
+        Assert.assertEquals(10L, domainRC.getCount());
+        Mockito.verify(resourceCountDao, Mockito.times(1)).update(domainRC.getId(), domainRC);
+        Mockito.verify(resourceCountDao, Mockito.never()).persist(Mockito.any(ResourceCountVO.class));
     }
 }

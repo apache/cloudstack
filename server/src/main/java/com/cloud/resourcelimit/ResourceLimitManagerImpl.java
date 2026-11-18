@@ -1367,10 +1367,13 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 }
             }
 
-            // TODO domainRC may be null if there are no resource counts for the domain found in the loop above
-            if (oldResourceCount != newResourceCount) {
+            if (domainRC == null) {
+                _resourceCountDao.persist(new ResourceCountVO(type, newResourceCount, domainId, ResourceOwnerType.Domain, tag));
+            } else if (oldResourceCount != newResourceCount) {
                 domainRC.setCount(newResourceCount);
                 _resourceCountDao.update(domainRC.getId(), domainRC);
+            }
+            if (oldResourceCount != newResourceCount) {
                 logger.warn("Discrepancy in the resource count has been detected (original count = {} correct count = {}) for Type = {} for Domain ID = {} is fixed during resource count recalculation.",
                         oldResourceCount, newResourceCount, type, domainId);
             }
