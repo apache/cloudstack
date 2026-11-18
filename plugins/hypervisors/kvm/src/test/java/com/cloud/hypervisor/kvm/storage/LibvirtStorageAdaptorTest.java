@@ -363,4 +363,17 @@ public class LibvirtStorageAdaptorTest {
         Assert.assertNull(LibvirtStorageAdaptor.maskRbdKey(null));
         Assert.assertEquals("timeout", LibvirtStorageAdaptor.maskRbdKey("timeout"));
     }
+
+    /**
+     * Measured with `rbd encryption format` (Ceph 20.2): the data of a LUKS2 encrypted image starts at 16 MiB with
+     * objects of 1, 4 or 8 MiB, and at 32 MiB with objects of 32 MiB.
+     */
+    @Test
+    public void testGetRbdLuks2HeaderSize() {
+        Assert.assertEquals(16L << 20, LibvirtStorageAdaptor.getRbdLuks2HeaderSize(1L << 20));
+        Assert.assertEquals(16L << 20, LibvirtStorageAdaptor.getRbdLuks2HeaderSize(4L << 20));
+        Assert.assertEquals(16L << 20, LibvirtStorageAdaptor.getRbdLuks2HeaderSize(8L << 20));
+        Assert.assertEquals(16L << 20, LibvirtStorageAdaptor.getRbdLuks2HeaderSize(16L << 20));
+        Assert.assertEquals(32L << 20, LibvirtStorageAdaptor.getRbdLuks2HeaderSize(32L << 20));
+    }
 }
