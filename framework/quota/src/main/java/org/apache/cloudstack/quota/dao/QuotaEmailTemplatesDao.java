@@ -24,4 +24,6 @@ import java.util.List;
 public interface QuotaEmailTemplatesDao extends GenericDao<QuotaEmailTemplatesVO, Long> {
     List<QuotaEmailTemplatesVO> listAllQuotaEmailTemplates(String templateName);
     boolean updateQuotaEmailTemplate(QuotaEmailTemplatesVO template);
+
+    QuotaEmailTemplatesVO findById(long id);
 }

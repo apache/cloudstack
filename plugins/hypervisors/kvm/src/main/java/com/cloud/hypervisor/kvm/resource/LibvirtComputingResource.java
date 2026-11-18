@@ -16,8 +16,32 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import com.cloud.offering.DiskOffering;
+import static com.cloud.host.Host.HOST_CDROM_MAX_COUNT;
+import static com.cloud.host.Host.HOST_CPU_MAX_SPEED_MHZ;
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
+import static com.cloud.host.Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM;
+import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
+import static com.cloud.host.Host.HOST_QEMU_RBD_SUPPORT;
+import static com.cloud.host.Host.HOST_QEMU_IMG_VERSION;
+import static com.cloud.host.Host.HOST_QEMU_IO_VERSION;
+import static com.cloud.host.Host.HOST_QEMU_NBD_VERSION;
+import static com.cloud.host.Host.HOST_RBD_VOLUME_ENCRYPTION;
+import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
+import static com.cloud.host.Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT;
+import static com.cloud.host.Host.HOST_VDDK_SUPPORT;
+import static com.cloud.host.Host.HOST_VDDK_VERSION;
+import static com.cloud.host.Host.HOST_VIRTV2V_INPLACE_SUPPORT;
+import static com.cloud.host.Host.HOST_VIRTV2V_INPLACE_VERSION;
+import static com.cloud.host.Host.HOST_VIRTV2V_VERSION;
+import static com.cloud.host.Host.HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT;
+import static com.cloud.host.Host.HOST_VDDK_BLOCKCOPY_RBD_SUPPORT;
+import static com.cloud.host.Host.HOST_VDDK_BLOCKCOPY_SUPPORT;
+import static com.cloud.host.Host.HOST_GUEST_BRIDGE_STP_ENABLED;
+import static com.cloud.host.Host.HOST_VLAN_FILTERING_ENABLED;
+import static com.cloud.host.Host.HOST_VLAN_TRUNK_XML_SUPPORTED;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
+import static org.apache.cloudstack.utils.linux.KVMHostInfo.isHostS390x;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -28,6 +52,8 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,22 +68,48 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
+import com.cloud.agent.api.to.VirtualMachineMetadataTO;
+import com.cloud.utils.exception.BackupException;
+import org.apache.cloudstack.storage.to.DeltaMergeTreeTO;
+import com.cloud.agent.api.to.DataObjectType;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
+import org.apache.cloudstack.command.CommandInfo;
+import org.apache.cloudstack.command.ReconcileCommandService;
+import org.apache.cloudstack.command.ReconcileCommandUtils;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.gpu.GpuDevice;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
+import org.apache.cloudstack.utils.rbd.RbdEncryption;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.KVMHostInfo;
@@ -70,25 +122,33 @@ import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.Logger;
 import org.apache.xerces.impl.xpath.regex.Match;
 import org.joda.time.Duration;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
+import org.libvirt.DomainBlockJobInfo;
 import org.libvirt.DomainBlockStats;
 import org.libvirt.DomainInfo;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
+import org.libvirt.Error;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
 import org.libvirt.Network;
+import org.libvirt.SchedLongParameter;
 import org.libvirt.SchedParameter;
 import org.libvirt.SchedUlongParameter;
 import org.libvirt.Secret;
@@ -100,10 +160,10 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.HostVmStateReportEntry;
+import com.cloud.agent.api.PingAnswer;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
@@ -112,6 +172,7 @@ import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
@@ -138,6 +199,7 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
+import com.cloud.hypervisor.kvm.resource.disconnecthook.DisconnectHook;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ClockDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ConsoleDef;
@@ -161,10 +223,12 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TpmDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.MetadataDef;
 import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceAgentExecutor;
 import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceExecutor;
 import com.cloud.hypervisor.kvm.resource.rolling.maintenance.RollingMaintenanceServiceExecutor;
@@ -180,14 +244,16 @@ import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.AgentStatusUpdater;
-import com.cloud.resource.ResourceStatusUpdater;
 import com.cloud.resource.RequestWrapper;
+import com.cloud.resource.ResourceStatusUpdater;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.JavaStorageLayer;
+import com.cloud.template.TemplateManager;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.Volume;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
@@ -206,7 +272,12 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
+
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -231,8 +302,8 @@ import com.google.gson.Gson;
  *         pool | the parent of the storage pool hierarchy * }
  **/
 public class LibvirtComputingResource extends ServerResourceBase implements ServerResource, VirtualRouterDeployer, ResourceStatusUpdater {
-    protected static Logger s_logger = Logger.getLogger(LibvirtComputingResource.class);
 
+    protected static Logger LOGGER = LogManager.getLogger(LibvirtComputingResource.class);
     private static final String CONFIG_VALUES_SEPARATOR = ",";
 
 
@@ -240,10 +311,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final String SECURE = "secure";
 
     /**
+     * Machine type for s390x architecture
+     */
+    private static final String S390X_VIRTIO_DEVICE = "s390-ccw-virtio";
+
+    /**
      * Machine type.
      */
-    private static final String PC = "pc";
-    private static final String VIRT = "virt";
+    public static final String PC = isHostS390x() ? S390X_VIRTIO_DEVICE : "pc";
+    public static final String VIRT = isHostS390x() ? S390X_VIRTIO_DEVICE : "virt";
 
     /**
      * Possible devices to add to VM.
@@ -262,6 +338,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final String KVMCLOCK = "kvmclock";
     private static final String HYPERVCLOCK = "hypervclock";
     private static final String WINDOWS = "Windows";
+    private static final String X86_DEFAULT_VIDEO_MODEL = "vga";
+    private static final int X86_DEFAULT_VIDEO_RAM_KIB = 32768;
     private static final String Q35 = "q35";
     private static final String PTY = "pty";
     private static final String VNC = "vnc";
@@ -297,9 +375,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     private static final int MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_TUNE = 9000;
     /**
+     * Libvirt supports multi-tag trunk mode (&lt;vlan trunk='yes'&gt;) on a standard Linux bridge since 11.0.0.
+     */
+    private static final long MIN_LIBVIRT_VERSION_FOR_VLAN_TRUNK = 11000000;
+    /**
      * Constant that defines ARM64 (aarch64) guest architectures.
      */
     private static final String AARCH64 = "aarch64";
+    /**
+     * Constant that defines IBM Z Arch (s390x) guest architectures.
+     */
+    private static final String S390X = "s390x";
 
     public static final String RESIZE_NOTIFY_ONLY = "NOTIFYONLY";
     public static final String BASEPATH = "/usr/share/cloudstack-common/vms/";
@@ -308,6 +394,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD = "virt-v2v --version";
     // virt-v2v --version => sample output: virt-v2v 1.42.0rhel=8,release=22.module+el8.10.0+1590+a67ab969
+    public static final String INSTANCE_CONVERSION_IN_PLACE_SUPPORTED_CHECK_CMD = "virt-v2v-in-place --version";
+    // EL9-family distributions install virt-v2v-in-place in libexecdir, outside $PATH
+    public static final String VIRT_V2V_IN_PLACE_LIBEXEC_PATH = "/usr/libexec/virt-v2v-in-place";
+    public static final String INSTANCE_CONVERSION_IN_PLACE_OPTION_SUPPORTED_CHECK_CMD = "virt-v2v --help 2>&1 | grep -q -- '--in-place'";
     public static final String OVF_EXPORT_SUPPORTED_CHECK_CMD = "ovftool --version";
     // ovftool --version => sample output: VMware ovftool 4.6.0 (build-21452615)
     public static final String OVF_EXPORT_TOOl_GET_VERSION_CMD = "ovftool --version | awk '{print $3}'";
@@ -315,9 +405,52 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "rpm -qa | grep -i virtio-win";
     public static final String UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "dpkg -l virtio-win";
     public static final String UBUNTU_NBDKIT_PKG_CHECK_CMD = "dpkg -l nbdkit";
+    public static final String VDDK_AUTODETECT_PATH_CMD = "find / -type d -name 'vmware-vix-disklib-distrib' 2>/dev/null | head -n 1";
+    public static final String NBDKIT_VDDK_DUMP_PLUGIN_CMD = "nbdkit vddk --dump-plugin";
+    public static final String QEMU_IMG_SUPPORTED_CHECK_CMD = "qemu-img --version";
+    public static final String QEMU_NBD_SUPPORTED_CHECK_CMD = "qemu-nbd --version";
+    public static final String QEMU_IO_SUPPORTED_CHECK_CMD = "qemu-io --version";
+    public static final String QEMU_IMG_RBD_SUPPORTED_CHECK_CMD = "qemu-img --help 2>&1 | grep -Eq '(^|[[:space:]])rbd([[:space:]]|$)'";
+    public static final String NBDCOPY_SUPPORTED_CHECK_CMD = "nbdcopy --version";
+
+    public static final int LIBVIRT_CGROUP_CPU_SHARES_MIN = 2;
+    public static final int LIBVIRT_CGROUP_CPU_SHARES_MAX = 262144;
+    /**
+     * The minimal value for the LIBVIRT_CGROUPV2_WEIGHT_MIN is actually 1.
+     * However, due to an old libvirt bug, it is raised to 2.
+     * See: https://github.com/libvirt/libvirt/commit/38af6497610075e5fe386734b87186731d4c17ac
+     */
+    public static final int LIBVIRT_CGROUPV2_WEIGHT_MIN = 2;
+    public static final int LIBVIRT_CGROUPV2_WEIGHT_MAX = 10000;
+
+    public static final String COMMANDS_LOG_PATH = "/usr/share/cloudstack-agent/tmp/commands";
+
+    public static final String CHECKPOINT_CREATE_COMMAND = "virsh checkpoint-create --domain %s --xmlfile %s --redefine";
+
+    public static final String CHECKPOINT_DELETE_COMMAND = "virsh checkpoint-delete --domain %s --checkpointname %s  --metadata";
+
+    public static final int IMAGE_SERVER_DEFAULT_PORT = 54322;
+    public static final String IMAGE_SERVER_SYSTEMD_UNIT_NAME = "cloudstack-image-server";
+
+    private static final String BLOCK_PULL_COMMAND = "virsh blockpull --domain %s --path %s";
+
+    private static final String SNAPSHOT_XML = "<domainsnapshot>\n" +
+            "<name>%s</name>\n" +
+            "<memory snapshot='no'/>\n" +
+            "<disks> \n" +
+            "%s" +
+            "</disks> \n" +
+            "</domainsnapshot>";
+
+    private static final String TAG_DISK_SNAPSHOT = "<disk name='%s' snapshot='external'>\n" +
+            "<source file='%s'/>\n" +
+            "</disk>\n";
+
+    protected int qcow2DeltaMergeTimeout;
 
     private String modifyVlanPath;
     private String versionStringPath;
+    private String gpuDiscoveryPath;
     private String patchScriptPath;
     private String createVmPath;
     private String manageSnapshotPath;
@@ -325,6 +458,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String createTmplPath;
     private String heartBeatPath;
     private String vmActivityCheckPath;
+    private String nasBackupPath;
+    private String imageServerPath;
+    private boolean imageServerTlsEnabled = false;
+    private String imageServerListenAddress;
     private String securityGroupPath;
     private String ovsPvlanDhcpHostPath;
     private String ovsPvlanVmPath;
@@ -377,6 +514,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private final static long HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING = 5000000;
     private final static long HYPERVISOR_QEMU_VERSION_IDE_DISCARD_FIXED = 7000000;
 
+    private static final int MINIMUM_LIBVIRT_VERSION_FOR_INCREMENTAL_SNAPSHOT = 7006000;
+
+    private static final int MINIMUM_QEMU_VERSION_FOR_INCREMENTAL_SNAPSHOT = 6001000;
+
     protected HypervisorType hypervisorType;
     protected String hypervisorURI;
     protected long hypervisorLibvirtVersion;
@@ -391,6 +532,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String linkLocalBridgeName;
     protected String publicBridgeName;
     protected String guestBridgeName;
+    // Guest traffic label (BridgeVifDriver#plugTrunkVlanNic prefers it over guestBridgeName)
+    protected String guestTrafficLabel;
     protected String privateIp;
     protected String pool;
     protected String localGateway;
@@ -421,12 +564,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String agentHooksBasedir = "/etc/cloudstack/agent/hooks";
 
     protected String agentHooksLibvirtXmlScript = "libvirt-vm-xml-transformer.groovy";
+    protected String agentHooksLibvirtXmlShellScript = "libvirt-vm-xml-transformer.sh";
     protected String agentHooksLibvirtXmlMethod = "transform";
 
     protected String agentHooksVmOnStartScript = "libvirt-vm-state-change.groovy";
+    protected String agentHooksVmOnStartShellScript = "libvirt-vm-state-change.sh";
     protected String agentHooksVmOnStartMethod = "onStart";
 
     protected String agentHooksVmOnStopScript = "libvirt-vm-state-change.groovy";
+    protected String agentHooksVmOnStopShellScript = "libvirt-vm-state-change.sh";
     protected String agentHooksVmOnStopMethod = "onStop";
 
     protected static final String LOCAL_STORAGE_PATH = "local.storage.path";
@@ -445,7 +591,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected WatchDogModel watchDogModel = WatchDogModel.I6300ESB;
 
     private final Map <String, String> pifs = new HashMap<String, String>();
-    private final Map<String, VmStats> vmStats = new ConcurrentHashMap<String, VmStats>();
+    private final Map<String, LibvirtExtendedVmStatsEntry> vmStats = new ConcurrentHashMap<>();
 
     private final Map<String, DomainBlockStats> vmDiskStats = new ConcurrentHashMap<>();
 
@@ -485,6 +631,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private boolean isTungstenEnabled = false;
 
+    private boolean isReconcileCommandsEnabled = false;
+
     private static Gson gson = new Gson();
 
     /**
@@ -496,39 +644,48 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private static int hostCpuMaxCapacity = 0;
 
-    private static final int CGROUP_V2_UPPER_LIMIT = 10000;
-
     private static final String COMMAND_GET_CGROUP_HOST_VERSION = "stat -fc %T /sys/fs/cgroup/";
 
     public static final String CGROUP_V2 = "cgroup2fs";
 
-    protected long getHypervisorLibvirtVersion() {
+    public static final org.libvirt.Error.ErrorNumber AGENT_UNRESPONSIVE_ERROR = Error.ErrorNumber.VIR_ERR_AGENT_UNRESPONSIVE;
+    /**
+     * Virsh command to merge (blockcommit) snapshot into the base file.<br><br>
+     * 1st parameter: VM's name;<br>
+     * 2nd parameter: disk's label (target.dev tag from VM's XML);<br>
+     * 3rd parameter: the absolute path of the base file;
+     */
+    private static final String COMMAND_MERGE_SNAPSHOT = "virsh blockcommit %s %s --base %s";
+
+    public long getHypervisorLibvirtVersion() {
         return hypervisorLibvirtVersion;
     }
 
-    protected long getHypervisorQemuVersion() {
+    public long getHypervisorQemuVersion() {
         return hypervisorQemuVersion;
     }
 
     @Override
     public synchronized void registerStatusUpdater(AgentStatusUpdater updater) {
-        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED)) {
+        if (isLibvirtEventsEnabled()) {
             try {
                 Connect conn = LibvirtConnection.getConnection();
                 if (libvirtDomainListener != null) {
-                    s_logger.debug("Clearing old domain listener");
+                    LOGGER.debug("Clearing old domain listener");
                     conn.removeLifecycleListener(libvirtDomainListener);
                 }
                 libvirtDomainListener = new LibvirtDomainListener(updater);
                 conn.addLifecycleListener(libvirtDomainListener);
-                s_logger.debug("Set up the libvirt domain event lifecycle listener");
+                LOGGER.debug("Set up the libvirt domain event lifecycle listener");
             } catch (LibvirtException e) {
-                s_logger.error("Failed to get libvirt connection for domain event lifecycle", e);
+                LOGGER.error("Failed to get libvirt connection for domain event lifecycle", e);
             }
         } else {
-            s_logger.debug("Libvirt event listening is disabled, not registering status updater");
+            LOGGER.debug("Libvirt event listening is disabled, not registering status updater");
         }
     }
+
+    protected List<DisconnectHook> _disconnectHooks = new CopyOnWriteArrayList<>();
 
     @Override
     public ExecutionResult executeInVR(final String routerIp, final String script, final String args) {
@@ -537,7 +694,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     @Override
     public ExecutionResult executeInVR(final String routerIp, final String script, final String args, final Duration timeout) {
-        final Script command = new Script(routerProxyPath, timeout, s_logger);
+        final Script command = new Script(routerProxyPath, timeout, LOGGER);
         final AllLinesParser parser = new AllLinesParser();
         command.add(script);
         command.add(routerIp);
@@ -549,7 +706,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             details = parser.getLines();
         }
 
-        s_logger.debug("Executing script in VR: " + script);
+        LOGGER.debug("Executing script in VR: " + script);
 
         return new ExecutionResult(command.getExitValue() == 0, details);
     }
@@ -559,12 +716,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final File permKey = new File("/root/.ssh/id_rsa.cloud");
         boolean success = true;
         String details = "Creating file in VR, with ip: " + routerIp + ", file: " + filename;
-        s_logger.debug(details);
+        LOGGER.debug(details);
 
         try {
             SshHelper.scpTo(routerIp, 3922, "root", permKey, null, path, content.getBytes(), filename, null);
         } catch (final Exception e) {
-            s_logger.warn("Failed to create file " + path + filename + " in VR " + routerIp, e);
+            LOGGER.warn("Failed to create file " + path + filename + " in VR " + routerIp, e);
             details = e.getMessage();
             success = false;
         }
@@ -610,15 +767,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public LibvirtKvmAgentHook getTransformer() throws IOException {
-        return new LibvirtKvmAgentHook(agentHooksBasedir, agentHooksLibvirtXmlScript, agentHooksLibvirtXmlMethod);
+        return new LibvirtKvmAgentHook(agentHooksBasedir, agentHooksLibvirtXmlScript, agentHooksLibvirtXmlShellScript, agentHooksLibvirtXmlMethod);
     }
 
     public LibvirtKvmAgentHook getStartHook() throws IOException {
-        return new LibvirtKvmAgentHook(agentHooksBasedir, agentHooksVmOnStartScript, agentHooksVmOnStartMethod);
+        return new LibvirtKvmAgentHook(agentHooksBasedir, agentHooksVmOnStartScript, agentHooksVmOnStartShellScript, agentHooksVmOnStartMethod);
     }
 
     public LibvirtKvmAgentHook getStopHook() throws IOException {
-        return new LibvirtKvmAgentHook(agentHooksBasedir, agentHooksVmOnStopScript, agentHooksVmOnStopMethod);
+        return new LibvirtKvmAgentHook(agentHooksBasedir, agentHooksVmOnStopScript, agentHooksVmOnStopShellScript, agentHooksVmOnStopMethod);
     }
 
     public LibvirtUtilitiesHelper getLibvirtUtilitiesHelper() {
@@ -718,6 +875,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return vmActivityCheckPath;
     }
 
+    public String getNasBackupPath() {
+        return nasBackupPath;
+    }
+
+    public String getImageServerPath() {
+        return imageServerPath;
+    }
+
+    public boolean isImageServerTlsEnabled() {
+        return imageServerTlsEnabled;
+    }
+
+    public String getImageServerListenAddress() {
+        return imageServerListenAddress;
+    }
+
     public String getOvsPvlanDhcpHostPath() {
         return ovsPvlanDhcpHostPath;
     }
@@ -745,6 +918,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public StorageSubsystemCommandHandler getStorageHandler() {
         return storageHandler;
     }
+
     private static final class KeyValueInterpreter extends OutputInterpreter {
         private final Map<String, String> map = new HashMap<String, String>();
 
@@ -755,14 +929,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             while ((line = reader.readLine()) != null) {
                 final String[] toks = line.trim().split("=");
                 if (toks.length < 2) {
-                    s_logger.warn("Failed to parse Script output: " + line);
+                    LOGGER.warn("Failed to parse Script output: " + line);
                 } else {
                     map.put(toks[0].trim(), toks[1].trim());
                 }
                 numLines++;
             }
             if (numLines == 0) {
-                s_logger.warn("KeyValueInterpreter: no output lines?");
+                LOGGER.warn("KeyValueInterpreter: no output lines?");
             }
             return null;
         }
@@ -787,15 +961,42 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         SUCCESS, FAILURE, IGNORE
     }
 
+    public enum CpuSchedulerParameter {
+        CPU_SHARES("cpu_shares"), PERIOD("vcpu_period"), QUOTA("vcpu_quota");
+
+        private String name;
+
+        CpuSchedulerParameter(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public String toString() {
+            return getName();
+        }
+    }
+
     protected BridgeType bridgeType;
 
     protected StorageSubsystemCommandHandler storageHandler;
 
     private boolean convertInstanceVerboseMode = false;
+    private Map<String, String> convertInstanceEnv = null;
+    private String vddkLibDir = null;
+    private static final String libguestfsBackend = "direct";
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
     protected String directDownloadTemporaryDownloadPath;
     protected String cachePath;
+    private String vddkTransports = null;
+    private String vddkNbdCompression = null;
+    private String vddkThumbprint = null;
+    private String vddkVersion = null;
+    private String detectedPasswordFileOption = null;
     protected String javaTempDir = System.getProperty("java.io.tmpdir");
 
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
@@ -816,7 +1017,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find developer.properties.");
         }
 
-        s_logger.info("developer.properties found at " + file.getAbsolutePath());
+        LOGGER.info("developer.properties found at " + file.getAbsolutePath());
         try {
             final Properties properties = PropertiesUtil.loadFromFile(file);
 
@@ -856,6 +1057,34 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return convertInstanceVerboseMode;
     }
 
+    public Map<String, String> getConvertInstanceEnv() {
+        return convertInstanceEnv;
+    }
+
+    public String getVddkLibDir() {
+        return vddkLibDir;
+    }
+
+    public String getLibguestfsBackend() {
+        return libguestfsBackend;
+    }
+
+    public String getVddkTransports() {
+        return vddkTransports;
+    }
+
+    public String getVddkNbdCompression() {
+        return vddkNbdCompression;
+    }
+
+    public String getVddkThumbprint() {
+        return vddkThumbprint;
+    }
+
+    public String getVddkVersion() {
+        return vddkVersion;
+    }
+
     /**
      * Defines resource's public and private network interface according to what is configured in agent.properties.
      */
@@ -889,7 +1118,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             loadUefiProperties();
         } catch (FileNotFoundException e) {
-            s_logger.error("uefi properties file not found due to: " + e.getLocalizedMessage());
+            LOGGER.error("uefi properties file not found due to: " + e.getLocalizedMessage());
         }
 
         storageLayer = new JavaStorageLayer();
@@ -930,6 +1159,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         cachePath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_CACHE_LOCATION);
 
+        imageServerTlsEnabled = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IMAGE_SERVER_TLS_ENABLED);
+        imageServerListenAddress = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IMAGE_SERVER_LISTEN_ADDRESS);
+
         params.put("domr.scripts.dir", domrScriptsDir);
 
         virtRouterResource = new VirtualRoutingResource(this);
@@ -958,14 +1190,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find versions.sh");
         }
 
+        gpuDiscoveryPath = Script.findScript(kvmScriptsDir, "gpudiscovery.sh");
+        if (gpuDiscoveryPath == null) {
+            throw new ConfigurationException("Unable to find gpudiscovery.sh");
+        }
+
         patchScriptPath = Script.findScript(kvmScriptsDir, "patch.sh");
         if (patchScriptPath == null) {
             throw new ConfigurationException("Unable to find patch.sh");
-        }
-
-        heartBeatPath = Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
-        if (heartBeatPath == null) {
-            throw new ConfigurationException("Unable to find kvmheartbeat.sh");
         }
 
         createVmPath = Script.findScript(storageScriptsDir, "createvm.sh");
@@ -987,6 +1219,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (vmActivityCheckPath == null) {
             throw new ConfigurationException("Unable to find kvmvmactivity.sh");
         }
+
+        nasBackupPath = Script.findScript(kvmScriptsDir, "nasbackup.sh");
+        if (nasBackupPath == null) {
+            throw new ConfigurationException("Unable to find nasbackup.sh");
+        }
+
+        String imageServerMain = Script.findScript(kvmScriptsDir, "imageserver/__main__.py");
+        if (imageServerMain == null) {
+            throw new ConfigurationException("Unable to find imageserver package");
+        }
+        imageServerPath = new File(imageServerMain).getParent();
 
         createTmplPath = Script.findScript(storageScriptsDir, "createtmplt.sh");
         if (createTmplPath == null) {
@@ -1020,7 +1263,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         hostHealthCheckScriptPath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEALTH_CHECK_SCRIPT_PATH);
         if (StringUtils.isNotBlank(hostHealthCheckScriptPath) && !new File(hostHealthCheckScriptPath).exists()) {
-            s_logger.info(String.format("Unable to find the host health check script at: %s, " +
+            LOGGER.info(String.format("Unable to find the host health check script at: %s, " +
                     "discarding it", hostHealthCheckScriptPath));
         }
 
@@ -1045,6 +1288,44 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         convertInstanceVerboseMode = BooleanUtils.isTrue(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VIRTV2V_VERBOSE_ENABLED));
+
+        String convertEnvTmpDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONVERT_ENV_TMPDIR);
+        String convertEnvVirtv2vTmpDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONVERT_ENV_VIRTV2V_TMPDIR);
+
+        setConvertInstanceEnv(convertEnvTmpDir, convertEnvVirtv2vTmpDir);
+
+        vddkLibDir = StringUtils.trimToNull(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_LIB_DIR));
+        if (StringUtils.isNotBlank(vddkLibDir) && !isVddkLibDirValid(vddkLibDir)) {
+            LOGGER.warn("Configured VDDK library dir [{}] is invalid (missing lib64/libvixDiskLib.so), attempting auto-detection", vddkLibDir);
+            vddkLibDir = null;
+        }
+        if (StringUtils.isBlank(vddkLibDir)) {
+            vddkLibDir = detectVddkLibDir();
+        }
+        if (StringUtils.isNotBlank(vddkLibDir)) {
+            LOGGER.info("Detected VDDK library dir: {}", vddkLibDir);
+        } else {
+            LOGGER.warn("Could not detect a valid VDDK library dir; VDDK conversion will be unavailable");
+        }
+
+        vddkVersion = detectVddkVersion(vddkLibDir);
+        if (StringUtils.isNotBlank(vddkVersion)) {
+            LOGGER.info("Detected usable VMware VDDK library version: {}", vddkVersion);
+        }
+
+        vddkTransports = StringUtils.trimToNull(
+                AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_TRANSPORTS));
+        vddkNbdCompression = StringUtils.trimToNull(
+                AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_NBD_COMPRESSION));
+        vddkThumbprint = StringUtils.trimToNull(
+                AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_THUMBPRINT));
+
+        detectedPasswordFileOption = detectPasswordFileOption();
+        if (StringUtils.isNotBlank(detectedPasswordFileOption)) {
+            LOGGER.info("Detected virt-v2v password option: {}", detectedPasswordFileOption);
+        } else {
+            LOGGER.warn("Could not detect virt-v2v password option, VDDK conversions may fail");
+        }
 
         pool = (String)params.get("pool");
         if (pool == null) {
@@ -1108,6 +1389,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmdsTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CMDS_TIMEOUT) * 1000;
 
         noMemBalloon = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_DISABLE);
+        qcow2DeltaMergeTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.QCOW2_DELTA_MERGE_TIMEOUT);
+        qcow2DeltaMergeTimeout = qcow2DeltaMergeTimeout > 0 ? qcow2DeltaMergeTimeout : AgentProperties.QCOW2_DELTA_MERGE_TIMEOUT.getDefaultValue();
 
         manualCpuSpeed = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_CPU_MANUAL_SPEED_MHZ);
 
@@ -1161,7 +1444,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         // destroy default network, see https://libvirt.org/sources/java/javadoc/org/libvirt/Network.html
         try {
             Network network = conn.networkLookupByName("default");
-            s_logger.debug("Found libvirt default network, destroying it and setting autostart to false");
+            LOGGER.debug("Found libvirt default network, destroying it and setting autostart to false");
             if (network.isActive() == 1) {
                 network.destroy();
             }
@@ -1169,7 +1452,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 network.setAutostart(false);
             }
         } catch (final LibvirtException e) {
-            s_logger.warn("Ignoring libvirt error.", e);
+            LOGGER.warn("Ignoring libvirt error.", e);
         }
 
         if (HypervisorType.KVM == hypervisorType) {
@@ -1187,17 +1470,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             hypervisorLibvirtVersion = conn.getLibVirVersion();
             hypervisorQemuVersion = conn.getVersion();
         } catch (final LibvirtException e) {
-            s_logger.trace("Ignoring libvirt error.", e);
+            LOGGER.trace("Ignoring libvirt error.", e);
         }
 
         // Enable/disable IO driver for Qemu (in case it is not set CloudStack can also detect if its supported by qemu)
         enableIoUring = isIoUringEnabled();
-        s_logger.info("IO uring driver for Qemu: " + (enableIoUring ? "enabled" : "disabled"));
+        LOGGER.info("IO uring driver for Qemu: " + (enableIoUring ? "enabled" : "disabled"));
 
         final String cpuArchOverride = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_ARCH);
         if (StringUtils.isNotEmpty(cpuArchOverride)) {
             guestCpuArch = cpuArchOverride;
-            s_logger.info("Using guest CPU architecture: " + guestCpuArch);
+            LOGGER.info("Using guest CPU architecture: " + guestCpuArch);
         }
 
         guestCpuMode = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_MODE);
@@ -1205,7 +1488,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             guestCpuModel = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_MODEL);
 
             if (hypervisorLibvirtVersion < 9 * 1000 + 10) {
-                s_logger.warn("Libvirt version 0.9.10 required for guest cpu mode, but version " + prettyVersion(hypervisorLibvirtVersion) +
+                LOGGER.warn("Libvirt version 0.9.10 required for guest cpu mode, but version " + prettyVersion(hypervisorLibvirtVersion) +
                         " detected, so it will be disabled");
                 guestCpuMode = "";
                 guestCpuModel = "";
@@ -1214,21 +1497,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             params.put("guest.cpu.model", guestCpuModel);
         }
 
-        final String cpuFeatures = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_FEATURES);
-        if (cpuFeatures != null) {
-            this.cpuFeatures = new ArrayList<String>();
-            for (final String feature: cpuFeatures.split(" ")) {
-                if (!feature.isEmpty()) {
-                    this.cpuFeatures.add(feature);
-                }
-            }
-        }
+        this.cpuFeatures = parseCpuFeatures(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_FEATURES));
 
         final String[] info = NetUtils.getNetworkParams(privateNic);
 
-        kvmhaMonitor = new KVMHAMonitor(null, info[0], heartBeatPath);
-        final Thread ha = new Thread(kvmhaMonitor);
-        ha.start();
+        kvmhaMonitor = new KVMHAMonitor(info[0]);
+        final Thread haMonitorThread = new Thread(kvmhaMonitor);
+        haMonitorThread.start();
 
         storagePoolManager = new KVMStoragePoolManager(storageLayer, kvmhaMonitor);
 
@@ -1256,21 +1531,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         */
 
         if (pifs.get("private") == null) {
-            s_logger.error("Failed to get private nic name");
+            LOGGER.error("Failed to get private nic name");
             throw new ConfigurationException("Failed to get private nic name");
         }
 
         if (pifs.get("public") == null) {
-            s_logger.error("Failed to get public nic name");
+            LOGGER.error("Failed to get public nic name");
             throw new ConfigurationException("Failed to get public nic name");
         }
-        s_logger.debug("Found pif: " + pifs.get("private") + " on " + privBridgeName + ", pif: " + pifs.get("public") + " on " + publicBridgeName);
+        LOGGER.debug("Found pif: " + pifs.get("private") + " on " + privBridgeName + ", pif: " + pifs.get("public") + " on " + publicBridgeName);
 
         canBridgeFirewall = canBridgeFirewall(pifs.get("public"));
 
         localGateway = Script.runSimpleBashScript("ip route show default 0.0.0.0/0|head -1|awk '{print $3}'");
         if (localGateway == null) {
-            s_logger.warn("No default IPv4 gateway found");
+            LOGGER.warn("No default IPv4 gateway found");
         }
 
         migrateDowntime = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MIGRATE_DOWNTIME);
@@ -1292,9 +1567,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     try {
                         migrateSpeed = Integer.parseInt(tokens[0]);
                     } catch (final NumberFormatException e) {
-                        s_logger.trace("Ignoring migrateSpeed extraction error.", e);
+                        LOGGER.trace("Ignoring migrateSpeed extraction error.", e);
                     }
-                    s_logger.debug("device " + pifs.get("public") + " has speed: " + String.valueOf(migrateSpeed));
+                    LOGGER.debug("device " + pifs.get("public") + " has speed: " + String.valueOf(migrateSpeed));
                 }
             }
             params.put("vm.migrate.speed", String.valueOf(migrateSpeed));
@@ -1320,12 +1595,44 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             final Thread cleanupMonitor = new Thread(isciCleanupMonitor);
             cleanupMonitor.start();
         } else {
-            s_logger.info("iscsi session clean up is disabled");
+            LOGGER.info("iscsi session clean up is disabled");
         }
 
         setupMemoryBalloonStatsPeriod(conn);
 
         return true;
+    }
+
+    private void setConvertInstanceEnv(String convertEnvTmpDir, String convertEnvVirtv2vTmpDir) {
+        if (StringUtils.isAllBlank(convertEnvTmpDir, convertEnvVirtv2vTmpDir)) {
+            return;
+        }
+        if (StringUtils.isNotBlank(convertEnvTmpDir) && StringUtils.isNotBlank(convertEnvVirtv2vTmpDir)) {
+            convertInstanceEnv = new HashMap<>(2);
+            convertInstanceEnv.put("TMPDIR", convertEnvTmpDir);
+            convertInstanceEnv.put("VIRT_V2V_TMPDIR", convertEnvVirtv2vTmpDir);
+        } else {
+            convertInstanceEnv = new HashMap<>(1);
+            String key = StringUtils.isNotBlank(convertEnvTmpDir) ? "TMPDIR" : "VIRT_V2V_TMPDIR";
+            String value = StringUtils.isNotBlank(convertEnvTmpDir) ? convertEnvTmpDir : convertEnvVirtv2vTmpDir;
+            convertInstanceEnv.put(key, value);
+        }
+    }
+
+    /**
+     * Parses a string containing whitespace-separated CPU feature names and converts it into a list.
+     *
+     * @param features A string containing whitespace-separated CPU feature names to be parsed.
+     * @return A list of CPU feature strings. Returns an empty list if {@code features} is null.
+     */
+    protected List<String> parseCpuFeatures(String features) {
+        if (features == null) {
+            return new ArrayList<>();
+        }
+
+        return Arrays.stream(features.split(" "))
+                .filter(feature -> !feature.isEmpty())
+                .collect(Collectors.toList());
     }
 
     /**
@@ -1339,14 +1646,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             vmIds = ArrayUtils.toObject(conn.listDomains());
         } catch (final LibvirtException e) {
-            s_logger.error("Unable to get the list of Libvirt domains on this host.", e);
+            LOGGER.error("Unable to get the list of Libvirt domains on this host.", e);
             return vmIdList;
         }
         vmIdList.addAll(Arrays.asList(vmIds));
-        s_logger.debug(String.format("We have found a total of [%s] VMs (Libvirt domains) on this host: [%s].", vmIdList.size(), vmIdList.toString()));
+        LOGGER.debug(String.format("We have found a total of [%s] VMs (Libvirt domains) on this host: [%s].", vmIdList.size(), vmIdList.toString()));
 
         if (vmIdList.isEmpty()) {
-            s_logger.info("Skipping the memory balloon stats period setting, since there are no VMs (active Libvirt domains) on this host.");
+            LOGGER.info("Skipping the memory balloon stats period setting, since there are no VMs (active Libvirt domains) on this host.");
         }
         return vmIdList;
     }
@@ -1357,13 +1664,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     protected Integer getCurrentVmBalloonStatsPeriod() {
         if (Boolean.TRUE.equals(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_DISABLE))) {
-            s_logger.info(String.format("The [%s] property is set to 'true', so the memory balloon stats period will be set to 0 for all VMs.",
+            LOGGER.info(String.format("The [%s] property is set to 'true', so the memory balloon stats period will be set to 0 for all VMs.",
                     AgentProperties.VM_MEMBALLOON_DISABLE.getName()));
             return 0;
         }
         Integer vmBalloonStatsPeriod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_STATS_PERIOD);
         if (vmBalloonStatsPeriod == 0) {
-            s_logger.info(String.format("The [%s] property is set to '0', this prevents memory statistics from being displayed correctly. "
+            LOGGER.info(String.format("The [%s] property is set to '0', this prevents memory statistics from being displayed correctly. "
                     + "Adjust (increase) the value of this parameter to correct this.", AgentProperties.VM_MEMBALLOON_STATS_PERIOD.getName()));
         }
         return vmBalloonStatsPeriod;
@@ -1383,20 +1690,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 parser.parseDomainXML(dm.getXMLDesc(0));
                 MemBalloonDef memBalloon = parser.getMemBalloon();
                 if (!MemBalloonDef.MemBalloonModel.VIRTIO.equals(memBalloon.getMemBalloonModel())) {
-                    s_logger.debug(String.format("Skipping the memory balloon stats period setting for the VM (Libvirt Domain) with ID [%s] and name [%s] because this VM has no memory"
+                    LOGGER.debug(String.format("Skipping the memory balloon stats period setting for the VM (Libvirt Domain) with ID [%s] and name [%s] because this VM has no memory"
                             + " balloon.", vmId, dm.getName()));
                 }
                 String setMemBalloonStatsPeriodCommand = String.format(COMMAND_SET_MEM_BALLOON_STATS_PERIOD, vmId, currentVmBalloonStatsPeriod);
                 String setMemBalloonStatsPeriodResult = Script.runSimpleBashScript(setMemBalloonStatsPeriodCommand);
                 if (StringUtils.isNotBlank(setMemBalloonStatsPeriodResult)) {
-                    s_logger.error(String.format("Unable to set up memory balloon stats period for VM (Libvirt Domain) with ID [%s] due to an error when running the [%s] "
+                    LOGGER.error(String.format("Unable to set up memory balloon stats period for VM (Libvirt Domain) with ID [%s] due to an error when running the [%s] "
                             + "command. Output: [%s].", vmId, setMemBalloonStatsPeriodCommand, setMemBalloonStatsPeriodResult));
                     continue;
                 }
-                s_logger.debug(String.format("The memory balloon stats period [%s] has been set successfully for the VM (Libvirt Domain) with ID [%s] and name [%s].",
+                LOGGER.debug(String.format("The memory balloon stats period [%s] has been set successfully for the VM (Libvirt Domain) with ID [%s] and name [%s].",
                         currentVmBalloonStatsPeriod, vmId, dm.getName()));
             } catch (final Exception e) {
-                s_logger.warn(String.format("Failed to set up memory balloon stats period for the VM %s with exception %s", parser.getName(), e.getMessage()));
+                LOGGER.warn(String.format("Failed to set up memory balloon stats period for the VM %s with exception %s", parser.getName(), e.getMessage()));
             }
         }
     }
@@ -1404,12 +1711,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private void enableSSLForKvmAgent() {
         final File keyStoreFile = PropertiesUtil.findConfigFile(KeyStoreUtils.KS_FILENAME);
         if (keyStoreFile == null) {
-            s_logger.info("Failed to find keystore file: " + KeyStoreUtils.KS_FILENAME);
+            LOGGER.info("Failed to find keystore file: " + KeyStoreUtils.KS_FILENAME);
             return;
         }
         String keystorePass = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KEYSTORE_PASSPHRASE);
         if (StringUtils.isBlank(keystorePass)) {
-            s_logger.info("Failed to find passphrase for keystore: " + KeyStoreUtils.KS_FILENAME);
+            LOGGER.info("Failed to find passphrase for keystore: " + KeyStoreUtils.KS_FILENAME);
             return;
         }
         if (keyStoreFile.exists() && !keyStoreFile.isDirectory()) {
@@ -1420,20 +1727,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected void configureLocalStorage() throws ConfigurationException {
         String localStoragePath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LOCAL_STORAGE_PATH);
-        s_logger.debug(String.format("Local Storage Path set: [%s].", localStoragePath));
+        LOGGER.debug(String.format("Local Storage Path set: [%s].", localStoragePath));
 
         String localStorageUUIDString = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LOCAL_STORAGE_UUID);
         if (localStorageUUIDString == null) {
             localStorageUUIDString = UUID.randomUUID().toString();
         }
-        s_logger.debug(String.format("Local Storage UUID set: [%s].", localStorageUUIDString));
+        LOGGER.debug(String.format("Local Storage UUID set: [%s].", localStorageUUIDString));
 
         String[] localStorageRelativePaths = localStoragePath.split(CONFIG_VALUES_SEPARATOR);
         String[] localStorageUUIDStrings = localStorageUUIDString.split(CONFIG_VALUES_SEPARATOR);
         if (localStorageRelativePaths.length != localStorageUUIDStrings.length) {
             String errorMessage = String.format("The path and UUID of the local storage pools have different length. Path: [%s], UUID: [%s].", localStoragePath,
                 localStorageUUIDString);
-            s_logger.error(errorMessage);
+            LOGGER.error(errorMessage);
             throw new ConfigurationException(errorMessage);
         }
         for (String localStorageRelativePath : localStorageRelativePaths) {
@@ -1461,7 +1768,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean configureHostParams(final Map<String, String> params) {
         final File file = PropertiesUtil.findConfigFile("agent.properties");
         if (file == null) {
-            s_logger.error("Unable to find the file agent.properties");
+            LOGGER.error("Unable to find the file agent.properties");
             return false;
         }
         // Save configurations in agent.properties
@@ -1483,30 +1790,51 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             isTungstenEnabled = Boolean.parseBoolean(params.get(NetworkOrchestrationService.TUNGSTEN_ENABLED.key()));
         }
 
+        if (params.get(ReconcileCommandService.ReconcileCommandsEnabled.key()) != null) {
+            isReconcileCommandsEnabled = Boolean.parseBoolean(params.get(ReconcileCommandService.ReconcileCommandsEnabled.key()));
+        }
+        if (isReconcileCommandsEnabled) {
+            File commandsLogPath = new File(COMMANDS_LOG_PATH);
+            if (!commandsLogPath.exists()) {
+                commandsLogPath.mkdirs();
+            }
+            // Update state of reconcile commands
+            getCommandInfosFromLogFiles(true);
+        }
+
         return true;
     }
 
     private void configureAgentHooks() {
         agentHooksBasedir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_BASEDIR);
-        s_logger.debug("agent.hooks.basedir is " + agentHooksBasedir);
+        LOGGER.debug("agent.hooks.basedir is " + agentHooksBasedir);
 
         agentHooksLibvirtXmlScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_SCRIPT);
-        s_logger.debug("agent.hooks.libvirt_vm_xml_transformer.script is " + agentHooksLibvirtXmlScript);
+        LOGGER.debug("agent.hooks.libvirt_vm_xml_transformer.script is " + agentHooksLibvirtXmlScript);
+
+        agentHooksLibvirtXmlShellScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_SHELL_SCRIPT);
+        LOGGER.debug("agent.hooks.libvirt_vm_xml_transformer.shell_script is " + agentHooksLibvirtXmlShellScript);
 
         agentHooksLibvirtXmlMethod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_METHOD);
-        s_logger.debug("agent.hooks.libvirt_vm_xml_transformer.method is " + agentHooksLibvirtXmlMethod);
+        LOGGER.debug("agent.hooks.libvirt_vm_xml_transformer.method is " + agentHooksLibvirtXmlMethod);
 
         agentHooksVmOnStartScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_START_SCRIPT);
-        s_logger.debug("agent.hooks.libvirt_vm_on_start.script is " + agentHooksVmOnStartScript);
+        LOGGER.debug("agent.hooks.libvirt_vm_on_start.script is " + agentHooksVmOnStartScript);
+
+        agentHooksVmOnStartShellScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_START_SHELL_SCRIPT);
+        LOGGER.debug("agent.hooks.libvirt_vm_on_start.shell_script is " + agentHooksVmOnStartShellScript);
 
         agentHooksVmOnStartMethod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_START_METHOD);
-        s_logger.debug("agent.hooks.libvirt_vm_on_start.method is " + agentHooksVmOnStartMethod);
+        LOGGER.debug("agent.hooks.libvirt_vm_on_start.method is " + agentHooksVmOnStartMethod);
 
         agentHooksVmOnStopScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_STOP_SCRIPT);
-        s_logger.debug("agent.hooks.libvirt_vm_on_stop.script is " + agentHooksVmOnStopScript);
+        LOGGER.debug("agent.hooks.libvirt_vm_on_stop.script is " + agentHooksVmOnStopScript);
+
+        agentHooksVmOnStopShellScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_STOP_SHELL_SCRIPT);
+        LOGGER.debug("agent.hooks.libvirt_vm_on_stop.shell_script is " + agentHooksVmOnStopShellScript);
 
         agentHooksVmOnStopMethod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_STOP_METHOD);
-        s_logger.debug("agent.hooks.libvirt_vm_on_stop.method is " + agentHooksVmOnStopMethod);
+        LOGGER.debug("agent.hooks.libvirt_vm_on_stop.method is " + agentHooksVmOnStopMethod);
     }
 
     public boolean isUefiPropertiesFileLoaded() {
@@ -1523,14 +1851,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new FileNotFoundException("Unable to find file uefi.properties.");
         }
 
-        s_logger.info("uefi.properties file found at " + file.getAbsolutePath());
+        LOGGER.info("uefi.properties file found at " + file.getAbsolutePath());
         try {
             PropertiesUtil.loadFromFile(uefiProperties, file);
-            s_logger.info("guest.nvram.template.legacy = " + uefiProperties.getProperty("guest.nvram.template.legacy"));
-            s_logger.info("guest.loader.legacy = " + uefiProperties.getProperty("guest.loader.legacy"));
-            s_logger.info("guest.nvram.template.secure = " + uefiProperties.getProperty("guest.nvram.template.secure"));
-            s_logger.info("guest.loader.secure =" + uefiProperties.getProperty("guest.loader.secure"));
-            s_logger.info("guest.nvram.path = " + uefiProperties.getProperty("guest.nvram.path"));
+            LOGGER.info("guest.nvram.template.legacy = " + uefiProperties.getProperty("guest.nvram.template.legacy"));
+            LOGGER.info("guest.loader.legacy = " + uefiProperties.getProperty("guest.loader.legacy"));
+            LOGGER.info("guest.nvram.template.secure = " + uefiProperties.getProperty("guest.nvram.template.secure"));
+            LOGGER.info("guest.loader.secure =" + uefiProperties.getProperty("guest.loader.secure"));
+            LOGGER.info("guest.nvram.path = " + uefiProperties.getProperty("guest.nvram.path"));
         } catch (final FileNotFoundException ex) {
             throw new CloudRuntimeException("Cannot find the file: " + file.getAbsolutePath(), ex);
         } catch (final IOException ex) {
@@ -1561,10 +1889,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String defaultVifDriverName = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_VIF_DRIVER);
         if (defaultVifDriverName == null) {
             if (bridgeType == BridgeType.OPENVSWITCH) {
-                s_logger.info("No libvirt.vif.driver specified. Defaults to OvsVifDriver.");
+                LOGGER.info("No libvirt.vif.driver specified. Defaults to OvsVifDriver.");
                 defaultVifDriverName = DEFAULT_OVS_VIF_DRIVER_CLASS_NAME;
             } else {
-                s_logger.info("No libvirt.vif.driver specified. Defaults to BridgeVifDriver.");
+                LOGGER.info("No libvirt.vif.driver specified. Defaults to BridgeVifDriver.");
                 defaultVifDriverName = DEFAULT_BRIDGE_VIF_DRIVER_CLASS_NAME;
             }
         }
@@ -1660,15 +1988,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         for (int i = 0; i < netdevs.length; i++) {
             final File isbridge = new File(netdevs[i].getAbsolutePath() + "/bridge");
             final String netdevName = netdevs[i].getName();
-            s_logger.debug("looking in file " + netdevs[i].getAbsolutePath() + "/bridge");
+            LOGGER.debug("looking in file " + netdevs[i].getAbsolutePath() + "/bridge");
             if (isbridge.exists()) {
-                s_logger.debug("Found bridge " + netdevName);
+                LOGGER.debug("Found bridge " + netdevName);
                 bridges.add(netdevName);
             }
         }
 
         for (final String bridge : bridges) {
-            s_logger.debug("looking for pif for bridge " + bridge);
+            LOGGER.debug("looking for pif for bridge " + bridge);
             final String pif = getPif(bridge);
             if (isPublicBridge(bridge)) {
                 pifs.put("public", pif);
@@ -1682,10 +2010,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         // guest(private) creates bridges on a pif, if private bridge not found try pif direct
         // This addresses the unnecessary requirement of someone to create an unused bridge just for traffic label
         if (pifs.get("private") == null) {
-            s_logger.debug("guest(private) traffic label '" + guestBridgeName + "' not found as bridge, looking for physical interface");
+            LOGGER.debug("guest(private) traffic label '" + guestBridgeName + "' not found as bridge, looking for physical interface");
             final File dev = new File("/sys/class/net/" + guestBridgeName);
             if (dev.exists()) {
-                s_logger.debug("guest(private) traffic label '" + guestBridgeName + "' found as a physical device");
+                LOGGER.debug("guest(private) traffic label '" + guestBridgeName + "' found as a physical device");
                 pifs.put("private", guestBridgeName);
             }
         }
@@ -1693,15 +2021,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         // public creates bridges on a pif, if private bridge not found try pif direct
         // This addresses the unnecessary requirement of someone to create an unused bridge just for traffic label
         if (pifs.get("public") == null) {
-            s_logger.debug("public traffic label '" + publicBridgeName + "' not found as bridge, looking for physical interface");
+            LOGGER.debug("public traffic label '" + publicBridgeName + "' not found as bridge, looking for physical interface");
             final File dev = new File("/sys/class/net/" + publicBridgeName);
             if (dev.exists()) {
-                s_logger.debug("public traffic label '" + publicBridgeName + "' found as a physical device");
+                LOGGER.debug("public traffic label '" + publicBridgeName + "' found as a physical device");
                 pifs.put("public", publicBridgeName);
             }
         }
 
-        s_logger.debug("done looking for pifs, no more bridges");
+        LOGGER.debug("done looking for pifs, no more bridges");
     }
 
     boolean isGuestBridge(String bridge) {
@@ -1710,10 +2038,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private void getOvsPifs() {
         final String cmdout = Script.runSimpleBashScript("ovs-vsctl list-br | sed '{:q;N;s/\\n/%/g;t q}'");
-        s_logger.debug("cmdout was " + cmdout);
+        LOGGER.debug("cmdout was " + cmdout);
         final List<String> bridges = Arrays.asList(cmdout.split("%"));
         for (final String bridge : bridges) {
-            s_logger.debug("looking for pif for bridge " + bridge);
+            LOGGER.debug("looking for pif for bridge " + bridge);
             // String pif = getOvsPif(bridge);
             // Not really interested in the pif name at this point for ovs
             // bridges
@@ -1726,7 +2054,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
             pifs.put(bridge, pif);
         }
-        s_logger.debug("done looking for pifs, no more bridges");
+        LOGGER.debug("done looking for pifs, no more bridges");
     }
 
     public boolean isPublicBridge(String bridge) {
@@ -1753,7 +2081,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 // if bridgeName already refers to a pif, return it as-is
                 return bridgeName;
             }
-            s_logger.debug("failing to get physical interface from bridge " + bridgeName + ", does " + brif.getAbsolutePath() + "exist?");
+            LOGGER.debug("failing to get physical interface from bridge " + bridgeName + ", does " + brif.getAbsolutePath() + "exist?");
             return "";
         }
 
@@ -1761,14 +2089,28 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         for (int i = 0; i < interfaces.length; i++) {
             final String fname = interfaces[i].getName();
-            s_logger.debug("matchPifFileInDirectory: file name '" + fname + "'");
+            LOGGER.debug("matchPifFileInDirectory: file name '" + fname + "'");
             if (isInterface(fname)) {
                 return fname;
             }
         }
 
-        s_logger.debug("failing to get physical interface from bridge " + bridgeName + ", did not find an eth*, bond*, team*, vlan*, em*, p*p*, ens*, eno*, enp*, or enx* in " + brif.getAbsolutePath());
+        LOGGER.debug("failing to get physical interface from bridge " + bridgeName + ", did not find an eth*, bond*, team*, vlan*, em*, p*p*, ens*, eno*, enp*, or enx* in " + brif.getAbsolutePath());
         return "";
+    }
+
+    public Integer getVlanIdForBridge(final String bridge) {
+        String pif = matchPifFileInDirectory(bridge);
+        final File vlanfile = new File("/proc/net/vlan/" + pif);
+        if (vlanfile.isFile()) {
+            String vlan = Script.runSimpleBashScript("awk '/VID:/ {print $3}' /proc/net/vlan/" + pif);
+            try {
+                return Integer.parseInt(vlan);
+            } catch (final NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     static String [] ifNamePatterns = {
@@ -1785,7 +2127,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             "^dummy",
             "^lo",
             "^p\\d+p\\d+",
-            "^vni"
+            "^vni",
+            "^enc"
     };
 
     /**
@@ -1797,7 +2140,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         for (final String ifNamePattern : ifNamePatterns) {
             commonPattern.append("|(").append(ifNamePattern).append(".*)");
         }
-        if(fname.matches(commonPattern.toString())) {
+        if (fname.matches(commonPattern.toString())) {
             return true;
         }
         return false;
@@ -1830,7 +2173,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private boolean checkOvsNetwork(final String networkName) {
-        s_logger.debug("Checking if network " + networkName + " exists as openvswitch bridge");
+        LOGGER.debug("Checking if network " + networkName + " exists as openvswitch bridge");
         if (networkName == null) {
             return true;
         }
@@ -1842,16 +2185,183 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean passCmdLine(final String vmName, final String cmdLine) throws InternalErrorException {
-        final Script command = new Script(patchScriptPath, 300000, s_logger);
+        final Script command = new Script(patchScriptPath, 300000, LOGGER);
         String result;
         command.add("-n", vmName);
         command.add("-c", cmdLine);
         result = command.execute();
         if (result != null) {
-            s_logger.error("Passing cmdline failed:" + result);
+            LOGGER.error("Passing cmdline failed:" + result);
             return false;
         }
         return true;
+    }
+
+    public List<VgpuTypesInfo> getGpuDevices() {
+        LOGGER.debug("Executing GPU discovery script at: {}", gpuDiscoveryPath);
+        final Script command = new Script(gpuDiscoveryPath, Duration.standardSeconds(30), LOGGER);
+
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String result = command.execute(parser);
+        if (result == null) {
+            LOGGER.debug("GPU discovery command executed successfully");
+            result = parser.getLines();
+        }
+
+        if (result == null || result.trim().isEmpty()) {
+            LOGGER.error("GPU discovery failed: command returned null or empty result. Script path: {}, Exit code: {}",
+                    gpuDiscoveryPath, command.getExitValue());
+            return Collections.emptyList();
+        }
+
+        LOGGER.debug("GPU discovery result: {}", result);
+
+        // This will be used to update the GPU device list when agent on a host is unavailable or the VM is imported.
+        return parseGpuDevicesFromResult(result);
+    }
+
+    protected List<VgpuTypesInfo> parseGpuDevicesFromResult(String result) {
+        List<VgpuTypesInfo> gpuDevices = new ArrayList<>();
+        try {
+            JsonParser jsonParser = new JsonParser();
+            JsonArray jsonArray = jsonParser.parse(result).getAsJsonObject().get("gpus").getAsJsonArray();
+
+            for (JsonElement jsonElement : jsonArray) {
+                JsonObject jsonObject = jsonElement.getAsJsonObject();
+                String busAddress = jsonObject.get("pci_address").getAsString();
+                String vendorId = jsonObject.get("vendor_id").getAsString();
+                String vendorName = jsonObject.get("vendor").getAsString();
+                String deviceId = jsonObject.get("device_id").getAsString();
+                String deviceName = jsonObject.get("device").getAsString();
+
+                // vgpu instances uses mdev uuid
+                // vf instances uses vf_pci_address
+
+                JsonArray vgpuInstances = jsonObject.get("vgpu_instances").getAsJsonArray();
+                JsonArray vfInstances = jsonObject.get("vf_instances").getAsJsonArray();
+
+                JsonObject fullPassthrough = jsonObject.get("full_passthrough").getAsJsonObject();
+                boolean fullPassthroughEnabled = fullPassthrough.get("enabled").getAsInt() == 1;
+
+                String numaNode = getJsonStringValueOrNull(jsonObject, "numa_node");
+                String pciRoot = getJsonStringValueOrNull(jsonObject, "pci_root");
+
+                Long maxInstances = getJsonLongValueOrNull(jsonObject, "max_instances");
+                Long videoRam = getJsonLongValueOrNull(jsonObject, "video_ram");
+                Long maxHeads = getJsonLongValueOrNull(jsonObject, "max_heads");
+                Long maxResolutionX = getJsonLongValueOrNull(jsonObject, "max_resolution_x");
+                Long maxResolutionY = getJsonLongValueOrNull(jsonObject, "max_resolution_y");
+
+                VgpuTypesInfo vgpuType = new VgpuTypesInfo(GpuDevice.DeviceType.PCI, vendorName + " " + deviceName,
+                        "passthrough", busAddress, vendorId, vendorName, deviceId, deviceName, numaNode, pciRoot);
+
+                vgpuType.setMaxVgpuPerGpu(maxInstances);
+                vgpuType.setVideoRam(videoRam);
+                vgpuType.setMaxHeads(maxHeads);
+                vgpuType.setMaxResolutionX(maxResolutionX);
+                vgpuType.setMaxResolutionY(maxResolutionY);
+
+                if (fullPassthroughEnabled) {
+                    vgpuType.setPassthroughEnabled(true);
+                } else {
+                    vgpuType.setPassthroughEnabled(false);
+                }
+                vgpuType.setVmName(getJsonStringValueOrNull(fullPassthrough, "used_by_vm"));
+
+                gpuDevices.add(vgpuType);
+
+                for (JsonElement vgpuInstance : vgpuInstances) {
+                    VgpuTypesInfo vgpu = getGpuDeviceFromVgpuInstance(vgpuInstance, busAddress, vendorId, vendorName,
+                            deviceId, deviceName, numaNode, pciRoot);
+                    if (vgpu != null) {
+                        gpuDevices.add(vgpu);
+                    }
+                }
+
+                for (JsonElement vfInstance : vfInstances) {
+                    VgpuTypesInfo vf = getGpuDeviceFromVfInstance(vfInstance, busAddress, vendorId, vendorName,
+                            deviceId, deviceName, numaNode, pciRoot);
+                    if (vf != null) {
+                        gpuDevices.add(vf);
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to parse GPU discovery result: {}", e.getMessage(), e);
+        }
+        return gpuDevices;
+    }
+
+    protected VgpuTypesInfo getGpuDeviceFromVgpuInstance(JsonElement vgpuInstance, String busAddress, String vendorId,
+            String vendorName, String deviceId, String deviceName, String numaNode, String pciRoot) {
+        JsonObject vgpuInstanceJsonObject = vgpuInstance.getAsJsonObject();
+        String mdevUuid = getJsonStringValueOrNull(vgpuInstanceJsonObject, "mdev_uuid");
+        String profileName = getJsonStringValueOrNull(vgpuInstanceJsonObject, "profile_name");
+        if (profileName == null || profileName.isEmpty()) {
+            return null; // Skip if profile name is not provided
+        }
+        Long maxInstances = getJsonLongValueOrNull(vgpuInstanceJsonObject, "max_instances");
+        Long videoRam = getJsonLongValueOrNull(vgpuInstanceJsonObject, "video_ram");
+        Long maxHeads = getJsonLongValueOrNull(vgpuInstanceJsonObject, "max_heads");
+        Long maxResolutionX = getJsonLongValueOrNull(vgpuInstanceJsonObject, "max_resolution_x");
+        Long maxResolutionY = getJsonLongValueOrNull(vgpuInstanceJsonObject, "max_resolution_y");
+        VgpuTypesInfo device = new VgpuTypesInfo(GpuDevice.DeviceType.MDEV, vendorName + " " + deviceName, profileName, mdevUuid, vendorId, vendorName, deviceId, deviceName, numaNode, pciRoot);
+        device.setParentBusAddress(busAddress);
+        device.setMaxVgpuPerGpu(maxInstances);
+        device.setVideoRam(videoRam);
+        device.setMaxHeads(maxHeads);
+        device.setMaxResolutionX(maxResolutionX);
+        device.setMaxResolutionY(maxResolutionY);
+        device.setVmName(getJsonStringValueOrNull(vgpuInstance.getAsJsonObject(), "used_by_vm"));
+        return device;
+    }
+
+    protected VgpuTypesInfo getGpuDeviceFromVfInstance(JsonElement vfInstance, String busAddress, String vendorId,
+            String vendorName, String deviceId, String deviceName, String numaNode, String pciRoot) {
+        JsonObject vfInstanceJsonObject = vfInstance.getAsJsonObject();
+        String vfPciAddress = vfInstanceJsonObject.get("vf_pci_address").getAsString();
+        String vfProfile = vfInstanceJsonObject.get("vf_profile").getAsString();
+        if (vfProfile == null || vfProfile.isEmpty()) {
+            return null; // Skip if profile name is not provided
+        }
+        Long maxInstances = getJsonLongValueOrNull(vfInstanceJsonObject, "max_instances");
+        Long videoRam = getJsonLongValueOrNull(vfInstanceJsonObject, "video_ram");
+        Long maxHeads = getJsonLongValueOrNull(vfInstanceJsonObject, "max_heads");
+        Long maxResolutionX = getJsonLongValueOrNull(vfInstanceJsonObject, "max_resolution_x");
+        Long maxResolutionY = getJsonLongValueOrNull(vfInstanceJsonObject, "max_resolution_y");
+        VgpuTypesInfo device = new VgpuTypesInfo(GpuDevice.DeviceType.PCI, vendorName + " " + deviceName, vfProfile, vfPciAddress, vendorId, vendorName, deviceId, deviceName, numaNode, pciRoot);
+        device.setParentBusAddress(busAddress);
+        device.setMaxVgpuPerGpu(maxInstances);
+        device.setVideoRam(videoRam);
+        device.setMaxHeads(maxHeads);
+        device.setMaxResolutionX(maxResolutionX);
+        device.setMaxResolutionY(maxResolutionY);
+        device.setVmName(getJsonStringValueOrNull(vfInstanceJsonObject, "used_by_vm"));
+        return device;
+    }
+
+    /**
+     * Safely extracts a string value from a JSON object, returning null if the field is missing or null.
+     *
+     * @param jsonObject the JSON object to extract from
+     * @param fieldName the name of the field to extract
+     * @return the string value of the field, or null if the field is missing or null
+     */
+    protected String getJsonStringValueOrNull(JsonObject jsonObject, String fieldName) {
+        JsonElement element = jsonObject.get(fieldName);
+        if (element == null || element.isJsonNull()) {
+            return null;
+        }
+        return element.getAsString();
+    }
+
+    protected Long getJsonLongValueOrNull(JsonObject jsonObject, String fieldName) {
+        JsonElement element = jsonObject.get(fieldName);
+        if (element == null || element.isJsonNull()) {
+            return null;
+        }
+        return element.getAsLong();
     }
 
     boolean isDirectAttachedNetwork(final String type) {
@@ -1868,6 +2378,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public String startVM(final Connect conn, final String vmName, final String domainXML) throws LibvirtException, InternalErrorException {
+        return startVM(conn, vmName, domainXML, 0);
+    }
+
+    public String startVM(final Connect conn, final String vmName, final String domainXML, int flags) throws LibvirtException, InternalErrorException {
         try {
             /*
                 We create a transient domain here. When this method gets
@@ -1895,7 +2409,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
 
-            conn.domainCreateXML(domainXML, 0);
+            conn.domainCreateXML(domainXML, flags);
         } catch (final LibvirtException e) {
             throw e;
         }
@@ -1906,13 +2420,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean stop() {
         try {
             final Connect conn = LibvirtConnection.getConnection();
-            if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED) && libvirtDomainListener != null) {
-                s_logger.debug("Clearing old domain listener");
+            if (isLibvirtEventsEnabled() && libvirtDomainListener != null) {
+                LOGGER.debug("Clearing old domain listener");
                 conn.removeLifecycleListener(libvirtDomainListener);
             }
             conn.close();
         } catch (final LibvirtException e) {
-            s_logger.trace("Ignoring libvirt error.", e);
+            LOGGER.trace("Ignoring libvirt error.", e);
         }
 
         return true;
@@ -1928,6 +2442,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     @Override
     public Answer executeRequest(final Command cmd) {
+        if (isReconcileCommandsEnabled) {
+            ReconcileCommandUtils.updateLogFileForCommand(COMMANDS_LOG_PATH, cmd, Command.State.STARTED);
+        }
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         try {
@@ -1937,17 +2454,78 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
+    public CommandInfo[] getCommandInfosFromLogFiles(boolean update) {
+        File commandsLogPath = new File(COMMANDS_LOG_PATH);
+        File[] files = commandsLogPath.listFiles();
+        if (files != null) {
+            CommandInfo[] commandInfos = new CommandInfo[files.length];
+            int i = 0;
+            for (File file : files) {
+                CommandInfo commandInfo = ReconcileCommandUtils.readLogFileForCommand(file.getAbsolutePath());
+                if (commandInfo == null) {
+                    continue;
+                }
+                if (update) {
+                    if (Command.State.PROCESSING.equals(commandInfo.getState())) {
+                        ReconcileCommandUtils.updateLogFileForCommand(file.getAbsolutePath(), Command.State.INTERRUPTED);
+                    } else if (Command.State.PROCESSING_IN_BACKEND.equals(commandInfo.getState())) {
+                        ReconcileCommandUtils.updateLogFileForCommand(file.getAbsolutePath(), Command.State.DANGLED_IN_BACKEND);
+                    }
+                }
+                logger.debug(String.format("Adding reconcile command with seq: %s, command: %s, answer: %s", commandInfo.getRequestSeq(), commandInfo.getCommandName(), commandInfo.getAnswer()));
+                commandInfos[i++] = commandInfo;
+            }
+            return commandInfos;
+        }
+        return new CommandInfo[0];
+    }
+
+    public void createOrUpdateLogFileForCommand(Command command, Command.State state) {
+        if (isReconcileCommandsEnabled) {
+            ReconcileCommandUtils.updateLogFileForCommand(COMMANDS_LOG_PATH, command, state);
+        }
+    }
+
+    public void createOrUpdateLogFileForCommand(Command command, Answer answer) {
+        if (isReconcileCommandsEnabled) {
+            ReconcileCommandUtils.updateLogFileWithAnswerForCommand(LibvirtComputingResource.COMMANDS_LOG_PATH, command, answer);
+        }
+    }
+
+    @Override
+    public void processPingAnswer(PingAnswer answer) {
+        PingCommand pingCommand = answer.getCommand();
+        List<String> reconcileCommands = answer.getReconcileCommands();
+        CommandInfo[] commandInfos = pingCommand.getCommandInfos();
+        for (CommandInfo commandInfo : commandInfos) {
+            String commandKey = getCommandKey(commandInfo.getRequestSeq(), commandInfo.getCommandName());
+            if (Arrays.asList(Command.State.COMPLETED, Command.State.FAILED, Command.State.INTERRUPTED, Command.State.TIMED_OUT).contains(commandInfo.getState())) {
+                logger.debug(String.format("Removing command %s in %s state as it has been received by the management server", commandKey, commandInfo.getState()));
+                String fileName = String.format("%s/%s-%s.json", COMMANDS_LOG_PATH, commandInfo.getRequestSeq(), commandInfo.getCommandName());
+                ReconcileCommandUtils.deleteLogFile(fileName);
+            } else if (!reconcileCommands.contains(commandKey)) {
+                logger.debug(String.format("Removing command %s in %s state as it cannot be found by the management server", commandKey, commandInfo.getState()));
+                String fileName = String.format("%s/%s-%s.json", COMMANDS_LOG_PATH, commandInfo.getRequestSeq(), commandInfo.getCommandName());
+                ReconcileCommandUtils.deleteLogFile(fileName);
+            }
+        }
+    }
+
+    private String getCommandKey(long requestSeq, String commandName) {
+        return requestSeq + "-" + commandName;
+    }
+
     public synchronized boolean destroyTunnelNetwork(final String bridge) {
         findOrCreateTunnelNetwork(bridge);
 
-        final Script cmd = new Script(ovsTunnelPath, timeout, s_logger);
+        final Script cmd = new Script(ovsTunnelPath, timeout, LOGGER);
         cmd.add("destroy_ovs_bridge");
         cmd.add("--bridge", bridge);
 
         final String result = cmd.execute();
 
         if (result != null) {
-            s_logger.debug("OVS Bridge could not be destroyed due to error ==> " + result);
+            LOGGER.debug("OVS Bridge could not be destroyed due to error ==> " + result);
             return false;
         }
         return true;
@@ -1964,9 +2542,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             Script.runSimpleBashScript("ovs-vsctl -- --may-exist add-br "
                     + nwName + " -- set bridge " + nwName
                     + " other_config:ovs-host-setup='-1'");
-            s_logger.debug("### KVM network for tunnels created:" + nwName);
+            LOGGER.debug("### KVM network for tunnels created:" + nwName);
         } catch (final Exception e) {
-            s_logger.warn("createTunnelNetwork failed", e);
+            LOGGER.warn("createTunnelNetwork failed", e);
             return false;
         }
         return true;
@@ -1977,7 +2555,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             final boolean findResult = findOrCreateTunnelNetwork(nwName);
             if (!findResult) {
-                s_logger.warn("LibvirtComputingResource.findOrCreateTunnelNetwork() failed! Cannot proceed creating the tunnel.");
+                LOGGER.warn("LibvirtComputingResource.findOrCreateTunnelNetwork() failed! Cannot proceed creating the tunnel.");
                 return false;
             }
             final String configuredHosts = Script
@@ -1994,7 +2572,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
             if (!configured) {
-                final Script cmd = new Script(ovsTunnelPath, timeout, s_logger);
+                final Script cmd = new Script(ovsTunnelPath, timeout, LOGGER);
                 cmd.add("setup_ovs_bridge");
                 cmd.add("--key", nwName);
                 cmd.add("--cs_host_id", ((Long)hostId).toString());
@@ -2007,7 +2585,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
         } catch (final Exception e) {
-            s_logger.warn("createandConfigureTunnelNetwork failed", e);
+            LOGGER.warn("createandConfigureTunnelNetwork failed", e);
             return false;
         }
         return true;
@@ -2035,7 +2613,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 secondaryPool.refresh();
                 final List<KVMPhysicalDisk> disks = secondaryPool.listPhysicalDisks();
                 if (disks == null || disks.isEmpty()) {
-                    s_logger.error("Failed to get volumes from pool: " + secondaryPool.getUuid());
+                    LOGGER.error("Failed to get volumes from pool: " + secondaryPool.getUuid());
                     return null;
                 }
                 for (final KVMPhysicalDisk disk : disks) {
@@ -2045,7 +2623,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     }
                 }
                 if (templateVol == null) {
-                    s_logger.error("Failed to get template from pool: " + secondaryPool.getUuid());
+                    LOGGER.error("Failed to get template from pool: " + secondaryPool.getUuid());
                     return null;
                 }
             } else {
@@ -2057,7 +2635,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             final KVMPhysicalDisk primaryVol = storagePoolManager.copyPhysicalDisk(templateVol, volUuid, primaryPool, 0);
             return primaryVol;
         } catch (final CloudRuntimeException e) {
-            s_logger.error("Failed to download template to primary storage", e);
+            LOGGER.error("Failed to download template to primary storage", e);
             return null;
         } finally {
             if (secondaryPool != null) {
@@ -2072,6 +2650,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         if (pool.getType() == StoragePoolType.CLVM && volFormat == PhysicalDiskFormat.RAW) {
             return "CLVM";
+        } else if (poolType == StoragePoolType.CLVM_NG) {
+            return "CLVM_NG";
         } else if ((poolType == StoragePoolType.NetworkFilesystem
                 || poolType == StoragePoolType.SharedMountPoint
                 || poolType == StoragePoolType.Filesystem
@@ -2088,25 +2668,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final String pif = matchPifFileInDirectory(brName);
         final Pattern pattern = Pattern.compile("(\\D+)(\\d+)(\\D*)(\\d*)(\\D*)(\\d*)");
         final Matcher matcher = pattern.matcher(pif);
-        s_logger.debug("getting broadcast uri for pif " + pif + " and bridge " + brName);
-        if(matcher.find()) {
+        LOGGER.debug("getting broadcast uri for pif " + pif + " and bridge " + brName);
+        if (matcher.find()) {
             if (brName.startsWith("brvx")){
                 return BroadcastDomainType.Vxlan.toUri(matcher.group(2)).toString();
-            }
-            else{
+            } else {
                 if (!matcher.group(6).isEmpty()) {
                     return BroadcastDomainType.Vlan.toUri(matcher.group(6)).toString();
                 } else if (!matcher.group(4).isEmpty()) {
                     return BroadcastDomainType.Vlan.toUri(matcher.group(4)).toString();
                 } else {
                     //untagged or not matching (eth|bond|team)#.#
-                    s_logger.debug("failed to get vNet id from bridge " + brName
+                    LOGGER.debug("failed to get vNet id from bridge " + brName
                             + "attached to physical interface" + pif + ", perhaps untagged interface");
                     return "";
                 }
             }
         } else {
-            s_logger.debug("failed to get vNet id from bridge " + brName + "attached to physical interface" + pif);
+            LOGGER.debug("failed to get vNet id from bridge " + brName + "attached to physical interface" + pif);
             return "";
         }
     }
@@ -2169,7 +2748,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return new ExecutionResult(true, null);
         } catch (final LibvirtException e) {
             final String msg = "Creating guest network failed due to " + e.toString();
-            s_logger.warn(msg, e);
+            LOGGER.warn(msg, e);
             return new ExecutionResult(false, msg);
         }
     }
@@ -2208,7 +2787,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return new ExecutionResult(true, "success");
         } catch (final LibvirtException e) {
             final String msg = "Ip SNAT failure due to " + e.toString();
-            s_logger.error(msg, e);
+            LOGGER.error(msg, e);
             return new ExecutionResult(false, msg);
         }
     }
@@ -2230,7 +2809,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             return new ExecutionResult(true, null);
         } catch (final LibvirtException e) {
-            s_logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
+            LOGGER.error("Ip Assoc failure on applying one ip due to exception:  ", e);
             return new ExecutionResult(false, e.getMessage());
         }
     }
@@ -2263,10 +2842,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
             return new ExecutionResult(true, null);
         } catch (final LibvirtException e) {
-            s_logger.error("ipassoccmd failed", e);
+            LOGGER.error("ipassoccmd failed", e);
             return new ExecutionResult(false, e.getMessage());
         } catch (final InternalErrorException e) {
-            s_logger.error("ipassoccmd failed", e);
+            LOGGER.error("ipassoccmd failed", e);
             return new ExecutionResult(false, e.getMessage());
         }
     }
@@ -2303,10 +2882,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
 
         } catch (final LibvirtException e) {
-            s_logger.error("ipassoccmd failed", e);
+            LOGGER.error("ipassoccmd failed", e);
             return new ExecutionResult(false, e.getMessage());
         } catch (final InternalErrorException e) {
-            s_logger.error("ipassoccmd failed", e);
+            LOGGER.error("ipassoccmd failed", e);
             return new ExecutionResult(false, e.getMessage());
         }
 
@@ -2340,14 +2919,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 final PowerState s = convertToPowerState(vms.getInfo().state);
                 return s;
             } catch (final LibvirtException e) {
-                s_logger.warn("Can't get vm state " + vmName + e.getMessage() + "retry:" + retry);
+                LOGGER.error("Could not get state for VM [{}] (retry={}) due to:", vmName, retry, e);
             } finally {
                 try {
                     if (vms != null) {
                         vms.free();
                     }
                 } catch (final LibvirtException l) {
-                    s_logger.trace("Ignoring libvirt error.", l);
+                    LOGGER.trace("Ignoring libvirt error.", l);
                 }
             }
         }
@@ -2359,7 +2938,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public String networkUsage(final String privateIpAddress, final String option, final String vif, String publicIp) {
-        final Script getUsage = new Script(routerProxyPath, s_logger);
+        final Script getUsage = new Script(routerProxyPath, LOGGER);
         getUsage.add("netusage.sh");
         getUsage.add(privateIpAddress);
         if (option.equals("get")) {
@@ -2380,7 +2959,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final OutputInterpreter.OneLineParser usageParser = new OutputInterpreter.OneLineParser();
         final String result = getUsage.execute(usageParser);
         if (result != null) {
-            s_logger.debug("Failed to execute networkUsage:" + result);
+            LOGGER.debug("Failed to execute networkUsage:" + result);
             return null;
         }
         return usageParser.getLine();
@@ -2405,7 +2984,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public String getHaproxyStats(final String privateIP, final String publicIp, final Integer port) {
-        final Script getHaproxyStatsScript = new Script(routerProxyPath, s_logger);
+        final Script getHaproxyStatsScript = new Script(routerProxyPath, LOGGER);
         getHaproxyStatsScript.add("get_haproxy_stats.sh");
         getHaproxyStatsScript.add(privateIP);
         getHaproxyStatsScript.add(publicIp);
@@ -2414,7 +2993,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final OutputInterpreter.OneLineParser statsParser = new OutputInterpreter.OneLineParser();
         final String result = getHaproxyStatsScript.execute(statsParser);
         if (result != null) {
-            s_logger.debug("Failed to execute haproxy stats:" + result);
+            LOGGER.debug("Failed to execute haproxy stats:" + result);
             return null;
         }
         return statsParser.getLine();
@@ -2431,7 +3010,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public String configureVPCNetworkUsage(final String privateIpAddress, final String publicIp, final String option, final String vpcCIDR) {
-        final Script getUsage = new Script(routerProxyPath, s_logger);
+        final Script getUsage = new Script(routerProxyPath, LOGGER);
         getUsage.add("vpc_netusage.sh");
         getUsage.add(privateIpAddress);
         getUsage.add("-l", publicIp);
@@ -2452,7 +3031,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final OutputInterpreter.OneLineParser usageParser = new OutputInterpreter.OneLineParser();
         final String result = getUsage.execute(usageParser);
         if (result != null) {
-            s_logger.debug("Failed to execute VPCNetworkUsage:" + result);
+            LOGGER.debug("Failed to execute VPCNetworkUsage:" + result);
             return null;
         }
         return usageParser.getLine();
@@ -2499,25 +3078,63 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * Set quota and period tags on 'ctd' when CPU limit use is set
      */
     protected void setQuotaAndPeriod(VirtualMachineTO vmTO, CpuTuneDef ctd) {
-        if (vmTO.getLimitCpuUse() && vmTO.getCpuQuotaPercentage() != null) {
+        if (vmTO.isLimitCpuUse() && vmTO.getCpuQuotaPercentage() != null) {
             Double cpuQuotaPercentage = vmTO.getCpuQuotaPercentage();
-            int period = CpuTuneDef.DEFAULT_PERIOD;
-            int quota = (int) (period * cpuQuotaPercentage);
-            if (quota < CpuTuneDef.MIN_QUOTA) {
-                s_logger.info("Calculated quota (" + quota + ") below the minimum (" + CpuTuneDef.MIN_QUOTA + ") for VM domain " + vmTO.getUuid() + ", setting it to minimum " +
-                        "and calculating period instead of using the default");
-                quota = CpuTuneDef.MIN_QUOTA;
-                period = (int) ((double) quota / cpuQuotaPercentage);
-                if (period > CpuTuneDef.MAX_PERIOD) {
-                    s_logger.info("Calculated period (" + period + ") exceeds the maximum (" + CpuTuneDef.MAX_PERIOD +
-                            "), setting it to the maximum");
-                    period = CpuTuneDef.MAX_PERIOD;
-                }
-            }
-            ctd.setQuota(quota);
-            ctd.setPeriod(period);
-            s_logger.info("Setting quota=" + quota + ", period=" + period + " to VM domain " + vmTO.getUuid());
+            Pair<Integer, Long> periodAndQuota = getPeriodAndQuota(cpuQuotaPercentage);
+            ctd.setPeriod(periodAndQuota.first());
+            ctd.setQuota(periodAndQuota.second());
+            LOGGER.info("Setting quota = [{}] and period = [{}] to VM domain [{}].", periodAndQuota.second(), periodAndQuota.first(), vmTO.getUuid());
         }
+    }
+
+    /**
+     * Calculates the CPU period and quota based on the quota percentage defined by the Management Server
+     * @param cpuQuotaPercentage CPU quota percentage defined by the Management Server
+     * @return The period and quota to be defined for the VM's domain
+     */
+    protected Pair<Integer, Long> getPeriodAndQuota(double cpuQuotaPercentage) {
+        int period = CpuTuneDef.DEFAULT_PERIOD;
+        long quota = (long) (period * cpuQuotaPercentage);
+        if (quota < CpuTuneDef.MIN_QUOTA) {
+            LOGGER.info("Calculated quota ({}) below the minimum ({}), setting it to minimum and calculating period instead of using the default", quota, CpuTuneDef.MIN_QUOTA);
+            quota = CpuTuneDef.MIN_QUOTA;
+            period = (int) ((double) quota / cpuQuotaPercentage);
+            if (period > CpuTuneDef.MAX_PERIOD) {
+                LOGGER.info("Calculated period ({}) exceeds the maximum ({}), setting it to the maximum", period, CpuTuneDef.MAX_PERIOD);
+                period = CpuTuneDef.MAX_PERIOD;
+            }
+        }
+
+        LOGGER.info("Calculated period = [{}] and quota = [{}] given the [{}] quota percentage.", period, quota, cpuQuotaPercentage);
+        return new Pair<>(period, quota);
+    }
+
+    /**
+     * Dynamically updates the domain's "vcpu_quota" and "period" fields of the CPU tune definition.
+     * This is required because the values of the fields must change according to the new CPU speed of the VM.
+     * When the CPU limitation is removed from the domain, the "vcpu_quota" field is set to 17,592,186,044,415.
+     * @param domain VM's domain.
+     * @param vmTO VM's transfer object, which contains the required fields to update the "vcpu_quota" and "period" fields.
+     * @param limitCpuUseChange Indicates whether the CPU limitation for the VM has changed.
+     * @throws org.libvirt.LibvirtException
+     **/
+    public void updateCpuQuotaAndPeriod(Domain domain, VirtualMachineTO vmTO, boolean limitCpuUseChange) throws LibvirtException {
+        if (hypervisorLibvirtVersion < MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_TUNE || (!limitCpuUseChange && !vmTO.isLimitCpuUse())) {
+            logger.info("Not updating the [{}] and [{}] for the [{}] domain, because [{}].",
+                    CpuSchedulerParameter.QUOTA, CpuSchedulerParameter.PERIOD, domain.getName(), hypervisorLibvirtVersion < MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_TUNE ?
+                            "the current Libvirt version does not support CPU tune" : "it was not requested to remove, change or apply CPU limitation for the instance.");
+            return;
+        }
+
+        if (limitCpuUseChange && !vmTO.isLimitCpuUse()) {
+            logger.info("Updating the [{}] of the [{}] domain to [{}], because CPU limitation has been removed.", CpuSchedulerParameter.QUOTA, domain.getName(), CpuTuneDef.MAX_CPU_QUOTA);
+            LibvirtComputingResource.setQuota(domain, CpuTuneDef.MAX_CPU_QUOTA);
+            return;
+        }
+
+        Pair<Integer, Long> periodAndQuota = getPeriodAndQuota(vmTO.getCpuQuotaPercentage());
+        LibvirtComputingResource.setPeriod(domain, periodAndQuota.first());
+        LibvirtComputingResource.setQuota(domain, periodAndQuota.second());
     }
 
     protected void enlightenWindowsVm(VirtualMachineTO vmTO, FeaturesDef features) {
@@ -2529,7 +3146,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             hyv.setFeature("spinlocks", true);
             hyv.setRetries(8096);
             features.addHyperVFeature(hyv);
-            s_logger.info("Enabling KVM Enlightment Features to VM domain " + vmTO.getUuid());
+            LOGGER.info("Enabling KVM Enlightment Features to VM domain " + vmTO.getUuid());
         }
     }
 
@@ -2537,7 +3154,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * Creates VM KVM definitions from virtual machine transfer object specifications.
      */
     public LibvirtVMDef createVMFromSpec(final VirtualMachineTO vmTO) {
-        s_logger.debug(String.format("Creating VM from specifications [%s]", vmTO.toString()));
+        LOGGER.debug(String.format("Creating VM from specifications [%s]", vmTO.toString()));
 
         LibvirtVMDef vm = new LibvirtVMDef();
         vm.setDomainName(vmTO.getName());
@@ -2554,10 +3171,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         if (MapUtils.isNotEmpty(customParams) && customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
             isUefiEnabled = true;
-            s_logger.debug(String.format("Enabled UEFI for VM UUID [%s].", uuid));
+            LOGGER.debug(String.format("Enabled UEFI for VM UUID [%s].", uuid));
 
             if (isSecureMode(customParams.get(GuestDef.BootType.UEFI.toString()))) {
-                s_logger.debug(String.format("Enabled Secure Boot for VM UUID [%s].", uuid));
+                LOGGER.debug(String.format("Enabled Secure Boot for VM UUID [%s].", uuid));
                 isSecureBoot = true;
             }
 
@@ -2566,7 +3183,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         Map<String, String> extraConfig = vmTO.getExtraConfig();
         if (dpdkSupport && (!extraConfig.containsKey(DpdkHelper.DPDK_NUMA) || !extraConfig.containsKey(DpdkHelper.DPDK_HUGE_PAGES))) {
-            s_logger.info(String.format("DPDK is enabled for VM [%s], but it needs extra configurations for CPU NUMA and Huge Pages for VM deployment.", vmTO.toString()));
+            LOGGER.info(String.format("DPDK is enabled for VM [%s], but it needs extra configurations for CPU NUMA and Huge Pages for VM deployment.", vmTO.toString()));
         }
         configureVM(vmTO, vm, customParams, isUefiEnabled, isSecureBoot, bootMode, extraConfig, uuid);
         return vm;
@@ -2577,7 +3194,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     private void configureVM(VirtualMachineTO vmTO, LibvirtVMDef vm, Map<String, String> customParams, boolean isUefiEnabled, boolean isSecureBoot, String bootMode,
             Map<String, String> extraConfig, String uuid) {
-        s_logger.debug(String.format("Configuring VM with UUID [%s].", uuid));
+        LOGGER.debug(String.format("Configuring VM with UUID [%s].", uuid));
 
         GuestDef guest = createGuestFromSpec(vmTO, vm, uuid, customParams);
         if (isUefiEnabled) {
@@ -2604,7 +3221,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.addComp(createClockDef(vmTO));
         vm.addComp(createDevicesDef(vmTO, guest, vcpus, isUefiEnabled));
 
+        MetadataDef metaDef;
+        if ((metaDef = createMetadataDef(vmTO)) != null) {
+            vm.addComp(metaDef);
+        }
+
         addExtraConfigsToVM(vmTO, vm, extraConfig);
+    }
+
+    protected MetadataDef createMetadataDef(VirtualMachineTO vmTO) {
+        VirtualMachineMetadataTO metadata = vmTO.getMetadata();
+        return (metadata != null) ? new MetadataDef(metadata) : null;
     }
 
     /**
@@ -2612,7 +3239,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     private void addExtraConfigsToVM(VirtualMachineTO vmTO, LibvirtVMDef vm, Map<String, String> extraConfig) {
         if (MapUtils.isNotEmpty(extraConfig) && VirtualMachine.Type.User.equals(vmTO.getType())) {
-            s_logger.debug(String.format("Appending extra configuration data [%s] to guest VM [%s] domain XML.", extraConfig, vmTO.toString()));
+            LOGGER.debug(String.format("Appending extra configuration data [%s] to guest VM [%s] domain XML.", extraConfig, vmTO.toString()));
             addExtraConfigComponent(extraConfig, vm);
         }
     }
@@ -2631,11 +3258,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         devices.addDevice(createChannelDef(vmTO));
-        devices.addDevice(createWatchDogDef());
+        if (!isGuestS390x()) {
+            devices.addDevice(createWatchDogDef());
+        }
         devices.addDevice(createVideoDef(vmTO));
         devices.addDevice(createConsoleDef());
         devices.addDevice(createGraphicDef(vmTO));
-        devices.addDevice(createTabletInputDef());
+
+        if (vmTO.getGpuDevice() != null && CollectionUtils.isNotEmpty(vmTO.getGpuDevice().getGpuDevices())) {
+            attachGpuDevices(vmTO, devices);
+        }
+
+        if (!isGuestS390x()) {
+            devices.addDevice(createTabletInputDef());
+        }
+
+        TpmDef tpmDef = createTpmDef(vmTO);
+        if (tpmDef != null) {
+            devices.addDevice(tpmDef);
+        }
 
         if (isGuestAarch64()) {
             createArm64UsbDef(devices);
@@ -2653,6 +3294,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             addSCSIControllers(devices, vcpus, vmTO.getDisks().length, isIothreadsEnabled);
         }
         return devices;
+    }
+
+    protected void attachGpuDevices(final VirtualMachineTO vmTO, final DevicesDef devicesDef) {
+        // GPU device is not set for the VM
+        List<VgpuTypesInfo> gpuDevices = vmTO.getGpuDevice().getGpuDevices();
+        for (VgpuTypesInfo gpuDevice : gpuDevices) {
+            LibvirtGpuDef gpu = new LibvirtGpuDef();
+
+            gpu.defGpu(gpuDevice);
+
+            devicesDef.addDevice(gpu);
+            LOGGER.info("Attached GPU device " + gpuDevice.getDeviceName() + " to VM " + vmTO.getName());
+        }
     }
 
     protected WatchDogDef createWatchDogDef() {
@@ -2720,6 +3374,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 videoRam = NumbersUtil.parseInt(value, videoRam);
             }
         }
+        if (StringUtils.isBlank(videoHw) && isGuestX86(vmTO)) {
+            // With no <video> element libvirt defaults x86 guests to cirrus, which is deprecated
+            // in QEMU and renders a blank console on recent Windows guests (e.g. Windows Server 2025 Core)
+            videoHw = X86_DEFAULT_VIDEO_MODEL;
+            if (videoRam == 0) {
+                videoRam = X86_DEFAULT_VIDEO_RAM_KIB;
+            }
+        }
         return new VideoDef(videoHw, videoRam);
     }
 
@@ -2754,9 +3416,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         FeaturesDef features = new FeaturesDef();
         features.addFeatures(PAE);
         features.addFeatures(APIC);
-        features.addFeatures(ACPI);
+        if (!isHostS390x()) {
+            features.addFeatures(ACPI);
+        }
         if (isUefiEnabled && isSecureBoot) {
             features.addFeatures(SMM);
+        }
+        if (MapUtils.isNotEmpty(customParams) && customParams.containsKey(VmDetailConstants.KVM_HINT_DEDICATED)) {
+            features.setKvmHintDedicated(Boolean.parseBoolean(customParams.get(VmDetailConstants.KVM_HINT_DEDICATED)));
         }
         return features;
     }
@@ -2794,56 +3461,89 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         int requestedCpuShares = vCpus * cpuSpeed;
         int hostCpuMaxCapacity = getHostCpuMaxCapacity();
 
+        // cgroup v2 is in use
         if (hostCpuMaxCapacity > 0) {
-            int updatedCpuShares = (int) Math.ceil((requestedCpuShares * CGROUP_V2_UPPER_LIMIT) / (double) hostCpuMaxCapacity);
-            s_logger.debug(String.format("This host utilizes cgroupv2 (as the max shares value is [%s]), thus, the VM requested shares of [%s] will be converted to " +
-                    "consider the host limits; the new CPU shares value is [%s].", hostCpuMaxCapacity, requestedCpuShares, updatedCpuShares));
+
+            int updatedCpuShares = (int) Math.ceil((requestedCpuShares * LIBVIRT_CGROUPV2_WEIGHT_MAX) / (double) hostCpuMaxCapacity);
+            LOGGER.debug("This host utilizes cgroupv2 (as the max shares value is [{}]), thus, the VM requested shares of [{}] will be converted to " +
+                    "consider the host limits; the new CPU shares value is [{}].", hostCpuMaxCapacity, requestedCpuShares, updatedCpuShares);
+
+            if (updatedCpuShares < LIBVIRT_CGROUPV2_WEIGHT_MIN) updatedCpuShares = LIBVIRT_CGROUPV2_WEIGHT_MIN;
+            if (updatedCpuShares > LIBVIRT_CGROUPV2_WEIGHT_MAX) updatedCpuShares = LIBVIRT_CGROUPV2_WEIGHT_MAX;
             return updatedCpuShares;
         }
-        s_logger.debug(String.format("This host does not have a maximum CPU shares set; therefore, this host utilizes cgroupv1 and the VM requested CPU shares [%s] will not be " +
-                "converted.", requestedCpuShares));
+
+        // cgroup v1 is in use
+        LOGGER.debug("This host does not have a maximum CPU shares set; therefore, this host utilizes cgroupv1 and the VM requested CPU shares [{}] will not be " +
+                "converted.", requestedCpuShares);
+
+        if (requestedCpuShares < LIBVIRT_CGROUP_CPU_SHARES_MIN) requestedCpuShares = LIBVIRT_CGROUP_CPU_SHARES_MIN;
+        if (requestedCpuShares > LIBVIRT_CGROUP_CPU_SHARES_MAX) requestedCpuShares = LIBVIRT_CGROUP_CPU_SHARES_MAX;
         return requestedCpuShares;
     }
 
     private CpuModeDef createCpuModeDef(VirtualMachineTO vmTO, int vcpus) {
         final CpuModeDef cmd = new CpuModeDef();
-        cmd.setMode(guestCpuMode);
-        cmd.setModel(guestCpuModel);
-        if (VirtualMachine.Type.User.equals(vmTO.getType())) {
-            cmd.setFeatures(cpuFeatures);
-        }
+        Map<String, String> details = vmTO.getDetails();
+        String cpuMode = MapUtils.isNotEmpty(details) && details.get(VmDetailConstants.GUEST_CPU_MODE) != null ? details.get(VmDetailConstants.GUEST_CPU_MODE) : guestCpuMode;
+        String cpuModel = MapUtils.isNotEmpty(details) && details.get(VmDetailConstants.GUEST_CPU_MODEL) != null ? details.get(VmDetailConstants.GUEST_CPU_MODEL) : guestCpuModel;
+        cmd.setMode(cpuMode);
+        cmd.setModel(cpuModel);
+        cmd.setFeatures(cpuFeatures);
         int vCpusInDef = vmTO.getVcpuMaxLimit() == null ? vcpus : vmTO.getVcpuMaxLimit();
         setCpuTopology(cmd, vCpusInDef, vmTO.getDetails());
         return cmd;
+    }
+
+    protected TpmDef createTpmDef(VirtualMachineTO vmTO) {
+        Map<String, String> details = vmTO.getDetails();
+        if (MapUtils.isEmpty(details)) {
+            return null;
+        }
+        String tpmModel = details.get(VmDetailConstants.VIRTUAL_TPM_MODEL);
+        if (tpmModel == null) {
+            return null;
+        }
+        String tpmVersion = details.get(VmDetailConstants.VIRTUAL_TPM_VERSION);
+        return new TpmDef(tpmModel, tpmVersion);
     }
 
     private void configureGuestIfUefiEnabled(boolean isSecureBoot, String bootMode, GuestDef guest) {
         setGuestLoader(bootMode, SECURE, guest, GuestDef.GUEST_LOADER_SECURE);
         setGuestLoader(bootMode, LEGACY, guest, GuestDef.GUEST_LOADER_LEGACY);
 
-        if (isUefiPropertieNotNull(GuestDef.GUEST_NVRAM_PATH)) {
+        if (isUefiPropertyNotNull(GuestDef.GUEST_NVRAM_PATH)) {
             guest.setNvram(uefiProperties.getProperty(GuestDef.GUEST_NVRAM_PATH));
         }
 
-        if (isSecureBoot && isUefiPropertieNotNull(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE) && SECURE.equalsIgnoreCase(bootMode)) {
+        if (isSecureBoot && isUefiPropertyNotNull(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE) && SECURE.equalsIgnoreCase(bootMode)) {
             guest.setNvramTemplate(uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_SECURE));
-        } else if (isUefiPropertieNotNull(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY)) {
+        } else if (isUefiPropertyNotNull(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY)) {
             guest.setNvramTemplate(uefiProperties.getProperty(GuestDef.GUEST_NVRAM_TEMPLATE_LEGACY));
         }
     }
 
-    private void setGuestLoader(String bootMode, String mode, GuestDef guest, String propertie) {
-        if (isUefiPropertieNotNull(propertie) && mode.equalsIgnoreCase(bootMode)) {
-            guest.setLoader(uefiProperties.getProperty(propertie));
+    private void setGuestLoader(String bootMode, String mode, GuestDef guest, String property) {
+        if (isUefiPropertyNotNull(property) && mode.equalsIgnoreCase(bootMode)) {
+            guest.setLoader(uefiProperties.getProperty(property));
         }
     }
 
-    private boolean isUefiPropertieNotNull(String propertie) {
-        return uefiProperties.getProperty(propertie) != null;
+    private boolean isUefiPropertyNotNull(String property) {
+        return uefiProperties.getProperty(property) != null;
     }
 
-    private boolean isGuestAarch64() {
+    public boolean isGuestAarch64() {
         return AARCH64.equals(guestCpuArch);
+    }
+
+    protected boolean isGuestX86(VirtualMachineTO vmTO) {
+        String arch = guestCpuArch != null ? guestCpuArch : vmTO.getArch();
+        return arch == null || arch.equals("x86_64") || arch.equals("i686");
+    }
+
+    private boolean isGuestS390x() {
+        return S390X.equals(guestCpuArch);
     }
 
     /**
@@ -2853,8 +3553,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         GuestDef guest = new GuestDef();
 
         configureGuestAndVMHypervisorType(vmTO, vm, guest);
+        guest.setManufacturer(vmTO.getMetadataManufacturer());
+        guest.setProduct(vmTO.getMetadataProductName());
         guest.setGuestArch(guestCpuArch != null ? guestCpuArch : vmTO.getArch());
-        guest.setMachineType(isGuestAarch64() ? VIRT : PC);
+        guest.setMachineType((isGuestAarch64() || isGuestS390x()) ? VIRT : PC);
         guest.setBootType(GuestDef.BootType.BIOS);
         if (MapUtils.isNotEmpty(customParams)) {
             if (customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
@@ -2866,9 +3568,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
             guest.setIothreads(customParams.containsKey(VmDetailConstants.IOTHREADS));
+            if (customParams.containsKey(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE)) {
+                guest.setMachineType(customParams.get(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE));
+            }
         }
         guest.setUuid(uuid);
-        guest.setBootOrder(GuestDef.BootOrder.CDROM);
+        if(!isGuestS390x()) {
+            guest.setBootOrder(GuestDef.BootOrder.CDROM);
+        }
         guest.setBootOrder(GuestDef.BootOrder.HARDISK);
         return guest;
     }
@@ -2907,10 +3614,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         grd.setMemBalloning(!noMemBalloon);
 
-        Long maxRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMaxRam());
-
-        grd.setMemorySize(maxRam);
-        grd.setCurrentMem(getCurrentMemAccordingToMemBallooning(vmTO, maxRam));
+        long requestedRam = ByteScaleUtils.bytesToKibibytes(vmTO.getRequestedRam());
+        long minRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
+        grd.setCurrentMem(getCurrentMemAccordingToMemBallooning(vmTO, requestedRam, minRam));
+        grd.setMaxMemory(ByteScaleUtils.bytesToKibibytes(vmTO.getMaxRam()));
 
         int vcpus = vmTO.getCpus();
         Integer maxVcpus = vmTO.getVcpuMaxLimit();
@@ -2921,18 +3628,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return grd;
     }
 
-    protected long getCurrentMemAccordingToMemBallooning(VirtualMachineTO vmTO, long maxRam) {
-        long retVal = maxRam;
+    protected long getCurrentMemAccordingToMemBallooning(VirtualMachineTO vmTO, long requestedRam, long minRam) {
         if (noMemBalloon) {
-            s_logger.warn(String.format("Setting VM's [%s] current memory as max memory [%s] due to memory ballooning is disabled. If you are using a custom service offering, verify if memory ballooning really should be disabled.", vmTO.toString(), maxRam));
-        } else if (vmTO != null && vmTO.getType() != VirtualMachine.Type.User) {
-            s_logger.warn(String.format("Setting System VM's [%s] current memory as max memory [%s].", vmTO.toString(), maxRam));
-        } else {
-            long minRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
-            s_logger.debug(String.format("Setting VM's [%s] current memory as min memory [%s] due to memory ballooning is enabled.", vmTO.toString(), minRam));
-            retVal = minRam;
+            LOGGER.warn("Setting VM's [{}] current memory as requested memory [{}] due to memory ballooning is disabled.", vmTO.toString(), requestedRam);
+            return requestedRam;
         }
-        return retVal;
+
+        if (vmTO != null && vmTO.getType() != VirtualMachine.Type.User) {
+            LOGGER.warn("Setting System VM's [{}] current memory as requested memory [{}].", vmTO.toString(), requestedRam);
+            return requestedRam;
+        }
+
+        LOGGER.debug("Setting VM's [{}] current memory as min memory [{}] due to memory ballooning is enabled.", vmTO.toString(), minRam);
+        return minRam;
     }
 
     /**
@@ -3010,6 +3718,44 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return useBLOCKDiskType(physicalDisk) ? DiskDef.DiskType.BLOCK : DiskDef.DiskType.FILE;
     }
 
+    /**
+     * Defines the disk configuration for the default pool type based on the provided parameters.
+     * It determines the appropriate disk settings depending on whether the disk is a data disk, whether
+     * it's a Windows template, whether UEFI is enabled, and whether secure boot is active.
+     *
+     * @param disk The disk definition object that will be configured with the disk settings.
+     * @param volume The volume (disk) object, containing information about the type of disk.
+     * @param isWindowsTemplate Flag indicating whether the template is a Windows template.
+     * @param isUefiEnabled Flag indicating whether UEFI is enabled.
+     * @param isSecureBoot Flag indicating whether secure boot is enabled.
+     * @param physicalDisk The physical disk object that contains the path to the disk.
+     * @param devId The device ID for the disk.
+     * @param diskBusType The disk bus type to use if not skipping force disk controller.
+     * @param diskBusTypeData The disk bus type to use for data disks, if applicable.
+     * @param details A map of VM details containing additional configuration values, such as whether to skip force
+     *                disk controller.
+     */
+    protected void defineDiskForDefaultPoolType(DiskDef disk, DiskTO volume, boolean isWindowsTemplate,
+                    boolean isUefiEnabled, boolean isSecureBoot, KVMPhysicalDisk physicalDisk, int devId,
+                    DiskDef.DiskBus diskBusType, DiskDef.DiskBus diskBusTypeData, Map<String, String> details) {
+        boolean skipForceDiskController = MapUtils.getBoolean(details, VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER,
+                false);
+        if (skipForceDiskController) {
+            disk.defFileBasedDisk(physicalDisk.getPath(), devId, Volume.Type.DATADISK.equals(volume.getType()) ?
+                    diskBusTypeData : diskBusType, DiskDef.DiskFmtType.QCOW2);
+            return;
+        }
+        if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
+            disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData, DiskDef.DiskFmtType.QCOW2);
+        } else {
+            if (isSecureBoot) {
+                disk.defFileBasedDisk(physicalDisk.getPath(), devId, DiskDef.DiskFmtType.QCOW2, isWindowsTemplate);
+            } else {
+                disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusType, DiskDef.DiskFmtType.QCOW2);
+            }
+        }
+    }
+
     public void createVbd(final Connect conn, final VirtualMachineTO vmSpec, final String vmName, final LibvirtVMDef vm) throws InternalErrorException, LibvirtException, URISyntaxException {
         final Map<String, String> details = vmSpec.getDetails();
         final List<DiskTO> disks = Arrays.asList(vmSpec.getDisks());
@@ -3028,8 +3774,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (vmSpec.getOs().toLowerCase().contains("window")) {
-            isWindowsTemplate =true;
+            isWindowsTemplate = true;
         }
+        final Set<Integer> definedCdromSlots = new HashSet<>();
         for (final DiskTO volume : disks) {
             KVMPhysicalDisk physicalDisk = null;
             KVMStoragePool pool = null;
@@ -3083,13 +3830,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             // check for disk activity, if detected we should exit because vm is running elsewhere
             if (diskActivityCheckEnabled && physicalDisk != null && physicalDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
-                s_logger.debug("Checking physical disk file at path " + volPath + " for disk activity to ensure vm is not running elsewhere");
+                LOGGER.debug("Checking physical disk file at path " + volPath + " for disk activity to ensure vm is not running elsewhere");
                 try {
                     HypervisorUtils.checkVolumeFileForActivity(volPath, diskActivityCheckTimeoutSeconds, diskActivityInactiveThresholdMilliseconds, diskActivityCheckFileSizeMin);
                 } catch (final IOException ex) {
                     throw new CloudRuntimeException("Unable to check physical disk file for activity", ex);
                 }
-                s_logger.debug("Disk activity check cleared");
+                LOGGER.debug("Disk activity check cleared");
             }
 
             // if params contains a rootDiskController key, use its value (this is what other HVs are doing)
@@ -3108,11 +3855,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (volume.getType() == Volume.Type.ISO) {
                 final DiskDef.DiskType diskType = getDiskType(physicalDisk);
                 disk.defISODisk(volPath, devId, isUefiEnabled, diskType);
+                definedCdromSlots.add(devId);
 
-                if (guestCpuArch != null && guestCpuArch.equals("aarch64")) {
+                if (guestCpuArch != null && (guestCpuArch.equals("aarch64") || guestCpuArch.equals("s390x"))) {
                     disk.setBusType(DiskDef.DiskBus.SCSI);
                 }
             } else {
+                if (pool == null) {
+                    throw new CloudRuntimeException(String.format("Found null pool for volume %s", volume));
+                }
+
+                disk.setLogicalBlockIOSize(pool.getSupportedLogicalBlockSize());
+                disk.setPhysicalBlockIOSize(pool.getSupportedPhysicalBlockSize());
+
                 if (diskBusType == DiskDef.DiskBus.SCSI || diskBusType == DiskDef.DiskBus.VIRTIOBLK) {
                     disk.setQemuDriver(true);
                     disk.setDiscard(DiscardType.UNMAP);
@@ -3140,6 +3895,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.defNetworkBasedDisk(physicalDisk.getPath().replace("rbd:", ""), pool.getSourceHost(), pool.getSourcePort(), pool.getAuthUserName(),
                             pool.getUuid(), devId, diskBusType, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
                 } else if (pool.getType() == StoragePoolType.PowerFlex) {
+                    if (isWindowsTemplate && isUefiEnabled) {
+                        diskBusTypeData = DiskDef.DiskBus.SATA;
+                    }
                     disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
                     if (physicalDisk.getFormat().equals(PhysicalDiskFormat.QCOW2)) {
                         disk.setDiskFormatType(DiskDef.DiskFmtType.QCOW2);
@@ -3150,29 +3908,26 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     final String glusterVolume = pool.getSourceDir().replace("/", "");
                     disk.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), pool.getSourceHost(), pool.getSourcePort(), null,
                             null, devId, diskBusType, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
-                } else if (pool.getType() == StoragePoolType.CLVM || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
+                } else if (pool.getType() == StoragePoolType.CLVM || pool.getType() == StoragePoolType.CLVM_NG || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
                     if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
-                    }
-                    else {
+                    } else {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
                     }
+
+                    // CLVM_NG uses QCOW2 format on block devices, override the default RAW format
+                    if (pool.getType() == StoragePoolType.CLVM_NG) {
+                        disk.setDiskFormatType(DiskDef.DiskFmtType.QCOW2);
+                    }
+
                     if (pool.getType() == StoragePoolType.Linstor && isQemuDiscardBugFree(diskBusType)) {
                         disk.setDiscard(DiscardType.UNMAP);
                     }
                 } else {
-                    if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
-                        disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData, DiskDef.DiskFmtType.QCOW2);
-                    } else {
-                        if (isSecureBoot) {
-                            disk.defFileBasedDisk(physicalDisk.getPath(), devId, DiskDef.DiskFmtType.QCOW2, isWindowsTemplate);
-                        } else {
-                            disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusType, DiskDef.DiskFmtType.QCOW2);
-                        }
-                    }
-
+                    defineDiskForDefaultPoolType(disk, volume, isWindowsTemplate, isUefiEnabled, isSecureBoot,
+                            physicalDisk, devId, diskBusType, diskBusTypeData, details);
                 }
-
+                pool.customizeLibvirtDiskDef(disk);
             }
 
             if (data instanceof VolumeObjectTO) {
@@ -3184,24 +3939,41 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setCacheMode(DiskDef.DiskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString().toUpperCase()));
                 }
 
+                if (volumeObjectTO.getErrorPolicy() != null) {
+                    disk.setErrorPolicy(DiskOffering.DiskErrorPolicy.valueOf(volumeObjectTO.getErrorPolicy().toString().toUpperCase()));
+                }
+
                 if (volumeObjectTO.requiresEncryption() &&
                         pool.getType().encryptionSupportMode() == Storage.EncryptionSupport.Hypervisor ) {
                     String secretUuid = createLibvirtVolumeSecret(conn, volumeObjectTO.getPath(), volumeObjectTO.getPassphrase());
-                    DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(volumeObjectTO.getEncryptFormat()));
+                    // RBD volumes are encrypted natively by librbd, so request the librbd encryption engine.
+                    String encryptEngine = (pool.getType() == StoragePoolType.RBD) ? "librbd" : null;
+                    DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(volumeObjectTO.getEncryptFormat()), encryptEngine);
                     disk.setLibvirtDiskEncryptDetails(encryptDetails);
                 }
             }
             if (vm.getDevices() == null) {
-                s_logger.error("There is no devices for" + vm);
+                LOGGER.error("There is no devices for" + vm);
                 throw new RuntimeException("There is no devices for" + vm);
             }
             vm.getDevices().addDevice(disk);
         }
 
+        if (vmSpec.getType() == VirtualMachine.Type.User) {
+            for (int slot = TemplateManager.CDROM_PRIMARY_DEVICE_SEQ;
+                    slot < TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + LibvirtVMDef.MAX_CDROMS_PER_VM; slot++) {
+                if (!definedCdromSlots.contains(slot)) {
+                    final DiskDef emptyCdrom = new DiskDef();
+                    emptyCdrom.defISODisk(null, slot, isUefiEnabled, DiskDef.DiskType.FILE);
+                    vm.getDevices().addDevice(emptyCdrom);
+                }
+            }
+        }
+
         if (vmSpec.getType() != VirtualMachine.Type.User) {
             final DiskDef iso = new DiskDef();
             iso.defISODisk(sysvmISOPath, DiskDef.DiskType.FILE);
-            if (guestCpuArch != null && guestCpuArch.equals("aarch64")) {
+            if (guestCpuArch != null && (guestCpuArch.equals("aarch64") || guestCpuArch.equals("s390x"))) {
                 iso.setBusType(DiskDef.DiskBus.SCSI);
             }
             vm.getDevices().addDevice(iso);
@@ -3219,11 +3991,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 } else if (volume.getType() == Volume.Type.DATADISK) {
                     final KVMPhysicalDisk physicalDisk = storagePoolManager.getPhysicalDisk(store.getPoolType(), store.getUuid(), data.getPath());
                     final KVMStoragePool pool = physicalDisk.getPool();
-                    if(StoragePoolType.RBD.equals(pool.getType())) {
+                    if (StoragePoolType.RBD.equals(pool.getType())) {
                         final int devId = volume.getDiskSeq().intValue();
                         final String device = mapRbdDevice(physicalDisk);
                         if (device != null) {
-                            s_logger.debug("RBD device on host is: " + device);
+                            LOGGER.debug("RBD device on host is: " + device);
                             final DiskDef diskdef = new DiskDef();
                             diskdef.defBlockBasedDisk(device, devId, DiskDef.DiskBus.VIRTIO);
                             diskdef.setQemuDriver(false);
@@ -3246,10 +4018,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * Check if IO_URING is supported by qemu
      */
     protected boolean isIoUringSupportedByQemu() {
-        s_logger.debug("Checking if iouring is supported");
+        LOGGER.debug("Checking if iouring is supported");
         String command = getIoUringCheckCommand();
         if (org.apache.commons.lang3.StringUtils.isBlank(command)) {
-            s_logger.debug("Could not check iouring support, disabling it");
+            LOGGER.debug("Could not check iouring support, disabling it");
             return false;
         }
         int exitValue = executeBashScriptAndRetrieveExitValue(command);
@@ -3262,7 +4034,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             File file = new File(qemuPath);
             if (file.exists()) {
                 String cmd = String.format("ldd %s | grep -Eqe '[[:space:]]liburing\\.so'", qemuPath);
-                s_logger.debug("Using the check command: " + cmd);
+                LOGGER.debug("Using the check command: " + cmd);
                 return cmd;
             }
         }
@@ -3276,7 +4048,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * (ii) Libvirt >= 6.3.0
      */
     public void setDiskIoDriver(DiskDef disk, IoDriverPolicy ioDriver) {
-        s_logger.debug(String.format("Disk IO driver policy [%s]. The host supports the io_uring policy [%s]", ioDriver, enableIoUring));
+        LOGGER.debug(String.format("Disk IO driver policy [%s]. The host supports the io_uring policy [%s]", ioDriver, enableIoUring));
         if (ioDriver != null) {
             if (IoDriverPolicy.IO_URING != ioDriver) {
                 disk.setIoDriver(ioDriver);
@@ -3302,7 +4074,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (!meetRequirements) {
             return false;
         }
-        return isUbuntuHost() || isIoUringSupportedByQemu();
+        return isUbuntuOrDebianHost() || isIoUringSupportedByQemu();
     }
 
     /**
@@ -3315,13 +4087,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return diskBus != DiskDef.DiskBus.IDE || getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_IDE_DISCARD_FIXED;
     }
 
-    public boolean isUbuntuHost() {
+    public boolean isUbuntuOrDebianHost() {
         Map<String, String> versionString = getVersionStrings();
         String hostKey = "Host.OS";
         if (MapUtils.isEmpty(versionString) || !versionString.containsKey(hostKey) || versionString.get(hostKey) == null) {
             return false;
         }
-        return versionString.get(hostKey).equalsIgnoreCase("ubuntu");
+        return versionString.get(hostKey).equalsIgnoreCase("ubuntu")
+                || versionString.get(hostKey).toLowerCase().startsWith("debian");
     }
 
     private KVMPhysicalDisk getPhysicalDiskFromNfsStore(String dataStoreUrl, DataTO data) {
@@ -3374,7 +4147,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private void createVif(final LibvirtVMDef vm, final VirtualMachineTO vmSpec, final NicTO nic, final String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
         if (vm.getDevices() == null) {
-            s_logger.error("LibvirtVMDef object get devices with null result");
+            LOGGER.error("LibvirtVMDef object get devices with null result");
             throw new InternalErrorException("LibvirtVMDef object get devices with null result");
         }
         final InterfaceDef interfaceDef = getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter, extraConfig);
@@ -3392,7 +4165,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final String path = disk.getDiskPath();
 
         if (StringUtils.isBlank(path)) {
-            s_logger.debug("Unable to clean up disk with null path (perhaps empty cdrom drive):" + disk);
+            LOGGER.debug("Unable to clean up disk with null path (perhaps empty cdrom drive):" + disk);
             return false;
         }
 
@@ -3419,19 +4192,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         if (configdrive != null) {
             try {
-                s_logger.debug(String.format("Detaching ConfigDrive ISO of the VM %s, at path %s", vmName, configdrive.getDiskPath()));
+                LOGGER.debug(String.format("Detaching ConfigDrive ISO of the VM %s, at path %s", vmName, configdrive.getDiskPath()));
                 String result = attachOrDetachISO(conn, vmName, configdrive.getDiskPath(), false, CONFIG_DRIVE_ISO_DEVICE_ID);
                 if (result != null) {
-                    s_logger.warn(String.format("Detach ConfigDrive ISO of the VM %s, at path %s with %s: ", vmName, configdrive.getDiskPath(), result));
+                    LOGGER.warn("Detach ConfigDrive ISO of the VM {}, at path {} with result: {}", vmName, configdrive.getDiskPath(), result);
                 }
-                s_logger.debug(String.format("Attaching ConfigDrive ISO of the VM %s, at path %s", vmName, configdrive.getDiskPath()));
+                LOGGER.debug(String.format("Attaching ConfigDrive ISO of the VM %s, at path %s", vmName, configdrive.getDiskPath()));
                 result = attachOrDetachISO(conn, vmName, configdrive.getDiskPath(), true, CONFIG_DRIVE_ISO_DEVICE_ID);
                 if (result != null) {
-                    s_logger.warn(String.format("Attach ConfigDrive ISO of the VM %s, at path %s with %s: ", vmName, configdrive.getDiskPath(), result));
+                    LOGGER.warn("Attach ConfigDrive ISO of the VM {}, at path {} with result: {}", vmName, configdrive.getDiskPath(), result);
                 }
             } catch (final LibvirtException | InternalErrorException | URISyntaxException e) {
                 final String msg = "Detach and attach ConfigDrive ISO failed due to " + e.toString();
-                s_logger.warn(msg, e);
+                LOGGER.warn(msg, e);
             }
         }
     }
@@ -3439,10 +4212,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, final Integer diskSeq) throws LibvirtException, URISyntaxException,
             InternalErrorException {
         final DiskDef iso = new DiskDef();
-        if (isAttach && StringUtils.isNotBlank(isoPath) && isoPath.lastIndexOf("/") > 0) {
-            if (isoPath.startsWith(getConfigPath() + "/" + ConfigDrive.CONFIGDRIVEDIR) && isoPath.contains(vmName)) {
+        if (isAttach && StringUtils.isNotBlank(isoPath)) {
+            if (isoPath.startsWith(getConfigPath() + "/" + ConfigDrive.CONFIGDRIVEDIR) || isoPath.contains(vmName)) {
                 iso.defISODisk(isoPath, diskSeq, DiskDef.DiskType.FILE);
-            } else {
+            } else if (isoPath.lastIndexOf("/") > 0) {
                 final int index = isoPath.lastIndexOf("/");
                 final String path = isoPath.substring(0, index);
                 final String name = isoPath.substring(index + 1);
@@ -3466,7 +4239,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     cleanupDisk(disk);
                 }
             }
-
         }
         return result;
     }
@@ -3565,6 +4337,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (cacheMode != null) {
                     diskdef.setCacheMode(DiskDef.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
                 }
+
+                diskdef.setPhysicalBlockIOSize(attachingPool.getSupportedPhysicalBlockSize());
+                diskdef.setLogicalBlockIOSize(attachingPool.getSupportedLogicalBlockSize());
+                attachingPool.customizeLibvirtDiskDef(diskdef);
             }
 
             final String xml = diskdef.toString();
@@ -3581,17 +4357,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             dm = conn.domainLookupByName(vmName);
             if (attach) {
-                s_logger.debug("Attaching device: " + xml);
+                LOGGER.debug("Attaching device: " + xml);
                 dm.attachDevice(xml);
             } else {
-                s_logger.debug("Detaching device: " + xml);
+                LOGGER.debug("Detaching device: " + xml);
                 dm.detachDevice(xml);
             }
         } catch (final LibvirtException e) {
             if (attach) {
-                s_logger.warn("Failed to attach device to " + vmName + ": " + e.getMessage());
+                LOGGER.warn("Failed to attach device to " + vmName + ": " + e.getMessage());
             } else {
-                s_logger.warn("Failed to detach device from " + vmName + ": " + e.getMessage());
+                LOGGER.warn("Failed to detach device from " + vmName + ": " + e.getMessage());
             }
             throw e;
         } finally {
@@ -3599,7 +4375,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 try {
                     dm.free();
                 } catch (final LibvirtException l) {
-                    s_logger.trace("Ignoring libvirt error.", l);
+                    LOGGER.trace("Ignoring libvirt error.", l);
                 }
             }
         }
@@ -3620,6 +4396,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (healthCheckResult != HealthCheckResult.IGNORE) {
             pingRoutingCommand.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);
         }
+        if (isReconcileCommandsEnabled) {
+            pingRoutingCommand.setCommandInfos(getCommandInfosFromLogFiles(false));
+        }
         return pingRoutingCommand;
     }
 
@@ -3635,19 +4414,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     private HealthCheckResult getHostHealthCheckResult() {
         if (StringUtils.isBlank(hostHealthCheckScriptPath)) {
-            s_logger.debug("Host health check script path is not specified");
+            LOGGER.debug("Host health check script path is not specified");
             return HealthCheckResult.IGNORE;
         }
         File script = new File(hostHealthCheckScriptPath);
         if (!script.exists() || !script.isFile() || !script.canExecute()) {
-            s_logger.warn(String.format("The host health check script file set at: %s cannot be executed, " +
+            LOGGER.warn(String.format("The host health check script file set at: %s cannot be executed, " +
                             "reason: %s", hostHealthCheckScriptPath,
                     !script.exists() ? "file does not exist" : "please check file permissions to execute this file"));
             return HealthCheckResult.IGNORE;
         }
         int exitCode = executeBashScriptAndRetrieveExitValue(hostHealthCheckScriptPath);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Host health check script exit code: %s", exitCode));
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(String.format("Host health check script exit code: %s", exitCode));
         }
         return retrieveHealthCheckResultFromExitCode(exitCode);
     }
@@ -3665,7 +4444,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private Map<String, String> getVersionStrings() {
-        final Script command = new Script(versionStringPath, timeout, s_logger);
+        final Script command = new Script(versionStringPath, timeout, LOGGER);
         final KeyValueInterpreter kvi = new KeyValueInterpreter();
         final String result = command.execute(kvi);
         if (result == null) {
@@ -3684,29 +4463,80 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (dpdkSupport) {
             capabilities += ",dpdk";
         }
-
         final StartupRoutingCommand cmd =
                 new StartupRoutingCommand(info.getAllocatableCpus(), info.getCpuSpeed(), info.getTotalMemory(), info.getReservedMemory(), capabilities, hypervisorType,
                         RouterPrivateIpStrategy.HostLocal);
         cmd.setCpuSockets(info.getCpuSockets());
+        if (info.getCpuMaxSpeed() > 0) {
+            cmd.getHostDetails().put(HOST_CPU_MAX_SPEED_MHZ, String.valueOf(info.getCpuMaxSpeed()));
+        }
         fillNetworkInformation(cmd);
         privateIp = cmd.getPrivateIpAddress();
         cmd.getHostDetails().putAll(getVersionStrings());
         cmd.getHostDetails().put(KeyStoreUtils.SECURED, String.valueOf(isHostSecured()).toLowerCase());
+        cmd.getHostDetails().put(HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, Boolean.TRUE.toString());
         cmd.setPool(pool);
         cmd.setCluster(clusterId);
         cmd.setGatewayIpAddress(localGateway);
         cmd.setIqn(getIqn());
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
-        cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(hostSupportsInstanceConversion()));
+        cmd.getHostDetails().put(HOST_RBD_VOLUME_ENCRYPTION, String.valueOf(hostSupportsRbdVolumeEncryption()));
+        cmd.setHostTags(getHostTags());
+        boolean instanceConversionSupported = hostSupportsInstanceConversion();
+        cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
+        cmd.getHostDetails().put(HOST_VDDK_SUPPORT, String.valueOf(hostSupportsVddk()));
+        cmd.getHostDetails().put(HOST_CDROM_MAX_COUNT, String.valueOf(LibvirtVMDef.MAX_CDROMS_PER_VM));
+        cmd.getHostDetails().put(HOST_VLAN_FILTERING_ENABLED, String.valueOf(hostSupportsVlanFiltering()));
+        cmd.getHostDetails().put(HOST_GUEST_BRIDGE_STP_ENABLED, String.valueOf(isGuestBridgeStpEnabled()));
+        cmd.getHostDetails().put(HOST_VLAN_TRUNK_XML_SUPPORTED, String.valueOf(hostSupportsVlanTrunkXml()));
+        cmd.getHostDetails().put(HOST_VDDK_BLOCKCOPY_SUPPORT, String.valueOf(hostSupportsVddkBlockCopy()));
+        cmd.getHostDetails().put(HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT, String.valueOf(hostSupportsVddkBlockCopyInPlaceFinalization()));
+        cmd.getHostDetails().put(HOST_VDDK_BLOCKCOPY_RBD_SUPPORT, String.valueOf(hostSupportsVddkBlockCopyRbd()));
+        cmd.getHostDetails().put(HOST_VIRTV2V_INPLACE_SUPPORT, String.valueOf(hostSupportsVirtV2vInPlace()));
+        cmd.getHostDetails().put(HOST_QEMU_RBD_SUPPORT, String.valueOf(hostSupportsQemuRbd()));
+        cmd.getHostDetails().put(HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT, String.valueOf(hostSupportsVddkRbdDirectImport()));
+        if (StringUtils.isNotBlank(vddkLibDir)) {
+            cmd.getHostDetails().put(HOST_VDDK_LIB_DIR, vddkLibDir);
+        }
+        if (StringUtils.isNotBlank(vddkVersion)) {
+            cmd.getHostDetails().put(HOST_VDDK_VERSION, vddkVersion);
+        }
+        String qemuImgVersion = getQemuImgVersion();
+        if (StringUtils.isNotBlank(qemuImgVersion)) {
+            cmd.getHostDetails().put(HOST_QEMU_IMG_VERSION, qemuImgVersion);
+        }
+        String qemuNbdVersion = getQemuNbdVersion();
+        if (StringUtils.isNotBlank(qemuNbdVersion)) {
+            cmd.getHostDetails().put(HOST_QEMU_NBD_VERSION, qemuNbdVersion);
+        }
+        String qemuIoVersion = getQemuIoVersion();
+        if (StringUtils.isNotBlank(qemuIoVersion)) {
+            cmd.getHostDetails().put(HOST_QEMU_IO_VERSION, qemuIoVersion);
+        }
+        if (instanceConversionSupported) {
+            cmd.getHostDetails().put(HOST_VIRTV2V_VERSION, getHostVirtV2vVersion());
+        }
+        String virtV2vInPlaceVersion = getHostVirtV2vInPlaceVersion();
+        if (StringUtils.isNotBlank(virtV2vInPlaceVersion)) {
+            cmd.getHostDetails().put(HOST_VIRTV2V_INPLACE_VERSION, virtV2vInPlaceVersion);
+        }
+        if (hostSupportsOvfExport()) {
+            cmd.getHostDetails().put(HOST_OVFTOOL_VERSION, getHostOvfToolVersion());
+        }
+        addBackupJobDetails(cmd.getHostDetails());
         HealthCheckResult healthCheckResult = getHostHealthCheckResult();
         if (healthCheckResult != HealthCheckResult.IGNORE) {
             cmd.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);
+        }
+        if (StringUtils.isNotBlank(info.getCpuArch())) {
+            cmd.setCpuArch(info.getCpuArch());
         }
 
         if (cmd.getHostDetails().containsKey("Host.OS")) {
             hostDistro = cmd.getHostDetails().get("Host.OS");
         }
+
+        cmd.setGpuDevices(getGpuDevices());
 
         List<StartupCommand> startupCommands = new ArrayList<>();
         startupCommands.add(cmd);
@@ -3727,6 +4557,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return startupCommandsArray;
     }
 
+    private void addBackupJobDetails(Map<String, String> details) {
+        Integer maxCompressionOperations = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.BACKUP_COMPRESSION_MAX_CONCURRENT_OPERATIONS_PER_HOST);
+        if (maxCompressionOperations != null) {
+            details.put(AgentProperties.BACKUP_COMPRESSION_MAX_CONCURRENT_OPERATIONS_PER_HOST.getName(), maxCompressionOperations.toString());
+        }
+
+        Integer maxValidationOperations = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.BACKUP_VALIDATION_MAX_CONCURRENT_OPERATIONS_PER_HOST);
+        if (maxValidationOperations != null) {
+            details.put(AgentProperties.BACKUP_VALIDATION_MAX_CONCURRENT_OPERATIONS_PER_HOST.getName(), maxValidationOperations.toString());
+        }
+    }
+
+    protected List<String> getHostTags() {
+        List<String> hostTagsList = new ArrayList<>();
+        String hostTags = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_TAGS);
+        if (StringUtils.isNotBlank(hostTags)) {
+            for (String hostTag : hostTags.split(",")) {
+                if (!hostTagsList.contains(hostTag.trim())) {
+                    hostTagsList.add(hostTag.trim());
+                }
+            }
+        }
+        return hostTagsList;
+    }
+
     /**
      * Calculates and sets the host CPU max capacity according to the cgroup version of the host.
      * <ul>
@@ -3740,17 +4595,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     protected void calculateHostCpuMaxCapacity(int cpuCores, Long cpuSpeed) {
         String output = Script.runSimpleBashScript(COMMAND_GET_CGROUP_HOST_VERSION);
-        s_logger.info(String.format("Host uses control group [%s].", output));
+        LOGGER.info(String.format("Host uses control group [%s].", output));
 
         if (!CGROUP_V2.equals(output)) {
-            s_logger.info(String.format("Setting host CPU max capacity to 0, as it uses cgroup v1.", getHostCpuMaxCapacity()));
+            LOGGER.info("Setting host CPU max capacity: {} to 0, as it uses cgroup v1.", getHostCpuMaxCapacity());
             setHostCpuMaxCapacity(0);
             return;
         }
 
-        s_logger.info(String.format("Calculating the max shares of the host."));
+        LOGGER.info("Calculating the max shares of the host.");
         setHostCpuMaxCapacity(cpuCores * cpuSpeed.intValue());
-        s_logger.info(String.format("The max shares of the host is [%d].", getHostCpuMaxCapacity()));
+        LOGGER.info(String.format("The max shares of the host is [%d].", getHostCpuMaxCapacity()));
     }
 
     private StartupStorageCommand createLocalStoragePool(String localStoragePath, String localStorageUUID, StartupRoutingCommand cmd) {
@@ -3767,7 +4622,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             sscmd.setDataCenter(dcId);
             sscmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
         } catch (final CloudRuntimeException e) {
-            s_logger.debug("Unable to initialize local storage pool: " + e);
+            LOGGER.debug("Unable to initialize local storage pool: " + e);
         }
         return sscmd;
     }
@@ -3781,7 +4636,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             final String textToFind = "InitiatorName=";
 
-            final Script iScsiAdmCmd = new Script(true, "grep", 0, s_logger);
+            final Script iScsiAdmCmd = new Script(true, "grep", 0, LOGGER);
 
             iScsiAdmCmd.add(textToFind);
             iScsiAdmCmd.add("/etc/iscsi/initiatorname.iscsi");
@@ -3813,7 +4668,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String sourcePath = null;
         try {
             String mountResult = Script.runSimpleBashScript("mount | grep \"" + diskPath + "\"");
-            s_logger.debug("Got mount result for " + diskPath + "\n\n" + mountResult);
+            LOGGER.debug("Got mount result for " + diskPath + "\n\n" + mountResult);
             if (StringUtils.isNotEmpty(mountResult)) {
                 String[] res = mountResult.strip().split(" ");
                 if (res[0].contains(":")) {
@@ -3830,7 +4685,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return new Pair<>(sourceHostIp, sourcePath);
             }
         } catch (Exception ex) {
-            s_logger.warn("Failed to list source host and IP for " + diskPath + ex.toString());
+            LOGGER.warn("Failed to list source host and IP for " + diskPath + ex.toString());
         }
         return null;
     }
@@ -3843,14 +4698,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 domainNames.add(names[i]);
             }
         } catch (final LibvirtException e) {
-            s_logger.warn("Failed to list defined domains", e);
+            LOGGER.warn("Failed to list defined domains", e);
         }
 
         int[] ids = null;
         try {
             ids = conn.listDomains();
         } catch (final LibvirtException e) {
-            s_logger.warn("Failed to list domains", e);
+            LOGGER.warn("Failed to list domains", e);
             return domainNames;
         }
 
@@ -3860,14 +4715,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 dm = conn.domainLookupByID(ids[i]);
                 domainNames.add(dm.getName());
             } catch (final LibvirtException e) {
-                s_logger.warn("Unable to get vms", e);
+                LOGGER.warn("Unable to get Instances", e);
             } finally {
                 try {
                     if (dm != null) {
                         dm.free();
                     }
                 } catch (final LibvirtException e) {
-                    s_logger.trace("Ignoring libvirt error.", e);
+                    LOGGER.trace("Ignoring libvirt error.", e);
                 }
             }
         }
@@ -3886,7 +4741,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 conn = LibvirtConnection.getConnectionByType(HypervisorType.KVM.toString());
                 vmStates.putAll(getHostVmStateReport(conn));
             } catch (final LibvirtException e) {
-                s_logger.debug("Failed to get connection: " + e.getMessage());
+                LOGGER.debug("Failed to get connection: " + e.getMessage());
             }
         }
 
@@ -3895,7 +4750,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 conn = LibvirtConnection.getConnectionByType(HypervisorType.KVM.toString());
                 vmStates.putAll(getHostVmStateReport(conn));
             } catch (final LibvirtException e) {
-                s_logger.debug("Failed to get connection: " + e.getMessage());
+                LOGGER.debug("Failed to get connection: " + e.getMessage());
             }
         }
 
@@ -3911,13 +4766,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             ids = conn.listDomains();
         } catch (final LibvirtException e) {
-            s_logger.warn("Unable to listDomains", e);
+            LOGGER.warn("Unable to listDomains", e);
             return null;
         }
         try {
             vms = conn.listDefinedDomains();
         } catch (final LibvirtException e) {
-            s_logger.warn("Unable to listDomains", e);
+            LOGGER.warn("Unable to listDomains", e);
             return null;
         }
 
@@ -3930,7 +4785,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
                 final PowerState state = convertToPowerState(ps);
 
-                s_logger.trace("VM " + dm.getName() + ": powerstate = " + ps + "; vm state=" + state.toString());
+                LOGGER.trace("VM " + dm.getName() + ": powerstate = " + ps + "; vm state=" + state.toString());
                 final String vmName = dm.getName();
 
                 // TODO : for XS/KVM (host-based resource), we require to remove
@@ -3941,14 +4796,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     vmStates.put(vmName, new HostVmStateReportEntry(state, conn.getHostName()));
                 }
             } catch (final LibvirtException e) {
-                s_logger.warn("Unable to get vms", e);
+                LOGGER.warn("Unable to get Instances", e);
             } finally {
                 try {
                     if (dm != null) {
                         dm.free();
                     }
                 } catch (final LibvirtException e) {
-                    s_logger.trace("Ignoring libvirt error.", e);
+                    LOGGER.trace("Ignoring libvirt error.", e);
                 }
             }
         }
@@ -3961,7 +4816,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 final DomainState ps = dm.getInfo().state;
                 final PowerState state = convertToPowerState(ps);
                 final String vmName = dm.getName();
-                s_logger.trace("VM " + vmName + ": powerstate = " + ps + "; vm state=" + state.toString());
+                LOGGER.trace("VM " + vmName + ": powerstate = " + ps + "; vm state=" + state.toString());
 
                 // TODO : for XS/KVM (host-based resource), we require to remove
                 // VM completely from host, for some reason, KVM seems to still keep
@@ -3971,14 +4826,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     vmStates.put(vmName, new HostVmStateReportEntry(state, conn.getHostName()));
                 }
             } catch (final LibvirtException e) {
-                s_logger.warn("Unable to get vms", e);
+                LOGGER.warn("Unable to get Instances", e);
             } finally {
                 try {
                     if (dm != null) {
                         dm.free();
                     }
                 } catch (final LibvirtException e) {
-                    s_logger.trace("Ignoring libvirt error.", e);
+                    LOGGER.trace("Ignoring libvirt error.", e);
                 }
             }
         }
@@ -3998,7 +4853,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             dm.reboot(0x1);
             return null;
         } catch (final LibvirtException e) {
-            s_logger.warn("Failed to create vm", e);
+            LOGGER.warn("Failed to create vm", e);
             msg = e.getMessage();
         } finally {
             try {
@@ -4006,7 +4861,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     dm.free();
                 }
             } catch (final LibvirtException e) {
-                s_logger.trace("Ignoring libvirt error.", e);
+                LOGGER.trace("Ignoring libvirt error.", e);
             }
         }
 
@@ -4022,18 +4877,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             dm = conn.domainLookupByName(vmName);
             cleanVMSnapshotMetadata(dm);
         } catch (LibvirtException e) {
-            s_logger.debug("Failed to get vm :" + e.getMessage());
+            LOGGER.debug("Failed to get vm :" + e.getMessage());
         } finally {
             try {
                 if (dm != null) {
                     dm.free();
                 }
             } catch (LibvirtException l) {
-                s_logger.trace("Ignoring libvirt error.", l);
+                LOGGER.trace("Ignoring libvirt error.", l);
             }
         }
 
-        s_logger.debug("Try to stop the vm at first");
+        LOGGER.debug("Try to stop the vm at first");
         if (forceStop) {
             return stopVMInternal(conn, vmName, true);
         }
@@ -4053,25 +4908,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     state = dm.getInfo().state;
                     break;
                 } catch (final LibvirtException e) {
-                    s_logger.debug("Failed to get vm status:" + e.getMessage());
+                    LOGGER.debug("Failed to get vm status:" + e.getMessage());
                 } finally {
                     try {
                         if (dm != null) {
                             dm.free();
                         }
                     } catch (final LibvirtException l) {
-                        s_logger.trace("Ignoring libvirt error.", l);
+                        LOGGER.trace("Ignoring libvirt error.", l);
                     }
                 }
             }
 
             if (state == null) {
-                s_logger.debug("Can't get vm's status, assume it's dead already");
+                LOGGER.debug("Can't get vm's status, assume it's dead already");
                 return null;
             }
 
             if (state != DomainState.VIR_DOMAIN_SHUTOFF) {
-                s_logger.debug("Try to destroy the vm");
+                LOGGER.debug("Try to destroy the vm");
                 ret = stopVMInternal(conn, vmName, true);
                 if (ret != null) {
                     return ret;
@@ -4110,13 +4965,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 } catch (final LibvirtException e) {
                     final String error = e.toString();
                     if (error.contains("Domain not found")) {
-                        s_logger.debug("successfully shut down vm " + vmName);
+                        LOGGER.debug("successfully shut down vm " + vmName);
                     } else {
-                        s_logger.debug("Error in waiting for vm shutdown:" + error);
+                        LOGGER.debug("Error in waiting for vm shutdown:" + error);
                     }
                 }
                 if (retry < 0) {
-                    s_logger.warn("Timed out waiting for domain " + vmName + " to shutdown gracefully");
+                    LOGGER.warn("Timed out waiting for domain " + vmName + " to shutdown gracefully");
                     return Script.ERR_TIMEOUT;
                 } else {
                     if (persist == 1) {
@@ -4126,13 +4981,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         } catch (final LibvirtException e) {
             if (e.getMessage().contains("Domain not found")) {
-                s_logger.debug("VM " + vmName + " doesn't exist, no need to stop it");
+                LOGGER.debug("VM " + vmName + " doesn't exist, no need to stop it");
                 return null;
             }
-            s_logger.debug("Failed to stop VM :" + vmName + " :", e);
+            LOGGER.debug("Failed to stop VM :" + vmName + " :", e);
             return e.getMessage();
         } catch (final InterruptedException ie) {
-            s_logger.debug("Interrupted sleep");
+            LOGGER.debug("Interrupted sleep");
             return ie.getMessage();
         } finally {
             try {
@@ -4140,7 +4995,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     dm.free();
                 }
             } catch (final LibvirtException e) {
-                s_logger.trace("Ignoring libvirt error.", e);
+                LOGGER.trace("Ignoring libvirt error.", e);
             }
         }
 
@@ -4161,7 +5016,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     dm.free();
                 }
             } catch (final LibvirtException l) {
-                s_logger.trace("Ignoring libvirt error.", l);
+                LOGGER.trace("Ignoring libvirt error.", l);
             }
         }
     }
@@ -4177,7 +5032,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
         } catch (final LibvirtException e) {
-            s_logger.trace("Ignoring libvirt error.", e);
+            LOGGER.trace("Ignoring libvirt error.", e);
         }
         return false;
     }
@@ -4187,7 +5042,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             parser.parseCapabilitiesXML(conn.getCapabilities());
         } catch (final LibvirtException e) {
-            s_logger.debug(e.getMessage());
+            LOGGER.debug(e.getMessage());
         }
         return parser.getEmulator();
     }
@@ -4213,10 +5068,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         String rootDiskController = details.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         if (StringUtils.isNotBlank(rootDiskController)) {
-            s_logger.debug("Passed custom disk controller for ROOT disk " + rootDiskController);
+            LOGGER.debug("Passed custom disk controller for ROOT disk " + rootDiskController);
             for (DiskDef.DiskBus bus : DiskDef.DiskBus.values()) {
                 if (bus.toString().equalsIgnoreCase(rootDiskController)) {
-                    s_logger.debug("Found matching enum for disk controller for ROOT disk " + rootDiskController);
+                    LOGGER.debug("Found matching enum for disk controller for ROOT disk " + rootDiskController);
                     return bus;
                 }
             }
@@ -4232,12 +5087,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         String dataDiskController = details.get(VmDetailConstants.DATA_DISK_CONTROLLER);
         if (StringUtils.isNotBlank(dataDiskController)) {
-            s_logger.debug("Passed custom disk controller for DATA disk " + dataDiskController);
-            for (DiskDef.DiskBus bus : DiskDef.DiskBus.values()) {
-                if (bus.toString().equalsIgnoreCase(dataDiskController)) {
-                    s_logger.debug("Found matching enum for disk controller for DATA disk " + dataDiskController);
-                    return bus;
-                }
+            LOGGER.debug("Passed custom disk controller for DATA disk {}", dataDiskController);
+            DiskDef.DiskBus bus = DiskDef.DiskBus.fromValue(dataDiskController);
+            if (bus != null) {
+                LOGGER.debug("Found matching enum for disk controller for DATA disk {}", dataDiskController);
+                return bus;
             }
         }
         return null;
@@ -4255,7 +5109,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return DiskDef.DiskBus.VIRTIO;
         } else if (isUefiEnabled && StringUtils.startsWithAny(platformEmulator, "Windows", "Other")) {
             return DiskDef.DiskBus.SATA;
-        } else if (guestCpuArch != null && guestCpuArch.equals("aarch64")) {
+        } else if (guestCpuArch != null && (guestCpuArch.equals("aarch64") || guestCpuArch.equals("s390x"))) {
             return DiskDef.DiskBus.SCSI;
         } else {
             return DiskDef.DiskBus.IDE;
@@ -4285,7 +5139,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return parser.getInterfaces();
 
         } catch (final LibvirtException e) {
-            s_logger.debug("Failed to get dom xml: " + e.toString());
+            LOGGER.debug("Failed to get dom xml: " + e.toString());
             return new ArrayList<InterfaceDef>();
         } finally {
             try {
@@ -4293,9 +5147,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     dm.free();
                 }
             } catch (final LibvirtException e) {
-                s_logger.trace("Ignoring libvirt error.", e);
+                LOGGER.trace("Ignoring libvirt error.", e);
             }
         }
+    }
+
+    public InterfaceDef getInterface(final Connect conn, final String vmName, final String macAddress) {
+        List<InterfaceDef> interfaces = getInterfaces(conn, vmName);
+        return interfaces.stream().filter(interfaceDef -> interfaceDef.getMacAddress().equals(macAddress))
+                .findFirst().orElseThrow(() -> new CloudRuntimeException(String.format("Unable to find NIC with MAC address %s.", macAddress)));
     }
 
     public List<DiskDef> getDisks(final Connect conn, final String vmName) {
@@ -4307,7 +5167,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return parser.getDisks();
 
         } catch (final LibvirtException e) {
-            s_logger.debug("Failed to get dom xml: " + e.toString());
+            LOGGER.debug("Failed to get dom xml: " + e.toString());
             return new ArrayList<DiskDef>();
         } finally {
             try {
@@ -4315,7 +5175,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     dm.free();
                 }
             } catch (final LibvirtException e) {
-                s_logger.trace("Ignoring libvirt error.", e);
+                LOGGER.trace("Ignoring libvirt error.", e);
             }
         }
     }
@@ -4325,7 +5185,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private Script createScript(final String script) {
-        final Script command = new Script("/bin/bash", timeout, s_logger);
+        final Script command = new Script("/bin/bash", timeout, LOGGER);
         command.add("-c");
         command.add(script);
         return command;
@@ -4410,6 +5270,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
+    public DiskDef getDiskWithPathOfVolumeObjectTO(List<DiskDef> disks, VolumeObjectTO vol) {
+        return disks.stream()
+                .filter(diskDef -> diskDef.getDiskPath() != null && diskDef.getDiskPath().contains(vol.getPath()))
+                .findFirst()
+                .orElseThrow(() -> new CloudRuntimeException(String.format("Unable to find volume [%s] with path [%s].", vol.getUuid(), vol.getPath())));
+    }
+
     protected String getDiskPathFromDiskDef(DiskDef disk) {
         final String path = disk.getDiskPath();
         if (path != null) {
@@ -4420,6 +5287,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     return token[1];
                 }
             } else if (token.length > 3) {
+                // for powerflex/scaleio, path = /dev/disk/by-id/emc-vol-2202eefc4692120f-540fd8fa00000003
+                if (token.length > 4 && StringUtils.isNotBlank(token[4]) && token[4].startsWith("emc-vol-")) {
+                    final String[] emcVolToken = token[4].split("-");
+                    if (emcVolToken.length == 4) {
+                        return emcVolToken[3];
+                    }
+                }
+
                 // for example, path = /mnt/pool_uuid/disk_path/
                 return token[3];
             }
@@ -4427,127 +5302,189 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return null;
     }
 
-    private class VmStats {
-        long usedTime;
-        long tx;
-        long rx;
-        long ioRead;
-        long ioWrote;
-        long bytesRead;
-        long bytesWrote;
-        Calendar timestamp;
+    private String vmToString(Domain dm) throws LibvirtException {
+        return String.format("{\"name\":\"%s\",\"uuid\":\"%s\"}", dm.getName(), dm.getUUIDString());
     }
 
+    /**
+     * Returns metrics for the period since this function was last called for the specified VM.
+     * @param conn the Libvirt connection.
+     * @param vmName name of the VM.
+     * @return metrics for the period since last time this function was called for the VM.
+     * @throws LibvirtException
+     */
     public VmStatsEntry getVmStat(final Connect conn, final String vmName) throws LibvirtException {
         Domain dm = null;
         try {
+            LOGGER.debug("Trying to get VM with name [{}].", vmName);
             dm = getDomain(conn, vmName);
             if (dm == null) {
+                LOGGER.warn("Could not get VM with name [{}].", vmName);
                 return null;
             }
-            DomainInfo info = dm.getInfo();
-            final VmStatsEntry stats = new VmStatsEntry();
 
-            stats.setNumCPUs(info.nrVirtCpu);
-            stats.setEntityType("vm");
+            LibvirtExtendedVmStatsEntry newStats = getVmCurrentStats(dm);
+            LibvirtExtendedVmStatsEntry oldStats = vmStats.get(vmName);
 
-            stats.setMemoryKBs(info.maxMem);
-            stats.setTargetMemoryKBs(info.memory);
-            stats.setIntFreeMemoryKBs(getMemoryFreeInKBs(dm));
+            VmStatsEntry metrics = calculateVmMetrics(dm, oldStats, newStats);
+            vmStats.put(vmName, newStats);
 
-            /* get cpu utilization */
-            VmStats oldStats = null;
-
-            final Calendar now = Calendar.getInstance();
-
-            oldStats = vmStats.get(vmName);
-
-            long elapsedTime = 0;
-            if (oldStats != null) {
-                elapsedTime = now.getTimeInMillis() - oldStats.timestamp.getTimeInMillis();
-                double utilization = (info.cpuTime - oldStats.usedTime) / ((double)elapsedTime * 1000000);
-
-                utilization = utilization / info.nrVirtCpu;
-                if (utilization > 0) {
-                    stats.setCPUUtilization(utilization * 100);
-                }
-            }
-
-            /* get network stats */
-
-            final List<InterfaceDef> vifs = getInterfaces(conn, vmName);
-            long rx = 0;
-            long tx = 0;
-            for (final InterfaceDef vif : vifs) {
-                final DomainInterfaceStats ifStats = dm.interfaceStats(vif.getDevName());
-                rx += ifStats.rx_bytes;
-                tx += ifStats.tx_bytes;
-            }
-
-            if (oldStats != null) {
-                final double deltarx = rx - oldStats.rx;
-                if (deltarx > 0) {
-                    stats.setNetworkReadKBs(deltarx / 1024);
-                }
-                final double deltatx = tx - oldStats.tx;
-                if (deltatx > 0) {
-                    stats.setNetworkWriteKBs(deltatx / 1024);
-                }
-            }
-
-            /* get disk stats */
-            final List<DiskDef> disks = getDisks(conn, vmName);
-            long io_rd = 0;
-            long io_wr = 0;
-            long bytes_rd = 0;
-            long bytes_wr = 0;
-            for (final DiskDef disk : disks) {
-                if (disk.getDeviceType() == DeviceType.CDROM || disk.getDeviceType() == DeviceType.FLOPPY) {
-                    continue;
-                }
-                final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
-                io_rd += blockStats.rd_req;
-                io_wr += blockStats.wr_req;
-                bytes_rd += blockStats.rd_bytes;
-                bytes_wr += blockStats.wr_bytes;
-            }
-
-            if (oldStats != null) {
-                final long deltaiord = io_rd - oldStats.ioRead;
-                if (deltaiord > 0) {
-                    stats.setDiskReadIOs(deltaiord);
-                }
-                final long deltaiowr = io_wr - oldStats.ioWrote;
-                if (deltaiowr > 0) {
-                    stats.setDiskWriteIOs(deltaiowr);
-                }
-                final double deltabytesrd = bytes_rd - oldStats.bytesRead;
-                if (deltabytesrd > 0) {
-                    stats.setDiskReadKBs(deltabytesrd / 1024);
-                }
-                final double deltabyteswr = bytes_wr - oldStats.bytesWrote;
-                if (deltabyteswr > 0) {
-                    stats.setDiskWriteKBs(deltabyteswr / 1024);
-                }
-            }
-
-            /* save to Hashmap */
-            final VmStats newStat = new VmStats();
-            newStat.usedTime = info.cpuTime;
-            newStat.rx = rx;
-            newStat.tx = tx;
-            newStat.ioRead = io_rd;
-            newStat.ioWrote = io_wr;
-            newStat.bytesRead = bytes_rd;
-            newStat.bytesWrote = bytes_wr;
-            newStat.timestamp = now;
-            vmStats.put(vmName, newStat);
-            return stats;
+            return metrics;
         } finally {
             if (dm != null) {
                 dm.free();
             }
         }
+    }
+
+    /**
+     * Returns a VM's current statistics.
+     * @param dm domain of the VM.
+     * @return current statistics of the VM.
+     * @throws LibvirtException
+     */
+    protected LibvirtExtendedVmStatsEntry getVmCurrentStats(final Domain dm) throws LibvirtException {
+        final LibvirtExtendedVmStatsEntry stats = new LibvirtExtendedVmStatsEntry();
+
+        getVmCurrentCpuStats(dm, stats);
+        getVmCurrentNetworkStats(dm, stats);
+        getVmCurrentDiskStats(dm, stats);
+
+        LOGGER.debug("Retrieved statistics for VM [{}]: [{}].", vmToString(dm), stats);
+        stats.setTimestamp(Calendar.getInstance());
+        return stats;
+    }
+
+    /**
+     * Passes a VM's current CPU statistics into the provided LibvirtExtendedVmStatsEntry.
+     * @param dm domain of the VM.
+     * @param stats LibvirtExtendedVmStatsEntry that will receive the current CPU statistics.
+     * @throws LibvirtException
+     */
+    protected void getVmCurrentCpuStats(final Domain dm, final LibvirtExtendedVmStatsEntry stats) throws LibvirtException {
+        LOGGER.trace("Getting CPU stats for VM [{}].", vmToString(dm));
+        stats.setCpuTime(dm.getInfo().cpuTime);
+    }
+
+    /**
+     * Passes a VM's current network statistics into the provided LibvirtExtendedVmStatsEntry.
+     * @param dm domain of the VM.
+     * @param stats LibvirtExtendedVmStatsEntry that will receive the current network statistics.
+     * @throws LibvirtException
+     */
+    protected void getVmCurrentNetworkStats(final Domain dm, final LibvirtExtendedVmStatsEntry stats) throws LibvirtException {
+        final String vmAsString = vmToString(dm);
+        LOGGER.trace("Getting network stats for VM [{}].", vmAsString);
+        final List<InterfaceDef> vifs = getInterfaces(dm.getConnect(), dm.getName());
+        LOGGER.debug("Found [{}] network interface(s) for VM [{}].", vifs.size(), vmAsString);
+        double rx = 0;
+        double tx = 0;
+        for (final InterfaceDef vif : vifs) {
+            final DomainInterfaceStats ifStats = dm.interfaceStats(vif.getDevName());
+            rx += ifStats.rx_bytes;
+            tx += ifStats.tx_bytes;
+        }
+        stats.setNetworkReadKBs(rx / 1024);
+        stats.setNetworkWriteKBs(tx / 1024);
+    }
+
+    /**
+     * Passes a VM's current disk statistics into the provided LibvirtExtendedVmStatsEntry.
+     * @param dm domain of the VM.
+     * @param stats LibvirtExtendedVmStatsEntry that will receive the current disk statistics.
+     * @throws LibvirtException
+     */
+    protected void getVmCurrentDiskStats(final Domain dm, final LibvirtExtendedVmStatsEntry stats) throws LibvirtException {
+        final String vmAsString = vmToString(dm);
+        LOGGER.trace("Getting disk stats for VM [{}].", vmAsString);
+        final List<DiskDef> disks = getDisks(dm.getConnect(), dm.getName());
+        LOGGER.debug("Found [{}] disk(s) for VM [{}].", disks.size(), vmAsString);
+        long io_rd = 0;
+        long io_wr = 0;
+        double bytes_rd = 0;
+        double bytes_wr = 0;
+        for (final DiskDef disk : disks) {
+            if (disk.getDeviceType() == DeviceType.CDROM || disk.getDeviceType() == DeviceType.FLOPPY) {
+                LOGGER.debug("Ignoring disk [{}] in VM [{}]'s stats since its deviceType is [{}].", disk.toString().replace("\n", ""), vmAsString, disk.getDeviceType());
+                continue;
+            }
+            final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
+            io_rd += blockStats.rd_req;
+            io_wr += blockStats.wr_req;
+            bytes_rd += blockStats.rd_bytes;
+            bytes_wr += blockStats.wr_bytes;
+        }
+        stats.setDiskReadIOs(io_rd);
+        stats.setDiskWriteIOs(io_wr);
+        stats.setDiskReadKBs(bytes_rd / 1024);
+        stats.setDiskWriteKBs(bytes_wr / 1024);
+    }
+
+    /**
+     * Calculates a VM's metrics for the period between the two statistics given as parameters.
+     * @param dm domain of the VM.
+     * @param oldStats old statistics. If null, the CPU, network and disk utilization won't be calculated.
+     * @param newStats new statistics.
+     * @return metrics for the period between the two statistics.
+     * @throws LibvirtException
+     */
+    protected VmStatsEntry calculateVmMetrics(final Domain dm, final LibvirtExtendedVmStatsEntry oldStats, final LibvirtExtendedVmStatsEntry newStats) throws LibvirtException {
+        final VmStatsEntry metrics = new VmStatsEntry();
+        final DomainInfo info = dm.getInfo();
+        final String vmAsString = vmToString(dm);
+
+        metrics.setEntityType("vm");
+        LOGGER.trace("Writing VM [{}]'s CPU and memory information into the metrics.", vmAsString);
+        metrics.setNumCPUs(info.nrVirtCpu);
+        metrics.setMemoryKBs(info.maxMem);
+        metrics.setTargetMemoryKBs(info.memory);
+        LOGGER.trace("Trying to get free memory for VM [{}].", vmAsString);
+        metrics.setIntFreeMemoryKBs(getMemoryFreeInKBs(dm));
+
+        if (oldStats != null) {
+            LOGGER.debug("Old stats exist for VM [{}]; therefore, the utilization will be calculated.", vmAsString);
+
+            LOGGER.trace("Calculating CPU utilization for VM [{}].", vmAsString);
+            final Calendar now = Calendar.getInstance();
+            long elapsedTime = now.getTimeInMillis() - oldStats.getTimestamp().getTimeInMillis();
+            double utilization = (info.cpuTime - oldStats.getCpuTime()) / ((double) elapsedTime * 1000000 * info.nrVirtCpu);
+            if (utilization > 0) {
+                metrics.setCPUUtilization(utilization * 100);
+            }
+
+            LOGGER.trace("Calculating network utilization for VM [{}].", vmAsString);
+            final double deltarx = newStats.getNetworkReadKBs() - oldStats.getNetworkReadKBs();
+            if (deltarx > 0) {
+                metrics.setNetworkReadKBs(deltarx);
+            }
+            final double deltatx = newStats.getNetworkWriteKBs() - oldStats.getNetworkWriteKBs();
+            if (deltatx > 0) {
+                metrics.setNetworkWriteKBs(deltatx);
+            }
+
+            LOGGER.trace("Calculating disk utilization for VM [{}].", vmAsString);
+            final double deltaiord = newStats.getDiskReadIOs() - oldStats.getDiskReadIOs();
+            if (deltaiord > 0) {
+                metrics.setDiskReadIOs(deltaiord);
+            }
+            final double deltaiowr = newStats.getDiskWriteIOs() - oldStats.getDiskWriteIOs();
+            if (deltaiowr > 0) {
+                metrics.setDiskWriteIOs(deltaiowr);
+            }
+            final double deltabytesrd = newStats.getDiskReadKBs() - oldStats.getDiskReadKBs();
+            if (deltabytesrd > 0) {
+                metrics.setDiskReadKBs(deltabytesrd);
+            }
+            final double deltabyteswr = newStats.getDiskWriteKBs() - oldStats.getDiskWriteKBs();
+            if (deltabyteswr > 0) {
+                metrics.setDiskWriteKBs(deltabyteswr);
+            }
+        }
+
+        String metricsAsString = new ReflectionToStringBuilder(metrics, ToStringStyle.JSON_STYLE).setExcludeFieldNames("vmId", "vmUuid").toString();
+        LOGGER.debug("Calculated metrics for VM [{}]: [{}].", vmAsString, metricsAsString);
+
+        return metrics;
     }
 
     /**
@@ -4559,10 +5496,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     protected long getMemoryFreeInKBs(Domain dm) throws LibvirtException {
         MemoryStatistic[] memoryStats = dm.memoryStats(NUMMEMSTATS);
-
-        if(s_logger.isTraceEnabled()){
-            s_logger.trace(String.format("Retrieved memory statistics (information about tags can be found on the libvirt documentation):", ArrayUtils.toString(memoryStats)));
-        }
+        LOGGER.trace("Retrieved memory statistics (information about tags can be found on the libvirt documentation): {}.",
+                () -> Stream.of(memoryStats).map(stat -> stat.toString().trim().replace("\n", ",")).collect(Collectors.joining("},{", "[{", "}]")));
 
         long freeMemory = NumberUtils.LONG_MINUS_ONE;
 
@@ -4571,20 +5506,144 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         for (int i = 0; i < memoryStats.length; i++) {
-            if(memoryStats[i].getTag() == UNUSEDMEMORY) {
+            if (memoryStats[i].getTag() == UNUSEDMEMORY) {
                 freeMemory = memoryStats[i].getValue();
                 break;
             }
         }
 
         if (freeMemory == NumberUtils.LONG_MINUS_ONE){
-            s_logger.warn("Couldn't retrieve free memory, returning -1.");
+            LOGGER.warn("Couldn't retrieve free memory, returning -1.");
         }
         return freeMemory;
     }
 
+    public void removeCheckpointsOnVm(String vmName, String volumeUuid, List<String> checkpointPaths) {
+        logger.debug("Removing checkpoints with paths [{}] of volume [{}] on VM [{}].", checkpointPaths, volumeUuid, vmName);
+        String checkpointName;
+        for (String checkpointPath : checkpointPaths) {
+            checkpointName = checkpointPath.substring(checkpointPath.lastIndexOf("/") + 1);
+            Script.runSimpleBashScript(String.format(CHECKPOINT_DELETE_COMMAND, vmName, checkpointName));
+        }
+        logger.debug("Removed all checkpoints of volume [{}] on VM [{}].", volumeUuid, vmName);
+    }
+
+    public Map<String, String> getDiskPathLabelMap(String vmName) {
+        try {
+            Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
+            List<DiskDef> disks = getDisks(conn, vmName);
+            Map<String, String> diskPathLabelMap = new HashMap<>();
+            for (DiskDef disk : disks) {
+                if (disk.getDeviceType() != DeviceType.DISK) {
+                    continue;
+                }
+                diskPathLabelMap.put(disk.getDiskPath(), disk.getDiskLabel());
+            }
+            return diskPathLabelMap;
+        } catch (LibvirtException e) {
+            logger.error("Failed to get disk path label map for VM [{}] due to: [{}].", vmName, e.getMessage(), e);
+            throw new CloudRuntimeException(e);
+        }
+    }
+
+    public boolean recreateCheckpointsOnVm(List<VolumeObjectTO> volumes, String vmName, Connect conn) {
+        logger.debug("Trying to recreate checkpoints on VM [{}] with volumes [{}].", vmName, volumes);
+        try {
+            validateLibvirtAndQemuVersionForIncrementalSnapshots();
+        } catch (CloudRuntimeException e) {
+            logger.warn("Will not recreate the checkpoints on VM as {}", e.getMessage(), e);
+            return false;
+        }
+        List<DiskDef> diskDefs = getDisks(conn, vmName);
+        Map<VolumeObjectTO, DiskDef> mapDiskToDiskDef = mapVolumeToDiskDef(volumes, diskDefs);
+
+        for (VolumeObjectTO volume : volumes) {
+            if (CollectionUtils.isEmpty(volume.getCheckpointPaths())) {
+                continue;
+            }
+            Set<KVMStoragePool> storagePoolSet = connectToAllVolumeSnapshotSecondaryStorages(volume);
+            recreateCheckpointsOfDisk(vmName, volume, mapDiskToDiskDef);
+            disconnectAllVolumeSnapshotSecondaryStorages(storagePoolSet);
+        }
+        logger.debug("Successfully recreated all checkpoints on VM [{}].", vmName);
+        return true;
+    }
+
+    public Set<KVMStoragePool> connectToAllVolumeSnapshotSecondaryStorages(VolumeObjectTO volumeObjectTO) {
+        return volumeObjectTO.getCheckpointImageStoreUrls().stream().map(uri -> getStoragePoolMgr().getStoragePoolByURI(uri)).collect(Collectors.toSet());
+    }
+
+    public void disconnectAllVolumeSnapshotSecondaryStorages(Set<KVMStoragePool> kvmStoragePools) {
+        kvmStoragePools.forEach(storage -> getStoragePoolMgr().deleteStoragePool(storage.getType(), storage.getUuid()));
+    }
+
+
+    protected void recreateCheckpointsOfDisk(String vmName, VolumeObjectTO volume, Map<VolumeObjectTO, DiskDef> mapDiskToDiskDef) {
+        for (String path : volume.getCheckpointPaths()) {
+            DiskDef diskDef = mapDiskToDiskDef.get(volume);
+            if (diskDef != null) {
+                try {
+                    updateDiskLabelOnXml(path, diskDef.getDiskLabel());
+                } catch (ParserConfigurationException | IOException | SAXException | TransformerException | XPathExpressionException e) {
+                    logger.error("Exception while parsing checkpoint XML with path [{}].", path, e);
+                    throw new CloudRuntimeException(e);
+                }
+            } else {
+                logger.debug("Could not map [{}] to any disk definition. Will try to recreate snapshot without updating disk label.", volume);
+            }
+
+            logger.trace("Recreating checkpoint with path [{}] on VM [{}].", path, vmName);
+            Script.runSimpleBashScript(String.format(CHECKPOINT_CREATE_COMMAND, vmName, path));
+        }
+    }
+
+    /**
+     * Changes the value of the disk label of the checkpoint XML found in {@code path} to {@code label}. This method assumes that the checkpoint only contains one disk.
+     * @param path the path to the checkpoint XML to be updated
+     * @param label the new label to be used for the disk
+     * */
+    private void updateDiskLabelOnXml(String path, String label) throws ParserConfigurationException, IOException, SAXException, XPathExpressionException, TransformerException {
+        logger.trace("Updating checkpoint with path [{}] to use disk label [{}].", path, label);
+
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(new File(path));
+
+        XPath xPath = XPathFactory.newInstance().newXPath();
+        Node diskNode = (Node) xPath.compile("/domaincheckpoint/disks/disk").evaluate(doc, XPathConstants.NODE);
+        diskNode.getAttributes().getNamedItem("name").setNodeValue(label);
+
+        Transformer tf = TransformerFactory.newInstance().newTransformer();
+        tf.setOutputProperty(OutputKeys.INDENT, "yes");
+        tf.setOutputProperty(OutputKeys.METHOD, "xml");
+        tf.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+
+        DOMSource domSource = new DOMSource(doc);
+        StreamResult sr = new StreamResult(new File(path));
+        tf.transform(domSource, sr);
+    }
+
+    protected Map<VolumeObjectTO, DiskDef> mapVolumeToDiskDef(List<VolumeObjectTO> volumeTos, List<DiskDef> diskDefs) {
+        HashMap<VolumeObjectTO, DiskDef> diskToDiskDefHashMap = new HashMap<>();
+        for (VolumeObjectTO volumeTo : volumeTos) {
+            for (DiskDef diskDef : diskDefs) {
+                if (StringUtils.contains(diskDef.getDiskPath(), volumeTo.getPath())) {
+                    diskToDiskDefHashMap.put(volumeTo, diskDef);
+                }
+            }
+        }
+        return diskToDiskDefHashMap;
+    }
+
+    public void validateLibvirtAndQemuVersionForIncrementalSnapshots() {
+        if (getHypervisorLibvirtVersion() < MINIMUM_LIBVIRT_VERSION_FOR_INCREMENTAL_SNAPSHOT || getHypervisorQemuVersion() < MINIMUM_QEMU_VERSION_FOR_INCREMENTAL_SNAPSHOT) {
+            throw new CloudRuntimeException(String.format("Hypervisor version is insufficient, should have at least libvirt [%s] and qemu [%s] but we have [%s] and [%s].",
+                    MINIMUM_LIBVIRT_VERSION_FOR_INCREMENTAL_SNAPSHOT, MINIMUM_QEMU_VERSION_FOR_INCREMENTAL_SNAPSHOT, getHypervisorLibvirtVersion(), getHypervisorQemuVersion()));
+        }
+    }
+
     private boolean canBridgeFirewall(final String prvNic) {
-        final Script cmd = new Script(securityGroupPath, timeout, s_logger);
+        final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
         cmd.add("can_bridge_firewall");
         cmd.add("--privnic", prvNic);
         final String result = cmd.execute();
@@ -4604,7 +5663,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             final InterfaceDef intf = intfs.get(0);
             vif = intf.getDevName();
         }
-        final Script cmd = new Script(securityGroupPath, timeout, s_logger);
+        final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
         cmd.add("destroy_network_rules_for_vm");
         cmd.add("--vmname", vmName);
         if (vif != null) {
@@ -4650,7 +5709,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final String brname = intf.getBrName();
         final String vif = intf.getDevName();
 
-        final Script cmd = new Script(securityGroupPath, timeout, s_logger);
+        final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
         cmd.add("destroy_network_rules_for_vm");
         cmd.add("--vmname", vmName);
         if (nic.getIp() != null) {
@@ -4677,7 +5736,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean applyDefaultNetworkRules(final Connect conn, final VirtualMachineTO vm, final boolean checkBeforeApply) {
         NicTO[] nicTOs = new NicTO[] {};
         if (vm != null && vm.getNics() != null) {
-            s_logger.debug("Checking default network rules for vm " + vm.getName());
+            LOGGER.debug("Checking default network rules for vm " + vm.getName());
             nicTOs = vm.getNics();
         }
         for (NicTO nic : nicTOs) {
@@ -4693,7 +5752,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     break;
                 }
                 if (!applyDefaultNetworkRulesOnNic(conn, vm.getName(), vm.getId(), nic, isFirstNic, checkBeforeApply)) {
-                    s_logger.error("Unable to apply default network rule for nic " + nic.getName() + " for VM " + vm.getName());
+                    LOGGER.error("Unable to apply default network rule for nic " + nic.getName() + " for VM " + vm.getName());
                     return false;
                 }
                 isFirstNic = false;
@@ -4741,7 +5800,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final String brname = intf.getBrName();
         final String vif = intf.getDevName();
 
-        final Script cmd = new Script(securityGroupPath, timeout, s_logger);
+        final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
         cmd.add("default_network_rules");
         cmd.add("--vmname", vmName);
         cmd.add("--vmid", vmId.toString());
@@ -4782,7 +5841,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final String brname = intf.getBrName();
         final String vif = intf.getDevName();
 
-        final Script cmd = new Script(securityGroupPath, timeout, s_logger);
+        final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
         cmd.add("post_default_network_rules");
         cmd.add("--vmname", vmName);
         cmd.add("--vmid", vmId.toString());
@@ -4808,7 +5867,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return false;
         }
 
-        final Script cmd = new Script(securityGroupPath, timeout, s_logger);
+        final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
         cmd.add("default_network_rules_systemvm");
         cmd.add("--vmname", vmName);
         cmd.add("--localbrname", linkLocalBridgeName);
@@ -4821,8 +5880,71 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public Answer listFilesAtPath(ListDataStoreObjectsCommand command) {
         DataStoreTO store = command.getStore();
-        KVMStoragePool storagePool = storagePoolManager.getStoragePool(StoragePoolType.NetworkFilesystem, store.getUuid());
+        StoragePoolType poolType = StoragePoolType.NetworkFilesystem;
+        if (store instanceof PrimaryDataStoreTO) {
+            poolType = ((PrimaryDataStoreTO) store).getPoolType();
+        }
+        KVMStoragePool storagePool = storagePoolManager.getStoragePool(poolType, store.getUuid());
+        if (ClvmPoolManager.isClvmPoolType(poolType)) {
+            return listLvmVolumes(storagePool.getLocalPath(), command.getStartIndex(), command.getPageSize());
+        }
         return listFilesAtPath(storagePool.getLocalPath(), command.getPath(), command.getStartIndex(), command.getPageSize());
+    }
+
+    private Answer listLvmVolumes(String localPath, int startIndex, int pageSize) {
+        String vgName = localPath;
+        if (vgName.startsWith("/")) {
+            String[] parts = vgName.split("/");
+            for (int i = parts.length - 1; i >= 0; i--) {
+                if (!parts[i].isEmpty()) {
+                    vgName = parts[i];
+                    break;
+                }
+            }
+        }
+
+        Script lvs = new Script("lvs", 30000, logger);
+        lvs.add("--noheadings");
+        lvs.add("--nosuffix");
+        lvs.add("-o", "lv_name,lv_size");
+        lvs.add("--units", "b");
+        lvs.add(vgName);
+        AllLinesParser parser = new AllLinesParser();
+        String result = lvs.execute(parser);
+
+        List<String> names = new ArrayList<>();
+        List<String> paths = new ArrayList<>();
+        List<String> absPaths = new ArrayList<>();
+        List<Boolean> isDirs = new ArrayList<>();
+        List<Long> sizes = new ArrayList<>();
+        List<Long> lastModified = new ArrayList<>();
+
+        if (result != null) {
+            logger.warn("lvs listing failed for VG {}: {}", vgName, result);
+            return new ListDataStoreObjectsAnswer(false, 0, names, paths, absPaths, isDirs, sizes, lastModified);
+        }
+
+        List<String[]> entries = new ArrayList<>();
+        for (String line : parser.getLines().split("\n")) {
+            String trimmed = line.trim();
+            if (trimmed.isEmpty()) continue;
+            String[] cols = trimmed.split("\\s+");
+            if (cols.length >= 2) entries.add(cols);
+        }
+
+        int count = entries.size();
+        for (int i = startIndex; i < startIndex + pageSize && i < count; i++) {
+            String lvName = entries.get(i)[0];
+            long size = 0;
+            try { size = Long.parseLong(entries.get(i)[1]); } catch (NumberFormatException ignored) {}
+            names.add(lvName);
+            paths.add("/" + lvName);
+            absPaths.add("/dev/" + vgName + "/" + lvName);
+            isDirs.add(false);
+            sizes.add(size);
+            lastModified.add(0L);
+        }
+        return new ListDataStoreObjectsAnswer(true, count, names, paths, absPaths, isDirs, sizes, lastModified);
     }
 
     public boolean addNetworkRules(final String vmName, final String vmId, final String guestIP, final String guestIP6, final String sig, final String seq, final String mac, final String rules, final String vif, final String brname,
@@ -4832,7 +5954,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         final String newRules = rules.replace(" ", ";");
-        final Script cmd = new Script(securityGroupPath, timeout, s_logger);
+        final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
         cmd.add("add_network_rules");
         cmd.add("--vmname", vmName);
         cmd.add("--vmid", vmId);
@@ -4862,7 +5984,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return false;
         }
 
-        final Script cmd = new Script(securityGroupPath, timeout, s_logger);
+        final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
         cmd.add("network_rules_vmSecondaryIp");
         cmd.add("--vmname", vmName);
         cmd.add("--vmmac", vmMac);
@@ -4878,7 +6000,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean setupTungstenVRouter(final String oper, final String inf, final String subnet, final String route,
         final String vrf) {
-        final Script cmd = new Script(setupTungstenVrouterPath, timeout, s_logger);
+        final Script cmd = new Script(setupTungstenVrouterPath, timeout, LOGGER);
         cmd.add(oper);
         cmd.add(inf);
         cmd.add(subnet);
@@ -4891,7 +6013,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean updateTungstenLoadbalancerStats(final String lbUuid, final String lbStatsPort,
         final String lbStatsUri, final String lbStatsAuth) {
-        final Script cmd = new Script(updateTungstenLoadbalancerStatsPath, timeout, s_logger);
+        final Script cmd = new Script(updateTungstenLoadbalancerStatsPath, timeout, LOGGER);
         cmd.add(lbUuid);
         cmd.add(lbStatsPort);
         cmd.add(lbStatsUri);
@@ -4903,7 +6025,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean updateTungstenLoadbalancerSsl(final String lbUuid, final String sslCertName,
         final String certificateKey, final String privateKey, final String privateIp, final String port) {
-        final Script cmd = new Script(updateTungstenLoadbalancerSslPath, timeout, s_logger);
+        final Script cmd = new Script(updateTungstenLoadbalancerSslPath, timeout, LOGGER);
         cmd.add(lbUuid);
         cmd.add(sslCertName);
         cmd.add(certificateKey);
@@ -4916,7 +6038,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean setupTfRoute(final String privateIpAddress, final String fromNetwork, final String toNetwork) {
-        final Script setupTfRouteScript = new Script(routerProxyPath, timeout, s_logger);
+        final Script setupTfRouteScript = new Script(routerProxyPath, timeout, LOGGER);
         setupTfRouteScript.add("setup_tf_route.py");
         setupTfRouteScript.add(privateIpAddress);
         setupTfRouteScript.add(fromNetwork);
@@ -4925,7 +6047,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final OutputInterpreter.OneLineParser setupTfRouteParser = new OutputInterpreter.OneLineParser();
         final String result = setupTfRouteScript.execute(setupTfRouteParser);
         if (result != null) {
-            s_logger.debug("Failed to execute setup TF Route:" + result);
+            LOGGER.debug("Failed to execute setup TF Route:" + result);
             return false;
         }
         return true;
@@ -4935,7 +6057,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (!canBridgeFirewall) {
             return false;
         }
-        final Script cmd = new Script(securityGroupPath, timeout, s_logger);
+        final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
         cmd.add("cleanup_rules");
         final String result = cmd.execute();
         if (result != null) {
@@ -4945,7 +6067,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public String getRuleLogsForVms() {
-        final Script cmd = new Script(securityGroupPath, timeout, s_logger);
+        final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
         cmd.add("get_rule_logs_for_vms");
         final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
         final String result = cmd.execute(parser);
@@ -4959,7 +6081,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final HashMap<String, Pair<Long, Long>> states = new HashMap<String, Pair<Long, Long>>();
 
         final String result = getRuleLogsForVms();
-        s_logger.trace("syncNetworkGroups: id=" + id + " got: " + result);
+        LOGGER.trace("syncNetworkGroups: id=" + id + " got: " + result);
         final String[] rulelogs = result != null ? result.split(";") : new String[0];
         for (final String rulesforvm : rulelogs) {
             final String[] log = rulesforvm.split(",");
@@ -4989,12 +6111,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new Pair<Double, Double>(readDouble(nicName, "rx_bytes"), readDouble(nicName, "tx_bytes"));
     }
 
-    static double readDouble(final String nicName, final String fileName) {
+    double readDouble(final String nicName, final String fileName) {
         final String path = "/sys/class/net/" + nicName + "/statistics/" + fileName;
         try {
             return Double.parseDouble(FileUtils.readFileToString(new File(path)));
         } catch (final IOException ioe) {
-            s_logger.warn("Failed to read the " + fileName + " for " + nicName + " from " + path, ioe);
+            LOGGER.warn("Failed to read the " + fileName + " for " + nicName + " from " + path, ioe);
             return 0.0;
         }
     }
@@ -5037,12 +6159,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return hypervisorType;
     }
 
-    public String mapRbdDevice(final KVMPhysicalDisk disk){
+    public String mapRbdDevice(final KVMPhysicalDisk disk) {
         final KVMStoragePool pool = disk.getPool();
         //Check if rbd image is already mapped
         final String[] splitPoolImage = disk.getPath().split("/");
         String device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"[ ]*"+splitPoolImage[1]+"\" | grep -o \"[^ ]*[ ]*$\"");
-        if(device == null) {
+        if (device == null) {
             //If not mapped, map and return mapped device
             Script.runSimpleBashScript("rbd map " + disk.getPath() + " --id " + pool.getAuthUserName());
             device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"[ ]*"+splitPoolImage[1]+"\" | grep -o \"[^ ]*[ ]*$\"");
@@ -5051,11 +6173,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public List<Ternary<String, Boolean, String>> cleanVMSnapshotMetadata(Domain dm) throws LibvirtException {
-        s_logger.debug("Cleaning the metadata of vm snapshots of vm " + dm.getName());
+        LOGGER.debug("Cleaning the metadata of Instance Snapshots of Instance " + dm.getName());
         List<Ternary<String, Boolean, String>> vmsnapshots = new ArrayList<Ternary<String, Boolean, String>>();
         if (dm.snapshotNum() == 0) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("VM [%s] does not have any snapshots. Skipping cleanup of snapshots for this VM.", dm.getName()));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(String.format("Instance [%s] does not have any Snapshots. Skipping cleanup of Snapshots for this Instance.", dm.getName()));
             }
             return vmsnapshots;
         }
@@ -5063,8 +6185,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             DomainSnapshot snapshotCurrent = dm.snapshotCurrent();
             String snapshotXML = snapshotCurrent.getXMLDesc();
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Current snapshot of VM [%s] has the following XML: [%s].", dm.getName(), snapshotXML));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(String.format("Current snapshot of VM [%s] has the following XML: [%s].", dm.getName(), snapshotXML));
             }
 
             snapshotCurrent.free();
@@ -5079,23 +6201,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
                 currentSnapshotName = getTagValue("name", rootElement);
             } catch (ParserConfigurationException | SAXException | IOException e) {
-                s_logger.error(String.format("Failed to parse snapshot configuration [%s] of VM [%s] due to: [%s].", snapshotXML, dm.getName(), e.getMessage()), e);
+                LOGGER.error(String.format("Failed to parse snapshot configuration [%s] of VM [%s] due to: [%s].", snapshotXML, dm.getName(), e.getMessage()), e);
             }
         } catch (LibvirtException e) {
-            s_logger.error(String.format("Failed to get the current snapshot of VM [%s] due to: [%s]. Continuing the migration process.", dm.getName(), e.getMessage()), e);
+            LOGGER.error(String.format("Failed to get the current snapshot of VM [%s] due to: [%s]. Continuing the migration process.", dm.getName(), e.getMessage()), e);
         }
         int flags = 2; // VIR_DOMAIN_SNAPSHOT_DELETE_METADATA_ONLY = 2
         String[] snapshotNames = dm.snapshotListNames();
         Arrays.sort(snapshotNames);
-        s_logger.debug(String.format("Found [%s] snapshots in VM [%s] to clean.", snapshotNames.length, dm.getName()));
+        LOGGER.debug(String.format("Found [%s] snapshots in VM [%s] to clean.", snapshotNames.length, dm.getName()));
         for (String snapshotName: snapshotNames) {
             DomainSnapshot snapshot = dm.snapshotLookupByName(snapshotName);
             Boolean isCurrent = (currentSnapshotName != null && currentSnapshotName.equals(snapshotName)) ? true: false;
             vmsnapshots.add(new Ternary<String, Boolean, String>(snapshotName, isCurrent, snapshot.getXMLDesc()));
         }
         for (String snapshotName: snapshotNames) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Cleaning snapshot [%s] of VM [%s] metadata.", snapshotNames, dm.getName()));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Cleaning snapshot {} of VM {} metadata.", Arrays.toString(snapshotNames), dm.getName());
             }
             DomainSnapshot snapshot = dm.snapshotLookupByName(snapshotName);
             snapshot.delete(flags); // clean metadata of vm snapshot
@@ -5129,12 +6251,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public void restoreVMSnapshotMetadata(Domain dm, String vmName, List<Ternary<String, Boolean, String>> vmsnapshots) {
-        s_logger.debug("Restoring the metadata of vm snapshots of vm " + vmName);
+        LOGGER.debug("Restoring the metadata of Instance Snapshots of Instance " + vmName);
         for (Ternary<String, Boolean, String> vmsnapshot: vmsnapshots) {
             String snapshotName = vmsnapshot.first();
             Boolean isCurrent = vmsnapshot.second();
             String snapshotXML = vmsnapshot.third();
-            s_logger.debug("Restoring vm snapshot " + snapshotName + " on " + vmName + " with XML:\n " + snapshotXML);
+            LOGGER.debug("Restoring Instance Snapshot " + snapshotName + " on " + vmName + " with XML:\n " + snapshotXML);
             try {
                 int flags = 1; // VIR_DOMAIN_SNAPSHOT_CREATE_REDEFINE = 1
                 if (isCurrent) {
@@ -5142,7 +6264,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
                 dm.snapshotCreateXML(snapshotXML, flags);
             } catch (LibvirtException e) {
-                s_logger.debug("Failed to restore vm snapshot " + snapshotName + ", continue");
+                LOGGER.debug("Failed to restore Instance Snapshot " + snapshotName + ", continue");
                 continue;
             }
         }
@@ -5169,7 +6291,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     * Test host for volume encryption support
+     * Test host for qemu-native LUKS volume encryption (qemu-img LUKS support + cryptsetup),
+     * reported as {@code host.volume.encryption}. RBD/librbd encryption support is a separate
+     * capability, reported as {@code host.volume.encryption.rbd}
+     * (see {@link #hostSupportsRbdVolumeEncryption()}).
      * @return boolean
      */
     public boolean hostSupportsVolumeEncryption() {
@@ -5180,18 +6305,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return false;
             }
         } catch (QemuImgException | LibvirtException ex) {
-            s_logger.info("Host's qemu install doesn't support encryption", ex);
+            LOGGER.info("Host's qemu install doesn't support encryption", ex);
             return false;
         }
 
         // test cryptsetup
         CryptSetup crypt = new CryptSetup();
         if (!crypt.isSupported()) {
-            s_logger.info("Host can't run cryptsetup");
+            LOGGER.info("Host can't run cryptsetup");
             return false;
         }
 
         return true;
+    }
+
+    /**
+     * Test host for librbd native LUKS encryption support (rbd CLI with the encryption subcommand).
+     */
+    public boolean hostSupportsRbdVolumeEncryption() {
+        return new RbdEncryption().isSupported();
     }
 
     public boolean isSecureMode(String bootMode) {
@@ -5204,14 +6336,314 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean hostSupportsInstanceConversion() {
         int exitValue = Script.runSimpleBashScriptForExitValue(INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD);
-        if (isUbuntuHost() && exitValue == 0) {
+        if (isUbuntuOrDebianHost() && exitValue == 0) {
             exitValue = Script.runSimpleBashScriptForExitValue(UBUNTU_NBDKIT_PKG_CHECK_CMD);
         }
         return exitValue == 0;
     }
 
+    /**
+     * Static capability: whether this host's libvirt understands multi-tag trunk vlan XML
+     * (&lt;vlan trunk='yes'&gt;) on a standard Linux bridge interface.
+     */
+    public boolean hostSupportsVlanTrunkXml() {
+        return hypervisorLibvirtVersion >= MIN_LIBVIRT_VERSION_FOR_VLAN_TRUNK;
+    }
+
+    /**
+     * Live state: whether vlan_filtering is currently enabled on this host's guest bridge.
+     * A vlan_filtering=0 bridge floods every tagged frame to every port regardless of tag,
+     * so this must be true before any multi-VLAN trunk nic can be placed on this host.
+     */
+    public boolean hostSupportsVlanFiltering() {
+        return isBridgeVlanFilteringEnabled(getEffectiveGuestBridgeName());
+    }
+
+    public void setGuestTrafficLabel(String guestTrafficLabel) {
+        this.guestTrafficLabel = guestTrafficLabel;
+    }
+
+    // Mirrors BridgeVifDriver#plugTrunkVlanNic's bridge resolution
+    protected String getEffectiveGuestBridgeName() {
+        return StringUtils.isNotBlank(guestTrafficLabel) ? guestTrafficLabel : guestBridgeName;
+    }
+
+    protected boolean isBridgeVlanFilteringEnabled(String bridgeName) {
+        if (StringUtils.isBlank(bridgeName)) {
+            return false;
+        }
+        File vlanFilteringFile = new File("/sys/class/net/" + bridgeName + "/bridge/vlan_filtering");
+        if (!vlanFilteringFile.exists()) {
+            return false;
+        }
+        try {
+            return "1".equals(FileUtils.readFileToString(vlanFilteringFile).trim());
+        } catch (IOException e) {
+            LOGGER.warn("Failed to read vlan_filtering state for bridge " + bridgeName, e);
+            return false;
+        }
+    }
+
+    // whether STP is enabled on this host's guest bridge - delays new ports (vm start, nic plug, migration) ~2x the forward delay before they forward traffic
+    public boolean isGuestBridgeStpEnabled() {
+        return isBridgeStpEnabled(getEffectiveGuestBridgeName());
+    }
+
+    protected boolean isBridgeStpEnabled(String bridgeName) {
+        if (StringUtils.isBlank(bridgeName)) {
+            return false;
+        }
+        File stpStateFile = new File("/sys/class/net/" + bridgeName + "/bridge/stp_state");
+        if (!stpStateFile.exists()) {
+            return false;
+        }
+        try {
+            return !"0".equals(FileUtils.readFileToString(stpStateFile).trim());
+        } catch (IOException e) {
+            LOGGER.warn("Failed to read stp_state for bridge " + bridgeName, e);
+            return false;
+        }
+    }
+
+    public boolean hostSupportsVddk() {
+        return hostSupportsVddk(null);
+    }
+
+    public boolean hostSupportsVddk(String overriddenVddkLibDir) {
+        String effectiveVddkLibDir = resolveVddkLibDir(overriddenVddkLibDir);
+        return hostSupportsInstanceConversion() && isVddkLibDirValid(effectiveVddkLibDir) && isNbdkitVddkPluginUsable(effectiveVddkLibDir);
+    }
+
+    public boolean hostSupportsVddkBlockCopy() {
+        return hostSupportsVddkBlockCopy(null);
+    }
+
+    public boolean hostSupportsVddkBlockCopy(String overriddenVddkLibDir) {
+        return hostSupportsVddk(overriddenVddkLibDir)
+                && Script.runSimpleBashScriptForExitValue(QEMU_IMG_SUPPORTED_CHECK_CMD) == 0
+                && Script.runSimpleBashScriptForExitValue(QEMU_NBD_SUPPORTED_CHECK_CMD) == 0
+                && Script.runSimpleBashScriptForExitValue(QEMU_IO_SUPPORTED_CHECK_CMD) == 0;
+    }
+
+    public boolean hostSupportsVddkBlockCopyInPlaceFinalization() {
+        return hostSupportsVddkBlockCopy() && hostSupportsVirtV2vInPlace();
+    }
+
+    public boolean hostSupportsVddkBlockCopyRbd() {
+        return hostSupportsVddkBlockCopyInPlaceFinalization()
+                && Script.runSimpleBashScriptForExitValue(QEMU_IMG_RBD_SUPPORTED_CHECK_CMD) == 0;
+    }
+
+    public String getQemuImgVersion() {
+        return detectFirstLineVersion("qemu-img", "--version");
+    }
+
+    public String getQemuNbdVersion() {
+        return detectFirstLineVersion("qemu-nbd", "--version");
+    }
+
+    public String getQemuIoVersion() {
+        return detectFirstLineVersion("qemu-io", "--version");
+    }
+
+    public boolean hostSupportsVirtV2vInPlace() {
+        return hostSupportsVirtV2vInPlaceBinary() || hostSupportsVirtV2vInPlaceOption();
+    }
+
+    /**
+     * nbdcopy (from libnbd) is an optional accelerator for full-disk copies from an
+     * nbdkit/VDDK source into a local raw block device: it uses multiple in-flight
+     * requests and connections, so it is typically faster than a single-connection
+     * qemu-img convert. It is a pure optimization - callers fall back to
+     * qemu-img convert when it is absent.
+     */
+    public boolean hostSupportsNbdcopy() {
+        return Script.runSimpleBashScriptForExitValue(NBDCOPY_SUPPORTED_CHECK_CMD) == 0;
+    }
+
+    public boolean hostSupportsVirtV2vInPlaceBinary() {
+        return getVirtV2vInPlaceBinary() != null;
+    }
+
+    /**
+     * Resolves the virt-v2v-in-place executable. Ubuntu/Debian install it on $PATH,
+     * but EL9-family distributions ship it in /usr/libexec, so probing the bare name
+     * alone would (wrongly) disable in-place finalization there. Returns the
+     * invocable binary (name or absolute path), or null when neither works.
+     */
+    public String getVirtV2vInPlaceBinary() {
+        if (Script.runSimpleBashScriptForExitValue(INSTANCE_CONVERSION_IN_PLACE_SUPPORTED_CHECK_CMD) == 0) {
+            return "virt-v2v-in-place";
+        }
+        if (Script.runSimpleBashScriptForExitValue(VIRT_V2V_IN_PLACE_LIBEXEC_PATH + " --version") == 0) {
+            return VIRT_V2V_IN_PLACE_LIBEXEC_PATH;
+        }
+        return null;
+    }
+
+    public boolean hostSupportsVirtV2vInPlaceOption() {
+        return Script.runSimpleBashScriptForExitValue(INSTANCE_CONVERSION_IN_PLACE_OPTION_SUPPORTED_CHECK_CMD) == 0;
+    }
+
+    public String getHostVirtV2vInPlaceVersion() {
+        if (!hostSupportsVirtV2vInPlace()) {
+            return "";
+        }
+        String inPlaceBinary = getVirtV2vInPlaceBinary();
+        if (inPlaceBinary == null) {
+            return getHostVirtV2vVersion();
+        }
+        String cmd = String.format("%s --version | awk '{print $2}'", inPlaceBinary);
+        String version = Script.runSimpleBashScript(cmd);
+        return StringUtils.isNotBlank(version) ? version.split(",")[0] : "";
+    }
+
+    protected String detectFirstLineVersion(String... command) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            Process process = pb.start();
+
+            String output = new String(process.getInputStream().readAllBytes());
+            process.waitFor();
+
+            for (String line : output.split("\\R")) {
+                String trimmed = StringUtils.trimToNull(line);
+                if (StringUtils.isNotBlank(trimmed)) {
+                    return parseVersionToken(trimmed);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Failed to detect version for command {}: {}", String.join(" ", command), e.getMessage());
+        }
+        return null;
+    }
+
+    protected String parseVersionToken(String versionLine) {
+        String versionMarker = " version ";
+        int markerIndex = versionLine.indexOf(versionMarker);
+        if (markerIndex < 0) {
+            return versionLine;
+        }
+        String value = versionLine.substring(markerIndex + versionMarker.length());
+        String[] parts = value.split("\\s+", 2);
+        return parts.length > 0 ? parts[0] : versionLine;
+    }
+
+    public boolean hostSupportsQemuRbd() {
+        return Script.runSimpleBashScriptForExitValue(QEMU_IMG_RBD_SUPPORTED_CHECK_CMD) == 0;
+    }
+
+    public boolean hostSupportsVddkRbdDirectImport() {
+        return hostSupportsVddkRbdDirectImport(null);
+    }
+
+    public boolean hostSupportsVddkRbdDirectImport(String overriddenVddkLibDir) {
+        return hostSupportsVddk(overriddenVddkLibDir) && hostSupportsQemuRbd() && hostSupportsVirtV2vInPlace();
+    }
+
+    protected boolean isVddkLibDirValid(String path) {
+        if (StringUtils.isBlank(path)) {
+            return false;
+        }
+        File libDir = new File(path, "lib64");
+        if (!libDir.isDirectory()) {
+            return false;
+        }
+        File[] libs = libDir.listFiles((dir, name) -> name.startsWith("libvixDiskLib.so"));
+        return libs != null && libs.length > 0;
+    }
+
+    protected String resolveVddkLibDir(String overriddenVddkLibDir) {
+        String effectiveVddkLibDir = StringUtils.trimToNull(overriddenVddkLibDir);
+        if (StringUtils.isBlank(effectiveVddkLibDir)) {
+            effectiveVddkLibDir = StringUtils.trimToNull(vddkLibDir);
+        }
+        if (StringUtils.isBlank(effectiveVddkLibDir) || !isVddkLibDirValid(effectiveVddkLibDir)) {
+            effectiveVddkLibDir = detectVddkLibDir();
+        }
+        return effectiveVddkLibDir;
+    }
+
+    protected String detectVddkLibDir() {
+        String detectedPath = StringUtils.trimToNull(Script.runSimpleBashScript(VDDK_AUTODETECT_PATH_CMD));
+        if (StringUtils.isNotBlank(detectedPath) && isVddkLibDirValid(detectedPath)) {
+            return detectedPath;
+        }
+        return null;
+    }
+
+    protected String detectVddkVersion() {
+        return detectVddkVersion(null);
+    }
+
+    protected String detectVddkVersion(String overriddenVddkLibDir) {
+        String effectiveVddkLibDir = resolveVddkLibDir(overriddenVddkLibDir);
+        if (!isVddkLibDirValid(effectiveVddkLibDir)) {
+            return null;
+        }
+        return parseVddkLibraryVersionFromDumpPluginOutput(runNbdkitVddkDumpPlugin(effectiveVddkLibDir));
+    }
+
+    protected boolean isNbdkitVddkPluginUsable(String vddkLibDir) {
+        if (!isVddkLibDirValid(vddkLibDir)) {
+            return false;
+        }
+        String dumpPluginOutput = runNbdkitVddkDumpPlugin(vddkLibDir);
+        if (StringUtils.isBlank(parseVddkLibraryVersionFromDumpPluginOutput(dumpPluginOutput))) {
+            LOGGER.warn("nbdkit-vddk-plugin could not load VMware VDDK from [{}]", vddkLibDir);
+            return false;
+        }
+        return true;
+    }
+
+    protected String runNbdkitVddkDumpPlugin(String vddkLibDir) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("nbdkit", "vddk", "--dump-plugin", String.format("libdir=%s", vddkLibDir));
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            boolean completed = process.waitFor(10, TimeUnit.SECONDS);
+            if (!completed) {
+                process.destroyForcibly();
+                process.waitFor(5, TimeUnit.SECONDS);
+            }
+            String output = new String(process.getInputStream().readAllBytes());
+            if (!completed) {
+                LOGGER.warn("Timed out while checking nbdkit-vddk-plugin with libdir [{}]", vddkLibDir);
+                return output;
+            }
+            if (process.exitValue() != 0) {
+                LOGGER.warn("nbdkit-vddk-plugin check failed for libdir [{}]: {}", vddkLibDir, StringUtils.trimToEmpty(output));
+                return output;
+            }
+            return output;
+        } catch (Exception e) {
+            LOGGER.error("Failed to check nbdkit-vddk-plugin with libdir [{}]: {}", vddkLibDir, e.getMessage());
+            return null;
+        }
+    }
+
+    protected String parseVddkLibraryVersionFromDumpPluginOutput(String output) {
+        if (StringUtils.isBlank(output)) {
+            return null;
+        }
+        String libraryVersionPrefix = "vddk_library_version=";
+        try {
+            for (String line : output.split("\\R")) {
+                String trimmed = StringUtils.trimToEmpty(line);
+                if (trimmed.startsWith(libraryVersionPrefix)) {
+                    return StringUtils.trimToNull(trimmed.substring(libraryVersionPrefix.length()));
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to parse nbdkit-vddk-plugin output: {}", e.getMessage());
+            return null;
+        }
+        return null;
+    }
+
     public boolean hostSupportsWindowsGuestConversion() {
-        if (isUbuntuHost()) {
+        if (isUbuntuOrDebianHost()) {
             int exitValue = Script.runSimpleBashScriptForExitValue(UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD);
             return exitValue == 0;
         }
@@ -5224,8 +6656,58 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return exitValue == 0;
     }
 
+    /**
+     * Detect which password option virt-v2v supports by examining its --help output
+     * @return "-ip" if supported (virt-v2v >= 2.8.1), "--password-file" if older version, or null if detection fails
+     */
+    protected String detectPasswordFileOption() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("virt-v2v", "--help");
+            Process process = pb.start();
+
+            String output = new String(process.getInputStream().readAllBytes());
+            process.waitFor();
+
+            if (output.contains("-ip <filename>")) {
+                return "-ip";
+            } else if (output.contains("--password-file")) {
+                return "--password-file";
+            } else {
+                LOGGER.error("virt-v2v does not support -ip or --password-file");
+                return null;
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to detect virt-v2v password option: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Get the detected password file option for virt-v2v
+     * @return the password option ("-ip" or "--password-file") or null if not detected
+     */
+    public String getDetectedPasswordFileOption() {
+        return detectedPasswordFileOption;
+    }
+
+    public String getHostVirtV2vVersion() {
+        if (!hostSupportsInstanceConversion()) {
+            return "";
+        }
+        String cmd = String.format("%s | awk '{print $2}'", INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD);
+        String version = Script.runSimpleBashScript(cmd);
+        return StringUtils.isNotBlank(version) ? version.split(",")[0] : "";
+    }
+
+    public String getHostOvfToolVersion() {
+        if (!hostSupportsOvfExport()) {
+            return "";
+        }
+        return Script.runSimpleBashScript(OVF_EXPORT_TOOl_GET_VERSION_CMD);
+    }
+
     public boolean ovfExportToolSupportsParallelThreads() {
-        String ovfExportToolVersion = Script.runSimpleBashScript(OVF_EXPORT_TOOl_GET_VERSION_CMD);
+        String ovfExportToolVersion = getHostOvfToolVersion();
         if (StringUtils.isBlank(ovfExportToolVersion)) {
             return false;
         }
@@ -5244,31 +6726,48 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return false;
     }
 
-    private void setCpuTopology(CpuModeDef cmd, int vCpusInDef, Map<String, String> details) {
+    protected void setCpuTopology(CpuModeDef cmd, int vCpusInDef, Map<String, String> details) {
         if (!enableManuallySettingCpuTopologyOnKvmVm) {
-            s_logger.debug(String.format("Skipping manually setting CPU topology on VM's XML due to it is disabled in agent.properties {\"property\": \"%s\", \"value\": %s}.",
+            LOGGER.debug(String.format("Skipping manually setting CPU topology on VM's XML due to it is disabled in agent.properties {\"property\": \"%s\", \"value\": %s}.",
               AgentProperties.ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM.getName(), enableManuallySettingCpuTopologyOnKvmVm));
             return;
         }
-        // multi cores per socket, for larger core configs
-        int numCoresPerSocket = -1;
+
+        int numCoresPerSocket = 1;
+        int numThreadsPerCore = 1;
+
         if (details != null) {
-            final String coresPerSocket = details.get(VmDetailConstants.CPU_CORE_PER_SOCKET);
-            final int intCoresPerSocket = NumbersUtil.parseInt(coresPerSocket, numCoresPerSocket);
-            if (intCoresPerSocket > 0 && vCpusInDef % intCoresPerSocket == 0) {
-                numCoresPerSocket = intCoresPerSocket;
-            }
+            numCoresPerSocket = NumbersUtil.parseInt(details.get(VmDetailConstants.CPU_CORE_PER_SOCKET), 1);
+            numThreadsPerCore = NumbersUtil.parseInt(details.get(VmDetailConstants.CPU_THREAD_PER_CORE), 1);
         }
-        if (numCoresPerSocket <= 0) {
+
+        if ((numCoresPerSocket * numThreadsPerCore) > vCpusInDef) {
+            LOGGER.warn(String.format("cores per socket (%d) * threads per core (%d) exceeds total VM cores. Ignoring extra topology", numCoresPerSocket, numThreadsPerCore));
+            numCoresPerSocket = 1;
+            numThreadsPerCore = 1;
+        }
+
+        if (vCpusInDef % (numCoresPerSocket * numThreadsPerCore) != 0) {
+            LOGGER.warn(String.format("cores per socket(%d) * threads per core(%d) doesn't divide evenly into total VM cores(%d). Ignoring extra topology", numCoresPerSocket, numThreadsPerCore, vCpusInDef));
+            numCoresPerSocket = 1;
+            numThreadsPerCore = 1;
+        }
+
+        // Set default coupling (makes 4 or 6 core sockets for larger core configs)
+        int numTotalSockets = 1;
+        if (numCoresPerSocket == 1 && numThreadsPerCore == 1) {
             if (vCpusInDef % 6 == 0) {
                 numCoresPerSocket = 6;
             } else if (vCpusInDef % 4 == 0) {
                 numCoresPerSocket = 4;
             }
+            numTotalSockets = vCpusInDef / numCoresPerSocket;
+        } else {
+            int nTotalCores = vCpusInDef / numThreadsPerCore;
+            numTotalSockets = nTotalCores / numCoresPerSocket;
         }
-        if (numCoresPerSocket > 0) {
-            cmd.setTopology(numCoresPerSocket, vCpusInDef / numCoresPerSocket);
-        }
+
+        cmd.setTopology(numCoresPerSocket, numThreadsPerCore, numTotalSockets);
     }
 
     public void setBackingFileFormat(String volPath) {
@@ -5284,14 +6783,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 // VMs which are created in CloudStack 4.14 and before cannot be started or migrated
                 // in latest Linux distributions due to missing backing file format
                 // Please refer to https://libvirt.org/kbase/backing_chains.html#vm-refuses-to-start-due-to-misconfigured-backing-store-format
-                s_logger.info("Setting backing file format of " + volPath);
+                LOGGER.info("Setting backing file format of " + volPath);
                 QemuImgFile backingFile = new QemuImgFile(backingFilePath);
                 Map<String, String> backingFileinfo = qemu.info(backingFile);
                 String backingFileFmt = backingFileinfo.get(QemuImg.FILE_FORMAT);
                 qemu.rebase(file, backingFile, backingFileFmt, false);
             }
         } catch (QemuImgException | LibvirtException e) {
-            s_logger.error("Failed to set backing file format of " + volPath + " due to : " + e.getMessage(), e);
+            LOGGER.error("Failed to set backing file format of " + volPath + " due to : " + e.getMessage(), e);
         }
     }
 
@@ -5325,27 +6824,57 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      **/
     public static Integer getCpuShares(Domain dm) throws LibvirtException {
         for (SchedParameter c : dm.getSchedulerParameters()) {
-            if (c.field.equals("cpu_shares")) {
+            if (c.field.equals(CpuSchedulerParameter.CPU_SHARES.getName())) {
                 return Integer.parseInt(c.getValueAsString());
             }
         }
-        s_logger.warn(String.format("Could not get cpu_shares of domain: [%s]. Returning default value of 0. ", dm.getName()));
+        LOGGER.warn("Could not get [{}] of domain: [{}]. Returning default value of 0. ", CpuSchedulerParameter.CPU_SHARES.getName(), dm.getName());
         return 0;
     }
 
     /**
-     * Sets the cpu_shares (priority) of the running VM <br/>
+     * Updates the cpu_shares (priority) of the running VM.
      * @param dm domain of the VM.
      * @param cpuShares new priority of the running VM.
-     * @throws org.libvirt.LibvirtException
      **/
     public static void setCpuShares(Domain dm, Integer cpuShares) throws LibvirtException {
+        LOGGER.info("Dynamically updating the [{}] of the [{}] VM to [{}].", CpuSchedulerParameter.CPU_SHARES.getName(), dm.getName(), cpuShares);
         SchedUlongParameter[] params = new SchedUlongParameter[1];
         params[0] = new SchedUlongParameter();
-        params[0].field = "cpu_shares";
+        params[0].field = CpuSchedulerParameter.CPU_SHARES.getName();
         params[0].value = cpuShares;
 
         dm.setSchedulerParameters(params);
+    }
+
+    /**
+     * Updates the period of the running VM.
+     * @param domain domain of the VM.
+     * @param period new period of the running VM.
+     **/
+    public static void setPeriod(Domain domain, int period) throws LibvirtException {
+        LOGGER.info("Dynamically updating the [{}] of the [{}] VM to [{}].", CpuSchedulerParameter.PERIOD.getName(), domain.getName(), period);
+        SchedUlongParameter[] params = new SchedUlongParameter[1];
+        params[0] = new SchedUlongParameter();
+        params[0].field = CpuSchedulerParameter.PERIOD.getName();
+        params[0].value = period;
+
+        domain.setSchedulerParameters(params);
+    }
+
+    /**
+     * Updates the quota of the running VM.
+     * @param domain domain of the VM.
+     * @param quota new quota of the running VM.
+     **/
+    public static void setQuota(Domain domain, long quota) throws LibvirtException {
+        LOGGER.info("Dynamically updating the [{}] of the [{}] VM to [{}].", CpuSchedulerParameter.QUOTA.getName(), domain.getName(), quota);
+        SchedLongParameter[] params = new SchedLongParameter[1];
+        params[0] = new SchedLongParameter();
+        params[0].field = CpuSchedulerParameter.QUOTA.getName();
+        params[0].value = quota;
+
+        domain.setSchedulerParameters(params);
     }
 
     /**
@@ -5375,7 +6904,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 Match match = new Match();
                 if (UuidUtils.getUuidRegex().matches(ex.getMessage(), match)) {
                     secretUuid = match.getCapturedText(0);
-                    s_logger.info(String.format("Reusing previously defined secret '%s' for volume '%s'", secretUuid, consumer));
+                    LOGGER.info(String.format("Reusing previously defined secret '%s' for volume '%s'", secretUuid, consumer));
                 } else {
                     throw ex;
                 }
@@ -5393,12 +6922,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             secret.undefine();
         } catch (LibvirtException ex) {
             if (ex.getMessage().contains("Secret not found")) {
-                s_logger.debug(String.format("Secret uuid %s doesn't exist", secretUuid));
+                LOGGER.debug(String.format("Secret uuid %s doesn't exist", secretUuid));
                 return;
             }
             throw ex;
         }
-        s_logger.debug(String.format("Undefined secret %s", secretUuid));
+        LOGGER.debug(String.format("Undefined secret %s", secretUuid));
     }
 
     public void cleanOldSecretsByDiskDef(Connect conn, List<DiskDef> disks) throws LibvirtException {
@@ -5410,8 +6939,218 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
+    /**
+     * Retrieves the temporary path of the snapshot.
+     * @param diskPath Path of the disk to snapshot;
+     * @param snapshotName Snapshot name;
+     * @return the path of the disk replacing the disk with the snapshot.
+     */
+    public String getSnapshotTemporaryPath(String diskPath, String snapshotName) {
+        String[] diskPathSplitted = diskPath.split(File.separator);
+        diskPathSplitted[diskPathSplitted.length - 1] = snapshotName;
+        return String.join(File.separator, diskPathSplitted);
+    }
+
+    public String getUefiNvramPath(String vmUuid) {
+        String nvramDirectory = uefiProperties.getProperty(LibvirtVMDef.GuestDef.GUEST_NVRAM_PATH);
+        if (StringUtils.isBlank(nvramDirectory) || StringUtils.isBlank(vmUuid)) {
+            return null;
+        }
+
+        return nvramDirectory + vmUuid + ".fd";
+    }
+
     public static String generateSecretUUIDFromString(String seed) {
-        return UUID.nameUUIDFromBytes(seed.getBytes()).toString();
+        return UuidUtils.nameUUIDFromBytes(seed.getBytes()).toString();
+    }
+
+    /**
+     * Merges the delta into a base file.
+     *
+     * @param vm           Domain of the VM;
+     * @param diskLabel    Disk label to manage snapshot and base file;
+     * @param baseFilePath Path of the base file;
+     * @param topFilePath Path of the top file, if null, the active image is used;
+     * @param active Whether the snapshot being merged is the active image;
+     * @param snapshotName Name of the snapshot;
+     * @param volume VolumeObjectTO of the corresponding volume;
+     * @param conn Libvirt connection;
+     * @throws LibvirtException
+     */
+    public void mergeDeltaIntoBaseFile(Domain vm, String diskLabel, String baseFilePath, String topFilePath, boolean active, String snapshotName, VolumeObjectTO volume,
+            Connect conn) throws LibvirtException {
+        if (isLibvirtEventsEnabled()) {
+            mergeSnapshotIntoBaseFileWithEventsAndConfigurableTimeout(vm, diskLabel, baseFilePath, topFilePath, active, snapshotName, volume, conn);
+        } else {
+            mergeSnapshotIntoBaseFileWithoutEvents(vm, diskLabel, baseFilePath, topFilePath, active, snapshotName, volume, conn);
+        }
+    }
+
+    protected Boolean isLibvirtEventsEnabled() {
+        return AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED);
+    }
+
+    /**
+     * This method only works if LIBVIRT_EVENTS_ENABLED is true.
+     * */
+    protected void mergeSnapshotIntoBaseFileWithEventsAndConfigurableTimeout(Domain vm, String diskLabel, String baseFilePath, String topFilePath, boolean active, String snapshotName, VolumeObjectTO volume,
+            Connect conn) throws LibvirtException {
+        boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit = LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(conn);
+        String vmName = vm.getName();
+
+        int commitFlags = 0;
+        if (isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit) {
+            commitFlags |= Domain.BlockCommitFlags.DELETE;
+        }
+        if (active) {
+            commitFlags |= Domain.BlockCommitFlags.ACTIVE;
+        }
+
+        BlockCommitListener blockCommitListener = getBlockCommitListener(vmName);
+        try {
+            vm.addBlockJobListener(blockCommitListener);
+
+            logger.info("Starting block commit of QCOW2 delta [{}] of VM [{}]. Using parameters: diskLabel [{}]; baseFilePath [{}]; topFilePath [{}]; commitFlags [{}]",
+                    snapshotName,
+                    vmName, diskLabel, baseFilePath, topFilePath, commitFlags);
+
+            vm.blockCommit(diskLabel, baseFilePath, topFilePath, 0, commitFlags);
+
+            checkBlockCommitProgress(vm, diskLabel, vmName, snapshotName, topFilePath, baseFilePath);
+        } finally {
+            vm.removeBlockJobListener(blockCommitListener);
+        }
+
+        String mergeResult = blockCommitListener.getResult();
+        if (mergeResult != null) {
+            String commitError = String.format("Failed the block commit of top file [%s] into base file [%s] for snapshot [%s] of VM [%s]. The job will be left running to avoid" +
+                    " data corruption, but ACS will return an error and volume [%s] will need to be normalized manually. If the commit involved the active image, the pivot will" +
+                    " need to be manually done. The failure occurred due to [%s].", topFilePath, baseFilePath, snapshotName, vmName, volume, mergeResult);
+            logger.error(commitError);
+            throw new CloudRuntimeException(commitError);
+        }
+
+        logger.info("Completed block commit of snapshot [{}] of VM [{}].", snapshotName, vmName);
+
+        manuallyDeleteUnusedSnapshotFile(isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit, topFilePath != null ? topFilePath : getSnapshotTemporaryPath(baseFilePath, snapshotName));
+    }
+
+    /**
+     * Merges the snapshot into base file to keep volume and VM behavior after stopping - starting.
+     * @param vm Domain of the VM;
+     * @param diskLabel Disk label to manage snapshot and base file;
+     * @param baseFilePath Path of the base file;
+     * @param snapshotName Name of the snapshot;
+     * @throws LibvirtException
+     */
+    protected void mergeSnapshotIntoBaseFileWithoutEvents(Domain vm, String diskLabel, String baseFilePath, String topFilePath, boolean active, String snapshotName, VolumeObjectTO volume, Connect conn) throws LibvirtException {
+        boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit = LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(conn);
+        String vmName = vm.getName();
+        String mergeCommand = buildMergeCommand(vmName, diskLabel, baseFilePath, topFilePath, active, isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit);
+        String mergeResult = Script.runSimpleBashScript(mergeCommand);
+
+        if (mergeResult == null) {
+            logger.debug("Successfully merged snapshot [{}] into VM [{}] {} base file.", snapshotName, vmName, volume);
+            manuallyDeleteUnusedSnapshotFile(isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit, getSnapshotTemporaryPath(baseFilePath, snapshotName));
+            return;
+        }
+
+        String errorMsg = String.format("Failed to merge snapshot [%s] into VM [%s] %s base file. Command [%s] resulted in [%s]. If the VM is stopped and then started, it"
+                + " will start to write in the base file again. All changes made between the snapshot and the VM stop will be in the snapshot. If the VM is stopped, the snapshot must be"
+                + " merged into the base file manually.", snapshotName, vmName, volume, mergeCommand, mergeResult);
+
+        logger.warn("%s VM XML: [{}].", errorMsg, vm.getXMLDesc(0));
+        throw new CloudRuntimeException(errorMsg);
+    }
+
+    protected String buildMergeCommand(String vmName, String diskLabel, String baseFilePath, String topFilePath, boolean active, boolean delete) {
+        StringBuilder cmd = new StringBuilder(COMMAND_MERGE_SNAPSHOT);
+        if (StringUtils.isNotEmpty(topFilePath)) {
+            cmd.append(" --top ");
+            cmd.append(topFilePath);
+        }
+        if (active) {
+            cmd.append(" --active --pivot");
+        }
+        if (delete) {
+            cmd.append(" --delete");
+        }
+        cmd.append(" --wait");
+        return String.format(cmd.toString(), vmName, diskLabel, baseFilePath);
+    }
+
+    /**
+     * This was created to facilitate testing.
+     * */
+    protected BlockCommitListener getBlockCommitListener(String vmName) {
+        return new BlockCommitListener(vmName, ThreadContext.get("logcontextid"));
+    }
+
+    protected void checkBlockCommitProgress(Domain vm, String diskLabel, String vmName, String snapshotName, String topFilePath, String baseFilePath) {
+        int timeout = qcow2DeltaMergeTimeout;
+        DomainBlockJobInfo result;
+        long lastCommittedBytes = 0;
+        long endBytes = 0;
+        String partialLog = String.format("of top file [%s] into base file [%s] for snapshot [%s] of VM [%s]", topFilePath, baseFilePath, snapshotName, vmName);
+
+        while (timeout > 0) {
+            timeout -= 1;
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                logger.trace("Thread that was tracking the progress for the block commit job {} was interrupted. Ignoring.", partialLog, ex);
+                continue;
+            }
+
+            try {
+                result = vm.getBlockJobInfo(diskLabel, 0);
+            } catch (LibvirtException ex) {
+                logger.warn("Exception while getting block job info {}: [{}].", partialLog, ex.getMessage(), ex);
+                return;
+            }
+
+            if (result == null || result.type == 0 && result.end == 0 && result.cur == 0) {
+                logger.debug("Block commit job {} has already finished.", partialLog);
+                return;
+            }
+
+            long currentCommittedBytes = result.cur;
+            if (currentCommittedBytes > lastCommittedBytes) {
+                logger.debug("The block commit {} is at [{}] of [{}].", partialLog, currentCommittedBytes, result.end);
+            }
+            lastCommittedBytes = currentCommittedBytes;
+            endBytes = result.end;
+        }
+        logger.warn("Block commit {} has timed out after waiting at least {} seconds. The progress of the operation was [{}] of [{}].", partialLog, qcow2DeltaMergeTimeout, lastCommittedBytes, endBytes);
+    }
+
+    /**
+     * Manually deletes the unused snapshot file.<br/>
+     * This method is necessary due to Libvirt created the tag '--delete' on command 'virsh blockcommit' on version <b>1.2.9</b>, however it was only implemented on version
+     *  <b>6.0.0</b>.
+     * @param snapshotPath The unused snapshot file to manually delete.
+     */
+    protected void manuallyDeleteUnusedSnapshotFile(boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit, String snapshotPath) {
+        if (isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit) {
+            logger.debug("The current Libvirt's version supports the flag '--delete' on command 'virsh blockcommit', we will skip the manually deletion of the"
+                    + " unused snapshot file [{}] as it already was automatically deleted.", snapshotPath);
+            return;
+        }
+
+        logger.debug("The current Libvirt's version does not supports the flag '--delete' on command 'virsh blockcommit', therefore we will manually delete the"
+                + " unused snapshot file [{}].", snapshotPath);
+
+        deleteIfExists(snapshotPath);
+    }
+
+    protected void deleteIfExists(String snapshotPath) {
+        try {
+            Files.deleteIfExists(Paths.get(snapshotPath));
+            logger.debug("Manually deleted unused snapshot file [{}].", snapshotPath);
+        } catch (IOException ex) {
+            throw new CloudRuntimeException(String.format("Unable to manually delete unused snapshot file [%s] due to [%s].", snapshotPath, ex.getMessage()));
+        }
     }
 
     public void setInterfaceDefQueueSettings(Map<String, String> details, Integer cpus, InterfaceDef interfaceDef) {
@@ -5427,7 +7166,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     interfaceDef.setMultiQueueNumber(nicMultiqueueNumberInteger);
                 }
             } catch (NumberFormatException ex) {
-                s_logger.warn(String.format("VM details %s is not a valid integer value %s", VmDetailConstants.NIC_MULTIQUEUE_NUMBER, nicMultiqueueNumber));
+                LOGGER.warn(String.format("VM details %s is not a valid integer value %s", VmDetailConstants.NIC_MULTIQUEUE_NUMBER, nicMultiqueueNumber));
             }
         }
         String nicPackedEnabled = details.get(VmDetailConstants.NIC_PACKED_VIRTQUEUES_ENABLED);
@@ -5435,7 +7174,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             try {
                 interfaceDef.setPackedVirtQueues(Boolean.valueOf(nicPackedEnabled));
             } catch (NumberFormatException ex) {
-                s_logger.warn(String.format("VM details %s is not a valid Boolean value %s", VmDetailConstants.NIC_PACKED_VIRTQUEUES_ENABLED, nicPackedEnabled));
+                LOGGER.warn(String.format("VM details %s is not a valid Boolean value %s", VmDetailConstants.NIC_PACKED_VIRTQUEUES_ENABLED, nicPackedEnabled));
             }
         }
     }
@@ -5450,11 +7189,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             command.append(remoteFile);
             command.append(" " + tmpPath);
             command.append(outputFile);
-            s_logger.debug(String.format("Converting remote disk file: %s, output file: %s%s (timeout: %d secs)", remoteFile, tmpPath, outputFile, timeoutInSecs));
+            LOGGER.debug(String.format("Converting remote disk file: %s, output file: %s%s (timeout: %d secs)", remoteFile, tmpPath, outputFile, timeoutInSecs));
             SshHelper.sshExecute(srcIp, 22, username, null, password, command.toString(), timeoutInSecs * 1000);
-            s_logger.debug("Copying converted remote disk file " + outputFile + " to: " + localDir);
+            LOGGER.debug("Copying converted remote disk file " + outputFile + " to: " + localDir);
             SshHelper.scpFrom(srcIp, 22, username, null, password, localDir, tmpPath + outputFile);
-            s_logger.debug("Successfully copied converted remote disk file to: " + localDir + "/" + outputFile);
+            LOGGER.debug("Successfully copied converted remote disk file to: " + localDir + "/" + outputFile);
             return outputFile;
         } catch (Exception e) {
             try {
@@ -5471,4 +7210,565 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public void disconnected() {
+        LOGGER.info("Detected agent disconnect event, running through " + _disconnectHooks.size() + " disconnect hooks");
+        for (DisconnectHook hook : _disconnectHooks) {
+            hook.start();
+        }
+        long start = System.currentTimeMillis();
+        for (DisconnectHook hook : _disconnectHooks) {
+            try {
+                long elapsed = System.currentTimeMillis() - start;
+                long remaining = hook.getTimeoutMs() - elapsed;
+                long joinWait = remaining > 0 ? remaining : 1;
+                hook.join(joinWait);
+                hook.interrupt();
+            } catch (InterruptedException ex) {
+                LOGGER.warn("Interrupted disconnect hook: " + ex.getMessage());
+            }
+        }
+        _disconnectHooks.clear();
+    }
+
+    public void addDisconnectHook(DisconnectHook hook) {
+        LOGGER.debug("Adding disconnect hook " + hook);
+        _disconnectHooks.add(hook);
+    }
+
+    public void removeDisconnectHook(DisconnectHook hook) {
+        LOGGER.debug("Removing disconnect hook " + hook);
+        if (_disconnectHooks.contains(hook)) {
+            LOGGER.debug("Removing disconnect hook " + hook);
+            _disconnectHooks.remove(hook);
+        } else {
+            LOGGER.debug("Requested removal of disconnect hook, but hook not found: " + hook);
+        }
+    }
+
+    public VolumeOnStorageTO getVolumeOnStorage(PrimaryDataStoreTO primaryStore, String volumePath) {
+        try {
+            if (primaryStore.isManaged()) {
+                if (!storagePoolManager.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volumePath, primaryStore.getDetails())) {
+                    logger.warn(String.format("Failed to connect src volume %s, in storage pool %s", volumePath, primaryStore));
+                }
+            }
+            final KVMPhysicalDisk srcVolume = storagePoolManager.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volumePath);
+            if (srcVolume == null) {
+                logger.debug("Failed to get physical disk for volume: " + volumePath);
+                throw new CloudRuntimeException("Failed to get physical disk for volume at path: " + volumePath);
+            }
+            return new VolumeOnStorageTO(HypervisorType.KVM, srcVolume.getName(), srcVolume.getName(), srcVolume.getPath(),
+                    srcVolume.getFormat().toString(), srcVolume.getSize(), srcVolume.getVirtualSize());
+        } catch (final CloudRuntimeException e) {
+            logger.debug(String.format("Failed to get volume %s on storage %s: %s", volumePath, primaryStore, e));
+            return new VolumeOnStorageTO();
+        } finally {
+            if (primaryStore.isManaged()) {
+                storagePoolManager.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volumePath);
+            }
+        }
+    }
+
+    public String getHypervisorPath() {
+        return hypervisorPath;
+    }
+    public String getGuestCpuArch() {
+        return guestCpuArch;
+    }
+
+    /**
+     * CLVM volume state for migration operations on source host
+     */
+    public enum ClvmVolumeState {
+        /** Shared mode (-asy) - used before migration to allow both hosts to access volume */
+        SHARED("-asy", "shared", "Before migration: activating in shared mode"),
+
+        /** Deactivate (-an) - used after successful migration to release volume on source */
+        DEACTIVATE("-an", "deactivated", "After successful migration: deactivating volume"),
+
+        /** Exclusive mode (-aey) - used after failed migration to revert to original exclusive state */
+        EXCLUSIVE("-aey", "exclusive", "After failed migration: reverting to exclusive mode");
+
+        private final String lvchangeFlag;
+        private final String description;
+        private final String logMessage;
+
+        ClvmVolumeState(String lvchangeFlag, String description, String logMessage) {
+            this.lvchangeFlag = lvchangeFlag;
+            this.description = description;
+            this.logMessage = logMessage;
+        }
+
+        public String getLvchangeFlag() {
+            return lvchangeFlag;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public String getLogMessage() {
+            return logMessage;
+        }
+    }
+
+    public static void modifyClvmVolumesStateForMigration(List<DiskDef> disks, VirtualMachineTO vmSpec, ClvmVolumeState state) {
+        for (DiskDef disk : disks) {
+            if (isClvmVolume(disk, vmSpec)) {
+                String volumePath = disk.getDiskPath();
+                try {
+                    modifyClvmVolumeState(volumePath, state.getLvchangeFlag(), state.getDescription(), state.getLogMessage());
+                } catch (Exception e) {
+                    LOGGER.error("[CLVM Migration] Exception while setting volume [{}] to {} state: {}",
+                            volumePath, state.getDescription(), e.getMessage(), e);
+                }
+            }
+        }
+    }
+
+    private static void modifyClvmVolumeState(String volumePath, String lvchangeFlag,
+                                       String stateDescription, String logMessage) {
+        try {
+            LOGGER.info("{} for volume [{}]", logMessage, volumePath);
+
+            Script cmd = new Script("lvchange", Duration.standardSeconds(300), LOGGER);
+            cmd.add(lvchangeFlag);
+            cmd.add(volumePath);
+
+            String result = cmd.execute();
+            if (result != null) {
+                String errorMsg = String.format(
+                        "Failed to set volume [%s] to %s state. Command result: %s",
+                        volumePath, stateDescription, result);
+                LOGGER.error(errorMsg);
+                throw new CloudRuntimeException(errorMsg);
+            } else {
+                LOGGER.info("Successfully set volume [{}] to {} state.",
+                        volumePath, stateDescription);
+            }
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            String errorMsg = String.format(
+                    "Exception while setting volume [%s] to %s state: %s",
+                    volumePath, stateDescription, e.getMessage());
+            LOGGER.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg, e);
+        }
+    }
+
+    public static void activateClvmVolumeExclusive(String volumePath) {
+        modifyClvmVolumeState(volumePath, ClvmVolumeState.EXCLUSIVE.getLvchangeFlag(),
+                ClvmVolumeState.EXCLUSIVE.getDescription(),
+                "Activating CLVM volume in exclusive mode");
+    }
+
+    public static void deactivateClvmVolume(String volumePath) {
+        try {
+            modifyClvmVolumeState(volumePath, ClvmVolumeState.DEACTIVATE.getLvchangeFlag(),
+                    ClvmVolumeState.DEACTIVATE.getDescription(),
+                    "Deactivating CLVM volume");
+        } catch (Exception e) {
+            LOGGER.warn("Failed to deactivate CLVM volume {}: {}", volumePath, e.getMessage());
+        }
+    }
+
+    public static void setClvmVolumeToSharedMode(String volumePath) {
+        try {
+            modifyClvmVolumeState(volumePath, ClvmVolumeState.SHARED.getLvchangeFlag(),
+                    ClvmVolumeState.SHARED.getDescription(),
+                    "Setting CLVM volume to shared mode");
+        } catch (Exception e) {
+            LOGGER.warn("Failed to set CLVM volume {} to shared mode: {}", volumePath, e.getMessage());
+        }
+    }
+
+    /**
+     * Determines if a disk is on a CLVM storage pool by checking the actual pool type from VirtualMachineTO.
+     * This is the most reliable method as it uses CloudStack's own storage pool information.
+     *
+     * @param disk The disk definition to check
+     * @param resource The LibvirtComputingResource instance (unused but kept for compatibility)
+     * @param vmSpec The VirtualMachineTO specification containing disk and pool information
+     * @return true if the disk is on a CLVM storage pool, false otherwise
+     */
+    private static boolean isClvmVolume(DiskDef disk, VirtualMachineTO vmSpec) {
+        String diskPath = disk.getDiskPath();
+        if (diskPath == null || vmSpec == null) {
+            return false;
+        }
+
+        try {
+            if (vmSpec.getDisks() != null) {
+                for (DiskTO diskTO : vmSpec.getDisks()) {
+                    if (!(diskTO.getData() instanceof VolumeObjectTO)) {
+                        continue;
+                    }
+                    VolumeObjectTO volumeTO = (VolumeObjectTO) diskTO.getData();
+                    if (!diskPath.substring(diskPath.lastIndexOf(File.separator) + 1).equals(volumeTO.getPath())) {
+                        continue;
+                    }
+                    DataStoreTO dataStore = volumeTO.getDataStore();
+                    if (!(dataStore instanceof PrimaryDataStoreTO)) {
+                        continue;
+                    }
+                    PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) dataStore;
+                    boolean isClvm = StoragePoolType.CLVM == primaryStore.getPoolType() ||
+                                     StoragePoolType.CLVM_NG == primaryStore.getPoolType();
+                    LOGGER.debug("Disk {} identified as CLVM/CLVM_NG={} via VirtualMachineTO pool type: {}",
+                                diskPath, isClvm, primaryStore.getPoolType());
+                    return isClvm;
+                }
+            }
+
+            if (diskPath.startsWith("/dev/") && !diskPath.contains("/dev/mapper/")) {
+                String vgName = extractVolumeGroupFromPath(diskPath);
+                if (vgName != null) {
+                    boolean isClustered = checkIfVolumeGroupIsClustered(vgName);
+                    LOGGER.debug("Disk {} VG {} identified as clustered={} via vgs attribute check",
+                                diskPath, vgName, isClustered);
+                    return isClustered;
+                }
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Error determining if volume {} is CLVM: {}", diskPath, e.getMessage(), e);
+        }
+
+        return false;
+    }
+
+    /**
+     * Extracts the volume group name from a device path.
+     *
+     * @param devicePath The device path (e.g., /dev/vgname/lvname)
+     * @return The volume group name, or null if cannot be determined
+     */
+     static String extractVolumeGroupFromPath(String devicePath) {
+        if (devicePath == null || !devicePath.startsWith("/dev/")) {
+            return null;
+        }
+
+        // Format: /dev/<vgname>/<lvname>
+        String[] parts = devicePath.split("/");
+        if (parts.length >= 3) {
+            return parts[2]; // ["", "dev", "vgname", ...]
+        }
+
+        return null;
+    }
+
+    /**
+     * Checks if a volume group is clustered (CLVM) by examining its attributes.
+     * Uses 'vgs' command to check for the clustered/shared flag in VG attributes.
+     *
+     * VG Attr format (6 characters): wz--nc or wz--ns
+     *   Position 6: Clustered flag - 'c' = CLVM (clustered), 's' = shared (lvmlockd), '-' = not clustered
+     *
+     * @param vgName The volume group name
+     * @return true if the VG is clustered or shared, false otherwise
+     */
+     static boolean checkIfVolumeGroupIsClustered(String vgName) {
+        if (vgName == null) {
+            return false;
+        }
+
+        try {
+            OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+            Script vgsCmd = new Script("vgs", 30000, LOGGER);
+            vgsCmd.add("--noheadings");
+            vgsCmd.add("--unbuffered");
+            vgsCmd.add("-o");
+            vgsCmd.add("vg_attr");
+            vgsCmd.add(vgName);
+
+            String result = vgsCmd.execute(parser);
+
+            if (result == null && parser.getLines() != null) {
+                String output = parser.getLines();
+                if (output != null && !output.isEmpty()) {
+                    String vgAttr = output.trim();
+                    if (vgAttr.length() >= 6) {
+                        char clusterFlag = vgAttr.charAt(5);  // Position 6 (0-indexed 5)
+                        boolean isClustered = (clusterFlag == 'c' || clusterFlag == 's');
+                        LOGGER.debug("VG {} has attributes '{}', cluster/shared flag '{}' = {}",
+                                    vgName, vgAttr, clusterFlag, isClustered);
+                        return isClustered;
+                    } else {
+                        LOGGER.warn("VG {} attributes '{}' have unexpected format (expected 6+ chars)", vgName, vgAttr);
+                    }
+                }
+            } else {
+                LOGGER.warn("Failed to get VG attributes for {}: {}", vgName, result);
+            }
+
+        } catch (Exception e) {
+            LOGGER.debug("Error checking if VG {} is clustered: {}", vgName, e.getMessage());
+        }
+
+        return false;
+    }
+
+    public Map<String, Long> createDiskOnlyVmSnapshotForRunningVm(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String vmName, String snapshotName,
+            boolean quiesceVm) throws BackupException {
+        logger.info("Taking disk-only VM snapshot of running VM [{}].", vmName);
+
+        Domain dm = null;
+        try {
+            LibvirtUtilitiesHelper libvirtUtilitiesHelper = getLibvirtUtilitiesHelper();
+            Connect conn = libvirtUtilitiesHelper.getConnection();
+            List<LibvirtVMDef.DiskDef> disks = getDisks(conn, vmName);
+
+            dm = getDomain(conn, vmName);
+
+            if (dm == null) {
+                throw new BackupException(String.format("Creation of disk-only VM snapshot failed as we could not find the VM [%s].", vmName), true);
+            }
+
+            Pair<String, Map<String, Long>> snapshotXmlAndVolumeToNewPathMap = createSnapshotXmlAndNewVolumePathMap(volumeTosAndNewPaths, disks, snapshotName);
+
+            int flagsToUseForRunningVmSnapshotCreation = getFlagsToUseForRunningVmSnapshotCreation(quiesceVm);
+            String snapshotXml = snapshotXmlAndVolumeToNewPathMap.first();
+
+            logger.info("Creating disk-only VM snapshot for VM [{}] using parameters: snapshotXml [{}]; flags [{}].", vmName, snapshotXml, flagsToUseForRunningVmSnapshotCreation);
+
+            dm.snapshotCreateXML(snapshotXml, flagsToUseForRunningVmSnapshotCreation);
+
+            return snapshotXmlAndVolumeToNewPathMap.second();
+        } catch (LibvirtException e) {
+            String errorMsg = String.format("Creation of disk-only VM snapshot for VM [%s] failed due to %s.", vmName, e.getMessage());
+            boolean isVmConsistent = false;
+            if (isGuestAgentUnresponsive(e)) {
+                errorMsg = "QEMU guest agent is not connected. If the VM has been recently started, it might connect soon. Otherwise the VM does not have the" +
+                        " guest agent installed; thus the QuiesceVM parameter is not supported.";
+                isVmConsistent = true;
+            }
+            logger.error(errorMsg, e);
+            throw new BackupException(errorMsg, isVmConsistent);
+        } finally {
+            if (dm != null) {
+                try {
+                    dm.free();
+                } catch (LibvirtException l) {
+                    logger.trace("Ignoring Libvirt error.", l);
+                }
+            }
+        }
+    }
+
+    public static boolean isGuestAgentUnresponsive(LibvirtException e) {
+        return AGENT_UNRESPONSIVE_ERROR.equals(e.getError().getCode());
+    }
+
+    public Map<String, Long> createDiskOnlyVMSnapshotOfStoppedVm(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String vmName) {
+        logger.info("Creating volume deltas for stopped VM [{}].", vmName);
+
+        Map<String, Long> mapVolumeToSnapshotSize = new HashMap<>();
+        try {
+            for (Pair<VolumeObjectTO, String> volumeObjectTOAndNewPath : volumeTosAndNewPaths) {
+                VolumeObjectTO volumeObjectTO = volumeObjectTOAndNewPath.first();
+                PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) volumeObjectTO.getDataStore();
+                KVMStoragePool kvmStoragePool = getStoragePoolMgr().getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+
+                String snapshotPath = volumeObjectTOAndNewPath.second();
+                String snapshotFullPath = kvmStoragePool.getLocalPathFor(snapshotPath);
+                QemuImgFile newDelta = new QemuImgFile(snapshotFullPath, QemuImg.PhysicalDiskFormat.QCOW2);
+
+                String currentDeltaFullPath = kvmStoragePool.getLocalPathFor(volumeObjectTO.getPath());
+                QemuImgFile currentDelta = new QemuImgFile(currentDeltaFullPath, QemuImg.PhysicalDiskFormat.QCOW2);
+
+                QemuImg qemuImg = new QemuImg(0);
+
+                logger.debug("Creating new delta [{}] for volume [{}] as part of the delta creation process for VM [{}].", newDelta, volumeObjectTO.getUuid(), vmName);
+                qemuImg.create(newDelta, currentDelta);
+
+                mapVolumeToSnapshotSize.put(volumeObjectTO.getUuid(), getFileSize(currentDeltaFullPath));
+            }
+        } catch (Exception e) {
+            logger.error("Exception while creating volume delta for VM [{}]. Deleting leftover deltas.", vmName, e);
+            cleanupLeftoverDeltas(volumeTosAndNewPaths, mapVolumeToSnapshotSize);
+            throw new BackupException(String.format("An exception was caught during the delta creation for VM [%s]. The leftover deltas have been deleted.", vmName), true);
+        }
+
+        return mapVolumeToSnapshotSize;
+    }
+
+    protected void cleanupLeftoverDeltas(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, Map<String, Long> mapVolumeToSnapshotSize) {
+        for (Pair<VolumeObjectTO, String> volumeObjectTOAndNewPath : volumeTosAndNewPaths) {
+            VolumeObjectTO volumeObjectTO = volumeObjectTOAndNewPath.first();
+            Long volSize = mapVolumeToSnapshotSize.get(volumeObjectTO.getUuid());
+            if (volSize == null) {
+                continue;
+            }
+            PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) volumeObjectTO.getDataStore();
+            KVMStoragePool kvmStoragePool = getStoragePoolMgr().getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+            try {
+                Files.deleteIfExists(Path.of(kvmStoragePool.getLocalPathFor(volumeObjectTOAndNewPath.second())));
+            } catch (IOException ex) {
+                logger.warn("Tried to delete leftover delta at [{}]. Failed.", volumeObjectTOAndNewPath.second(), ex);
+            }
+        }
+    }
+
+    public void mergeDeltaForStoppedVm(DeltaMergeTreeTO deltaMergeTreeTO) throws QemuImgException, IOException, LibvirtException {
+        logger.debug("Merging delta [{}] for stopped VM.", deltaMergeTreeTO);
+
+        QemuImg qemuImg = new QemuImg(qcow2DeltaMergeTimeout * 1000);
+        DataTO parentTo = deltaMergeTreeTO.getParent();
+        PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) parentTo.getDataStore();
+        KVMStoragePool storagePool = storagePoolManager.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+        String childLocalPath = storagePool.getLocalPathFor(deltaMergeTreeTO.getChild().getPath());
+
+        QemuImgFile parent = new QemuImgFile(storagePool.getLocalPathFor(parentTo.getPath()), QemuImg.PhysicalDiskFormat.QCOW2);
+        QemuImgFile child = new QemuImgFile(childLocalPath, QemuImg.PhysicalDiskFormat.QCOW2);
+
+        logger.debug("Committing child delta [{}] into parent delta [{}].", parentTo, deltaMergeTreeTO.getChild());
+        qemuImg.commit(child, parent, true);
+
+        List<QemuImgFile> grandChildren = deltaMergeTreeTO.getGrandChildren().stream()
+                .map(deltaTo -> new QemuImgFile(storagePool.getLocalPathFor(deltaTo.getPath()), QemuImg.PhysicalDiskFormat.QCOW2))
+                .collect(Collectors.toList());
+
+        logger.debug("Rebasing grand-children [{}] into parent at [{}].", grandChildren, parent.getFileName());
+        for (QemuImgFile grandChild : grandChildren) {
+            qemuImg.rebase(grandChild, parent, parent.getFormat().toString(), false);
+        }
+
+        logger.debug("Deleting child at [{}] as it is useless.", childLocalPath);
+
+        Files.deleteIfExists(Path.of(childLocalPath));
+    }
+
+    public void mergeDeltaForRunningVm(DeltaMergeTreeTO mergeTreeTO, String vmName, VolumeObjectTO volumeObjectTO) throws LibvirtException, QemuImgException {
+        logger.debug("Merging delta [{}] for running VM [{}].", mergeTreeTO, vmName);
+
+        QemuImg qemuImg = new QemuImg(qcow2DeltaMergeTimeout * 1000);
+        Connect conn = libvirtUtilitiesHelper.getConnection();
+        Domain domain = getDomain(conn, vmName);
+        List<LibvirtVMDef.DiskDef> disks = getDisks(conn, vmName);
+
+        DataTO childTO = mergeTreeTO.getChild();
+        DataTO parentSnapshotTO = mergeTreeTO.getParent();
+        KVMStoragePool storagePool = libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(volumeObjectTO, storagePoolManager);
+
+        boolean active = DataObjectType.VOLUME.equals(childTO.getObjectType());
+        String label = getDiskWithPathOfVolumeObjectTO(disks, volumeObjectTO).getDiskLabel();
+        String parentSnapshotLocalPath = storagePool.getLocalPathFor(parentSnapshotTO.getPath());
+        String childDeltaPath = storagePool.getLocalPathFor(childTO.getPath());
+
+        logger.debug("Found label [{}] for [{}]. Will merge delta at [{}] into delta at [{}].", label, volumeObjectTO, parentSnapshotLocalPath, childDeltaPath);
+
+        mergeDeltaIntoBaseFile(domain, label, parentSnapshotLocalPath, childDeltaPath, active, childTO.getPath(), volumeObjectTO, conn);
+
+        QemuImgFile parent = new QemuImgFile(parentSnapshotLocalPath, QemuImg.PhysicalDiskFormat.QCOW2);
+
+        logger.debug("Rebasing grand-children [{}] into parent at [{}].", mergeTreeTO.getGrandChildren(), parentSnapshotLocalPath);
+        for (DataTO grandChildTo : mergeTreeTO.getGrandChildren()) {
+            if (checkIfFileIsInActiveChainForVm(domain, grandChildTo)) {
+                logger.debug("Grand-child [{}] is on the active chain of VM [{}], thus Libvirt has already rebased it, will ignore it.", grandChildTo, vmName);
+                continue;
+            }
+            QemuImgFile grandChild = new QemuImgFile(storagePool.getLocalPathFor(grandChildTo.getPath()), QemuImg.PhysicalDiskFormat.QCOW2);
+            qemuImg.rebase(grandChild, parent, parent.getFormat().toString(), false);
+        }
+    }
+
+    private boolean checkIfFileIsInActiveChainForVm(Domain vm, DataTO dataTO) throws LibvirtException {
+        String xml = vm.getXMLDesc(0);
+        KVMStoragePool storagePool = libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(dataTO, storagePoolManager);
+        return xml.contains(storagePool.getLocalPathFor(dataTO.getPath()));
+    }
+
+    public int getFlagsToUseForRunningVmSnapshotCreation(boolean quiesceVm) {
+        int flags = quiesceVm ? Domain.SnapshotCreateFlags.QUIESCE : 0;
+        flags += Domain.SnapshotCreateFlags.DISK_ONLY +
+                Domain.SnapshotCreateFlags.ATOMIC +
+                Domain.SnapshotCreateFlags.NO_METADATA;
+        return flags;
+    }
+
+    public Pair<String, Map<String, Long>> createSnapshotXmlAndNewVolumePathMap(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, List<LibvirtVMDef.DiskDef> disks, String snapshotName) {
+        StringBuilder stringBuilder = new StringBuilder();
+        Map<String, Long> volumeObjectToNewPathMap = new HashMap<>();
+
+        for (Pair<VolumeObjectTO, String> volumeObjectTOAndPath : volumeTosAndNewPaths) {
+            LibvirtVMDef.DiskDef diskdef = getDiskWithPathOfVolumeObjectTO(disks, volumeObjectTOAndPath.first());
+            String newPath = volumeObjectTOAndPath.second();
+            stringBuilder.append(String.format(TAG_DISK_SNAPSHOT, diskdef.getDiskLabel(), getSnapshotTemporaryPath(diskdef.getDiskPath(), newPath)));
+
+            long snapSize = getFileSize(diskdef.getDiskPath());
+
+            volumeObjectToNewPathMap.put(volumeObjectTOAndPath.first().getUuid(), snapSize);
+        }
+
+        String snapshotXml = String.format(SNAPSHOT_XML, snapshotName, stringBuilder);
+        return new Pair<>(snapshotXml, volumeObjectToNewPathMap);
+    }
+
+    public long getFileSize(String path) {
+        return new File(path).length();
+    }
+
+    public boolean pullVolumeBackingFile(VolumeObjectTO volumeObjectTO, String vmName) throws LibvirtException {
+        Connect conn = libvirtUtilitiesHelper.getConnection();
+
+        Domain vm = getDomain(conn, vmName);
+        List<LibvirtVMDef.DiskDef> disks = getDisks(conn, vmName);
+        DiskDef diskDef = getDiskWithPathOfVolumeObjectTO(disks, volumeObjectTO);
+
+        String diskLabel = diskDef.getDiskLabel();
+        Script.runSimpleBashScript(String.format(BLOCK_PULL_COMMAND, vmName, diskLabel));
+
+        boolean result = checkBlockPullProgress(vm, diskLabel, vmName, volumeObjectTO.getUuid());
+
+        if (!result) {
+            logger.warn("Failed to block pull volume [{}] of VM [{}], aborting.", volumeObjectTO, vmName);
+            vm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.ASYNC);
+        }
+        return result;
+    }
+
+    protected Boolean checkBlockPullProgress(Domain vm, String diskLabel, String vmName, String volumeUuid) {
+        int timeout = qcow2DeltaMergeTimeout;
+        DomainBlockJobInfo result;
+        long lastCommittedBytes = 0;
+        long endBytes = 0;
+        String partialLog = String.format("for volume [%s] of VM [%s]", volumeUuid, vmName);
+        while (timeout > 0) {
+            timeout -= 1;
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+                logger.trace("Thread that was tracking the block pull progress {} was interrupted. Ignoring.", partialLog, ex);
+                continue;
+            }
+
+            try {
+                result = vm.getBlockJobInfo(diskLabel, 0);
+            } catch (LibvirtException ex) {
+                logger.warn("Exception while getting block job info {}: [{}].", partialLog, ex.getMessage(), ex);
+                return false;
+            }
+
+            if (result == null || result.type == 0 && result.end == 0 && result.cur == 0) {
+                logger.debug("Block pull job {} has finished.", partialLog);
+                return true;
+            }
+
+            long currentCommittedBytes = result.cur;
+            if (currentCommittedBytes > lastCommittedBytes) {
+                logger.debug("The block pull {} is at [{}] of [{}].", partialLog, currentCommittedBytes, result.end);
+            }
+            lastCommittedBytes = currentCommittedBytes;
+            endBytes = result.end;
+        }
+        logger.warn(String.format("Block pull %s has timed out after waiting at least %s seconds. The progress of the operation was [%s] of [%s].", partialLog,
+                qcow2DeltaMergeTimeout, lastCommittedBytes, endBytes));
+        return false;
+    }
+
+
 }

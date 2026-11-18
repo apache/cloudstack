@@ -32,29 +32,29 @@ import com.cloud.serializer.Param;
 @EntityReference(value = BigSwitchBcfDeviceVO.class)
 public class BigSwitchBcfDeviceResponse extends BaseResponse {
     @SerializedName(BcfConstants.BIGSWITCH_BCF_DEVICE_ID)
-    @Param(description = "device id of the BigSwitch BCF Controller")
+    @Param(description = "Device ID of the BigSwitch BCF Controller")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Param(description = "the physical network to which this BigSwitch BCF segment belongs to")
+    @Param(description = "The physical Network to which this BigSwitch BCF segment belongs to")
     private String physicalNetworkId;
 
     @SerializedName(ApiConstants.PROVIDER)
-    @Param(description = "name of the provider")
+    @Param(description = "Name of the provider")
     private String providerName;
 
     @SerializedName(BcfConstants.BIGSWITCH_BCF_DEVICE_NAME)
-    @Param(description = "device name")
+    @Param(description = "Device name")
     private String deviceName;
 
     @SerializedName(ApiConstants.HOST_NAME)
-    @Param(description = "the controller Ip address")
+    @Param(description = "The controller IP address")
     private String hostName;
 
-    @SerializedName(ApiConstants.USERNAME) @Param(description="the controller username")
+    @SerializedName(ApiConstants.USERNAME) @Param(description = "The controller username")
     private String username;
 
-    @SerializedName(ApiConstants.PASSWORD) @Param(description="the controller password", isSensitive = true)
+    @SerializedName(ApiConstants.PASSWORD) @Param(description = "The controller password", isSensitive = true)
     private String password;
 
     @SerializedName(BcfConstants.BIGSWITCH_BCF_DEVICE_NAT)

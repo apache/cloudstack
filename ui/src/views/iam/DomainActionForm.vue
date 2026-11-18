@@ -67,8 +67,11 @@
                 :filterOption="(input, option) => {
                   return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option v-for="(opt, optIndex) in action.mapping[field.name].options" :key="optIndex" :label="opt">
-                  {{ opt }}
+                <a-select-option
+                  v-for="(opt, optIndex) in action.mapping[field.name].options"
+                  :key="optIndex"
+                  :label="opt.description ? $t(opt.description) : opt">
+                  {{ opt.description ? $t(opt.description) : opt }}
                 </a-select-option>
               </a-select>
               <a-select
@@ -134,7 +137,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { ref, reactive, toRaw } from 'vue'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -205,7 +208,8 @@ export default {
                 break
               }
               if (this.action.mapping && key in this.action.mapping && this.action.mapping[key].options) {
-                params[key] = this.action.mapping[key].options[input]
+                const mappedOption = this.action.mapping[key].options[input]
+                params[key] = (mappedOption && typeof mappedOption === 'object') ? mappedOption.id : mappedOption
               } else if (param.type === 'uuid') {
                 params[key] = param.opts[input].id
               } else if (param.type === 'list') {
@@ -242,7 +246,7 @@ export default {
             delete params[key]
           }
         })
-        api(this.action.api, params).then(json => {
+        postAPI(this.action.api, params).then(json => {
           for (const obj in json) {
             if (obj.includes('response')) {
               for (const res in json[obj]) {

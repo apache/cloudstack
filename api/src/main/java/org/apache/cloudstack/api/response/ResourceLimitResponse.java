@@ -16,54 +16,57 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.configuration.Resource;
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
+import com.cloud.configuration.Resource;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ResourceLimit.class)
 @SuppressWarnings("unused")
 public class ResourceLimitResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account of the resource limit")
+    @Param(description = "The Account of the resource limit")
     private String accountName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the resource limit")
+    @Param(description = "The domain ID of the resource limit")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the resource limit")
+    @Param(description = "The domain name of the resource limit")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the resource limit belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the resource limit belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.RESOURCE_TYPE)
-    @Param(description = "resource type. Values include 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11. See the resourceType parameter for more information on these values.")
+    @Param(description = "Resource type. Values include 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11. See the resourceType parameter for more information on these values.")
     private String resourceType;
 
     @SerializedName(ApiConstants.RESOURCE_TYPE_NAME)
-    @Param(description = "resource type name. Values include user_vm, public_ip, volume, snapshot, template, project, network, vpc, cpu, memory, primary_storage, secondary_storage.")
+    @Param(description = "Resource type name. Values include user_vm, public_ip, volume, Snapshot, Template, project, Network, VPC, CPU, memory, primary_storage, secondary_storage.")
     private String resourceTypeName;
 
     @SerializedName("max")
-    @Param(description = "the maximum number of the resource. A -1 means the resource currently has no limit.")
+    @Param(description = "The maximum number of the resource. A -1 means the resource currently has no limit.")
     private Long max;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the resource limit")
+    @Param(description = "The project ID of the resource limit")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the resource limit")
+    @Param(description = "The project name of the resource limit")
     private String projectName;
+
+    @SerializedName(ApiConstants.TAG)
+    @Param(description = "The tag for the resource limit", since = "4.20.0")
+    private String tag;
 
     @Override
     public void setAccountName(String accountName) {
@@ -101,5 +104,9 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
     @Override
     public void setProjectId(String projectId) {
         this.projectId = projectId;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 }

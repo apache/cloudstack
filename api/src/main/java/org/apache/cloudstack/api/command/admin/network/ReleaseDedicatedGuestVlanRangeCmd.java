@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.admin.network;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -36,7 +35,6 @@ import com.cloud.user.Account;
 @APICommand(name = "releaseDedicatedGuestVlanRange", description = "Releases a dedicated guest vlan range to the system", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ReleaseDedicatedGuestVlanRangeCmd.class.getName());
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -46,7 +44,7 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = GuestVlanRangeResponse.class,
                required = true,
-               description = "the ID of the dedicated guest vlan range")
+               description = "The ID of the dedicated guest VLAN range")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -74,7 +72,7 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Releasing a dedicated guest vlan range.";
+        return "Releasing dedicated guest VLAN range with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     // ///////////////////////////////////////////////////
@@ -83,7 +81,7 @@ public class ReleaseDedicatedGuestVlanRangeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Dedicated guest vlan range Id: " + id);
+        CallContext.current().setEventDetails("Dedicated guest VLAN range ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _networkService.releaseDedicatedGuestVlanRange(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

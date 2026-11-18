@@ -31,9 +31,10 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.QuotaAlertManagerImpl.DeferredQuotaEmail;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
+import org.apache.cloudstack.quota.dao.QuotaEmailConfigurationDao;
+import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.user.AccountVO;
@@ -42,7 +43,6 @@ import com.cloud.utils.component.ManagerBase;
 
 @Component
 public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
-    private static final Logger s_logger = Logger.getLogger(QuotaStatementImpl.class);
 
     @Inject
     private AccountDao _accountDao;
@@ -54,6 +54,12 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
     private QuotaAlertManager _quotaAlert;
     @Inject
     private ConfigurationDao _configDao;
+
+    @Inject
+    private QuotaEmailConfigurationDao quotaEmailConfigurationDao;
+
+    @Inject
+    private QuotaEmailTemplatesDao quotaEmailTemplatesDao;
 
     final public static int s_LAST_STATEMENT_SENT_DAYS = 6; //ideally should be less than 7 days
 
@@ -91,16 +97,16 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
 
     @Override
     public boolean start() {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Starting Statement Manager");
+        if (logger.isInfoEnabled()) {
+            logger.info("Starting Statement Manager");
         }
         return true;
     }
 
     @Override
     public boolean stop() {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Stopping Statement Manager");
+        if (logger.isInfoEnabled()) {
+            logger.info("Stopping Statement Manager");
         }
         return true;
     }
@@ -113,35 +119,40 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
             if (quotaAccount.getQuotaBalance() == null) {
                 continue; // no quota usage for this account ever, ignore
             }
+            AccountVO account = _accountDao.findById(quotaAccount.getId());
+            if (account == null) {
+                logger.debug("Could not find an account corresponding to [{}]. Therefore, the statement email will not be sent.", quotaAccount);
+                continue;
+            }
+
+            boolean quotaStatementEmailEnabled = _quotaAlert.isQuotaEmailTypeEnabledForAccount(account, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_STATEMENT);
+            if (!quotaStatementEmailEnabled) {
+                logger.debug("{} has [{}] email disabled. Therefore the email will not be sent.", quotaAccount, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_STATEMENT);
+                continue;
+            }
 
             //check if it is statement time
             Calendar interval[] = statementTime(Calendar.getInstance(), _period);
 
             Date lastStatementDate = quotaAccount.getLastStatementDate();
             if (interval != null) {
-                AccountVO account = _accountDao.findById(quotaAccount.getId());
-                if (account != null) {
-                    if (lastStatementDate == null || getDifferenceDays(lastStatementDate, new Date()) >= s_LAST_STATEMENT_SENT_DAYS + 1) {
-                        BigDecimal quotaUsage = _quotaUsage.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, interval[0].getTime(), interval[1].getTime());
-                        s_logger.info("For account=" + quotaAccount.getId() + ", quota used = " + quotaUsage);
-                        // send statement
-                        deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, quotaUsage, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_STATEMENT));
-                    } else {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("For " + quotaAccount.getId() + " the statement has been sent recently");
+                if (lastStatementDate == null || getDifferenceDays(lastStatementDate, new Date()) >= s_LAST_STATEMENT_SENT_DAYS + 1) {
+                    BigDecimal quotaUsage = _quotaUsage.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, interval[0].getTime(), interval[1].getTime());
+                    logger.info("Quota statement for account [{}] has an usage of [{}].", quotaAccount, quotaUsage);
 
-                        }
-                    }
+                    // send statement
+                    deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, quotaUsage, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_STATEMENT));
+                } else {
+                    logger.debug("Quota statement has already been sent recently to account [{}].", quotaAccount);
                 }
             } else if (lastStatementDate != null) {
-                s_logger.info("For " + quotaAccount.getId() + " it is already more than " + getDifferenceDays(lastStatementDate, new Date())
-                        + " days, will send statement in next cycle");
+                logger.info("For account {} it is already more than {} days, will send statement in next cycle.", quotaAccount.getId(), getDifferenceDays(lastStatementDate, new Date()));
             }
         }
 
         for (DeferredQuotaEmail emailToBeSent : deferredQuotaEmailList) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Attempting to send quota STATEMENT email to users of account: " + emailToBeSent.getAccount().getAccountName());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Attempting to send quota STATEMENT email to users of account: " + emailToBeSent.getAccount().getAccountName());
             }
             _quotaAlert.sendQuotaAlert(emailToBeSent);
         }

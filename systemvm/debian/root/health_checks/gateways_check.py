@@ -24,7 +24,7 @@ from utility import getHealthChecksData
 def main():
     gws = getHealthChecksData("gateways")
     if gws is None and len(gws) == 0:
-        print "No gateways data available, skipping"
+        print("No gateways data available, skipping")
         exit(0)
 
     unreachableGateWays = []
@@ -36,7 +36,8 @@ def main():
         for i in range(5):
             pingCmd = "ping " + gw + " -c 5 -w 10"
             pout = Popen(pingCmd, shell=True, stdout=PIPE)
-            if pout.wait() == 0:
+            pout.communicate()
+            if pout.returncode == 0:
                 reachableGw = True
                 break
 
@@ -44,11 +45,11 @@ def main():
             unreachableGateWays.append(gw)
 
     if len(unreachableGateWays) == 0:
-        print "All " + str(len(gwsList)) + " gateways are reachable via ping"
+        print("All " + str(len(gwsList)) + " gateways are reachable via ping")
         exit(0)
     else:
-        print "Unreachable gateways found-"
-        print unreachableGateWays
+        print("Unreachable gateways found-")
+        print(unreachableGateWays)
         exit(1)
 
 

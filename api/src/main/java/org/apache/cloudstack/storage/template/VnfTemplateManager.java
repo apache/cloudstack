@@ -26,9 +26,11 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import org.apache.cloudstack.api.command.user.template.RegisterVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateVnfTemplateCmd;
+import org.apache.cloudstack.api.command.user.vm.BaseDeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import java.util.List;
+import java.util.Map;
 
 public interface VnfTemplateManager {
 
@@ -42,11 +44,26 @@ public interface VnfTemplateManager {
 
     void updateVnfTemplate(long templateId, UpdateVnfTemplateCmd cmd);
 
-    void validateVnfApplianceNics(VirtualMachineTemplate template, List<Long> networkIds);
+    void validateVnfApplianceNics(VirtualMachineTemplate template, List<Long> networkIds, Map<Integer, Long> vmNetworkMap);
+
+    /**
+     * Rejects a nicnetworkslist request that would make a VNF template's management nic a multi-VLAN trunk nic -
+     * management access must stay single-segment. No-op when nicNetworksList is empty (i.e. the legacy
+     * networkids/deploy-as-is paths, which cannot address a nic as a trunk at all).
+     */
+    void validateVnfApplianceTrunkNics(VirtualMachineTemplate template, List<BaseDeployVMCmd.NicNetworkGrouping> nicNetworksList);
+
+    /**
+     * Single-nic counterpart of {@link #validateVnfApplianceTrunkNics}, for the live associate-network-to-nic
+     * path (an already-deployed VNF's nic, rather than a deploy-time nicnetworkslist). No-op when the template
+     * has no VNF nic metadata at all, i.e. any non-VNF template.
+     */
+    void validateVnfApplianceTrunkNic(VirtualMachineTemplate template, long deviceId);
 
     SecurityGroup createSecurityGroupForVnfAppliance(DataCenter zone, VirtualMachineTemplate template, Account owner, DeployVnfApplianceCmd cmd);
 
     void createIsolatedNetworkRulesForVnfAppliance(DataCenter zone, VirtualMachineTemplate template, Account owner,
                                                    UserVm vm, DeployVnfApplianceCmd cmd)
             throws InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException;
+
 }

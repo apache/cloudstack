@@ -27,13 +27,11 @@ import java.sql.SQLException;
 
 import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade481to490 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade481to490.class);
+public class Upgrade481to490 extends DbUpgradeAbstractImpl {
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -74,7 +72,7 @@ public class Upgrade481to490 implements DbUpgrade {
                 final Integer accountType = selectResultSet.getInt(2);
                 final Long roleId = RoleType.getByAccountType(Account.Type.getFromValue(accountType)).getId();
                 if (roleId < 1L || roleId > 4L) {
-                    s_logger.warn("Skipping role ID migration due to invalid role_id resolved for account id=" + accountId);
+                    logger.warn("Skipping role ID migration due to invalid role_id resolved for account id=" + accountId);
                     continue;
                 }
                 try (final PreparedStatement updateStatement = conn.prepareStatement("UPDATE `cloud`.`account` SET account.role_id = ? WHERE account.id = ? ;")) {
@@ -82,14 +80,14 @@ public class Upgrade481to490 implements DbUpgrade {
                     updateStatement.setLong(2, accountId);
                     updateStatement.executeUpdate();
                 } catch (SQLException e) {
-                    s_logger.error("Failed to update cloud.account role_id for account id:" + accountId + " with exception: " + e.getMessage());
+                    logger.error("Failed to update cloud.account role_id for account id:" + accountId + " with exception: " + e.getMessage());
                     throw new CloudRuntimeException("Exception while updating cloud.account role_id", e);
                 }
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while migrating existing account table's role_id column to a role based on account type", e);
         }
-        s_logger.debug("Done migrating existing accounts to use one of default roles based on account type");
+        logger.debug("Done migrating existing accounts to use one of default roles based on account type");
     }
 
     private void setupRolesAndPermissionsForDynamicChecker(final Connection conn) {
@@ -101,7 +99,7 @@ public class Upgrade481to490 implements DbUpgrade {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             if (e.getMessage().contains("role_id")) {
-                s_logger.warn("cloud.account table already has the role_id column, skipping altering table and migration of accounts");
+                logger.warn("cloud.account table already has the role_id column, skipping altering table and migration of accounts");
                 return;
             } else {
                 throw new CloudRuntimeException("Unable to create column role_id in table cloud.account", e);
@@ -116,20 +114,20 @@ public class Upgrade481to490 implements DbUpgrade {
 
         migrateAccountsToDefaultRoles(conn);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Configuring default role-api mappings, use migrate-dynamicroles.py instead if you want to migrate rules from an existing commands.properties file");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Configuring default role-api mappings, use migrate-dynamicroles.py instead if you want to migrate rules from an existing commands.properties file");
         }
         final String scriptFile = "META-INF/db/create-default-role-api-mappings.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            s_logger.error("Unable to find default role-api mapping sql file, please configure api per role manually");
+            logger.error("Unable to find default role-api mapping sql file, please configure api per role manually");
             return;
         }
         try(final InputStreamReader reader = new InputStreamReader(script)) {
             ScriptRunner runner = new ScriptRunner(conn, false, true);
             runner.runScript(reader);
         } catch (SQLException | IOException e) {
-            s_logger.error("Unable to insert default api-role mappings from file: " + script + ". Please configure api per role manually, giving up!", e);
+            logger.error("Unable to insert default api-role mappings from file: " + script + ". Please configure api per role manually, giving up!", e);
         }
     }
 

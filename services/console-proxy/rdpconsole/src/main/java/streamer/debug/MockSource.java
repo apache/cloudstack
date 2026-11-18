@@ -75,7 +75,6 @@ public class MockSource extends FakeSource {
                         new ByteBuffer(new byte[] {3, 1, 2, 3}), new ByteBuffer(new byte[] {4, 1, 2}), new ByteBuffer(new byte[] {5, 1})};
                 verbose = true;
                 delay = 100;
-                // this.numBuffers = this.bufs.length;
             }
         };
 

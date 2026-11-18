@@ -25,7 +25,11 @@ import sys
 import os.path
 import re
 import shutil
+from typing import Optional, TYPE_CHECKING
 from netaddr import *
+
+if TYPE_CHECKING:
+    from .CsConfig import CsConfig
 
 PUBLIC_INTERFACES = {"router": "eth2", "vpcrouter": "eth1"}
 
@@ -87,7 +91,7 @@ def mkdir(name, mode, fatal):
     except OSError as e:
         if e.errno != 17:
             print("failed to make directories " + name + " due to :" + e.strerror)
-            if(fatal):
+            if fatal:
                 sys.exit(1)
 
 
@@ -196,7 +200,7 @@ def execute(command):
         returncode = 0
 
         logging.debug("Command [%s] has the result [%s]" % (command, result))
-        return result.splitlines()
+        return result.decode().splitlines()
     except subprocess.CalledProcessError as e:
         logging.error(e)
         returncode = e.returncode
@@ -270,3 +274,29 @@ def copy(src, dest):
         logging.error("Could not copy %s to %s" % (src, dest))
     else:
         logging.info("Copied %s to %s" % (src, dest))
+
+
+def find_device_for_gateway(config: 'CsConfig', gateway_ip: str) -> Optional[str]:
+    """
+    Find which ethernet device the gateway IP belongs to by checking
+    if the gateway is in any of the configured interface subnets.
+
+    Args:
+        config: CsConfig instance containing network configuration
+        gateway_ip: IP address of the gateway to locate
+
+    Returns:
+        Device name (e.g., 'eth2') or None if not found
+    """
+    try:
+        interfaces = config.address().get_interfaces()
+        for interface in interfaces:
+            if not interface.is_added():
+                continue
+            if interface.ip_in_subnet(gateway_ip):
+                return interface.get_device()
+        logging.debug("No matching device found for gateway %s" % gateway_ip)
+        return None
+    except Exception as e:
+        logging.error("Error finding device for gateway %s: %s" % (gateway_ip, e))
+        return None

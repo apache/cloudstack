@@ -28,6 +28,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.utils.db.GenericDaoBase;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 /**
  * Join table for storage pools and hosts
@@ -98,6 +99,11 @@ public class StoragePoolHostVO implements StoragePoolHostAssoc {
 
     public void setLocalPath(String localPath) {
         this.localPath = localPath;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "hostId", "poolId");
     }
 
 }

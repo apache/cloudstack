@@ -18,11 +18,12 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 
@@ -33,8 +34,9 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
     public void remove(long loadBalancerId) {
         SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
 
-        expunge(sc);
+        remove(sc);
     }
 
     @Override
@@ -42,11 +44,12 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
         SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
         sc.addAnd("instanceId", SearchCriteria.Op.IN, instanceIds.toArray());
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
         if (revoke != null) {
             sc.addAnd("revoke", SearchCriteria.Op.EQ, revoke);
         }
 
-        expunge(sc);
+        remove(sc);
     }
 
     @Override
@@ -55,12 +58,13 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
         sc.addAnd("instanceId", SearchCriteria.Op.IN, instanceId);
         sc.addAnd("instanceIp", SearchCriteria.Op.EQ, instanceIp);
+        sc.addAnd("removed", SearchCriteria.Op.NULL);
 
         if (revoke != null) {
             sc.addAnd("revoke", SearchCriteria.Op.EQ, revoke);
         }
 
-        expunge(sc);
+        remove(sc);
     }
 
 
@@ -134,5 +138,17 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
         sc.addAnd("instanceId", SearchCriteria.Op.EQ, instanceId);
         return listBy(sc);
+    }
+
+    @Override
+    public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
+        SearchBuilder<LoadBalancerVMMapVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
+        SearchCriteria<LoadBalancerVMMapVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return batchExpunge(sc, batchSize);
     }
 }

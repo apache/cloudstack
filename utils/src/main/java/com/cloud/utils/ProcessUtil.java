@@ -26,14 +26,15 @@ import java.util.Properties;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 public class ProcessUtil {
-    private static final Logger s_logger = Logger.getLogger(ProcessUtil.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(ProcessUtil.class);
 
     // paths cannot be hardcoded
     public static void pidCheck(String pidDir, String run) throws ConfigurationException {
@@ -43,7 +44,7 @@ public class ProcessUtil {
         try {
             final File propsFile = PropertiesUtil.findConfigFile("environment.properties");
             if (propsFile == null) {
-                s_logger.debug("environment.properties could not be opened");
+                LOGGER.debug("environment.properties could not be opened");
             } else {
                 final Properties props = PropertiesUtil.loadFromFile(propsFile);
                 dir = props.getProperty("paths.pid");
@@ -52,7 +53,7 @@ public class ProcessUtil {
                 }
             }
         } catch (IOException e) {
-            s_logger.debug("environment.properties could not be opened");
+            LOGGER.debug("environment.properties could not be opened");
         }
 
         final File pidFile = new File(dir + File.separator + run);
@@ -68,7 +69,7 @@ public class ProcessUtil {
                 }
                 try {
                     final long pid = Long.parseLong(pidLine);
-                    final Script script = new Script("bash", 120000, s_logger);
+                    final Script script = new Script("bash", 120000, LOGGER);
                     script.add("-c", "ps -p " + pid);
                     final String result = script.execute();
                     if (result == null) {
@@ -86,7 +87,7 @@ public class ProcessUtil {
             }
             pidFile.deleteOnExit();
 
-            final Script script = new Script("bash", 120000, s_logger);
+            final Script script = new Script("bash", 120000, LOGGER);
             script.add("-c", "echo $PPID");
             final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
             script.execute(parser);

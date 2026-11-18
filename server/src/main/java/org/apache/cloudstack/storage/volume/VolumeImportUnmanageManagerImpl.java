@@ -35,9 +35,11 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering;
+import com.cloud.resourcelimit.ReservationHelper;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Volume;
@@ -68,23 +70,29 @@ import org.apache.cloudstack.api.response.VolumeForImportResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageService {
-    protected Logger logger = Logger.getLogger(VolumeImportUnmanageManagerImpl.class);
+    protected Logger logger = LogManager.getLogger(VolumeImportUnmanageManagerImpl.class);
 
     @Inject
     private AccountManager accountMgr;
@@ -116,6 +124,8 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     private VolumeApiService volumeApiService;
     @Inject
     private SnapshotDataStoreDao snapshotDataStoreDao;
+    @Inject
+    private DataStoreManager dataStoreManager;
 
     static final String DEFAULT_DISK_OFFERING_NAME = "Default Custom Offering for Volume Import";
     static final String DEFAULT_DISK_OFFERING_UNIQUE_NAME = "Volume-Import";
@@ -191,40 +201,49 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         }
 
         // 4. get volume info on storage through host and check
-        VolumeOnStorageTO volume = getVolumeOnStorageAndCheck(pool, volumePath);
+        VolumeOnStorageTO volume = getVolumeOnStorageAndCheck(pool, volumePath, false);
 
         if (checkIfVolumeForSnapshot(pool, volume.getFullPath())) {
             logFailureAndThrowException("Volume is a reference of snapshot on primary: " + volume.getFullPath());
         }
 
-        // 5. check resource limitation
-        checkResourceLimitForImportVolume(owner, volume);
-
-        // 6. get disk offering
+        // 5. get disk offering
         DiskOfferingVO diskOffering = getOrCreateDiskOffering(owner, cmd.getDiskOfferingId(), pool.getDataCenterId(), pool.isLocal());
         if (diskOffering.isCustomized()) {
             volumeApiService.validateCustomDiskOfferingSizeRange(volume.getVirtualSize() / ByteScaleUtils.GiB);
         }
-        if (!volumeApiService.doesStoragePoolSupportDiskOfferingTags(pool, diskOffering.getTags())) {
-            logFailureAndThrowException(String.format("Disk offering: %s storage tags are not compatible with selected storage pool: %s", diskOffering.getUuid(), pool.getUuid()));
+        if (!volumeApiService.doesStoragePoolSupportDiskOffering(pool, diskOffering)) {
+            logFailureAndThrowException(String.format("Disk offering: %s storage tags are not compatible with selected storage pool: %s", diskOffering, pool));
         }
 
-        // 7. create records
-        String volumeName = StringUtils.isNotBlank(cmd.getName()) ? cmd.getName().trim() : volumePath;
-        VolumeVO volumeVO = importVolumeInternal(volume, diskOffering, owner, pool, volumeName);
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+            // 6. check resource limitation
+            checkResourceLimitForImportVolume(owner, volume, diskOffering, reservations);
 
-        // 8. Update resource count
-        updateResourceLimitForVolumeImport(volumeVO);
+            // 7. create records
+            String volumeName = StringUtils.isNotBlank(cmd.getName()) ? cmd.getName().trim() : volumePath;
+            VolumeVO volumeVO = importVolumeInternal(volume, diskOffering, owner, pool, volumeName);
 
-        // 9. Publish event
-        publicUsageEventForVolumeImportAndUnmanage(volumeVO, true);
+            // 7b. let the storage driver mark the volume as now owned by CloudStack (e.g. StorPool's cs/uuid tags)
+            notifyStorageDriverOfVolumeManagementChange(pool, volumeVO, true);
 
-        return responseGenerator.createVolumeResponse(ResponseObject.ResponseView.Full, volumeVO);
+            // 8. Update resource count
+            updateResourceLimitForVolumeImport(volumeVO);
+
+            // 9. Publish event
+            publicUsageEventForVolumeImportAndUnmanage(volumeVO, true);
+
+            return responseGenerator.createVolumeResponse(ResponseObject.ResponseView.Full, volumeVO);
+
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
     }
 
-    protected VolumeOnStorageTO getVolumeOnStorageAndCheck(StoragePoolVO pool, String volumePath) {
+    protected VolumeOnStorageTO getVolumeOnStorageAndCheck(StoragePoolVO pool, String volumePath, boolean forUnmanage) {
         // send a command to hypervisor to check
-        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(pool, volumePath, null);
+        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(pool, volumePath, null, forUnmanage);
         if (CollectionUtils.isEmpty(volumes)) {
             logFailureAndThrowException("Cannot find volume on storage pool: " + volumePath);
         }
@@ -240,6 +259,19 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     }
 
     protected List<VolumeOnStorageTO> listVolumesForImportInternal(StoragePoolVO pool, String volumePath, String keyword) {
+        if (pool.getPoolType() == Storage.StoragePoolType.Linstor && StringUtils.isNotBlank(volumePath)) {
+            ((PrimaryDataStoreDriver) dataStoreManager.getPrimaryDataStore(pool.getId()).getDriver())
+                    .validateVolumeForImport(pool, volumePath);
+        }
+        return listVolumesForImportInternal(pool, volumePath, keyword, false);
+    }
+
+    protected List<VolumeOnStorageTO> listVolumesForImportInternal(StoragePoolVO pool, String volumePath, String keyword, boolean forUnmanage) {
+        List<VolumeOnStorageTO> volumes = listVolumesForImportFromDriver(pool, volumePath, keyword, forUnmanage);
+        if (volumes != null) {
+            return volumes;
+        }
+
         Pair<HostVO, String> hostAndLocalPath = findHostAndLocalPathForVolumeImport(pool);
         HostVO host = hostAndLocalPath.first();
         checkIfHostAndPoolSupported(host, pool);
@@ -247,13 +279,30 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         StorageFilerTO storageTO = new StorageFilerTO(pool);
         GetVolumesOnStorageCommand command = new GetVolumesOnStorageCommand(storageTO, volumePath, keyword);
         Answer answer = agentManager.easySend(host.getId(), command);
-        if (answer == null || !(answer instanceof GetVolumesOnStorageAnswer)) {
-            logFailureAndThrowException("Cannot get volumes on storage pool via host " + host.getName());
+        if (!(answer instanceof GetVolumesOnStorageAnswer)) {
+            logFailureAndThrowException(String.format("Cannot get volumes on storage pool via host %s", host));
         }
         if (!answer.getResult()) {
             logFailureAndThrowException("Volume cannot be imported due to " + answer.getDetails());
         }
         return  ((GetVolumesOnStorageAnswer) answer).getVolumes();
+    }
+
+    private List<VolumeOnStorageTO> listVolumesForImportFromDriver(StoragePoolVO pool, String volumePath, String keyword, boolean forUnmanage) {
+        DataStore dataStore = dataStoreManager.getPrimaryDataStore(pool.getId());
+        if (dataStore == null || !(dataStore.getDriver() instanceof PrimaryDataStoreDriver)) {
+            return null;
+        }
+        return ((PrimaryDataStoreDriver) dataStore.getDriver()).listVolumesForImport(pool, volumePath, keyword, forUnmanage);
+    }
+
+    @Override
+    public void notifyStorageDriverOfVolumeManagementChange(StoragePool pool, Volume volume, boolean imported) {
+        DataStore dataStore = dataStoreManager.getPrimaryDataStore(pool.getId());
+        if (dataStore == null || !(dataStore.getDriver() instanceof PrimaryDataStoreDriver)) {
+            return;
+        }
+        ((PrimaryDataStoreDriver) dataStore.getDriver()).volumeManagementChanged(pool, volume, imported);
     }
 
     @Override
@@ -265,7 +314,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         StoragePoolVO pool = checkIfPoolAvailable(volume.getPoolId());
 
         // 3. unmanage volume internally
-        getVolumeOnStorageAndCheck(pool, volume.getPath());
+        getVolumeOnStorageAndCheck(pool, volume.getPath(), true);
 
         // 3. Update resource count
         updateResourceLimitForVolumeUnmanage(volume);
@@ -276,6 +325,9 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         // 5. update the state/removed of record
         unmanageVolumeFromDatabase(volume);
 
+        // 6. let the storage driver clear any CloudStack ownership marker (e.g. StorPool's cs/uuid tags)
+        notifyStorageDriverOfVolumeManagementChange(pool, volume, false);
+
         return true;
     }
 
@@ -285,10 +337,10 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
             logFailureAndThrowException(String.format("Storage pool (ID: %s) does not exist", poolId));
         }
         if (pool.isInMaintenance()) {
-            logFailureAndThrowException(String.format("Storage pool (name: %s) is in maintenance", pool.getName()));
+            logFailureAndThrowException(String.format("Storage pool %s is in maintenance", pool));
         }
         if (!StoragePoolStatus.Up.equals(pool.getStatus())) {
-            logFailureAndThrowException(String.format("Storage pool (ID: %s) is not Up: %s", pool.getName(), pool.getStatus()));
+            logFailureAndThrowException(String.format("Storage pool %s is not Up: %s", pool, pool.getStatus()));
         }
         return pool;
     }
@@ -297,7 +349,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         List<HostVO> hosts = new ArrayList<>();
         switch (pool.getScope()) {
             case HOST:
-                return findHostAndLocalPathForVolumeImportForHostScope(pool.getId());
+                return findHostAndLocalPathForVolumeImportForHostScope(pool);
             case CLUSTER:
                 hosts = hostDao.findHypervisorHostInCluster((pool.getClusterId()));
                 break;
@@ -315,8 +367,8 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         return null;
     }
 
-    private Pair<HostVO, String> findHostAndLocalPathForVolumeImportForHostScope(Long poolId) {
-        List<StoragePoolHostVO> storagePoolHostVOs = storagePoolHostDao.listByPoolId(poolId);
+    private Pair<HostVO, String> findHostAndLocalPathForVolumeImportForHostScope(StoragePoolVO pool) {
+        List<StoragePoolHostVO> storagePoolHostVOs = storagePoolHostDao.listByPoolId(pool.getId());
         if (CollectionUtils.isNotEmpty(storagePoolHostVOs)) {
             for (StoragePoolHostVO storagePoolHostVO : storagePoolHostVOs) {
                 HostVO host = hostDao.findById(storagePoolHostVO.getHostId());
@@ -325,7 +377,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
                 }
             }
         }
-        logFailureAndThrowException("No host found to perform volume import on pool: " + poolId);
+        logFailureAndThrowException(String.format("No host found to perform volume import on pool: %s", pool));
         return null;
     }
 
@@ -365,7 +417,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     }
 
     private boolean checkIfVolumeForSnapshot(StoragePoolVO pool, String fullVolumePath) {
-        List<String> absPathList = Arrays.asList(fullVolumePath);
+        List<String> absPathList = Collections.singletonList(fullVolumePath);
         return CollectionUtils.isNotEmpty(snapshotDataStoreDao.listByStoreAndInstallPaths(pool.getId(), DataStoreRole.Primary, absPathList));
     }
 
@@ -393,7 +445,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         Map<VolumeOnStorageTO.Detail, String> volumeDetails = volume.getDetails();
         if (volumeDetails != null && volumeDetails.containsKey(VolumeOnStorageTO.Detail.BACKING_FILE)) {
             String backingFile = volumeDetails.get(VolumeOnStorageTO.Detail.BACKING_FILE);
-            if (StringUtils.isNotBlank(backingFile)) {
+            if (StringUtils.isNotBlank(backingFile) && !AllowImportVolumeWithBackingFile.value()) {
                 logFailureAndThrowException("Volume with backing file cannot be imported or unmanaged.");
             }
         }
@@ -407,20 +459,20 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
                 logFailureAndThrowException(String.format("Disk offering %s does not exist", diskOfferingId));
             }
             if (!DiskOffering.State.Active.equals(diskOfferingVO.getState())) {
-                logFailureAndThrowException(String.format("Disk offering with ID %s is not active", diskOfferingId));
+                logFailureAndThrowException(String.format("Disk offering %s is not active", diskOfferingVO));
             }
             if (diskOfferingVO.isUseLocalStorage() != isLocal) {
-                logFailureAndThrowException(String.format("Disk offering with ID %s should use %s storage", diskOfferingId, isLocal ? "local": "shared"));
+                logFailureAndThrowException(String.format("Disk offering %s should use %s storage", diskOfferingVO, isLocal ? "local": "shared"));
             }
             if (diskOfferingVO.getEncrypt()) {
-                logFailureAndThrowException(String.format("Disk offering with ID %s should not support volume encryption", diskOfferingId));
+                logFailureAndThrowException(String.format("Disk offering %s should not support volume encryption", diskOfferingVO));
             }
             // check if disk offering is accessible by the account/owner
             try {
                 configMgr.checkDiskOfferingAccess(owner, diskOfferingVO, dcDao.findById(zoneId));
                 return diskOfferingVO;
             } catch (PermissionDeniedException ex) {
-                logFailureAndThrowException(String.format("Disk offering with ID %s is not accessible by owner %s", diskOfferingId, owner));
+                logFailureAndThrowException(String.format("Disk offering %s is not accessible by owner %s", diskOfferingVO, owner));
             }
         }
         return getOrCreateDefaultDiskOfferingIdForVolumeImport(isLocal);
@@ -451,17 +503,33 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
                                           Account owner, StoragePoolVO pool, String volumeName) {
         DiskProfile diskProfile = volumeManager.importVolume(Volume.Type.DATADISK, volumeName, diskOffering,
                 volume.getVirtualSize(), null, null, pool.getDataCenterId(), volume.getHypervisorType(), null, null,
-                owner, null, pool.getId(), volume.getPath(), null);
+                owner, null, pool.getId(), pool.getPoolType(), volume.getPath(), null, getImageFormat(volume.getFormat()));
         return volumeDao.findById(diskProfile.getVolumeId());
     }
 
-    protected void checkResourceLimitForImportVolume(Account owner, VolumeOnStorageTO volume) {
+    /**
+     * Maps the format the hypervisor reported for the volume on the pool onto an image format, so that
+     * the imported volume records what is actually on the pool (raw on RBD, qcow2 on file based pools)
+     * instead of the cluster default for the hypervisor. Returns null when the format is not recognised.
+     */
+    protected Storage.ImageFormat getImageFormat(String format) {
+        if (StringUtils.isBlank(format)) {
+            return null;
+        }
+        try {
+            return Storage.ImageFormat.valueOf(format.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            logger.warn("Unrecognised image format {} reported for the volume being imported, falling back to the hypervisor default", format);
+            return null;
+        }
+    }
+
+    protected void checkResourceLimitForImportVolume(Account owner, VolumeOnStorageTO volume, DiskOfferingVO diskOffering, List<Reserver> reservations) {
         Long volumeSize = volume.getVirtualSize();
         try {
-            resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.volume);
-            resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.primary_storage, volumeSize);
+            resourceLimitService.checkVolumeResourceLimit(owner, true, volumeSize, diskOffering, reservations);
         } catch (ResourceAllocationException e) {
-            logger.error(String.format("VM resource allocation error for account: %s", owner.getUuid()), e);
+            logger.error("VM resource allocation error for account: {}", owner, e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM resource allocation error for account: %s. %s", owner.getUuid(), StringUtils.defaultString(e.getMessage())));
         }
     }
@@ -481,7 +549,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
                     volumeVO.getId(), volumeVO.getName(), volumeVO.getDiskOfferingId(), null, volumeVO.getSize(),
                     Volume.class.getName(), volumeVO.getUuid(), volumeVO.isDisplayVolume());
         } catch (Exception e) {
-            logger.error(String.format("Failed to publish volume ID: %s event or usage records during volume import/unmanage", volumeVO.getUuid()), e);
+            logger.error("Failed to publish volume: {} event or usage records during volume import/unmanage", volumeVO, e);
         }
     }
 
@@ -496,13 +564,13 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
             logFailureAndThrowException(String.format("Volume (ID: %s) does not exist", volumeId));
         }
         if (!Volume.State.Ready.equals(volumeVO.getState())) {
-            logFailureAndThrowException(String.format("Volume (ID: %s) is not ready", volumeId));
+            logFailureAndThrowException(String.format("Volume %s is not ready", volumeVO));
         }
         if (volumeVO.getEncryptFormat() != null) {
-            logFailureAndThrowException(String.format("Volume (ID: %s) is encrypted", volumeId));
+            logFailureAndThrowException(String.format("Volume %s is encrypted", volumeVO));
         }
         if (volumeVO.getAttached() != null || volumeVO.getInstanceId() != null) {
-            logFailureAndThrowException(String.format("Volume (ID: %s) is attached to VM (ID: %s)", volumeId, volumeVO.getInstanceId()));
+            logFailureAndThrowException(String.format("Volume %s is attached to VM (ID: %s)", volumeVO, volumeVO.getInstanceId()));
         }
         return volumeVO;
     }
@@ -511,5 +579,17 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         volume.setState(Volume.State.Destroy);
         volume.setRemoved(new Date());
         volumeDao.update(volume.getId(), volume);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VolumeImportUnmanageManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[]{
+                AllowImportVolumeWithBackingFile
+        };
     }
 }

@@ -28,6 +28,7 @@ import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.NicSecondaryIp;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "nic_secondary_ips")
@@ -42,7 +43,7 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
         this.networkId = networkId;
     }
 
-    public NicSecondaryIpVO(long nicId, String ip4Address, String ip6Address, long vmId, long accountId, long domainId, long networkId) {
+    public NicSecondaryIpVO(long nicId, String ip4Address, String ip6Address, long vmId, long accountId, long domainId, long networkId, String description) {
         this.nicId = nicId;
         this.vmId = vmId;
         this.ip4Address = ip4Address;
@@ -50,6 +51,7 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
         this.accountId = accountId;
         this.domainId = domainId;
         this.networkId = networkId;
+        this.description = description;
     }
 
     protected NicSecondaryIpVO() {
@@ -86,6 +88,26 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
 
     @Column(name = "vmId")
     long vmId;
+
+    @Column(name = "description")
+    String description;
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("NicSecondaryIp %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "vmId",
+                        "nicId", "ip4Address", "ip6Address", "networkId"));
+    }
 
     @Override
     public long getId() {

@@ -30,13 +30,15 @@ import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.net.HttpClientCloudStackUserAgent;
 
 public final class QCOW2Utils {
-    public static final Logger LOGGER = Logger.getLogger(QCOW2Utils.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(QCOW2Utils.class);
 
     private static final int VIRTUALSIZE_HEADER_LOCATION = 24;
     private static final int VIRTUALSIZE_HEADER_LENGTH = 8;
@@ -118,6 +120,7 @@ public final class QCOW2Utils {
         try {
             URI url = new URI(urlStr);
             httpConn = (HttpURLConnection)url.toURL().openConnection();
+            httpConn.setRequestProperty(UriUtils.USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
             httpConn.setInstanceFollowRedirects(followRedirects);
             return getVirtualSize(httpConn.getInputStream(), UriUtils.isUrlForCompressedFile(urlStr));
         } catch (URISyntaxException e) {

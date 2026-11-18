@@ -836,7 +836,7 @@ under the License.
 			</item>
 			<item setparam="true">
 				<name>size</name>
-				<param>debian50templatesize</param>				
+				<param>debian50templatesize</param>
 			</item>
 			<item>
 				<name>account</name>
@@ -869,7 +869,7 @@ under the License.
 			<item>
 				<name>domainid</name>
 				<value>1</value>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -1269,7 +1269,7 @@ under the License.
 
 		</returnvalue>
 	</command>
-	
+
  	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -1280,7 +1280,7 @@ under the License.
 				<value>60</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 	<!-- Test case #957 - listVirtualMachines command -->
 	<command>
@@ -2686,7 +2686,7 @@ under the License.
 			</item>
 			<item getparam="true">
 				<name>serviceofferingid</name>
-				<param>globalserviceofferingid</param> 
+				<param>globalserviceofferingid</param>
 			</item>
 			<item>
 				<name>serviceofferingname</name>
@@ -2694,7 +2694,7 @@ under the License.
 			<item>
 				<name>serviceofferingdisplaytext</name>
 			</item>
-			
+
 		</returnvalue>
 	</command>
 
@@ -2807,7 +2807,7 @@ under the License.
 			<item>
 				<name>destroyed</name>
 				<value>false</value>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -2902,7 +2902,7 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>Created</value>
-			</item>			
+			</item>
 			<item getparam="true">
 				<name>account</name>
 				<param>accountname</param>
@@ -3018,7 +3018,7 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>Created</value>
-			</item>			
+			</item>
 			<item getparam="true">
 				<name>account</name>
 				<param>accountname</param>
@@ -3066,7 +3066,7 @@ under the License.
 			<item>
 				<name>destroyed</name>
 				<value>false</value>
-			</item>						
+			</item>
 		</returnvalue>
 	</command>
 
@@ -3210,7 +3210,7 @@ under the License.
 			<item>
 				<name>intervaltype</name>
 				<value>MANUAL</value>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -3320,7 +3320,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createTemplate</name>
 		<testcase>958 [Create Template from Snapshot] </testcase>
@@ -3373,7 +3373,7 @@ under the License.
 			<item>
 				<name>isready</name>
 				<value>true</value>
-			</item>			
+			</item>
 			<item>
 				<name>passwordenabled</name>
 				<value>false</value>
@@ -3411,7 +3411,7 @@ under the License.
 			<item>
 				<name>domainid</name>
 				<value>1</value>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -3458,7 +3458,7 @@ under the License.
 			<item>
 				<name>hypervisor</name>
 				<value>XenServer</value>
-			</item>			
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -3539,11 +3539,11 @@ under the License.
 			<item>
 				<name>isextractable</name>
 				<value>true</value>
-			</item>	 		
+			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -3554,8 +3554,8 @@ under the License.
 				<value>300</value>
 			</item>
 		</parameters>
-	</command>	
-		
+	</command>
+
 	<!-- Test case #27 - listTemplates command -->
 	<command>
 		<name>listTemplates</name>
@@ -3601,7 +3601,7 @@ under the License.
 			<item>
 				<name>format</name>
 				<value>VHD</value>
-			</item>	
+			</item>
 			<item>
 				<name>isfeatured</name>
 				<value>false</value>
@@ -3648,7 +3648,7 @@ under the License.
 			<item>
 				<name>domain</name>
 				<value>ROOT</value>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -3762,7 +3762,7 @@ under the License.
 				<value>240</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 	<command>
 		<name>listTemplates</name>
@@ -3965,7 +3965,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<!--
 		Test case #20 - changeServiceOffering command; make sure that vm has
 		correct service offering assigned
@@ -3996,14 +3996,14 @@ under the License.
 			<item>
 				<name>displayname</name>
 				<value>Testcase13-VM</value>
-			</item>			
+			</item>
 			<item getparam="true">
 				<name>ipaddress</name>
 				<param>vmipaddress</param>
 			</item>
 			<item getparam="true">
 				<name>account</name>
-				<param>accountname</param>	
+				<param>accountname</param>
 			</item>
 			<item>
 				<name>domainid</name>
@@ -4132,7 +4132,7 @@ under the License.
 		machine is in Running state after it comes back
 	-->
 	<!-- Under Construction: NOT CONSIDERED FOR NOW-->
-	<!-- 
+	<!--
 	<command>
 		<name>resetPasswordForVirtualMachine</name>
 		<testcase> 19 [Reset Password For Virtual Machine]</testcase>
@@ -4235,7 +4235,7 @@ under the License.
 			<item>
 				<name>domain</name>
 				<value>ROOT</value>
-			</item>			
+			</item>
 			<item>
 				<name>created</name>
 			</item>
@@ -4291,7 +4291,7 @@ under the License.
 				<value>Medium Instance, Virtual Networking</value>
 			</item>
 			<item>
-				<name>forvirtualnetwork</name>				
+				<name>forvirtualnetwork</name>
 			</item>
 			<item>
 				<name>cpunumber</name>
@@ -4316,7 +4316,7 @@ under the License.
 			</item>
 			<item>
 				<name>guestosid</name>
-			</item>					
+			</item>
 			<item>
 				<name>rootdeviceid</name>
 			</item>
@@ -4370,7 +4370,7 @@ under the License.
 			<item>
 				<name>domain</name>
 				<value>ROOT</value>
-			</item>			
+			</item>
 			<item>
 				<name>created</name>
 			</item>
@@ -4426,7 +4426,7 @@ under the License.
 				<value>Medium Instance, Virtual Networking</value>
 			</item>
 			<item>
-				<name>forvirtualnetwork</name>				
+				<name>forvirtualnetwork</name>
 			</item>
 			<item>
 				<name>cpunumber</name>
@@ -4451,7 +4451,7 @@ under the License.
 			</item>
 			<item>
 				<name>guestosid</name>
-			</item>					
+			</item>
 			<item>
 				<name>rootdeviceid</name>
 			</item>
@@ -4555,7 +4555,7 @@ under the License.
 			<item>
 				<name>domain</name>
 				<value>ROOT</value>
-			</item>			
+			</item>
 			<item>
 				<name>created</name>
 			</item>
@@ -4611,7 +4611,7 @@ under the License.
 				<value>Medium Instance, Virtual Networking</value>
 			</item>
 			<item>
-				<name>forvirtualnetwork</name>				
+				<name>forvirtualnetwork</name>
 			</item>
 			<item>
 				<name>cpunumber</name>
@@ -4636,7 +4636,7 @@ under the License.
 			</item>
 			<item>
 				<name>guestosid</name>
-			</item>					
+			</item>
 			<item>
 				<name>rootdeviceid</name>
 			</item>
@@ -5072,7 +5072,7 @@ under the License.
 			<item>
 				<name>domain</name>
 				<value>ROOT</value>
-			</item>						
+			</item>
 		</returnvalue>
 	</command>
 
@@ -5553,7 +5553,7 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>enabled</value>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -5675,7 +5675,7 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>enabled</value>
-			</item>	
+			</item>
 		</returnvalue>
 	</command>
 
@@ -5815,7 +5815,7 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>locked</value>
-			</item>	
+			</item>
 		</returnvalue>
 	</command>
 
@@ -5933,7 +5933,7 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>disabled</value>
-			</item>	
+			</item>
 		</returnvalue>
 	</command>
 
@@ -6300,7 +6300,7 @@ under the License.
 			<item>
 				<name>isCustomized</name>
 				<value>false</value>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -6515,7 +6515,7 @@ under the License.
 			</item>
 			<item>
 				<name>name</name>
-			</item>		
+			</item>
 			<item>
 				<name>state</name>
 			</item>
@@ -6603,7 +6603,7 @@ under the License.
 			</item>
 			<item>
 				<name>events</name>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -6616,7 +6616,7 @@ under the License.
 			<name>iso</name>
 			<element>0</element>
 			<item>
-				<name>id</name>				
+				<name>id</name>
 			</item>
 			<item>
 				<name>name</name>
@@ -6914,7 +6914,7 @@ under the License.
 			<item>
 				<name>usevirtualnetwork</name>
 				<value>true</value>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -7057,7 +7057,7 @@ under the License.
 				<value>300</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 	<!-- Test case # - listIsos command -->
 	<command>
@@ -7355,7 +7355,7 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>Running</value>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -7444,7 +7444,7 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>Running</value>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -7466,7 +7466,7 @@ under the License.
 			<item>
 				<name>systemvmtype</name>
 				<value>consoleproxy</value>
-			</item>			
+			</item>
 			<item getparam="true">
 				<name>zoneid</name>
 				<param>globalzoneid</param>
@@ -7524,7 +7524,7 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>Stopped</value>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -7612,7 +7612,7 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>Running</value>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -7638,7 +7638,7 @@ under the License.
 				<param>privateisoid</param>
 			</item>
 		</parameters>
-		
+
 	</command>
 
 	<!--  Delete template command -->

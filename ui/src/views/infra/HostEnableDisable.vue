@@ -28,15 +28,15 @@
     >
       <a-alert type="warning">
         <template #message>
-          <span v-html="$t('message.confirm.enable.host')" />
+          <span v-html="resourcestate === 'Disabled' ? $t('message.confirm.enable.host') : $t('message.confirm.disable.host') " />
         </template>
       </a-alert>
-      <div v-show="enableKVMAutoEnableDisableSetting" class="reason">
+      <div v-show="kvmAutoEnableDisableSetting" class="reason">
         <a-form-item
           class="form__item"
           name="reason"
           ref="reason"
-          :label="'The setting \'enable.kvm.host.auto.enable.disable\' is enabled, ' +
+          :label="'The Auto Enable/Disable KVM Hosts functionality is enabled, ' +
             ' can specify a reason for ' + (resourcestate === 'Enabled' ? 'disabling' : 'enabling') + ' this host'">
           <a-textarea
             v-model:value="form.reason"
@@ -55,7 +55,7 @@
 
 <script>
 import { reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 
 export default {
   name: 'HostEnableDisable',
@@ -69,7 +69,7 @@ export default {
     return {
       resourcestate: '',
       allocationstate: '',
-      enableKVMAutoEnableDisableSetting: false
+      kvmAutoEnableDisableSetting: false
     }
   },
   created () {
@@ -87,9 +87,9 @@ export default {
       if (this.resource.hypervisor !== 'KVM') {
         return
       }
-      api('listConfigurations', { name: 'enable.kvm.host.auto.enable.disable', clusterid: this.resource.clusterid }).then(json => {
-        if (json.listconfigurationsresponse.configuration[0]) {
-          this.enableKVMAutoEnableDisableSetting = json.listconfigurationsresponse.configuration[0].value
+      getAPI('listConfigurations', { name: 'enable.kvm.host.auto.enable.disable', clusterid: this.resource.clusterid }).then(json => {
+        if (json.listconfigurationsresponse.configuration?.[0]) {
+          this.kvmAutoEnableDisableSetting = json?.listconfigurationsresponse?.configuration?.[0]?.value || false
         }
       })
     },
@@ -103,7 +103,7 @@ export default {
         if (values.reason) {
           data.annotation = values.reason
         }
-        api('updateHost', data).then(_ => {
+        postAPI('updateHost', data).then(_ => {
           this.$emit('close-action')
           this.$emit('refresh-data')
         }).catch(err => {

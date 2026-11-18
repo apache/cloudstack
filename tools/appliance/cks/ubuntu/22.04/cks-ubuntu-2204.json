@@ -1,0 +1,56 @@
+{
+  "_license": "Apache License 2.0",
+  "builders": [
+    {
+      "accelerator": "kvm",
+      "boot_command": [
+        "c<wait>linux /casper/vmlinuz --- autoinstall ds='nocloud-net;seedfrom=http://{{ .HTTPIP }}:{{ .HTTPPort }}/'",
+        "<enter><wait>",
+        "initrd /casper/initrd",
+        "<enter><wait><wait><wait>",
+        "boot",
+        "<enter>"
+      ],
+      "vm_name": "cks-ubuntu-2204",
+      "iso_checksum": "sha256:5e38b55d57d94ff029719342357325ed3bda38fa80054f9330dc789cd2d43931",
+      "iso_url": "https://old-releases.ubuntu.com/releases/jammy/ubuntu-22.04.2-live-server-amd64.iso",
+      "shutdown_command": "sudo shutdown -P now",
+      "net_device": "virtio-net",
+      "output_directory": "../dist",
+      "format": "qcow2",
+      "headless": true,
+      "http_directory": "http",
+      "ssh_password": "cloud",
+      "ssh_timeout": "30m",
+      "ssh_username": "cloud",
+      "type": "qemu",
+      "disk_interface": "virtio",
+      "disk_size": "5000M",
+      "qemuargs": [
+        [
+          "-m",
+          "2048M"
+        ],
+        [
+          "-smp",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "description": "CloudStack SystemVM template",
+  "provisioners": [
+    {
+      "execute_command": "echo 'cloud' | sudo -u root -S bash {{.Path}}",
+      "scripts": [
+        "scripts/apt_upgrade.sh",
+        "scripts/configure_networking.sh",
+        "scripts/configure-cloud-init.sh",
+        "scripts/setup-interfaces.sh",
+        "scripts/add-interface-rule.sh",
+        "scripts/cleanup.sh"
+      ],
+      "type": "shell"
+    }
+  ]
+}

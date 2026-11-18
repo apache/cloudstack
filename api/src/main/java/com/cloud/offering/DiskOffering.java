@@ -37,7 +37,7 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     State getState();
 
     enum DiskCacheMode {
-        NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough");
+        NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough"), HYPERVISOR_DEFAULT("hypervisor_default");
 
         private final String _diskCacheMode;
 
@@ -48,6 +48,21 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
         @Override
         public String toString() {
             return _diskCacheMode;
+        }
+    };
+
+    enum DiskErrorPolicy {
+        REPORT("report"), STOP("stop"), IGNORE("ignore"), ENOSPACE("enospace");
+
+        private final String diskErrorPolicy;
+
+        DiskErrorPolicy(String errorPolicy) {
+            diskErrorPolicy = errorPolicy;
+        }
+
+        @Override
+        public String toString() {
+            return diskErrorPolicy;
         }
     };
 
@@ -68,6 +83,8 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     Date getCreated();
 
     boolean isCustomized();
+
+    boolean isShared();
 
     void setDiskSize(long diskSize);
 
@@ -99,7 +116,6 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     Long getBytesReadRateMaxLength();
 
-
     void setBytesWriteRate(Long bytesWriteRate);
 
     Long getBytesWriteRate();
@@ -111,7 +127,6 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     void setBytesWriteRateMaxLength(Long bytesWriteMaxLength);
 
     Long getBytesWriteRateMaxLength();
-
 
     void setIopsReadRate(Long iopsReadRate);
 
@@ -133,7 +148,6 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     Long getIopsWriteRateMax();
 
-
     void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength);
 
     Long getIopsWriteRateMaxLength();
@@ -145,6 +159,10 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     DiskCacheMode getCacheMode();
 
     void setCacheMode(DiskCacheMode cacheMode);
+
+    DiskErrorPolicy getErrorPolicy();
+
+    void setErrorPolicy(DiskErrorPolicy errorPolicy);
 
     boolean isComputeOnly();
 

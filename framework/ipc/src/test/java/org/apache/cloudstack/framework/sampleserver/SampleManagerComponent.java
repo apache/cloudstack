@@ -24,7 +24,8 @@ import java.util.TimerTask;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -39,7 +40,7 @@ import org.apache.cloudstack.framework.rpc.RpcServiceHandler;
 
 @Component
 public class SampleManagerComponent {
-    private static final Logger s_logger = Logger.getLogger(SampleManagerComponent.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private MessageBus _eventBus;
@@ -88,12 +89,12 @@ public class SampleManagerComponent {
             .addCallbackListener(new RpcCallbackListener<SampleStoragePrepareAnswer>() {
                 @Override
                 public void onSuccess(SampleStoragePrepareAnswer result) {
-                    s_logger.info("StoragePrepare return result: " + result.getResult());
+                    logger.info("StoragePrepare return result: " + result.getResult());
                 }
 
                 @Override
                 public void onFailure(RpcException e) {
-                    s_logger.info("StoragePrepare failed");
+                    logger.info("StoragePrepare failed");
                 }
             })
             .apply();

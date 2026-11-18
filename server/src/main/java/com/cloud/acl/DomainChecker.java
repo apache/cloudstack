@@ -28,11 +28,15 @@ import org.apache.cloudstack.acl.RolePermissionEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.DnsProviderManager;
+import org.apache.cloudstack.dns.DnsServer;
+import org.apache.cloudstack.dns.DnsZone;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.backup.dao.BackupOfferingDetailsDao;
+import org.apache.cloudstack.backup.BackupOffering;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
@@ -71,6 +75,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Inject
     DomainDao _domainDao;
     @Inject
+    BackupOfferingDetailsDao backupOfferingDetailsDao;
+    @Inject
     AccountDao _accountDao;
     @Inject
     LaunchPermissionDao _launchPermissionDao;
@@ -98,8 +104,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     private ProjectDao projectDao;
     @Inject
     private AccountService accountService;
+    @Inject
+    private DnsProviderManager dnsProviderManager;
 
-    public static final Logger s_logger = Logger.getLogger(DomainChecker.class.getName());
     protected DomainChecker() {
         super();
     }
@@ -139,21 +146,21 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Override
     public boolean checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
         if (caller.getState() != Account.State.ENABLED) {
-            throw new PermissionDeniedException("Account " + caller.getAccountName() + " is disabled.");
+            throw new PermissionDeniedException(String.format("Account %s is disabled.", caller));
         }
 
         if (domain == null) {
-            throw new PermissionDeniedException(String.format("Provided domain is NULL, cannot check access for account [uuid=%s, name=%s]", caller.getUuid(), caller.getAccountName()));
+            throw new PermissionDeniedException(String.format("Provided domain is NULL, cannot check access for account [%s]", caller));
         }
 
         long domainId = domain.getId();
 
         if (_accountService.isNormalUser(caller.getId())) {
             if (caller.getDomainId() != domainId) {
-                throw new PermissionDeniedException("Account " + caller.getAccountName() + " does not have permission to operate within domain id=" + domain.getUuid());
+                throw new PermissionDeniedException(String.format("Account %s does not have permission to operate within domain id=%s", caller, domain.getUuid()));
             }
         } else if (!_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-            throw new PermissionDeniedException("Account " + caller.getAccountName() + " does not have permission to operate within domain id=" + domain.getUuid());
+            throw new PermissionDeniedException(String.format("Account %s does not have permission to operate within domain id=%s", caller, domain.getUuid()));
         }
 
         return true;
@@ -189,8 +196,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 // account can launch a VM from this template
                 LaunchPermissionVO permission = _launchPermissionDao.findByTemplateAndAccount(template.getId(), caller.getId());
                 if (permission == null) {
-                    throw new PermissionDeniedException("Account " + caller.getAccountName() +
-                            " does not have permission to launch instances from template " + template.getName());
+                    throw new PermissionDeniedException(String.format("Account %s does not have permission to launch instances from template %s", caller, template));
                 }
             } else {
                 // Domain admin and regular user can delete/modify only templates created by them
@@ -198,7 +204,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     if (!_accountService.isRootAdmin(caller.getId()) && owner.getId() != caller.getId()) {
                         // For projects check if the caller account can access the project account
                         if (owner.getType() != Account.Type.PROJECT || !(_projectMgr.canAccessProjectAccount(caller, owner.getId()))) {
-                            throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public templates");
+                            throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public Templates");
                         }
                     }
                 } else if (caller.getType() != Account.Type.ADMIN) {
@@ -215,7 +221,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             _networkMgr.checkRouterPermissions(caller, (VirtualRouter)entity);
         } else if (entity instanceof AffinityGroup) {
             return false;
-        } else {
+        } else if (entity instanceof DnsServer) {
+            dnsProviderManager.checkDnsServerPermission(caller, (DnsServer) entity);
+        } else if (entity instanceof DnsZone) {
+            dnsProviderManager.checkDnsZonePermission(caller, (DnsZone) entity);
+        }  else {
             validateCallerHasAccessToEntityOwner(caller, entity, accessType);
         }
         return true;
@@ -223,8 +233,6 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 
     protected void validateCallerHasAccessToEntityOwner(Account caller, ControlledEntity entity, AccessType accessType) {
         PermissionDeniedException exception = new PermissionDeniedException("Caller does not have permission to operate with provided resource.");
-        String entityLog = String.format("entity [owner ID: %d, type: %s]", entity.getAccountId(),
-                entity.getEntityType().getSimpleName());
 
         if (_accountService.isRootAdmin(caller.getId())) {
             return;
@@ -234,9 +242,10 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             return;
         }
 
-        Account owner = _accountDao.findById(entity.getAccountId());
+        Account owner = _accountDao.findByIdIncludingRemoved(entity.getAccountId());
+        String entityLog = String.format("entity [owner: %s, type: %s]", owner, entity.getEntityType().getSimpleName());
         if (owner == null) {
-            s_logger.error(String.format("Owner not found for %s", entityLog));
+            logger.error(String.format("Owner not found for %s", entityLog));
             throw exception;
         }
 
@@ -250,20 +259,20 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             // only project owner can delete/modify the project
             if (accessType == AccessType.ModifyProject) {
                 if (!_projectMgr.canModifyProjectAccount(caller, owner.getId())) {
-                    s_logger.error(String.format("Caller ID: %d does not have permission to modify project with " +
-                            "owner ID: %d", caller.getId(), owner.getId()));
+                    logger.error("Caller: {} does not have permission to modify project with " +
+                            "owner: {}", caller, owner);
                     throw exception;
                 }
             } else if (!_projectMgr.canAccessProjectAccount(caller, owner.getId())) {
-                s_logger.error(String.format("Caller ID: %d does not have permission to access project with " +
-                        "owner ID: %d", caller.getId(), owner.getId()));
+                logger.error("Caller: {} does not have permission to access project with " +
+                        "owner: {}", caller, owner);
                 throw exception;
             }
             checkOperationPermitted(caller, entity);
             return;
         }
 
-        s_logger.error(String.format("Caller ID: %d does not have permission to access %s", caller.getId(), entityLog));
+        logger.error("Caller: {} does not have permission to access {}", caller, entityLog);
         throw exception;
     }
 
@@ -474,6 +483,35 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         if (hasAccess && vof != null && zone != null) {
             final List<Long> doZoneIds = vpcOfferingDetailsDao.findZoneIds(vof.getId());
             hasAccess = doZoneIds.isEmpty() || doZoneIds.contains(zone.getId());
+        }
+        return hasAccess;
+    }
+
+    @Override
+    public boolean checkAccess(Account account, BackupOffering backupOffering) throws PermissionDeniedException {
+        boolean hasAccess = false;
+        if (account == null || backupOffering == null) {
+            hasAccess = true;
+        } else {
+            if (_accountService.isRootAdmin(account.getId())) {
+                hasAccess = true;
+            }
+            else if (_accountService.isNormalUser(account.getId())
+                    || account.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN
+                    || _accountService.isDomainAdmin(account.getId())
+                    || account.getType() == Account.Type.PROJECT) {
+                final List<Long> boDomainIds = backupOfferingDetailsDao.findDomainIds(backupOffering.getId());
+                if (boDomainIds.isEmpty()) {
+                    hasAccess = true;
+                } else {
+                    for (Long domainId : boDomainIds) {
+                        if (_domainDao.isChildDomain(domainId, account.getDomainId())) {
+                            hasAccess = true;
+                            break;
+                        }
+                    }
+                }
+            }
         }
         return hasAccess;
     }

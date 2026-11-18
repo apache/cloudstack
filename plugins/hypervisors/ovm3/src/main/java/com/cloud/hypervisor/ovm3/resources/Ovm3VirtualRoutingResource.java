@@ -17,7 +17,8 @@
 
 package com.cloud.hypervisor.ovm3.resources;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.joda.time.Duration;
 
 import com.cloud.agent.api.SetupGuestNetworkCommand;
@@ -34,8 +35,7 @@ import com.cloud.hypervisor.ovm3.objects.Xen;
 import com.cloud.utils.ExecutionResult;
 
 public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
-    private final Logger logger = Logger
-            .getLogger(Ovm3VirtualRoutingResource.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private String domRCloudPath = "/opt/cloud/bin/";
     private Connection c;
     private String agentName;

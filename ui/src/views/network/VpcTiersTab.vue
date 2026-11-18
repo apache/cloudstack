@@ -112,7 +112,7 @@
                 </template>
               </a-pagination>
             </a-collapse-panel>
-            <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :collapsible="!showIlb(network) ? 'disabled' : null" >
+            <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :collapsible="displayCollapsible[network.id] ? null: 'disabled'" >
               <a-button
                 type="dashed"
                 style="margin-bottom: 15px; width: 100%"
@@ -193,8 +193,14 @@
               optionFilterProp="label"
               :filterOption="(input, option) => {
                 return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }" >
-              <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id" :label="item.displaytext || item.name || item.description">
+              }"
+               >
+              <a-select-option
+                v-for="item in networkOfferings"
+                :key="item.id"
+                :value="item.id"
+                :label="item.displaytext || item.name || item.description"
+                :title="item.displaytext || item.name || item.description">
                 {{ item.displaytext || item.name || item.description }}
               </a-select-option>
             </a-select>
@@ -220,6 +226,25 @@
             <a-input
               v-model:value="form.vlan"
               :placeholder="$t('label.vlan')"/>
+          </a-form-item>
+          <a-form-item ref="asnumber" name="asnumber" v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyasnumber">
+            <template #label>
+              <tooltip-label :title="$t('label.asnumber')" :tooltip="$t('label.asnumber')"/>
+            </template>
+            <a-select
+             v-model:value="form.asnumber"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="asNumberLoading"
+              :placeholder="$t('label.asnumber')"
+              @change="val => { handleASNumberChange(val) }">
+              <a-select-option v-for="(opt, optIndex) in asNumbersZone" :key="optIndex" :label="opt.asnumber">
+                {{ opt.asnumber }}
+              </a-select-option>
+            </a-select>
           </a-form-item>
           <a-form-item ref="gateway" name="gateway" :colon="false">
             <template #label>
@@ -340,7 +365,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI, getAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import Status from '@/components/widgets/Status'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -439,7 +464,14 @@ export default {
         }
       },
       publicLBExists: false,
-      setMTU: false
+      setMTU: false,
+      isNsxEnabled: false,
+      zoneExtNetProvider: null,
+      isOfferingNatMode: false,
+      isOfferingRoutedMode: false,
+      displayCollapsible: [],
+      selectedAsNumber: 0,
+      asNumbersZone: []
     }
   },
   created () {
@@ -454,6 +486,23 @@ export default {
     }
   },
   methods: {
+    isASNumberRequired () {
+      return !this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyasnumber && this.selectedNetworkOffering.routingmode && this.selectedNetworkOffering.routingmode.toLowerCase() === 'dynamic'
+    },
+    handleASNumberChange (selectedIndex) {
+      this.selectedAsNumber = this.asNumbersZone[selectedIndex].asnumber
+      this.form.asnumber = this.selectedAsNumber
+    },
+    fetchZoneASNumbers () {
+      const params = {}
+      this.asNumberLoading = true
+      params.zoneid = this.resource.zoneid
+      params.isallocated = false
+      getAPI('listASNumbers', params).then(json => {
+        this.asNumbersZone = json.listasnumbersresponse.asnumber
+        this.asNumberLoading = false
+      })
+    },
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
     },
@@ -462,8 +511,8 @@ export default {
       this.form = reactive({})
       this.rules = reactive({})
     },
-    showIlb (network) {
-      return network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value === 'Internal').length > 0)).length > 0 || false
+    showIlb (network, networkOffering) {
+      return ((networkOffering.supportsinternallb && network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value.split(',').includes('Internal')).length > 0)).length > 0)) || false
     },
     updateMtu () {
       if (this.form.privatemtu > this.privateMtuMax) {
@@ -476,27 +525,31 @@ export default {
     fetchData () {
       this.networks = this.resource.network
       this.fetchMtuForZone()
+      this.getVpcNetworkOffering()
       if (!this.networks || this.networks.length === 0) {
         return
       }
       for (const network of this.networks) {
         this.fetchLoadBalancers(network.id)
         this.fetchVMs(network.id)
+        this.updateDisplayCollapsible(network.networkofferingid, network)
       }
       this.publicLBNetworkExists()
     },
     fetchMtuForZone () {
-      api('listZones', {
+      getAPI('listZones', {
         id: this.resource.zoneid
       }).then(json => {
         this.setMTU = json?.listzonesresponse?.zone?.[0]?.allowuserspecifyvrmtu || false
         this.privateMtuMax = json?.listzonesresponse?.zone?.[0]?.routerprivateinterfacemaxmtu || 1500
+        this.isNsxEnabled = json?.listzonesresponse?.zone?.[0]?.isnsxenabled || false
+        this.zoneExtNetProvider = json?.listzonesresponse?.zone?.[0]?.provider || null
       })
     },
     fetchNetworkAclList () {
       this.fetchLoading = true
       this.modalLoading = true
-      api('listNetworkACLLists', { vpcid: this.resource.id }).then(json => {
+      getAPI('listNetworkACLLists', { vpcid: this.resource.id }).then(json => {
         this.networkAclList = json.listnetworkacllistsresponse.networkacllist || []
         this.handleNetworkAclChange(null)
       }).catch(error => {
@@ -508,7 +561,7 @@ export default {
     },
     getNetworkOffering (networkId) {
       return new Promise((resolve, reject) => {
-        api('listNetworkOfferings', {
+        getAPI('listNetworkOfferings', {
           id: networkId
         }).then(json => {
           var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
@@ -518,8 +571,32 @@ export default {
         })
       })
     },
+    updateDisplayCollapsible (offeringId, network) {
+      getAPI('listNetworkOfferings', {
+        id: offeringId
+      }).then(json => {
+        var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
+        this.displayCollapsible[network.id] = this.showIlb(network, networkOffering)
+      }).catch(e => {
+        this.$notifyError(e)
+      })
+    },
+    getVpcNetworkOffering () {
+      return new Promise((resolve, reject) => {
+        getAPI('listVPCOfferings', {
+          id: this.resource.vpcofferingid
+        }).then(json => {
+          const vpcOffering = json?.listvpcofferingsresponse?.vpcoffering[0]
+          resolve(vpcOffering)
+          this.isOfferingNatMode = vpcOffering?.networkmode === 'NATTED' || false
+          this.isOfferingRoutedMode = vpcOffering?.networkmode === 'ROUTED' || false
+        }).catch(e => {
+          reject(e)
+        })
+      })
+    },
     publicLBNetworkExists () {
-      api('listNetworks', {
+      getAPI('listNetworks', {
         vpcid: this.resource.id,
         supportedservices: 'LB'
       }).then(async json => {
@@ -541,12 +618,15 @@ export default {
     fetchNetworkOfferings () {
       this.fetchLoading = true
       this.modalLoading = true
-      api('listNetworkOfferings', {
+      const params = {
         forvpc: true,
         guestiptype: 'Isolated',
-        supportedServices: 'SourceNat',
         state: 'Enabled'
-      }).then(json => {
+      }
+      if ((!this.isNsxEnabled || !['netris', 'nsx'].includes(this.zoneExtNetProvider.toLowerCase())) && !this.isOfferingRoutedMode) {
+        params.supportedServices = 'SourceNat'
+      }
+      getAPI('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
         var filteredOfferings = []
         const vpcLbServiceIndex = this.resource.service.map(svc => { return svc.name }).indexOf('Lb')
@@ -566,6 +646,13 @@ export default {
           }
         }
         this.networkOfferings = filteredOfferings
+        if (this.isNsxEnabled || (this.zoneExtNetProvider && ['netris', 'nsx'].includes(this.zoneExtNetProvider.toLowerCase()))) {
+          this.networkOfferings = this.networkOfferings.filter(offering => offering.networkmode === (this.isOfferingNatMode ? 'NATTED' : 'ROUTED'))
+        }
+        if (this.resource.asnumberid) {
+          this.networkOfferings = this.networkOfferings.filter(offering => offering.routingmode === 'Dynamic')
+        }
+        this.fetchZoneASNumbers()
         this.form.networkOffering = this.networkOfferings[0].id
       }).catch(error => {
         this.$notifyError(error)
@@ -576,7 +663,7 @@ export default {
     },
     fetchLoadBalancers (id) {
       this.fetchLoading = true
-      api('listLoadBalancers', {
+      getAPI('listLoadBalancers', {
         networkid: id,
         page: this.page,
         pagesize: this.pageSize,
@@ -590,7 +677,7 @@ export default {
     },
     fetchVMs (id) {
       this.fetchLoading = true
-      api('listVirtualMachines', {
+      getAPI('listVirtualMachines', {
         listAll: true,
         vpcid: this.resource.id,
         networkid: id,
@@ -681,7 +768,11 @@ export default {
           params.privatemtu = values.privatemtu
         }
 
-        api('createNetwork', params).then(() => {
+        if (values.asnumber && this.isASNumberRequired()) {
+          params.asnumber = values.asnumber
+        }
+
+        postAPI('createNetwork', params).then(() => {
           this.$notification.success({
             message: this.$t('message.success.add.vpc.network')
           })
@@ -707,7 +798,7 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
 
-        api('createLoadBalancer', {
+        postAPI('createLoadBalancer', {
           name: values.name,
           sourceipaddress: values.sourceIP,
           sourceport: values.sourcePort,

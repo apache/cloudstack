@@ -28,6 +28,7 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "vpc")
@@ -104,6 +105,12 @@ public class VpcVO implements Vpc {
     @Column(name = "ip6Dns2")
     String ip6Dns2;
 
+    @Column(name = "use_router_ip_resolver")
+    boolean useRouterIpResolver = false;
+
+    @Column(name = "keep_mac_address_on_public_nic")
+    private boolean keepMacAddressOnPublicNic = true;
+
     @Transient
     boolean rollingRestart = false;
 
@@ -159,6 +166,10 @@ public class VpcVO implements Vpc {
         return cidr;
     }
 
+    public void setCidr(String cidr) {
+        this.cidr = cidr;
+    }
+
     @Override
     public long getDomainId() {
         return domainId;
@@ -206,8 +217,9 @@ public class VpcVO implements Vpc {
 
     @Override
     public String toString() {
-        final StringBuilder buf = new StringBuilder("[VPC [");
-        return buf.append(id).append("-").append(name).append("]").toString();
+        return String.format("VPC %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name"));
     }
 
     @Override
@@ -302,5 +314,23 @@ public class VpcVO implements Vpc {
     @Override
     public String getIp6Dns2() {
         return ip6Dns2;
+    }
+
+    @Override
+    public boolean useRouterIpAsResolver() {
+        return useRouterIpResolver;
+    }
+
+    public void setUseRouterIpResolver(boolean useRouterIpResolver) {
+        this.useRouterIpResolver = useRouterIpResolver;
+    }
+
+    @Override
+    public boolean getKeepMacAddressOnPublicNic() {
+        return keepMacAddressOnPublicNic;
+    }
+
+    public void setKeepMacAddressOnPublicNic(boolean keepMacAddressOnPublicNic) {
+        this.keepMacAddressOnPublicNic = keepMacAddressOnPublicNic;
     }
 }

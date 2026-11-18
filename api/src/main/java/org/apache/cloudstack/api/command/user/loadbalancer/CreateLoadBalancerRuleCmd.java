@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -52,73 +52,88 @@ import com.cloud.utils.net.NetUtils;
 @APICommand(name = "createLoadBalancerRule", description = "Creates a load balancer rule", responseObject = LoadBalancerResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements LoadBalancer */{
-    public static final Logger s_logger = Logger.getLogger(CreateLoadBalancerRuleCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ALGORITHM, type = CommandType.STRING, required = true, description = "load balancer algorithm (source, roundrobin, leastconn)")
+    @Parameter(name = ApiConstants.ALGORITHM, type = CommandType.STRING, required = true, description = "Load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the load balancer rule", length = 4096)
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "The description of the load balancer rule", length = 4096)
     private String description;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the load balancer rule")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the load balancer rule")
     private String loadBalancerRuleName;
 
     @Parameter(name = ApiConstants.PRIVATE_PORT,
                type = CommandType.INTEGER,
                required = true,
-               description = "the private port of the private IP address/virtual machine where the network traffic will be load balanced to")
+               description = "The private port of the private IP address/Instance where the network traffic will be load balanced to")
     private Integer privatePort;
 
     @Parameter(name = ApiConstants.PUBLIC_IP_ID,
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
-               description = "public IP address ID from where the network traffic will be load balanced from")
+               description = "Public IP address ID from where the network traffic will be load balanced from")
     private Long publicIpId;
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
                required = false,
-               description = "zone where the load balancer is going to be created. This parameter is required when LB service provider is ElasticLoadBalancerVm")
+               description = "Zone where the load balancer is going to be created. This parameter is required when LB service provider is ElasticLoadBalancerVm")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.PUBLIC_PORT,
                type = CommandType.INTEGER,
                required = true,
-               description = "the public port from where the network traffic will be load balanced from")
+               description = "The public port from where the network traffic will be load balanced from")
     private Integer publicPort;
 
-    @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for"
+    @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "If true, firewall rule for"
         + " source/end public port is automatically created; if false - firewall rule has to be created explicitly. If not specified 1) defaulted to false when LB"
         + " rule is being created for VPC guest network 2) in all other cases defaulted to true")
     private Boolean openFirewall;
 
     @Parameter(name = ApiConstants.ACCOUNT,
                type = CommandType.STRING,
-               description = "the account associated with the load balancer. Must be used with the domainId parameter.")
+               description = "The Account associated with the load balancer. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the domain ID associated with the load balancer")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "The domain ID associated with the load balancer")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, since = "4.18.0.0", description = "the source CIDR list to allow traffic from; "
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, since = "4.18.0.0", description = "The source CIDR list to allow traffic from; "
             + "all other CIDRs will be blocked. Multiple entries must be separated by a single comma character (,). By default, all CIDRs are allowed.")
     private List<String> cidrlist;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The guest network this "
-        + "rule will be created for. Required when public Ip address is not associated with any Guest network yet (VPC case)")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The guest Network this "
+        + "rule will be created for. Required when public IP address is not associated with any Guest Network yet (VPC case)")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "The protocol for the LB such as tcp, udp or tcp-proxy.")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "The protocol for the LB such as TCP, UDP, TCP-proxy or SSL.")
     private String lbProtocol;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
+
+    @Parameter(name = ApiConstants.KEEPALIVE, type = CommandType.BOOLEAN, since = "24.0",
+            description = "Whether the load balancer keeps client connections open between requests. "
+                    + "Only applies to rules the router serves in HTTP mode. If not set, the network offering's setting is used.")
+    private Boolean keepAlive;
+
+    @Parameter(name = ApiConstants.IDLE_TIMEOUT, type = CommandType.LONG, since = "24.0",
+            description = "How long an idle connection is held open, in milliseconds. Use 0 for infinite. "
+                    + "If not set, the global setting network.loadbalancer.haproxy.idle.timeout is used.")
+    private Long idleTimeout;
+
+    @Parameter(name = ApiConstants.KEEPALIVE_TIMEOUT, type = CommandType.LONG, since = "24.0",
+            description = "How long an idle keepalive connection is held open waiting for the next request, "
+                    + "in milliseconds. Only applies to rules the router serves in HTTP mode. "
+                    + "If not set, idletimeout applies.")
+    private Long keepAliveTimeout;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -136,6 +151,18 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     public String getAlgorithm() {
         return algorithm;
     }
+    public Boolean getKeepAlive() {
+        return keepAlive;
+    }
+
+    public Long getIdleTimeout() {
+        return idleTimeout;
+    }
+    public Long getKeepAliveTimeout() {
+        return keepAliveTimeout;
+    }
+
+
 
     public String getDescription() {
         return description;
@@ -208,7 +235,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
             } else {
                 Network defaultGuestNetwork = _networkService.getExclusiveGuestNetwork(zoneId);
                 if (defaultGuestNetwork == null) {
-                    throw new InvalidParameterValueException("Unable to find a default guest network for account " + getAccountName() + " in domain ID=" + getDomainId());
+                    throw new InvalidParameterValueException("Unable to find a default guest Network for Account " + getAccountName() + " in domain ID=" + getDomainId());
                 } else {
                     return defaultGuestNetwork.getId();
                 }
@@ -218,7 +245,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
             if (ipAddr.getAssociatedWithNetworkId() != null) {
                 return ipAddr.getAssociatedWithNetworkId();
             } else {
-                throw new InvalidParameterValueException("IP address ID=" + publicIpId + " is not associated with any network");
+                throw new InvalidParameterValueException("IP address ID=" + publicIpId + " is not associated with any Network");
             }
         }
     }
@@ -255,7 +282,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     }
 
     public String getLbProtocol() {
-        return lbProtocol;
+        return StringUtils.trim(StringUtils.lowerCase(lbProtocol));
     }
 
     /////////////////////////////////////////////////////
@@ -269,7 +296,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
         boolean success = true;
         LoadBalancer rule = null;
         try {
-            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule ID: " + getEntityUuid());
 
             if (getOpenFirewall()) {
                 success = success && _firewallService.applyIngressFirewallRules(getSourceIpAddressId(), callerContext.getCallingAccount());
@@ -284,7 +311,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
             }
             lbResponse.setResponseName(getCommandName());
         } catch (Exception ex) {
-            s_logger.warn("Failed to create LB rule due to exception ", ex);
+            logger.warn("Failed to create LB rule due to exception ", ex);
         } finally {
             if (!success || rule == null) {
 
@@ -302,17 +329,20 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     @Override
     public void create() {
         try {
+            // Check the settings before the rule exists: a refused create must leave no rule behind
+            _lbService.validateLoadBalancerConnectionSettings(getIdleTimeout(), getKeepAliveTimeout());
             LoadBalancer result =
                 _lbService.createPublicLoadBalancerRule(getXid(), getName(), getDescription(), getSourcePortStart(), getSourcePortEnd(), getDefaultPortStart(),
                     getDefaultPortEnd(), getSourceIpAddressId(), getProtocol(), getAlgorithm(), getNetworkId(), getEntityOwnerId(), getOpenFirewall(), getLbProtocol(), isDisplay(),
                         getCidrList());
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
+            _lbService.updateLoadBalancerConnectionSettings(result.getId(), getKeepAlive(), getIdleTimeout(), getKeepAliveTimeout(), false);
         } catch (NetworkRuleConflictException e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         } catch (InsufficientAddressCapacityException e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, e.getMessage());
         } catch (InvalidParameterValueException e) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
@@ -341,10 +371,10 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
             if (account != null) {
                 return account.getId();
             } else {
-                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain ID=" + domainId);
+                throw new InvalidParameterValueException("Unable to find Account " + accountName + " in domain ID=" + domainId);
             }
         } else {
-            throw new InvalidParameterValueException("Can't define IP owner. Either specify account/domainId or publicIpId");
+            throw new InvalidParameterValueException("Can't define IP owner. Either specify Account/domainId or publicIpId");
         }
     }
 
@@ -389,7 +419,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
 
     @Override
     public String getEventDescription() {
-        return "creating load balancer: " + getName() + " account: " + getAccountName();
+        return "Creating load balancer: " + getName() + " Account: " + getAccountName();
 
     }
 

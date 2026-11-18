@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.firewall;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -38,7 +37,6 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listFirewallRules", description = "Lists all firewall rules for an IP address.", responseObject = FirewallResponse.class, entityType = {FirewallRule.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd implements IListFirewallRulesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListFirewallRulesCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -49,17 +47,17 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd implements 
     @Parameter(name = ApiConstants.IP_ADDRESS_ID,
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
-               description = "the ID of IP address of the firewall services")
+               description = "The ID of IP address of the firewall services")
     private Long ipAddressId;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "list firewall rules for certain network",
+               description = "List firewall rules for certain network",
                since = "4.3")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////

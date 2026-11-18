@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -87,7 +87,7 @@ then
 fi
 
 # try to find the physical link to outside, only supports eth and em prefix now
-trunk_port=`ovs-ofctl show $br | egrep "\((eth|em)[0-9]" | cut -d '(' -f 1|tr -d ' '`
+trunk_port=`ovs-ofctl show $br | grep -E "\((eth|em)[0-9]" | cut -d '(' -f 1|tr -d ' '`
 
 if [ "$op" == "add" ]
 then

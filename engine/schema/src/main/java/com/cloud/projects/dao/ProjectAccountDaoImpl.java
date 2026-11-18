@@ -18,7 +18,7 @@ package com.cloud.projects.dao;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import com.cloud.user.User;
 import org.springframework.stereotype.Component;
 
 import com.cloud.projects.ProjectAccount;
@@ -39,7 +39,6 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     final GenericSearchBuilder<ProjectAccountVO, Long> ProjectAccountsSearch;
     final GenericSearchBuilder<ProjectAccountVO, Long> CountByRoleSearch;
 
-    public static final Logger s_logger = Logger.getLogger(ProjectAccountDaoImpl.class.getName());
 
     protected ProjectAccountDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -190,18 +189,7 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
 
         int rowsRemoved = remove(sc);
         if (rowsRemoved > 0) {
-            s_logger.debug("Removed account id=" + accountId + " from " + rowsRemoved + " projects");
-        }
-    }
-
-    @Override
-    public void removeUserFromProjects(long userId) {
-        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
-        sc.setParameters("userId", userId);
-
-        int removedCount = remove(sc);
-        if (removedCount > 0) {
-            s_logger.debug(String.format("Removed user [%s] from %s project(s).", userId, removedCount));
+            logger.debug("Removed account id=" + accountId + " from " + rowsRemoved + " projects");
         }
     }
 
@@ -223,5 +211,24 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
         sc.setParameters("projectRoleId", id);
         return listBy(sc);
+    }
+
+    @Override
+    public List<ProjectAccountVO> listBy(Long projectId, Long accountId, Long userId) {
+        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
+        sc.setParametersIfNotNull("projectId", projectId);
+        sc.setParametersIfNotNull("userId", userId);
+        sc.setParametersIfNotNull("accountId", accountId);
+        return listBy(sc);
+    }
+
+    @Override
+    public void move(User oldUser, User newUser) {
+        List<ProjectAccountVO> projectAccounts = listBy(null, oldUser.getAccountId(), oldUser.getId());
+        for (ProjectAccountVO projectAccount : projectAccounts) {
+            projectAccount.setAccountId(newUser.getAccountId());
+            projectAccount.setUserId(newUser.getId());
+            update(projectAccount.getId(), projectAccount);
+        }
     }
 }

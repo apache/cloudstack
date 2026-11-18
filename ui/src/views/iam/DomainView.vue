@@ -74,11 +74,16 @@
         :resource="resource"
         :action="action"/>
     </div>
+    <domain-delete-confirm
+    v-if="showDeleteConfirm"
+    :domain="deleteDomainResource"
+    @close="showDeleteConfirm = false"
+    @confirm="confirmDeleteDomain" />
   </div>
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, callAPI } from '@/api'
 import store from '@/store'
 import { mixinDevice } from '@/utils/mixin.js'
 
@@ -87,6 +92,7 @@ import ActionButton from '@/components/view/ActionButton'
 import TreeView from '@/components/view/TreeView'
 import DomainActionForm from '@/views/iam/DomainActionForm'
 import ResourceView from '@/components/view/ResourceView'
+import DomainDeleteConfirm from '@/components/view/DomainDeleteConfirm'
 import eventBus from '@/config/eventBus'
 
 export default {
@@ -96,7 +102,8 @@ export default {
     ActionButton,
     TreeView,
     DomainActionForm,
-    ResourceView
+    ResourceView,
+    DomainDeleteConfirm
   },
   mixins: [mixinDevice],
   data () {
@@ -111,7 +118,9 @@ export default {
       action: {},
       dataView: false,
       domainStore: {},
-      treeDeletedKey: null
+      treeDeletedKey: null,
+      showDeleteConfirm: false,
+      deleteDomainResource: null
     }
   },
   computed: {
@@ -173,7 +182,7 @@ export default {
 
       this.loading = true
       params.showicon = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         const domains = json.listdomainsresponse.domain || []
         this.treeData = this.generateTreeData(domains)
         this.resource = domains[0] || {}
@@ -205,7 +214,12 @@ export default {
       })
     },
     execAction (action) {
-      this.treeDeletedKey = action.api === 'deleteDomain' ? this.resource.key : null
+      if (action.api === 'deleteDomain') {
+        this.deleteDomainResource = this.resource
+        this.showDeleteConfirm = true
+        return
+      }
+      this.treeDeletedKey = null
       this.actionData = []
       this.action = action
       this.action.params = store.getters.apis[this.action.api].params
@@ -274,23 +288,20 @@ export default {
       }
       param.loading = true
       param.opts = []
-      api(possibleApi, params).then(json => {
-        param.loading = false
-        for (const obj in json) {
-          if (obj.includes('response')) {
-            for (const res in json[obj]) {
-              if (res === 'count') {
-                continue
-              }
-              param.opts = json[obj][res]
-              break
+      callAPI(possibleApi, params)
+        .then(json => {
+          param.loading = false
+          const responseObj = Object.values(json).find(obj => obj.includes('response'))
+          if (responseObj) {
+            const responseData = Object.entries(responseObj).find(([res, value]) => res !== 'count')
+            if (responseData) {
+              param.opts = responseData[1]
             }
-            break
           }
-        }
-      }).catch(() => {
-        param.loading = false
-      })
+        })
+        .catch(() => {
+          param.loading = false
+        })
     },
     generateTreeData (treeData) {
       const result = []
@@ -318,6 +329,42 @@ export default {
     },
     closeAction () {
       this.showAction = false
+    },
+    confirmDeleteDomain () {
+      const domain = this.deleteDomainResource
+      const params = { id: domain.id, cleanup: true }
+
+      callAPI('deleteDomain', params).then(json => {
+        const jobId = json.deletedomainresponse.jobid
+
+        this.$pollJob({
+          jobId,
+          title: this.$t('label.action.delete.domain'),
+          description: domain.name,
+          loadingMessage: `${this.$t('label.action.delete.domain')} ${domain.name}`,
+          successMessage: `${this.$t('label.action.delete.domain')} ${domain.name}`,
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          successMethod: () => {
+            this.$router.replace({ path: '/domain' })
+            this.resource = {}
+            this.treeSelected = {}
+            this.treeDeletedKey = null
+            this.treeViewKey += 1
+            this.$nextTick(() => {
+              this.fetchData()
+            })
+          }
+        })
+      }).catch(error => {
+        this.$notification.error({
+          message: this.$t('message.request.failed'),
+          description: error.response?.headers['x-description'] || this.$t('message.request.failed')
+        })
+      }).finally(() => {
+        this.showDeleteConfirm = false
+        this.deleteDomainResource = null
+        this.treeDeletedKey = null
+      })
     },
     forceRerender () {
       this.treeViewKey += 1

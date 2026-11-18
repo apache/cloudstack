@@ -29,6 +29,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "project_invitations")
@@ -101,6 +102,10 @@ public class ProjectInvitationVO implements ProjectInvitation {
         return forAccountId;
     }
 
+    public void setForAccountId(Long forAccountId) {
+        this.forAccountId = forAccountId;
+    }
+
     @Override
     public String getToken() {
         return token;
@@ -127,9 +132,9 @@ public class ProjectInvitationVO implements ProjectInvitation {
 
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("ProjectInvitation[");
-        buf.append(id).append("|projectId=").append(projectId).append("|accountId=").append(forAccountId).append("]");
-        return buf.toString();
+        return String.format("ProjectInvitation %s.",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "projectId", "forAccountId"));
     }
 
     @Override

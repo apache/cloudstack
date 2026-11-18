@@ -60,7 +60,6 @@ import org.apache.cloudstack.poll.BackgroundPollManager;
 import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.dc.ClusterDetailsDao;
@@ -90,7 +89,6 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.google.common.base.Preconditions;
 
 public final class HAManagerImpl extends ManagerBase implements HAManager, ClusterManagerListener, PluggableService, Configurable, StateListener<HAConfig.HAState, HAConfig.Event, HAConfig> {
-    public static final Logger LOG = Logger.getLogger(HAManagerImpl.class);
 
     @Inject
     private HAConfigDao haConfigDao;
@@ -141,9 +139,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
 
     public synchronized void purgeHACounter(final Long resourceId, final HAResource.ResourceType resourceType) {
         final String key = resourceCounterKey(resourceId, resourceType);
-        if (haCounterMap.containsKey(key)) {
-            haCounterMap.remove(key);
-        }
+        haCounterMap.remove(key);
     }
 
     public boolean transitionHAState(final HAConfig.Event event, final HAConfig haConfig) {
@@ -155,9 +151,9 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             final HAConfig.HAState nextState = HAConfig.HAState.getStateMachine().getNextState(currentHAState, event);
             boolean result = HAConfig.HAState.getStateMachine().transitTo(haConfig, event, null, haConfigDao);
             if (result) {
-                final String message = String.format("Transitioned host HA state from:%s to:%s due to event:%s for the host id:%d",
-                        currentHAState, nextState, event, haConfig.getResourceId());
-                LOG.debug(message);
+                final String message = String.format("Transitioned host HA state from: %s to: %s due to event:%s for the host %s with id: %d",
+                        currentHAState, nextState, event, hostDao.findByIdIncludingRemoved(haConfig.getResourceId()), haConfig.getResourceId());
+                logger.debug(message);
 
                 if (nextState == HAConfig.HAState.Recovering || nextState == HAConfig.HAState.Fencing || nextState == HAConfig.HAState.Fenced) {
                     ActionEventUtils.onActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
@@ -166,7 +162,8 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             }
             return result;
         } catch (NoTransitionException e) {
-            LOG.warn(String.format("Unable to find next HA state for current HA state=[%s] for event=[%s] for host=[%s].", currentHAState, event, haConfig.getResourceId()), e);
+            logger.warn("Unable to find next HA state for current HA state=[{}] for event=[{}] for host {} with id {}.",
+                    currentHAState, event, hostDao.findByIdIncludingRemoved(haConfig.getResourceId()), haConfig.getResourceId(), e);
         }
         return false;
     }
@@ -249,6 +246,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
     }
 
     private boolean isHAEnabledForCluster(final HAResource resource) {
+        // HA is enabled by default when cluster details doesn't exist
         if (resource == null || resource.getClusterId() == null) {
             return true;
         }
@@ -260,14 +258,10 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         if (resource == null || resource.getId() < 1L) {
             return false;
         }
-        HAResource.ResourceType resourceType = null;
-        if (resource instanceof Host) {
-            resourceType = HAResource.ResourceType.Host;
-        }
-        if (resourceType == null) {
+        if (!(resource instanceof Host)) {
             return false;
         }
-        final HAConfig haConfig = haConfigDao.findHAResource(resource.getId(), resourceType);
+        final HAConfig haConfig = haConfigDao.findHAResource(resource.getId(), HAResource.ResourceType.Host);
         return haConfig != null && haConfig.isEnabled()
                 && haConfig.getState() != HAConfig.HAState.Disabled
                 && haConfig.getState() != HAConfig.HAState.Ineligible;
@@ -296,7 +290,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             }
 
             if (!host.getHypervisorType().toString().equals(haProvider.resourceSubType().toString())) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Incompatible haprovider provided [%s] for the resource [%s] of hypervisor type: [%s].", haProvider.resourceSubType().toString(), host.getId(),host.getHypervisorType()));
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Incompatible haprovider provided [%s] for the resource [%s] of hypervisor type: [%s].", haProvider.resourceSubType().toString(), host.getUuid(), host.getHypervisorType()));
             }
         }
     }
@@ -309,28 +303,32 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         final HAConfig haConfig = haConfigDao.findHAResource(host.getId(), HAResource.ResourceType.Host);
         if (haConfig != null) {
             if (haConfig.getState() == HAConfig.HAState.Fenced) {
-                LOG.debug(String.format("HA: Host [%s] is fenced.", host.getId()));
+                logger.debug("HA: Host [{}] is fenced.", host);
                 return false;
             }
-            LOG.debug(String.format("HA: Host [%s] is alive.", host.getId()));
+            logger.debug("HA: Host [{}] is alive.", host);
             return true;
         }
         throw new Investigator.UnknownVM();
     }
 
-    public Status getHostStatus(final Host host) {
+    public Status getHostStatusFromHAConfig(final Host host) {
         final HAConfig haConfig = haConfigDao.findHAResource(host.getId(), HAResource.ResourceType.Host);
-        if (haConfig != null) {
-            if (haConfig.getState() == HAConfig.HAState.Fenced) {
-                LOG.debug(String.format("HA: Agent [%s] is available/suspect/checking Up.", host.getId()));
-                return Status.Down;
-            } else if (haConfig.getState() == HAConfig.HAState.Degraded || haConfig.getState() == HAConfig.HAState.Recovering || haConfig.getState() == HAConfig.HAState.Fencing) {
-                LOG.debug(String.format("HA: Agent [%s] is disconnected. State: %s, %s.", host.getId(), haConfig.getState(), haConfig.getState().getDescription()));
-                return Status.Disconnected;
-            }
-            return Status.Up;
+        if (haConfig == null) {
+            logger.warn("HA: Agent [{}] config is not available.", host);
+            return Status.Unknown;
         }
-        return Status.Unknown;
+        if (haConfig.getState() == HAConfig.HAState.Fenced) {
+            logger.debug("HA: Agent [{}] is fenced.", host);
+            return Status.Down;
+        }
+        if (haConfig.getState() == HAConfig.HAState.Degraded || haConfig.getState() == HAConfig.HAState.Recovering || haConfig.getState() == HAConfig.HAState.Fencing) {
+            logger.debug("HA: Agent [{}] is disconnected. State: {}, {}.", host, haConfig.getState(), haConfig.getState().getDescription());
+            return Status.Disconnected;
+        }
+
+        logger.debug("HA: Agent [{}] is considered Up (HA state can be Available/Suspect/Checking/Recovered). State: {}, {}.", host, haConfig.getState(), haConfig.getState().getDescription());
+        return Status.Up;
     }
 
     //////////////////////////////////////////////////////
@@ -512,9 +510,14 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
 
         // Attempt recovery
         if (newState == HAConfig.HAState.Recovering) {
-            if (counter.getRecoveryCounter() >= (Long) (haProvider.getConfigValue(HAProviderConfig.MaxRecoveryAttempts, resource))) {
+            long recoveryCounter = counter.getRecoveryCounter();
+            Long maxRecoveryAttempts = (Long) (haProvider.getConfigValue(HAProviderConfig.MaxRecoveryAttempts, resource));
+            if (recoveryCounter >= maxRecoveryAttempts) {
+                logger.debug("Recovery attempts have reached the configured limit: {} for the resource [{}].", maxRecoveryAttempts, resource);
                 return false;
             }
+
+            logger.debug("Recovery attempt #{} for the resource [{}]. Max recovery attempts configured is {}.", recoveryCounter + 1, resource, maxRecoveryAttempts);
             final RecoveryTask task = ComponentContext.inject(new RecoveryTask(resource, haProvider, haConfig,
                     HAProviderConfig.RecoveryTimeout, recoveryExecutor));
             final Future<Boolean> recoveryFuture = recoveryExecutor.submit(task);
@@ -537,20 +540,20 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             return false;
         }
 
-        LOG.debug(String.format("HA state pre-transition:: new state=[%s], old state=[%s], for resource id=[%s], status=[%s], ha config state=[%s]." , newState, oldState, haConfig.getResourceId(), status, haConfig.getState()));
+        logger.debug("HA state pre-transition:: new state=[{}], old state=[{}], for resource id=[{}], status=[{}], ha config state=[{}].", newState, oldState, haConfig.getResourceId(), status, haConfig.getState());
 
         if (status && haConfig.getState() != newState) {
-            LOG.warn(String.format("HA state pre-transition:: HA state is not equal to transition state, HA state=[%s], new state=[%s].", haConfig.getState(), newState));
+            logger.warn("HA state pre-transition:: HA state is not equal to transition state, HA state=[{}], new state=[{}].", haConfig.getState(), newState);
         }
         return processHAStateChange(haConfig, newState, status);
     }
 
     @Override
     public boolean postStateTransitionEvent(final StateMachine2.Transition<HAConfig.HAState, HAConfig.Event> transition, final HAConfig haConfig, final boolean status, final Object opaque) {
-        LOG.debug(String.format("HA state post-transition:: new state=[%s], old state=[%s], for resource id=[%s], status=[%s], ha config state=[%s].", transition.getToState(), transition.getCurrentState(),  haConfig.getResourceId(), status, haConfig.getState()));
+        logger.debug("HA state post-transition:: new state=[{}], old state=[{}], for resource id=[{}], status=[{}], ha config state=[{}].", transition.getToState(), transition.getCurrentState(), haConfig.getResourceId(), status, haConfig.getState());
 
         if (status && haConfig.getState() != transition.getToState()) {
-            LOG.warn(String.format("HA state post-transition:: HA state is not equal to transition state, HA state=[%s], new state=[%s].", haConfig.getState(), transition.getToState()));
+            logger.warn("HA state post-transition:: HA state is not equal to transition state, HA state=[{}], new state=[{}].", haConfig.getState(), transition.getToState());
         }
         return processHAStateChange(haConfig, transition.getToState(), status);
     }
@@ -607,7 +610,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         pollManager.submitTask(new HAManagerBgPollTask());
         HAConfig.HAState.getStateMachine().registerListener(this);
 
-        LOG.debug("HA manager has been configured.");
+        logger.debug("HA manager has been configured.");
         return true;
     }
 
@@ -644,9 +647,9 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             HAConfig currentHaConfig = null;
 
             try {
-                LOG.debug("HA health check task is running...");
+                logger.debug("HA health check task is running...");
 
-                final List<HAConfig> haConfigList = new ArrayList<HAConfig>(haConfigDao.listAll());
+                final List<HAConfig> haConfigList = new ArrayList<>(haConfigDao.listAll());
                 for (final HAConfig haConfig : haConfigList) {
                     currentHaConfig = haConfig;
 
@@ -677,8 +680,8 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                                     HAProviderConfig.HealthCheckTimeout, healthCheckExecutor));
                             healthCheckExecutor.submit(task);
                             break;
-                    default:
-                        break;
+                        default:
+                            break;
                     }
 
                     final HAResourceCounter counter = getHACounter(haConfig.getResourceId(), haConfig.getResourceType());
@@ -696,16 +699,22 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                     }
 
                     if (haConfig.getState() == HAConfig.HAState.Recovering) {
-                        if (counter.getRecoveryCounter() >= (Long) (haProvider.getConfigValue(HAProviderConfig.MaxRecoveryAttempts, resource))) {
+                        long recoveryCounter = counter.getRecoveryCounter();
+                        Long maxRecoveryAttempts = (Long) (haProvider.getConfigValue(HAProviderConfig.MaxRecoveryAttempts, resource));
+                        if (recoveryCounter >= maxRecoveryAttempts) {
+                            logger.debug("Recovery attempts have reached the max limit: {} for the resource [{}].", maxRecoveryAttempts, resource);
                             transitionHAState(HAConfig.Event.RecoveryOperationThresholdExceeded, haConfig);
                         } else {
+                            logger.debug("Retry recovery for the resource [{}]. Max recovery attempts configured is {}.", resource, maxRecoveryAttempts);
                             transitionHAState(HAConfig.Event.RetryRecovery, haConfig);
                         }
                     }
 
                     if (haConfig.getState() == HAConfig.HAState.Recovered) {
                         counter.markRecoveryStarted();
-                        if (counter.canExitRecovery((Long)(haProvider.getConfigValue(HAProviderConfig.RecoveryWaitTimeout, resource)))) {
+                        Long recoveryWaitTimeout = (Long)(haProvider.getConfigValue(HAProviderConfig.RecoveryWaitTimeout, resource));
+                        logger.debug("Recovery started for the resource [{}], wait period configured to become Available is {} secs", resource, recoveryWaitTimeout);
+                        if (counter.canExitRecovery(recoveryWaitTimeout)) {
                             if (transitionHAState(HAConfig.Event.RecoveryWaitPeriodTimeout, haConfig)) {
                                 counter.markRecoveryCompleted();
                             }
@@ -718,9 +727,9 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                 }
             } catch (Throwable t) {
                 if (currentHaConfig != null) {
-                    LOG.error(String.format("Error trying to perform health checks in HA manager [%s].", currentHaConfig.getHaProvider()), t);
+                    logger.error("Error trying to perform health checks in HA manager [{}].", currentHaConfig.getHaProvider(), t);
                 } else {
-                    LOG.error("Error trying to perform health checks in HA manager.", t);
+                    logger.error("Error trying to perform health checks in HA manager.", t);
                 }
             }
         }

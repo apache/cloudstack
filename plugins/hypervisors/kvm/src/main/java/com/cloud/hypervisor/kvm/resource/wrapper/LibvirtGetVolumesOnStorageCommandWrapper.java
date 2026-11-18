@@ -36,6 +36,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.libvirt.LibvirtException;
 
@@ -51,7 +52,7 @@ import java.util.stream.Collectors;
 public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapper<GetVolumesOnStorageCommand, Answer, LibvirtComputingResource> {
 
     static final List<StoragePoolType> STORAGE_POOL_TYPES_SUPPORTED_BY_QEMU_IMG = Arrays.asList(StoragePoolType.NetworkFilesystem,
-            StoragePoolType.Filesystem, StoragePoolType.RBD);
+            StoragePoolType.Filesystem, StoragePoolType.RBD, StoragePoolType.SharedMountPoint, StoragePoolType.Linstor);
 
     @Override
     public Answer execute(final GetVolumesOnStorageCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -61,13 +62,24 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
         final String keyword = command.getKeyword();
 
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
-        final KVMStoragePool storagePool = storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid(), true);
+        final KVMStoragePool storagePool = storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid(), true, true);
 
+        if (StoragePoolType.Linstor.equals(pool.getType())) {
+            try {
+                List<VolumeOnStorageTO> volumes = storagePool.getVolumesForImport(
+                        StringUtils.isBlank(volumePath) ? null : volumePath);
+                if (StringUtils.isNotBlank(keyword)) {
+                    volumes = volumes.stream().filter(volume -> volume.getName().contains(keyword)).collect(Collectors.toList());
+                }
+                return new GetVolumesOnStorageAnswer(command, volumes);
+            } catch (RuntimeException e) {
+                return new GetVolumesOnStorageAnswer(command, false, e.getMessage());
+            }
+        }
         if (StringUtils.isNotBlank(volumePath)) {
             return addVolumeByVolumePath(command, storagePool, volumePath);
-        } else {
-            return addAllVolumes(command, storagePool, keyword);
         }
+        return addAllVolumes(command, storagePool, keyword);
     }
 
     private GetVolumesOnStorageAnswer addVolumeByVolumePath(final GetVolumesOnStorageCommand command, final KVMStoragePool storagePool, String volumePath) {
@@ -91,35 +103,57 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
             if (disk.getQemuEncryptFormat() != null) {
                 volumeOnStorageTO.setQemuEncryptFormat(disk.getQemuEncryptFormat().toString());
             }
-            String backingFilePath = info.get(QemuImg.BACKING_FILE);
-            if (StringUtils.isNotBlank(backingFilePath)) {
-                volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.BACKING_FILE, backingFilePath);
-            }
-            String backingFileFormat = info.get(QemuImg.BACKING_FILE_FORMAT);
-            if (StringUtils.isNotBlank(backingFileFormat)) {
-                volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.BACKING_FILE_FORMAT, backingFileFormat);
-            }
-            String clusterSize = info.get(QemuImg.CLUSTER_SIZE);
-            if (StringUtils.isNotBlank(clusterSize)) {
-                volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.CLUSTER_SIZE, clusterSize);
-            }
             String fileFormat = info.get(QemuImg.FILE_FORMAT);
-            if (StringUtils.isNotBlank(fileFormat)) {
-                if (!fileFormat.equalsIgnoreCase(disk.getFormat().toString())) {
-                    return new GetVolumesOnStorageAnswer(command, false, String.format("The file format is %s, but expected to be %s", fileFormat, disk.getFormat()));
-                }
-                volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.FILE_FORMAT, fileFormat);
+            if (StringUtils.isNotBlank(fileFormat) && !fileFormat.equalsIgnoreCase(disk.getFormat().toString())) {
+                return new GetVolumesOnStorageAnswer(command, false, String.format("The file format is %s, but expected to be %s", fileFormat, disk.getFormat()));
             }
-            String encrypted = info.get(QemuImg.ENCRYPTED);
-            if (StringUtils.isNotBlank(encrypted) && encrypted.equalsIgnoreCase("yes")) {
-                volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_ENCRYPTED, String.valueOf(Boolean.TRUE));
-            }
-            Boolean isLocked = isDiskFileLocked(storagePool, disk);
-            volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_LOCKED, String.valueOf(isLocked));
+            addDetailsToVolumeOnStorageTO(volumeOnStorageTO, info, storagePool, disk);
 
             volumes.add(volumeOnStorageTO);
         }
         return new GetVolumesOnStorageAnswer(command, volumes);
+    }
+
+    private void addDetailsToVolumeOnStorageTO(VolumeOnStorageTO volumeOnStorageTO, final Map<String, String> info, final KVMStoragePool storagePool, final KVMPhysicalDisk disk) {
+        if (MapUtils.isEmpty(info)) {
+            return;
+        }
+
+        String backingFilePath = info.get(QemuImg.BACKING_FILE);
+        if (StringUtils.isNotBlank(backingFilePath)) {
+            volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.BACKING_FILE, backingFilePath);
+        }
+        String backingFileFormat = info.get(QemuImg.BACKING_FILE_FORMAT);
+        if (StringUtils.isNotBlank(backingFileFormat)) {
+            volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.BACKING_FILE_FORMAT, backingFileFormat);
+        }
+        String clusterSize = info.get(QemuImg.CLUSTER_SIZE);
+        if (StringUtils.isNotBlank(clusterSize)) {
+            volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.CLUSTER_SIZE, clusterSize);
+        }
+        String fileFormat = info.get(QemuImg.FILE_FORMAT);
+        if (StringUtils.isNotBlank(fileFormat)) {
+            volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.FILE_FORMAT, fileFormat);
+        }
+        String encrypted = info.get(QemuImg.ENCRYPTED);
+        if (StringUtils.isNotBlank(encrypted) && encrypted.equalsIgnoreCase("yes")) {
+            volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_ENCRYPTED, String.valueOf(Boolean.TRUE));
+        }
+        boolean isLocked = isDiskFileLocked(storagePool, disk);
+        if (!isLocked) {
+            // Clustered block storage (Linstor/DRBD): the host-local qemu-img lock cannot see a
+            // volume in use by a running VM on another node — consult the cluster-wide state.
+            String inUseNode = storagePool.getVolumeInUseNode(disk.getName());
+            if (KVMStoragePool.IN_USE_NODE_UNKNOWN.equals(inUseNode)) {
+                logger.warn("Could not determine cluster-wide in-use state of volume {}; marking as locked",
+                        disk.getName());
+                isLocked = true;
+            } else if (inUseNode != null) {
+                logger.info("Volume {} is in use on node {}; marking as locked", disk.getName(), inUseNode);
+                isLocked = true;
+            }
+        }
+        volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_LOCKED, String.valueOf(isLocked));
     }
 
     private GetVolumesOnStorageAnswer addAllVolumes(final GetVolumesOnStorageCommand command, final KVMStoragePool storagePool, String keyword) {
@@ -134,11 +168,21 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
             if (!isDiskFormatSupported(disk)) {
                 continue;
             }
+            Map<String, String> info = getDiskFileInfo(storagePool, disk, true);
+            if (info == null) {
+                continue;
+            }
             VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(Hypervisor.HypervisorType.KVM, disk.getName(), disk.getName(), disk.getPath(),
                     disk.getFormat().toString(), disk.getSize(), disk.getVirtualSize());
             if (disk.getQemuEncryptFormat() != null) {
                 volumeOnStorageTO.setQemuEncryptFormat(disk.getQemuEncryptFormat().toString());
             }
+            String fileFormat = info.get(QemuImg.FILE_FORMAT);
+            if (StringUtils.isNotBlank(fileFormat) && !fileFormat.equalsIgnoreCase(disk.getFormat().toString())) {
+                continue;
+            }
+            addDetailsToVolumeOnStorageTO(volumeOnStorageTO, info, storagePool, disk);
+
             volumes.add(volumeOnStorageTO);
         }
         return new GetVolumesOnStorageAnswer(command, volumes);
@@ -161,11 +205,7 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
             QemuImg qemu = new QemuImg(0);
             QemuImgFile qemuFile = new QemuImgFile(disk.getPath(), disk.getFormat());
             if (StoragePoolType.RBD.equals(pool.getType())) {
-                String rbdDestFile = KVMPhysicalDisk.RBDStringBuilder(pool.getSourceHost(),
-                        pool.getSourcePort(),
-                        pool.getAuthUserName(),
-                        pool.getAuthSecret(),
-                        disk.getPath());
+                String rbdDestFile = KVMPhysicalDisk.RBDStringBuilder(pool, disk.getPath());
                 qemuFile = new QemuImgFile(rbdDestFile, disk.getFormat());
             }
             return qemu.info(qemuFile, secure);

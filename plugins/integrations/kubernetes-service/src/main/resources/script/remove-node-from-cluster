@@ -1,0 +1,43 @@
+#!/bin/bash
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+export PATH=$PATH:/opt/bin
+node_name=$1
+node_type=$2
+operation=$3
+
+if [ $operation == "remove" ]; then
+  if [ $node_type == "control" ]; then
+    # get the specific node
+    kubectl get nodes $node_name >/dev/null 2>&1
+    if [[ $(echo $?) -eq 1 ]]; then
+       echo "No node with name $node_name present in the cluster, exiting..."
+       exit 0
+    else
+       # Drain the node
+       kubectl drain $node_name --delete-local-data --force --ignore-daemonsets
+    fi
+  else
+    kubeadm reset -f
+  fi
+else
+  sudo mkdir -p /home/cloud/.kube
+  sudo cp /root/.kube/config /home/cloud/.kube/
+  sudo chown -R cloud:cloud /home/cloud/.kube
+  kubectl delete node $node_name
+fi

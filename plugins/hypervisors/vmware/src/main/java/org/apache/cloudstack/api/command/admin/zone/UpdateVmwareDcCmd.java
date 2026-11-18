@@ -33,7 +33,7 @@ import com.cloud.dc.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateVmwareDc", description = "Updates a Vmware datacenter details for a zone",
+@APICommand(name = "updateVmwareDc", description = "Updates a VMware datacenter details for a zone",
         responseObject = VmwareDatacenterResponse.class, responseHasSensitiveInfo = false,
         since = "4.12.0", authorized = {RoleType.Admin})
 public class UpdateVmwareDcCmd extends BaseCmd {
@@ -50,7 +50,7 @@ public class UpdateVmwareDcCmd extends BaseCmd {
     private Long zoneId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING,
-            description = "Vmware datacenter name.")
+            description = "VMware datacenter name.")
     private String name;
 
     @Parameter(name = ApiConstants.VCENTER, type = CommandType.STRING,
@@ -105,13 +105,13 @@ public class UpdateVmwareDcCmd extends BaseCmd {
     public void execute() {
         final VmwareDatacenter vmwareDatacenter = vmwareDatacenterService.updateVmwareDatacenter(this);
         if (vmwareDatacenter == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Vmware datacenter");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update VMware datacenter");
         }
         final VmwareDatacenterResponse response = new VmwareDatacenterResponse();
         response.setId(vmwareDatacenter.getUuid());
         response.setName(vmwareDatacenter.getVmwareDatacenterName());
         response.setResponseName(getCommandName());
-        response.setObjectName(ApiConstants.VMWARE_DC);
+        response.setObjectName("vmwaredc");
         setResponseObject(response);
     }
 

@@ -44,7 +44,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -68,7 +68,6 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -91,6 +90,8 @@ public class NetworkACLManagerTest extends TestCase {
     NetworkOfferingDao networkOfferingDao;
     @Inject
     NetworkModel _networkModel;
+    @Inject
+    NetworkServiceMapDao networkServiceMapDao;
     @Inject
     List<NetworkACLServiceProvider> _networkAclElements;
     @Inject
@@ -123,7 +124,7 @@ public class NetworkACLManagerTest extends TestCase {
 
     @Test
     public void testCreateACL() throws Exception {
-        Mockito.when(_networkACLDao.persist(Matchers.any(NetworkACLVO.class))).thenReturn(acl);
+        Mockito.when(_networkACLDao.persist(ArgumentMatchers.any(NetworkACLVO.class))).thenReturn(acl);
         assertNotNull(_aclMgr.createNetworkACL("acl_new", "acl desc", 1L, true));
     }
 
@@ -133,8 +134,8 @@ public class NetworkACLManagerTest extends TestCase {
         final NetworkVO network = Mockito.mock(NetworkVO.class);
         Mockito.when(_networkDao.findById(anyLong())).thenReturn(network);
         Mockito.when(networkOfferingDao.isIpv6Supported(anyLong())).thenReturn(false);
-        Mockito.when(_networkModel.isProviderSupportServiceInNetwork(anyLong(), Matchers.any(Network.Service.class), Matchers.any(Network.Provider.class))).thenReturn(true);
-        Mockito.when(_networkAclElements.get(0).applyNetworkACLs(Matchers.any(Network.class), Matchers.anyList())).thenReturn(true);
+        Mockito.when(_networkModel.isProviderSupportServiceInNetwork(anyLong(), ArgumentMatchers.any(Network.Service.class), ArgumentMatchers.any(Network.Provider.class))).thenReturn(true);
+        Mockito.when(_networkAclElements.get(0).applyNetworkACLs(ArgumentMatchers.any(Network.class), ArgumentMatchers.anyList())).thenReturn(true);
         assertTrue(_aclMgr.applyACLToNetwork(1L));
     }
 
@@ -169,8 +170,7 @@ public class NetworkACLManagerTest extends TestCase {
         final List<NetworkVO> networks = new ArrayList<>();
         networks.add(network);
 
-        NetworkServiceMapDao ntwkSrvcDao = mock(NetworkServiceMapDao.class);
-        when(ntwkSrvcDao.canProviderSupportServiceInNetwork(anyLong(), eq(Network.Service.NetworkACL), nullable(Network.Provider.class))).thenReturn(true);
+        when(networkServiceMapDao.canProviderSupportServiceInNetwork(anyLong(), eq(Network.Service.NetworkACL), nullable(Network.Provider.class))).thenReturn(true);
         Mockito.when(_networkDao.listByAclId(anyLong())).thenReturn(networks);
         Mockito.when(_networkDao.findById(anyLong())).thenReturn(network);
         Mockito.when(networkOfferingDao.isIpv6Supported(anyLong())).thenReturn(false);
@@ -275,6 +275,11 @@ public class NetworkACLManagerTest extends TestCase {
         @Bean
         public NetworkModel networkModel() {
             return Mockito.mock(NetworkModel.class);
+        }
+
+        @Bean
+        public NetworkServiceMapDao networkServiceMapDao() {
+            return Mockito.mock(NetworkServiceMapDao.class);
         }
 
         @Bean

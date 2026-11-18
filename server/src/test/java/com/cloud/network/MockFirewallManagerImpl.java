@@ -132,7 +132,7 @@ public class MockFirewallManagerImpl extends ManagerBase implements FirewallMana
     }
 
     @Override
-    public boolean revokeFirewallRulesForIp(long ipId, long userId, Account caller) throws ResourceUnavailableException {
+    public boolean revokeFirewallRulesForIp(IpAddress ip, long userId, Account caller) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -145,7 +145,7 @@ public class MockFirewallManagerImpl extends ManagerBase implements FirewallMana
     }
 
     @Override
-    public boolean revokeAllFirewallRulesForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException {
+    public boolean revokeAllFirewallRulesForNetwork(Network network, long userId, Account caller) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }

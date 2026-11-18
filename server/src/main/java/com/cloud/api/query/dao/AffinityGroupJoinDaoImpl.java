@@ -21,23 +21,46 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dedicated.DedicatedResourceResponse;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.DedicatedResources;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.host.Host;
+import com.cloud.host.dao.HostDao;
+import com.cloud.org.Cluster;
+import com.cloud.user.AccountManager;
 
 public class AffinityGroupJoinDaoImpl extends GenericDaoBase<AffinityGroupJoinVO, Long> implements AffinityGroupJoinDao {
-    public static final Logger s_logger = Logger.getLogger(AffinityGroupJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao _configDao;
+    @Inject
+    private DedicatedResourceDao dedicatedResourceDao;
+    @Inject
+    private DataCenterDao dataCenterDao;
+    @Inject
+    private HostPodDao podDao;
+    @Inject
+    private ClusterDao clusterDao;
+    @Inject
+    private HostDao hostDao;
+    @Inject
+    private AccountManager accountManager;
 
     private final SearchBuilder<AffinityGroupJoinVO> agSearch;
 
@@ -66,6 +89,14 @@ public class AffinityGroupJoinDaoImpl extends GenericDaoBase<AffinityGroupJoinVO
 
         ApiResponseHelper.populateOwner(agResponse, vag);
 
+        Long callerId = CallContext.current().getCallingAccountId();
+        boolean isCallerRootAdmin = accountManager.isRootAdmin(callerId);
+        boolean containsDedicatedResources = vag.getType().equals("ExplicitDedication");
+        if (isCallerRootAdmin && containsDedicatedResources) {
+            List<DedicatedResourceVO> dedicatedResources = dedicatedResourceDao.listByAffinityGroupId(vag.getId());
+            this.populateDedicatedResourcesField(dedicatedResources, agResponse);
+        }
+
         // update vm information
         long instanceId = vag.getVmId();
         if (instanceId > 0) {
@@ -76,6 +107,32 @@ public class AffinityGroupJoinDaoImpl extends GenericDaoBase<AffinityGroupJoinVO
 
         agResponse.setObjectName("affinitygroup");
         return agResponse;
+    }
+
+    private void populateDedicatedResourcesField(List<DedicatedResourceVO> dedicatedResources, AffinityGroupResponse agResponse) {
+        if (dedicatedResources.isEmpty()) {
+            return;
+        }
+
+        for (DedicatedResourceVO resource : dedicatedResources) {
+            DedicatedResourceResponse dedicatedResourceResponse = null;
+
+            if (resource.getDataCenterId() != null) {
+                DataCenter dataCenter = dataCenterDao.findById(resource.getDataCenterId());
+                dedicatedResourceResponse = new DedicatedResourceResponse(dataCenter.getUuid(), dataCenter.getName(), DedicatedResources.Type.Zone);
+            } else if (resource.getPodId() != null) {
+                HostPodVO pod = podDao.findById(resource.getPodId());
+                dedicatedResourceResponse = new DedicatedResourceResponse(pod.getUuid(), pod.getName(), DedicatedResources.Type.Pod);
+            } else if (resource.getClusterId() != null) {
+                Cluster cluster = clusterDao.findById(resource.getClusterId());
+                dedicatedResourceResponse = new DedicatedResourceResponse(cluster.getUuid(), cluster.getName(), DedicatedResources.Type.Cluster);
+            } else if (resource.getHostId() != null) {
+                Host host = hostDao.findById(resource.getHostId());
+                dedicatedResourceResponse = new DedicatedResourceResponse(host.getUuid(), host.getName(), DedicatedResources.Type.Host);
+            }
+
+            agResponse.addDedicatedResource(dedicatedResourceResponse);
+        }
     }
 
     @Override

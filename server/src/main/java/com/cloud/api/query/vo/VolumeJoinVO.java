@@ -19,9 +19,11 @@ package com.cloud.api.query.vo;
 import java.util.Date;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -33,10 +35,15 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
 @Table(name = "volume_view")
 public class VolumeJoinVO extends BaseViewWithTagInformationVO implements ControlledViewEntity {
+
+    @Id
+    @Column(name = "id", updatable = false, nullable = false)
+    private long id;
 
     @Column(name = "uuid")
     private String uuid;
@@ -179,7 +186,7 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
     private String errorString;
 
     @Column(name = "hypervisor_type")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisorType;
 
     @Column(name = "disk_offering_id")
@@ -214,6 +221,9 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     @Column(name = "cache_mode")
     String cacheMode;
+
+    @Column(name = "error_policy")
+    String errorPolicy;
 
     @Column(name = "pool_id")
     private long poolId;
@@ -277,6 +287,21 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     @Column(name = "encrypt_format")
     private String encryptionFormat = null;
+
+    @Column(name = "kms_key_id")
+    private Long kmsKeyId;
+
+    @Column(name = "kms_key_uuid")
+    private String kmsKeyUuid;
+
+    @Column(name = "kms_key_name")
+    private String kmsKeyName;
+
+    @Column(name = "kms_wrapped_key_id")
+    private Long kmsWrappedKeyId;
+
+    @Column(name = "delete_protection")
+    protected Boolean deleteProtection;
 
     public VolumeJoinVO() {
     }
@@ -480,6 +505,10 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
         return cacheMode;
     }
 
+    public String getErrorPolicy() {
+        return errorPolicy;
+    }
+
     public long getPoolId() {
         return poolId;
     }
@@ -615,6 +644,26 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getEncryptionFormat() {
         return encryptionFormat;
+    }
+
+    public Long getKmsKeyId() {
+        return kmsKeyId;
+    }
+
+    public String getKmsKeyName() {
+        return kmsKeyName;
+    }
+
+    public String getKmsKeyUuid() {
+        return kmsKeyUuid;
+    }
+
+    public Long getKmsWrappedKeyId() {
+        return kmsWrappedKeyId;
+    }
+
+    public Boolean getDeleteProtection() {
+        return deleteProtection;
     }
 
     @Override

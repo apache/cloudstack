@@ -18,15 +18,24 @@
 <template>
   <loading-outlined v-if="loadingTable" class="main-loading-spinner" />
   <div v-else>
-    <div style="width: 100%; display: flex; margin-bottom: 10px">
+    <div style="width: 100%; display: flex; margin-bottom: 20px">
       <a-button type="dashed" @click="exportRolePermissions" style="width: 100%">
         <template #icon><download-outlined /></template>
         {{ $t('label.export.rules') }}
       </a-button>
     </div>
+    <a-input-search
+      v-model:value="searchRule"
+      :placeholder="$t('label.rolepermissiontab.searchbar')"
+      background-color="gray"
+      style="width: 100%; margin-bottom: 10px; display: inline-block"
+      enter-button
+      @search="searchRulePermission"
+    />
     <div v-if="updateTable" class="loading-overlay">
       <loading-outlined />
     </div>
+
     <div
       class="rules-list ant-list ant-list-bordered"
       :class="{'rules-list--overflow-hidden' : updateTable}" >
@@ -106,11 +115,12 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import draggable from 'vuedraggable'
 import PermissionEditable from './PermissionEditable'
 import RuleDelete from './RuleDelete'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import { toCsv } from '@/utils/util.js'
 
 export default {
   name: 'RolePermissionTab',
@@ -136,7 +146,8 @@ export default {
       newRuleDescription: '',
       newRuleSelectError: false,
       drag: false,
-      apis: []
+      apis: [],
+      searchRule: ''
     }
   },
   created () {
@@ -169,8 +180,9 @@ export default {
     },
     fetchData (callback = null) {
       if (!this.resource.id) return
-      api('listRolePermissions', { roleid: this.resource.id }).then(response => {
+      getAPI('listRolePermissions', { roleid: this.resource.id }).then(response => {
         this.rules = response.listrolepermissionsresponse.rolepermission
+        this.totalRules = this.rules
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -188,7 +200,7 @@ export default {
     },
     changeOrder () {
       this.updateTable = true
-      api('updateRolePermission', {}, 'POST', {
+      postAPI('updateRolePermission', {
         roleid: this.resource.id,
         ruleorder: this.rules.map(rule => rule.id)
       }).catch(error => {
@@ -200,7 +212,7 @@ export default {
     },
     onRuleDelete (key) {
       this.updateTable = true
-      api('deleteRolePermission', { id: key }).catch(error => {
+      postAPI('deleteRolePermission', { id: key }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.updateTable = false
@@ -213,7 +225,7 @@ export default {
       if (!record) return
 
       this.updateTable = true
-      api('updateRolePermission', {
+      postAPI('updateRolePermission', {
         roleid: this.resource.id,
         ruleid: record.id,
         permission: value
@@ -235,7 +247,7 @@ export default {
       }
 
       this.updateTable = true
-      api('createRolePermission', {
+      postAPI('createRolePermission', {
         rule: this.newRule,
         permission: this.newRulePermission,
         description: this.newRuleDescription,
@@ -249,38 +261,27 @@ export default {
         this.updateTable = false
       })
     },
-    rulesDataToCsv ({ data = null, columnDelimiter = ',', lineDelimiter = '\n' }) {
-      if (data === null || !data.length) {
-        return null
-      }
-
-      const keys = ['rule', 'permission', 'description']
-      let result = ''
-      result += keys.join(columnDelimiter)
-      result += lineDelimiter
-
-      data.forEach(item => {
-        keys.forEach(key => {
-          if (item[key] === undefined) {
-            item[key] = ''
-          }
-          result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
-          result += columnDelimiter
-        })
-        result = result.slice(0, -1)
-        result += lineDelimiter
-      })
-
-      return result
-    },
     exportRolePermissions () {
-      const rulesCsvData = this.rulesDataToCsv({ data: this.rules })
+      const rulesCsvData = toCsv({ keys: ['rule', 'permission', 'description'], data: this.rules })
       const hiddenElement = document.createElement('a')
       hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(rulesCsvData)
       hiddenElement.target = '_blank'
       hiddenElement.download = this.resource.name + '_' + this.resource.type + '.csv'
       hiddenElement.click()
       hiddenElement.remove()
+    },
+    searchRulePermission (searchValue) {
+      searchValue = searchValue.toLowerCase()
+      if (!searchValue) {
+        this.rules = this.totalRules
+      } else {
+        this.updateTable = true
+        const searchRules = this.totalRules.filter((rule) => rule.rule.toLowerCase().includes(searchValue))
+        this.rules = searchRules
+        setTimeout(() => {
+          this.updateTable = false
+        })
+      }
     }
   }
 }

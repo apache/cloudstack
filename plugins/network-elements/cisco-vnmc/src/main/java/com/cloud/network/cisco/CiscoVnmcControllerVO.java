@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.cisco;
 
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -60,6 +62,13 @@ public class CiscoVnmcControllerVO implements CiscoVnmcController {
         this.providerName = providerName;
         this.deviceName = deviceName;
         this.uuid = UUID.randomUUID().toString();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("CiscoVnmcController %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name"));
     }
 
     @Override

@@ -16,14 +16,45 @@
 // under the License.
 package com.cloud.hypervisor;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.agent.api.to.VirtualMachineMetadataTO;
+import com.cloud.cpu.CPU;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.gpu.dao.VgpuProfileDao;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.projects.ProjectVO;
+import com.cloud.projects.dao.ProjectDao;
+import com.cloud.server.ResourceTag;
+import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupProvider;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -32,11 +63,11 @@ import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NetworkTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManager;
@@ -67,12 +98,13 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru, Configurable {
-    public static final Logger s_logger = Logger.getLogger(HypervisorGuruBase.class);
 
     @Inject
     protected
@@ -81,18 +113,30 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     protected
     NetworkDao networkDao;
     @Inject
+    protected VpcDao vpcDao;
+    @Inject
+    protected AccountManager accountManager;
+    @Inject
+    protected DomainDao domainDao;
+    @Inject
+    private DataCenterDao dcDao;
+    @Inject
     private NetworkOfferingDetailsDao networkOfferingDetailsDao;
     @Inject
     protected
     VMInstanceDao virtualMachineDao;
     @Inject
-    private UserVmDetailsDao _userVmDetailsDao;
+    private VMInstanceDetailsDao _vmInstanceDetailsDao;
     @Inject
     private NicSecondaryIpDao _nicSecIpDao;
+    @Inject
+    private NicNetworkMapDao nicNetworkMapDao;
     @Inject
     private ResourceManager _resourceMgr;
     @Inject
     protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    protected VgpuProfileDao vgpuProfileDao;
     @Inject
     protected ServiceOfferingDao serviceOfferingDao;
     @Inject
@@ -103,7 +147,19 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Inject
     private UserVmManager userVmManager;
     @Inject
+    protected UserVmDao userVmDao;
+    @Inject
+    protected ProjectDao projectDao;
+    @Inject
+    protected ClusterDao clusterDao;
+    @Inject
+    protected DataCenterDao dataCenterDao;
+    @Inject
+    protected HostPodDao hostPodDao;
+    @Inject
     private ConfigurationManager configurationManager;
+    @Inject
+    ResourceTagDao tagsDao;
 
     public static ConfigKey<Boolean> VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.min.memory.equals.memory.divided.by.mem.overprovisioning.factor", "true",
             "If we set this to 'true', a minimum memory (memory/ mem.overprovisioning.factor) will be set to the VM, independent of using a scalable service offering or not.", true, ConfigKey.Scope.Cluster);
@@ -113,7 +169,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
     private Map<NetworkOffering.Detail, String> getNicDetails(Network network) {
         if (network == null) {
-            s_logger.debug("Unable to get NIC details as the network is null");
+            logger.debug("Unable to get NIC details as the network is null");
             return null;
         }
         Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
@@ -154,9 +210,28 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setMtu(profile.getMtu());
         to.setIp6Dns1(profile.getIPv6Dns1());
         to.setIp6Dns2(profile.getIPv6Dns2());
+        to.setNetworkId(profile.getNetworkId());
+        to.setEnabled(profile.isEnabled());
 
         NetworkVO network = networkDao.findById(profile.getNetworkId());
         to.setNetworkUuid(network.getUuid());
+        Account account = accountManager.getAccount(network.getAccountId());
+        Domain domain = domainDao.findById(network.getDomainId());
+        DataCenter zone = dcDao.findById(network.getDataCenterId());
+        if (Objects.isNull(zone)) {
+            throw new CloudRuntimeException(String.format("Failed to find zone with ID: %s", network.getDataCenterId()));
+        }
+        if (Objects.isNull(account)) {
+            throw new CloudRuntimeException(String.format("Failed to find account with ID: %s", network.getAccountId()));
+        }
+        if (Objects.isNull(domain)) {
+            throw new CloudRuntimeException(String.format("Failed to find domain with ID: %s", network.getDomainId()));
+        }
+        VpcVO vpc = null;
+        if (Objects.nonNull(network.getVpcId())) {
+            vpc = vpcDao.findById(network.getVpcId());
+        }
+        to.setNetworkSegmentName(getNetworkName(zone.getId(), domain.getId(), account.getId(), vpc, network.getId()));
 
         // Workaround to make sure the TO has the UUID we need for Nicira integration
         NicVO nicVO = nicDao.findById(profile.getId());
@@ -171,8 +246,9 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
                 secIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nicVO.getId());
             }
             to.setNicSecIps(secIps);
+            setTrunkAssociationsOnNicTO(to, nicVO);
         } else {
-            s_logger.warn("Unabled to load NicVO for NicProfile " + profile.getId());
+            logger.warn("Unable to load NicVO for NicProfile {}", profile);
             //Workaround for dynamically created nics
             //FixMe: uuid and secondary IPs can be made part of nic profile
             to.setUuid(UUID.randomUUID().toString());
@@ -184,6 +260,42 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         // configuration. Use full when vm stop/start
         return to;
     }
+
+    private void setTrunkAssociationsOnNicTO(final NicTO to, final NicVO nic) {
+        if (!nic.getMultiNetwork()) {
+            return;
+        }
+        final List<NicNetworkMapVO> associations = nicNetworkMapDao.listByNicId(nic.getId());
+        if (associations.isEmpty()) {
+            return;
+        }
+        final List<NetworkTO> associatedNetworks = new ArrayList<>();
+        for (final NicNetworkMapVO association : associations) {
+            final NetworkVO associatedNetwork = networkDao.findById(association.getNetworkId());
+            if (associatedNetwork == null) {
+                continue;
+            }
+            final NetworkTO associatedTo = new NetworkTO();
+            associatedTo.setUuid(associatedNetwork.getUuid());
+            associatedTo.setBroadcastType(associatedNetwork.getBroadcastDomainType());
+            associatedTo.setBroadcastUri(associatedNetwork.getBroadcastUri());
+            associatedTo.setType(associatedNetwork.getTrafficType());
+            associatedNetworks.add(associatedTo);
+        }
+        if (!associatedNetworks.isEmpty()) {
+            to.setTrunkVlan(true);
+            to.setAssociatedNetworks(associatedNetworks);
+        }
+    }
+
+    private String getNetworkName(long zoneId, long domainId, long accountId, VpcVO vpc, long networkId) {
+        String prefix = String.format("D%s-A%s-Z%s", domainId, accountId, zoneId);
+        if (Objects.isNull(vpc)) {
+            return prefix + "-S" + networkId;
+        }
+        return prefix + "-V" + vpc.getId() + "-S" + networkId;
+    }
+
 
     /**
      * Add extra configuration from VM details. Extra configuration is stored as details starting with 'extraconfig'
@@ -264,13 +376,20 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setNics(nics);
         to.setDisks(vmProfile.getDisks().toArray(new DiskTO[vmProfile.getDisks().size()]));
 
-        if (vmProfile.getTemplate().getBits() == 32) {
-            to.setArch("i686");
+        CPU.CPUArch templateArch = vmProfile.getTemplate().getArch();
+        if (templateArch != null) {
+            to.setArch(templateArch.getType());
         } else {
-            to.setArch("x86_64");
+            if (vmProfile.getTemplate().getBits() == 32) {
+                to.setArch(CPU.CPUArch.x86.getType());
+            } else if("s390x".equals(System.getProperty("os.arch"))) {
+                to.setArch("s390x");
+            } else {
+                to.setArch(CPU.CPUArch.amd64.getType());
+            }
         }
 
-        Map<String, String> detailsInVm = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
+        Map<String, String> detailsInVm = _vmInstanceDetailsDao.listDetailsKeyPairs(vm.getId());
         if (detailsInVm != null) {
             to.setDetails(detailsInVm);
             addExtraConfig(detailsInVm, to, vm.getAccountId(), vm.getHypervisorType());
@@ -280,9 +399,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
         // Set GPU details
         ServiceOfferingDetailsVO offeringDetail = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString());
-        if (offeringDetail != null) {
-            ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
-            to.setGpuDevice(_resourceMgr.getGPUDevice(vm.getHostId(), groupName.getValue(), offeringDetail.getValue()));
+        if (offering.getVgpuProfileId() != null || offeringDetail != null) {
+                to.setGpuDevice(getGpuDevice(offering, offeringDetail, vm, vmProfile.getHostId()));
         }
 
         // Workaround to make sure the TO has the UUID we need for Niciri integration
@@ -300,19 +418,34 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         return to;
     }
 
+    private GPUDeviceTO getGpuDevice(ServiceOffering offering, ServiceOfferingDetailsVO offeringDetail, VirtualMachine vm, long hostId) {
+        if (offering.getVgpuProfileId() != null) {
+            VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(offering.getVgpuProfileId());
+            if (vgpuProfile != null) {
+                int gpuCount = offering.getGpuCount() != null ? offering.getGpuCount() : 1;
+                return _resourceMgr.getGPUDevice(vm, hostId, vgpuProfile, gpuCount);
+            }
+        } else if (offeringDetail != null) {
+            ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
+            return _resourceMgr.getGPUDevice(vm.getHostId(), groupName.getValue(), offeringDetail.getValue());
+        }
+        return null;
+    }
+
+
     protected Long findClusterOfVm(VirtualMachine vm) {
         HostVO host = hostDao.findById(vm.getHostId());
         if (host != null) {
             return host.getClusterId();
         }
 
-        s_logger.debug(String.format("VM [%s] does not have a host id. Trying the last host.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
+        logger.debug(String.format("VM [%s] does not have a host id. Trying the last host.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
         host = hostDao.findById(vm.getLastHostId());
         if (host != null) {
             return host.getClusterId();
         }
 
-        s_logger.debug(String.format("VM [%s] does not have a last host id.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
+        logger.debug(String.format("VM [%s] does not have a last host id.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
         return null;
     }
 
@@ -350,13 +483,13 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
     @Override
     public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId,
-                                                         String vmInternalName, Backup backup) throws Exception {
+                                                         String vmInternalName, Backup backup, BackupProvider backupProvider) throws Exception {
         return null;
     }
 
     @Override
     public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo,
-                                                        VirtualMachine vm, long poolId, Backup backup) throws Exception {
+                                                        VirtualMachine vm, long poolId, Backup backup, BackupProvider backupProvider) throws Exception {
         return false;
     }
 
@@ -379,25 +512,165 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
     @Override
     public Pair<UnmanagedInstanceTO, Boolean> getHypervisorVMOutOfBandAndCloneIfRequired(String hostIp, String vmName, Map<String, String> params) {
-        s_logger.error("Unsupported operation: cannot clone external VM");
+        logger.error("Unsupported operation: cannot clone external VM");
         return null;
     }
 
     @Override
     public boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
-        s_logger.error("Unsupported operation: cannot remove external VM");
+        logger.error("Unsupported operation: cannot remove external VM");
         return false;
     }
 
     @Override
     public String createVMTemplateOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation, int threadsCountToExportOvf) {
-        s_logger.error("Unsupported operation: cannot create template file");
+        logger.error("Unsupported operation: cannot create template file");
         return null;
     }
 
     @Override
     public boolean removeVMTemplateOutOfBand(DataStoreTO templateLocation, String templateDir) {
-        s_logger.error("Unsupported operation: cannot remove template file");
+        logger.error("Unsupported operation: cannot remove template file");
         return false;
+    }
+
+    /**
+     * Generates VirtualMachineMetadataTO object from VirtualMachineProfile
+     * It is a helper function to be used in the inherited classes to avoid repetition
+     * while generating metadata for multiple Guru implementations
+     *
+     * @param  vmProfile  virtual machine profile object
+     * @return      A VirtualMachineMetadataTO ready to be appended to VirtualMachineTO object
+     * @see         KVMGuru
+     */
+    protected VirtualMachineMetadataTO makeVirtualMachineMetadata(VirtualMachineProfile vmProfile) {
+        String vmName = "unknown",
+                instanceName = "unknown",
+                displayName = "unknown",
+                instanceUuid = "unknown",
+                clusterName = "unknown",
+                clusterUuid = "unknown",
+                zoneUuid = "unknown",
+                zoneName = "unknown",
+                podUuid = "unknown",
+                podName = "unknown",
+                domainUuid = "unknown",
+                domainName = "unknown",
+                accountUuid = "unknown",
+                accountName = "unknown",
+                projectName = "", // the project can be empty
+                projectUuid = "", // the project can be empty
+                serviceOfferingName = "unknown";
+        long created = 0L;
+        Integer cpuCores = -1, memory = -1;
+        List<String> serviceOfferingTags = new ArrayList<>();
+        HashMap<String, String> resourceTags = new HashMap<>();
+
+        UserVmVO vmVO = userVmDao.findById(vmProfile.getVirtualMachine().getId());
+        if (vmVO != null) {
+            instanceUuid = vmVO.getUuid();
+            vmName = vmVO.getHostName(); // this returns the VM name field
+            instanceName = vmVO.getInstanceName();
+            displayName = vmVO.getDisplayName();
+            created = vmVO.getCreated().getTime() / 1000L;
+
+            HostVO host = hostDao.findById(vmVO.getHostId());
+            if (host != null) {
+                // Find zone and cluster
+                Long clusterId = host.getClusterId();
+                ClusterVO cluster = clusterDao.findById(clusterId);
+
+                if (cluster != null) {
+                    clusterName = cluster.getName();
+                    clusterUuid = cluster.getUuid();
+
+                    DataCenterVO zone = dataCenterDao.findById(cluster.getDataCenterId());
+                    if (zone != null) {
+                        zoneUuid = zone.getUuid();
+                        zoneName = zone.getName();
+                    }
+
+                    HostPodVO pod = hostPodDao.findById(cluster.getPodId());
+                    if (pod != null) {
+                        podUuid = pod.getUuid();
+                        podName = pod.getName();
+                    }
+                }
+            } else {
+                logger.warn("Could not find the Host object for the virtual machine (null value returned). Libvirt metadata for cluster, pod, zone will not be populated.");
+            }
+
+            DomainVO domain = domainDao.findById(vmVO.getDomainId());
+            if (domain != null) {
+                domainUuid = domain.getUuid();
+                domainName = domain.getName();
+            } else {
+                logger.warn("Could not find the Domain object for the virtual machine (null value returned). Libvirt metadata for domain will not be populated.");
+            }
+
+            Account account = accountManager.getAccount(vmVO.getAccountId());
+            if (account != null) {
+                accountUuid = account.getUuid();
+                accountName = account.getName();
+
+                ProjectVO project = projectDao.findByProjectAccountId(account.getId());
+                if (project != null) {
+                    projectName = project.getName();
+                    projectUuid = project.getUuid();
+                }
+            } else {
+                logger.warn("Could not find the Account object for the virtual machine (null value returned). Libvirt metadata for account and project will not be populated.");
+            }
+
+            List<? extends ResourceTag> resourceTagsList = tagsDao.listBy(vmVO.getId(), ResourceTag.ResourceObjectType.UserVm);
+            if (resourceTagsList != null) {
+                for (ResourceTag tag : resourceTagsList) {
+                    resourceTags.put(tag.getKey(), tag.getValue());
+                }
+            }
+        } else {
+            logger.warn("Could not find the VirtualMachine object by its profile (null value returned). Libvirt metadata will not be populated.");
+        }
+
+        ServiceOffering serviceOffering = vmProfile.getServiceOffering();
+        if (serviceOffering != null) {
+            serviceOfferingName = serviceOffering.getName();
+            cpuCores = serviceOffering.getCpu();
+            memory = serviceOffering.getRamSize();
+
+            String hostTagsCommaSeparated = serviceOffering.getHostTag();
+            if (hostTagsCommaSeparated != null) { // when service offering has no host tags, this value is null
+                serviceOfferingTags = Arrays.asList(hostTagsCommaSeparated.split(","));
+            }
+        } else {
+            logger.warn("Could not find the ServiceOffering object by its profile (null value returned). Libvirt metadata for service offering will not be populated.");
+        }
+
+
+        return new VirtualMachineMetadataTO(
+                vmName, // name
+                instanceName, // internalName
+                displayName, // displayName
+                instanceUuid , // instanceUUID
+                cpuCores, // cpuCores
+                memory, // memory
+                created, // created, unix epoch in seconds
+                System.currentTimeMillis() / 1000L, // started, unix epoch in seconds
+                domainUuid, // ownerDomainUUID
+                domainName, // ownerDomainName
+                accountUuid, // ownerAccountUUID
+                accountName, // ownerAccountName
+                projectUuid,
+                projectName,
+                serviceOfferingName,
+                serviceOfferingTags, // serviceOfferingTags
+                zoneName,
+                zoneUuid,
+                podName,
+                podUuid,
+                clusterName,
+                clusterUuid,
+                resourceTags
+        );
     }
 }

@@ -100,7 +100,7 @@ public class BasePrimaryDataStoreLifeCycleImplTest {
         ReflectionTestUtils.setField(host, "id", HOST_ID);
         List<HypervisorType> hypervisorTypes = Arrays.asList(HypervisorType.KVM, HypervisorType.VMware);
         Mockito.when(resourceManager.listAllHostsInOneZoneNotInClusterByHypervisors(hypervisorTypes, ZONE_ID, CLUSTER_ID)).thenReturn(Arrays.asList(host));
-        Mockito.when(storageManager.connectHostToSharedPool(HOST_ID, POOL_ID)).thenReturn(true);
+        Mockito.when(storageManager.connectHostToSharedPool(host, POOL_ID)).thenReturn(true);
 
         dataStoreLifeCycle.changeStoragePoolScopeToZone(store, clusterScope, null);
 

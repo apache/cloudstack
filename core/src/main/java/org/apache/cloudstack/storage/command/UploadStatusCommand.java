@@ -28,6 +28,7 @@ public class UploadStatusCommand extends Command {
     }
     private String entityUuid;
     private EntityType entityType;
+    private Boolean abort;
 
     protected UploadStatusCommand() {
     }
@@ -37,12 +38,21 @@ public class UploadStatusCommand extends Command {
         this.entityType = entityType;
     }
 
+    public UploadStatusCommand(String entityUuid, EntityType entityType, Boolean abort) {
+        this(entityUuid, entityType);
+        this.abort = abort;
+    }
+
     public String getEntityUuid() {
         return entityUuid;
     }
 
     public EntityType getEntityType() {
         return entityType;
+    }
+
+    public Boolean getAbort() {
+        return abort;
     }
 
     @Override

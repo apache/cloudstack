@@ -18,8 +18,10 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import tungsten from '@/assets/icons/tungsten.svg?inline'
-import { isAdmin } from '@/role'
+import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import { isZoneCreated } from '@/utils/zone'
+import { vueProps } from '@/vue-app'
+import { escapeHtml } from '@/utils/util'
 
 export default {
   name: 'network',
@@ -48,14 +50,22 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domainpath', 'associatednetwork', 'associatednetworkid', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu']
-        if (!isAdmin()) {
-          fields = fields.filter(function (e) { return e !== 'broadcasturi' })
+        const fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'asnumber',
+          'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename',
+          'account', 'domainpath', 'associatednetwork', 'associatednetworkid', 'ip4routing', 'ip6firewall', 'ip6routing', 'ip6routes',
+          'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu', 'dnszone', 'dnssubdomain']
+        if (isAdmin()) {
+          const vlanIndex = fields.findIndex(detail => detail === 'vlan')
+          fields.splice(vlanIndex + 1, 0, 'broadcasturi')
+          fields.push({
+            field: 'keepmacaddressonpublicnic',
+            customTitle: 'keep.mac.address.on.public.nic'
+          })
         }
         return fields
       },
       filters: ['all', 'account', 'domainpath', 'shared'],
-      searchFilters: ['keyword', 'zoneid', 'domainid', 'account', 'type', 'displaynetwork', 'tags'],
+      searchFilters: ['keyword', 'zoneid', 'domainid', 'account', 'type', 'restartrequired', 'displaynetwork', 'tags'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -69,13 +79,21 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/EgressRulesTab.vue'))),
         show: (record, route, user) => { return record.type === 'Isolated' && !('vpcname' in record) && 'listEgressFirewallRules' in store.getters.apis && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid) }
       }, {
+        name: 'bgp.peers',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/BgpPeersTab.vue'))),
+        show: (record, route, user) => { return !record.vpcid && ['Admin'].includes(user.roletype) && record.ip4routing === 'Dynamic' }
+      }, {
+        name: 'routing.firewall',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/RoutingFirewallRulesTab.vue'))),
+        show: (record, route, user) => { return record.type === 'Isolated' && record.ip4routing && !('vpcname' in record) && 'listRoutingFirewallRules' in store.getters.apis && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid) }
+      }, {
         name: 'ip.v6.firewall',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/Ipv6FirewallRulesTab.vue'))),
         show: (record, route, user) => { return record.type === 'Isolated' && ['IPv6', 'DualStack'].includes(record.internetprotocol) && !('vpcid' in record) && 'listIpv6FirewallRules' in store.getters.apis && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid) }
       }, {
         name: (record) => { return record.type === 'Shared' ? 'ip.addresses' : 'public.ip.addresses' },
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/IpAddressesTab.vue'))),
-        show: (record, route, user) => { return 'listPublicIpAddresses' in store.getters.apis && (record.type === 'Shared' || (record.type === 'Isolated' && !('vpcname' in record) && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid))) }
+        show: (record, route, user) => { return 'listPublicIpAddresses' in store.getters.apis && (record.type === 'Shared' || (record.type === 'Isolated' && !record.ip4routing && !('vpcname' in record) && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid))) }
       }, {
         name: 'virtual.routers',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/RoutersTab.vue'))),
@@ -104,6 +122,14 @@ export default {
         name: 'network.permissions',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/NetworkPermissions.vue'))),
         show: (record, route, user) => { return 'listNetworkPermissions' in store.getters.apis && record.acltype === 'Account' && !('vpcid' in record) && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account) && !record.projectid }
+      }, {
+        name: 'custom.actions',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/extension/RunCustomAction.vue'))),
+        show: (record) => {
+          return 'runCustomAction' in store.getters.apis &&
+            'listCustomActions' in store.getters.apis &&
+            record.service && record.service.some(s => s.name === 'CustomAction')
+        }
       },
       {
         name: 'events',
@@ -163,18 +189,21 @@ export default {
             if (isGroupAction || record.vpcid == null) {
               fields.push('cleanup')
             }
+            if (!record.redundantrouter && vueProps.$config.allowMakingRouterRedundant) {
+              fields.push('makeredundant')
+            }
             fields.push('livepatch')
             return fields
           },
           show: (record) => record.type !== 'L2',
           groupAction: true,
           popup: true,
-          groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup } }) }
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup, makeredundant: values.makeredundant } }) }
         },
         {
           api: 'replaceNetworkACLList',
           icon: 'swap-outlined',
-          label: 'label.replace.acl.list',
+          label: 'label.replace.acl',
           message: 'message.confirm.replace.acl.new.one',
           docHelp: 'adminguide/networking_and_traffic.html#configuring-network-access-control-list',
           dataView: true,
@@ -185,6 +214,49 @@ export default {
               api: 'listNetworkACLLists',
               params: (record) => { return { vpcid: record.vpcid } }
             },
+            networkid: {
+              value: (record) => { return record.id }
+            }
+          }
+        },
+        {
+          api: 'runCustomAction',
+          icon: 'thunderbolt-outlined',
+          label: 'label.run.custom.action',
+          dataView: true,
+          show: (record) => {
+            return 'runCustomAction' in store.getters.apis &&
+              'listCustomActions' in store.getters.apis &&
+              record.service && record.service.some(s => s.name === 'CustomAction')
+          },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/extension/RunCustomAction.vue')))
+        },
+        {
+          api: 'associateDnsZoneToNetwork',
+          icon: 'link-outlined',
+          label: 'label.action.associate.dns.zone',
+          dataView: true,
+          show: (record, store) => {
+            return (record.type === 'Shared' && record.dnszone === undefined &&
+              (record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype)))
+          },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/AssociateDnsZone.vue')))
+        },
+        {
+          api: 'disassociateDnsZoneFromNetwork',
+          icon: 'disconnect-outlined',
+          label: 'label.action.disassociate.dns.zone',
+          message: 'message.action.disassociate.dns.zone',
+          dataView: true,
+          popup: true,
+          args: ['networkid'],
+          show: (record, store) => {
+            return record.dnszone !== undefined && record.type === 'Shared' &&
+              (record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype))
+          },
+          mapping: {
             networkid: {
               value: (record) => { return record.id }
             }
@@ -221,8 +293,17 @@ export default {
         fields.push(...['domain', 'zonename'])
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu'],
-      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
+      details: () => {
+        const fields = ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip4routing', 'ip4routes', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu']
+        if (isAdmin()) {
+          fields.push({
+            field: 'keepmacaddressonpublicnic',
+            customTitle: 'keep.mac.address.on.public.nic'
+          })
+        }
+        return fields
+      },
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'restartrequired', 'tags'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -256,7 +337,13 @@ export default {
           icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
-          args: ['name', 'displaytext', 'publicmtu', 'sourcenatipaddress']
+          args: () => {
+            const fields = ['name', 'displaytext', 'publicmtu', 'sourcenatipaddress']
+            if (isAdmin()) {
+              fields.push('keepmacaddressonpublicnic')
+            }
+            return fields
+          }
         },
         {
           api: 'restartVPC',
@@ -312,10 +399,7 @@ export default {
           return false
         }
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
-        if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
-          return false
-        }
-        return true
+        return (listZoneHaveSGEnabled && listZoneHaveSGEnabled.length > 0) || store.getters.showSecurityGroups
       },
       actions: [
         {
@@ -351,7 +435,10 @@ export default {
       permission: ['listVnfAppliances'],
       resourceType: 'UserVm',
       params: () => {
-        return { details: 'servoff,tmpl,nics', isvnf: true }
+        return {
+          details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff,vnfnics',
+          isvnf: true
+        }
       },
       columns: () => {
         const fields = ['name', 'state', 'ipaddress']
@@ -495,6 +582,7 @@ export default {
           api: 'createVMSnapshot',
           icon: 'camera-outlined',
           label: 'label.action.vmsnapshot.create',
+          message: 'message.action.vmsnapshot.create',
           docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
           dataView: true,
           args: ['virtualmachineid', 'name', 'description', 'snapshotmemory', 'quiescevm'],
@@ -673,7 +761,7 @@ export default {
           show: (record) => { return ['Stopped'].includes(record.state) && record.passwordenabled },
           response: (result) => {
             return {
-              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null,
+              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${escapeHtml(result.virtualmachine.displayname)}</b> is <b>${result.virtualmachine.password}</b>` : null,
               copybuttontext: result.virtualmachine.password ? 'label.copy.password' : null,
               copytext: result.virtualmachine.password ? result.virtualmachine.password : null
             }
@@ -693,7 +781,7 @@ export default {
         {
           api: 'resetUserDataForVirtualMachine',
           icon: 'solution-outlined',
-          label: 'label.reset.userdata.on.vm',
+          label: 'label.reset.user.data.on.vm',
           message: 'message.desc.reset.userdata',
           docHelp: 'adminguide/virtual_machines.html#resetting-userdata',
           dataView: true,
@@ -795,7 +883,8 @@ export default {
       }, {
         name: 'vpn',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/VpnDetails.vue'))),
-        show: (record) => { return record.issourcenat }
+        networkServiceFilter: networkService => networkService.filter(x => x.name === 'Vpn').length > 0,
+        show: (record) => { return record.issourcenat || record.virtualmachinetype === 'DomainRouter' || !record.hasrules }
       },
       {
         name: 'events',
@@ -874,6 +963,54 @@ export default {
       ]
     },
     {
+      name: 'asnumbers',
+      title: 'label.asnumbers',
+      icon: 'partition-outlined',
+      permission: ['listASNumbers'],
+      show: () => {
+        if (!store.getters.zones || store.getters.zones.length === 0) {
+          return false
+        }
+        const AdvancedZonesWithRoutedmode = store.getters.zones.filter(zone => zone.routedmodeenabled)
+        if (isAdmin() && (AdvancedZonesWithRoutedmode && AdvancedZonesWithRoutedmode.length > 0)) {
+          return true
+        }
+        return false
+      },
+      filters: ['all', 'allocatedonly', 'free'],
+      columns: ['asnumber', 'allocationstate', 'asnrange', 'associatednetworkname', 'vpcname', 'allocated', 'account', 'domain', 'zonename'],
+      searchFilters: ['zoneid', 'associatednetworkid', 'account', 'domainid'],
+      resourceType: 'ASNumber',
+      actions: [
+        {
+          api: 'releaseASNumber',
+          icon: 'delete-outlined',
+          label: 'label.action.release.asnumber',
+          message: 'message.action.release.asnumber',
+          show: (record) => { return record.allocationstate === 'Allocated' },
+          args: ['zoneid', 'asnumber'],
+          mapping: {
+            zoneid: {
+              value: (record) => { return record.zoneid }
+            },
+            asnumber: {
+              value: (record) => { return record.asnumber }
+            }
+          },
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupShow: (selectedItems, storegetters) => {
+            return selectedItems.length === 1 && selectedItems[0].allocationstate === 'Allocated'
+          },
+          groupMap: (selectedId, values, records) => {
+            const record = records.filter(x => { return x.id === selectedId[0] })
+            return record
+          }
+        }
+      ]
+    },
+    {
       name: 'privategw',
       title: 'label.private.gateway',
       icon: 'gateway-outlined',
@@ -912,7 +1049,7 @@ export default {
         {
           api: 'replaceNetworkACLList',
           icon: 'swap-outlined',
-          label: 'label.replace.acl.list',
+          label: 'label.replace.acl',
           message: 'message.confirm.replace.acl.new.one',
           docHelp: 'adminguide/networking_and_traffic.html#acl-on-private-gateway',
           dataView: true,
@@ -968,7 +1105,6 @@ export default {
       title: 'label.site.to.site.vpn.connections',
       docHelp: 'adminguide/networking_and_traffic.html#setting-up-a-site-to-site-vpn-connection',
       icon: 'sync-outlined',
-      hidden: true,
       permission: ['listVpnConnections'],
       columns: ['publicip', 'state', 'gateway', 'ipsecpsk', 'ikepolicy', 'esppolicy'],
       details: ['publicip', 'gateway', 'passive', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'esppolicy', 'ikelifetime', 'ikeversion', 'esplifetime', 'dpd', 'splitconnections', 'forceencap', 'created'],
@@ -1009,10 +1145,9 @@ export default {
     },
     {
       name: 'acllist',
-      title: 'label.network.acl.lists',
+      title: 'label.network.acls',
       icon: 'bars-outlined',
       docHelp: 'adminguide/networking_and_traffic.html#configuring-network-access-control-list',
-      hidden: true,
       permission: ['listNetworkACLLists'],
       columns: ['name', 'description', 'id'],
       details: ['name', 'description', 'id'],
@@ -1020,15 +1155,15 @@ export default {
         name: 'details',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }, {
-        name: 'acl.list.rules',
-        component: shallowRef(defineAsyncComponent(() => import('@/views/network/AclListRulesTab.vue'))),
+        name: 'acl.rules',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/AclRulesTab.vue'))),
         show: () => true
       }],
       actions: [
         {
           api: 'createNetworkACLList',
           icon: 'plus-outlined',
-          label: 'label.add.acl.list',
+          label: 'label.add.acl',
           docHelp: 'adminguide/networking_and_traffic.html#creating-acl-lists',
           listView: true,
           args: ['name', 'description', 'vpcid']
@@ -1036,15 +1171,15 @@ export default {
         {
           api: 'updateNetworkACLList',
           icon: 'edit-outlined',
-          label: 'label.edit.acl.list',
+          label: 'label.edit.acl',
           dataView: true,
           args: ['name', 'description']
         },
         {
           api: 'deleteNetworkACLList',
           icon: 'delete-outlined',
-          label: 'label.delete.acl.list',
-          message: 'message.confirm.delete.acl.list',
+          label: 'label.delete.acl',
+          message: 'message.confirm.delete.acl',
           dataView: true
         }
       ]
@@ -1212,15 +1347,11 @@ export default {
         {
           api: 'updateVpnCustomerGateway',
           icon: 'edit-outlined',
-          label: 'label.edit',
+          label: 'label.update.vpn.customer.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#updating-and-removing-a-vpn-customer-gateway',
           dataView: true,
-          args: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'ikeversion', 'esppolicy', 'esplifetime', 'dpd', 'splitconnections', 'forceencap'],
-          mapping: {
-            ikeversion: {
-              options: ['ike', 'ikev1', 'ikev2']
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/UpdateVpnCustomerGateway.vue')))
         },
         {
           api: 'deleteVpnCustomerGateway',
@@ -1397,6 +1528,143 @@ export default {
         show: (record) => { return (record.allocationstate === 'Allocated') }
       }],
       show: isZoneCreated
+    },
+    {
+      name: 'ipv4subnets',
+      title: 'label.ipv4.subnets',
+      icon: 'pic-center-outlined',
+      permission: ['listIpv4SubnetsForGuestNetwork'],
+      columns: ['subnet', 'zonename', 'parentsubnet', 'networkname', 'vpcname', 'created', 'allocated'],
+      details: ['subnet', 'zonename', 'zoneid', 'parentsubnet', 'networkname', 'networkid', 'vpcname', 'vpcid', 'created', 'allocated', 'state'],
+      searchFilters: ['zoneid'],
+      show: () => {
+        if (!store.getters.zones || store.getters.zones.length === 0) {
+          return false
+        }
+        const AdvancedZonesWithRoutedmode = store.getters.zones.filter(zone => zone.routedmodeenabled)
+        if (isAdmin() && (AdvancedZonesWithRoutedmode && AdvancedZonesWithRoutedmode.length > 0)) {
+          return true
+        }
+        return false
+      },
+      actions: [
+        {
+          api: 'createIpv4SubnetForGuestNetwork',
+          icon: 'plus-outlined',
+          label: 'label.add.ipv4.subnet',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/CreateIpv4SubnetForNetwork.vue')))
+        },
+        {
+          api: 'deleteIpv4SubnetForGuestNetwork',
+          icon: 'delete-outlined',
+          label: 'label.delete.ipv4.subnet',
+          message: 'message.action.delete.ipv4.subnet',
+          dataView: true,
+          show: (record) => { return !record.networkid },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
+    },
+    {
+      name: 'dnszone',
+      title: 'label.dns.zones',
+      icon: 'apartment-outlined',
+      permission: ['listDnsZones'],
+      columns: ['name', 'state', 'dnsservername', 'account', 'description'],
+      details: ['name', 'id', 'state', 'dnsservername', 'dnsserverid', 'account', 'domainpath', 'description'],
+      tabs: [{
+        name: 'details',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+      },
+      {
+        name: 'dns.records',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/DnsRecordsTab.vue'))),
+        show: () => true
+      }],
+      actions: [
+        {
+          api: 'createDnsZone',
+          icon: 'plus-outlined',
+          label: 'label.dns.create.zone',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/CreateDnsZone.vue'))),
+          show: () => {
+            return true
+          }
+        },
+        {
+          api: 'updateDnsZone',
+          icon: 'edit-outlined',
+          label: 'label.dns.update.zone',
+          dataView: true,
+          popup: true,
+          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/UpdateDnsZone.vue')))
+        },
+        {
+          api: 'deleteDnsZone',
+          icon: 'delete-outlined',
+          label: 'label.dns.delete.zone',
+          message: 'message.action.delete.dns.zone',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/DeleteDnsZone.vue'))),
+          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
+          groupAction: false
+        }
+      ]
+    },
+    {
+      name: 'dnsserver',
+      title: 'label.dns.servers',
+      icon: 'cloud-server-outlined',
+      permission: ['listDnsServers'],
+      columns: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers', 'publicdomainsuffix'],
+      details: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers', 'publicdomainsuffix', 'domain', 'account'],
+      related: [{
+        name: 'dnszone',
+        title: 'label.dns.zone',
+        param: 'dnsserverid'
+      }],
+      actions: [
+        {
+          api: 'addDnsServer',
+          icon: 'plus-outlined',
+          label: 'label.dns.add.server',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/AddDnsServer.vue'))),
+          show: () => {
+            return true
+          }
+        },
+        {
+          api: 'updateDnsServer',
+          icon: 'edit-outlined',
+          label: 'label.dns.update.server',
+          dataView: true,
+          popup: true,
+          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/UpdateDnsServer.vue')))
+        },
+        {
+          api: 'deleteDnsServer',
+          icon: 'delete-outlined',
+          label: 'label.dns.delete.server',
+          message: 'message.action.delete.dns.server',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/DeleteDnsServer.vue'))),
+          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
+          groupAction: false,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
     }
   ]
 }

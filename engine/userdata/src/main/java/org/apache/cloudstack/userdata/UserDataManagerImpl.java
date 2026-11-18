@@ -16,24 +16,33 @@
 // under the License.
 package org.apache.cloudstack.userdata;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.domain.Domain;
+import com.cloud.user.User;
+import com.cloud.user.UserDataVO;
+import com.cloud.user.dao.UserDataDao;
+import com.cloud.utils.compression.CompressionUtil;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import javax.inject.Inject;
+
 public class UserDataManagerImpl extends ManagerBase implements UserDataManager {
-    private static final Logger s_logger = Logger.getLogger(UserDataManagerImpl.class);
+    @Inject
+    UserDataDao userDataDao;
+
     private static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
     private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES; // 4KB
     private static final int NUM_OF_2K_BLOCKS = 512;
@@ -89,9 +98,9 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
 
     @Override
     public String validateUserData(String userData, BaseCmd.HTTPMethod httpmethod) {
-        s_logger.trace(String.format("Validating base64 encoded user data: [%s].", userData));
+        logger.trace(String.format("Validating base64 encoded user data: [%s].", userData));
         if (StringUtils.isBlank(userData)) {
-            s_logger.debug("Null/empty base64 encoded user data set");
+            logger.debug("Null/empty base64 encoded user data set");
             return null;
         }
 
@@ -110,14 +119,33 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
         byte[] decodedUserData = null;
 
         // If GET, use 4K. If POST, support up to 1M.
-        if (httpmethod.equals(BaseCmd.HTTPMethod.GET)) {
-            decodedUserData = validateAndDecodeByHTTPMethod(userData, MAX_HTTP_GET_LENGTH, BaseCmd.HTTPMethod.GET);
-        } else if (httpmethod.equals(BaseCmd.HTTPMethod.POST)) {
+        if (BaseCmd.HTTPMethod.POST.equals(httpmethod)) {
             decodedUserData = validateAndDecodeByHTTPMethod(userData, MAX_HTTP_POST_LENGTH, BaseCmd.HTTPMethod.POST);
+        } else {
+            decodedUserData = validateAndDecodeByHTTPMethod(userData, MAX_HTTP_GET_LENGTH, BaseCmd.HTTPMethod.GET);
         }
 
         // Re-encode so that the '=' paddings are added if necessary since 'isBase64' does not require it, but python does on the VR.
         return Base64.encodeBase64String(decodedUserData);
+    }
+
+    @Override
+    public String validateAndGetUserDataForSystemVM(String userDataUuid) throws IOException {
+        if (StringUtils.isBlank(userDataUuid)) {
+            return null;
+        }
+        UserDataVO userDataVo = userDataDao.findByUuid(userDataUuid);
+        if (userDataVo == null) {
+            return null;
+        }
+        if (userDataVo.getDomainId() == Domain.ROOT_DOMAIN && userDataVo.getAccountId() == User.UID_ADMIN) {
+            // Decode base64 user data, compress it, then re-encode to reduce command line length
+            String plainTextUserData = new String(java.util.Base64.getDecoder().decode(userDataVo.getUserData()));
+            CompressionUtil compressionUtil = new CompressionUtil();
+            byte[] compressedUserData = compressionUtil.compressString(plainTextUserData);
+            return java.util.Base64.getEncoder().encodeToString(compressedUserData);
+        }
+        throw new CloudRuntimeException("User data can only be used by system VMs if it belongs to the ROOT domain and ADMIN account.");
     }
 
     private byte[] validateAndDecodeByHTTPMethod(String userData, int maxHTTPLength, BaseCmd.HTTPMethod httpMethod) {
@@ -126,17 +154,17 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
             throw new InvalidParameterValueException("User data is too short.");
         }
 
-        s_logger.trace(String.format("Decoded user data: [%s].", decodedUserData));
+        logger.trace(String.format("Decoded user data: [%s].", decodedUserData));
         int userDataLength = userData.length();
         int decodedUserDataLength = decodedUserData.length;
-        s_logger.info(String.format("Configured base64 encoded user data size: %d bytes, actual user data size: %d bytes", userDataLength, decodedUserDataLength));
+        logger.info(String.format("Configured base64 encoded user data size: %d bytes, actual user data size: %d bytes", userDataLength, decodedUserDataLength));
 
         if (userDataLength > maxHTTPLength) {
-            s_logger.warn(String.format("Base64 encoded user data (size: %d bytes) too long for http %s request (accepted size: %d bytes)", userDataLength, httpMethod.toString(), maxHTTPLength));
+            logger.warn(String.format("Base64 encoded user data (size: %d bytes) too long for http %s request (accepted size: %d bytes)", userDataLength, httpMethod.toString(), maxHTTPLength));
             throw new InvalidParameterValueException(String.format("User data is too long for http %s request", httpMethod.toString()));
         }
         if (userDataLength > VM_USERDATA_MAX_LENGTH.value()) {
-            s_logger.warn(String.format("Base64 encoded user data (size: %d bytes) has exceeded configurable max length of %d bytes", userDataLength, VM_USERDATA_MAX_LENGTH.value()));
+            logger.warn(String.format("Base64 encoded user data (size: %d bytes) has exceeded configurable max length of %d bytes", userDataLength, VM_USERDATA_MAX_LENGTH.value()));
             throw new InvalidParameterValueException("User data has exceeded configurable max length: " + VM_USERDATA_MAX_LENGTH.value());
         }
 

@@ -15,7 +15,8 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import com.cloud.resource.AgentStatusUpdater;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
 import org.libvirt.event.DomainEvent;
@@ -24,7 +25,7 @@ import org.libvirt.event.LifecycleListener;
 import org.libvirt.event.StoppedDetail;
 
 public class LibvirtDomainListener implements LifecycleListener {
-    private static final Logger LOGGER = Logger.getLogger(LibvirtDomainListener.class);
+    private static final Logger LOGGER = LogManager.getLogger(LibvirtDomainListener.class);
 
     private final AgentStatusUpdater agentStatusUpdater;
 

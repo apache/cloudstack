@@ -19,7 +19,7 @@ package com.cloud.projects.dao;
 import java.sql.Date;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import com.cloud.user.User;
 import org.springframework.stereotype.Component;
 
 import com.cloud.projects.ProjectInvitation.State;
@@ -31,7 +31,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO, Long> implements ProjectInvitationDao {
-    private static final Logger s_logger = Logger.getLogger(ProjectInvitationDaoImpl.class);
     protected final SearchBuilder<ProjectInvitationVO> AllFieldsSearch;
     protected final SearchBuilder<ProjectInvitationVO> InactiveSearch;
     protected final SearchBuilder<ProjectInvitationVO> ProjectAccountInviteSearch;
@@ -111,7 +110,7 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
         for (ProjectInvitationVO invitationToExpire : invitationsToExpire) {
             invitationToExpire.setState(State.Expired);
             if (!update(invitationToExpire.getId(), invitationToExpire)) {
-                s_logger.warn("Fail to expire invitation " + invitationToExpire.toString());
+                logger.warn("Fail to expire invitation " + invitationToExpire.toString());
                 success = false;
             }
         }
@@ -127,13 +126,47 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
     }
 
     @Override
+    public int removeBy(Long projectId, Long accountId, Long userId) {
+        SearchCriteria<ProjectInvitationVO> sc = prepareAllFieldsSearchCriteria(projectId, accountId, userId);
+        return remove(sc);
+    }
+
+    @Override
+    public List<ProjectInvitationVO> listBy(Long projectId, Long accountId, Long userId) {
+        SearchCriteria<ProjectInvitationVO> sc = prepareAllFieldsSearchCriteria(projectId, accountId, userId);
+        return listBy(sc);
+    }
+
+    @Override
+    public void move(User oldUser, User newUser) {
+        List<ProjectInvitationVO> projectInvitations = listBy(null, oldUser.getAccountId(), oldUser.getId());
+        for (ProjectInvitationVO projectInvitation : projectInvitations) {
+            projectInvitation.setForAccountId(newUser.getAccountId());
+            projectInvitation.setForUserId(newUser.getId());
+            update(projectInvitation.getId(), projectInvitation);
+        }
+    }
+
+    private SearchCriteria<ProjectInvitationVO> prepareAllFieldsSearchCriteria(Long projectId, Long accountId, Long userId) {
+        SearchCriteria<ProjectInvitationVO> sc = AllFieldsSearch.create();
+
+        sc.setParametersIfNotNull("userId", userId);
+        sc.setParametersIfNotNull("accountId", accountId);
+        if (projectId != null && projectId != -1) {
+            sc.setParameters("projectId", projectId);
+        }
+
+        return sc;
+    }
+
+    @Override
     public boolean isActive(long id, long timeout) {
         SearchCriteria<ProjectInvitationVO> sc = InactiveSearch.create();
 
         sc.setParameters("id", id);
 
         if (findOneBy(sc) == null) {
-            s_logger.warn("Unable to find project invitation by id " + id);
+            logger.warn("Unable to find project invitation by id " + id);
             return false;
         }
 
@@ -185,7 +218,7 @@ public class ProjectInvitationDaoImpl extends GenericDaoBase<ProjectInvitationVO
         sc.setParameters("projectId", projectId);
 
         int numberRemoved = remove(sc);
-        s_logger.debug("Removed " + numberRemoved + " invitations for project id=" + projectId);
+        logger.debug("Removed " + numberRemoved + " invitations for project id=" + projectId);
     }
 
 }

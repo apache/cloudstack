@@ -25,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
@@ -38,7 +37,6 @@ import com.cloud.utils.component.ManagerBase;
 
 public class InMemoryEventBus extends ManagerBase implements EventBus {
 
-    private static final Logger s_logger = Logger.getLogger(InMemoryEventBus.class);
 
     private final static Map<UUID, Pair<EventTopic, EventSubscriber>> subscribers;
 
@@ -62,6 +60,8 @@ public class InMemoryEventBus extends ManagerBase implements EventBus {
         if (subscriber == null || topic == null) {
             throw new EventBusException("Invalid EventSubscriber/EventTopic object passed.");
         }
+        logger.debug("subscribing '{}' to events of type '{}' from '{}'", subscriber.toString(), topic.getEventType(), topic.getEventSource());
+
         UUID subscriberId = UUID.randomUUID();
 
         subscribers.put(subscriberId, new Pair<EventTopic, EventSubscriber>(topic, subscriber));
@@ -70,6 +70,7 @@ public class InMemoryEventBus extends ManagerBase implements EventBus {
 
     @Override
     public void unsubscribe(UUID subscriberId, EventSubscriber subscriber) throws EventBusException {
+        logger.debug("unsubscribing '{}'", subscriberId);
         if (subscriberId == null) {
             throw new EventBusException("Cannot unregister a null subscriberId.");
         }
@@ -87,7 +88,9 @@ public class InMemoryEventBus extends ManagerBase implements EventBus {
 
     @Override
     public void publish(Event event) throws EventBusException {
+        logger.trace("publish '{}'", event.getDescription());
         if (subscribers == null || subscribers.isEmpty()) {
+            logger.trace("no subscribers, no publish");
             return; // no subscriber to publish to, so just return
         }
 

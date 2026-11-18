@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.network;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,13 +35,12 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteNetworkACLList", description = "Deletes a network ACL", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteNetworkACLListCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = true, description = "the ID of the network ACL")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = true, description = "The ID of the network ACL")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -63,7 +61,7 @@ public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting network ACL ID=" + id);
+        return ("Deleting network ACL with ID: " + getResourceUuid(ApiConstants.ID));
     }
 
     @Override
@@ -84,7 +82,7 @@ public class DeleteNetworkACLListCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Network ACL ID: " + id);
+        CallContext.current().setEventDetails("Network ACL ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _networkACLService.deleteNetworkACL(id);
 
         if (result) {

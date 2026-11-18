@@ -117,6 +117,12 @@
         <template v-if="column.key === 'cidrlist'">
           <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(",", "\n") }}</span>
         </template>
+        <template v-if="vpcConserveMode && column.key === 'networkid'">
+          <router-link
+            :to="{ path: '/guestnetwork/' + record.networkid }">
+            {{ record.networkname }}
+          </router-link>
+        </template>
         <template v-if="column.key === 'vm'">
           <div><desktop-outlined/>
             <router-link
@@ -216,10 +222,10 @@
       @cancel="closeModal">
       <div v-ctrl-enter="addRule">
         <span
-          v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
+          v-if="'vpcid' in resource && (!('associatednetworkid' in resource) || vpcConserveMode)">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
-            :v-focus="'vpcid' in resource && !('associatednetworkid' in resource)"
+            v-focus="'vpcid' in resource && (!('associatednetworkid' in resource) || vpcConserveMode)"
             v-model:value="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')"
@@ -268,13 +274,15 @@
                 :filterOption="(input, option) => {
                   return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option
-                  v-for="(nic, nicIndex) in nics"
-                  :key="nic"
-                  :value="nic"
-                  :label="nic">
-                  {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
-                </a-select-option>
+                <a-select-opt-group v-for="group in groupedNicIpOptions" :key="group.kind" :label="group.label">
+                  <a-select-option
+                    v-for="item in group.items"
+                    :key="item.ip"
+                    :value="item.ip"
+                    :label="item.ip + ' ' + item.networkname">
+                    {{ item.ip }} <span class="nic-select__network">({{ item.networkname }})</span>
+                  </a-select-option>
+                </a-select-opt-group>
               </a-select>
             </template>
 
@@ -338,12 +346,13 @@
 
 <script>
 import { reactive, ref, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
 import eventBus from '@/config/eventBus'
 import TooltipLabel from '@/components/widgets/TooltipLabel.vue'
+import { buildNicIpOptions, groupNicIpOptionsByKind, resolveNetworkIdForIp } from '@/utils/multiNetworkNic'
 
 export default {
   components: {
@@ -393,7 +402,7 @@ export default {
       addVmModalLoading: false,
       addVmModalNicLoading: false,
       vms: [],
-      nics: [],
+      nicIpOptions: [],
       totalCount: 0,
       page: 1,
       pageSize: 10,
@@ -467,19 +476,22 @@ export default {
       vmPageSize: 10,
       vmCount: 0,
       searchQuery: null,
-      cidrlist: ''
+      cidrlist: '',
+      vpcConserveMode: false
     }
   },
   computed: {
     hasSelected () {
       return this.selectedRowKeys.length > 0
+    },
+    groupedNicIpOptions () {
+      return groupNicIpOptionsByKind(this.nicIpOptions, this.$t)
     }
   },
   beforeCreate () {
     this.apiParams = this.$getApiParams('createPortForwardingRule')
   },
   created () {
-    console.log(this.resource)
     this.initForm()
     this.fetchData()
   },
@@ -504,16 +516,33 @@ export default {
       })
     },
     fetchData () {
+      this.fetchVpc()
       this.fetchListTiers()
       this.fetchPFRules()
     },
-    fetchListTiers () {
-      if ('vpcid' in this.resource && 'associatednetworkid' in this.resource) {
+    fetchVpc () {
+      if (!this.resource.vpcid) {
         return
       }
+      this.vpcConserveMode = false
+      getAPI('listVPCs', {
+        id: this.resource.vpcid
+      }).then(json => {
+        this.vpcConserveMode = json.listvpcsresponse?.vpc?.[0].vpcofferingconservemode || false
+        if (this.vpcConserveMode) {
+          this.columns.splice(this.columns.length - 1, 0, {
+            key: 'networkid',
+            title: this.$t('label.network')
+          })
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    fetchListTiers () {
       this.selectedTier = null
       this.tiers.loading = true
-      api('listNetworks', {
+      getAPI('listNetworks', {
         supportedservices: 'PortForwarding',
         vpcid: this.resource.vpcid,
         listall: this.resource.vpcid !== null
@@ -528,7 +557,7 @@ export default {
     },
     fetchPFRules () {
       this.loading = true
-      api('listPortForwardingRules', {
+      getAPI('listPortForwardingRules', {
         listAll: true,
         ipaddressid: this.resource.id,
         page: this.page,
@@ -595,7 +624,7 @@ export default {
     },
     deleteRule (rule) {
       this.loading = true
-      api('deletePortForwardingRule', { id: rule.id }).then(response => {
+      postAPI('deletePortForwardingRule', { id: rule.id }).then(response => {
         const jobId = response.deleteportforwardingruleresponse.jobid
         eventBus.emit('update-job-details', { jobId, resourceId: null })
         this.$pollJob({
@@ -630,8 +659,9 @@ export default {
       if (this.loading) return
       this.loading = true
       this.addVmModalVisible = false
-      const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
-      api('createPortForwardingRule', {
+      const primaryNetworkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
+      const networkId = resolveNetworkIdForIp(this.nicIpOptions, this.newRule.vmguestip, primaryNetworkId)
+      postAPI('createPortForwardingRule', {
         ...this.newRule,
         ipaddressid: this.resource.id,
         networkid: networkId
@@ -683,7 +713,7 @@ export default {
       this.addVmModalLoading = false
       this.addVmModalNicLoading = false
       this.showConfirmationAction = false
-      this.nics = []
+      this.nicIpOptions = []
       this.checked = false
       this.resetTagInputs()
     },
@@ -693,7 +723,7 @@ export default {
       this.selectedRule = id
       this.tagsModalVisible = true
       this.tags = []
-      api('listTags', {
+      getAPI('listTags', {
         resourceId: id,
         resourceType: 'PortForwardingRule',
         listAll: true
@@ -714,7 +744,7 @@ export default {
         const values = toRaw(this.form)
         this.tagsModalLoading = false
 
-        api('createTags', {
+        postAPI('createTags', {
           'tags[0].key': values.key,
           'tags[0].value': values.value,
           resourceIds: this.selectedRule,
@@ -747,7 +777,7 @@ export default {
     },
     handleDeleteTag (tag) {
       this.tagsModalLoading = true
-      api('deleteTags', {
+      postAPI('deleteTags', {
         'tags[0].key': tag.key,
         'tags[0].value': tag.value,
         resourceIds: this.selectedRule,
@@ -783,23 +813,19 @@ export default {
       this.fetchVirtualMachines()
     },
     fetchNics (e) {
-      this.nics = []
+      this.nicIpOptions = []
       this.addVmModalNicLoading = true
       this.newRule.virtualmachineid = e.target.value
-      api('listNics', {
+      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
+      getAPI('listNics', {
         virtualmachineid: e.target.value,
-        networkId: ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+        networkid: networkId
       }).then(response => {
-        if (!response.listnicsresponse.nic || response.listnicsresponse.nic.length < 1) return
-        const nic = response.listnicsresponse.nic[0]
-        this.nics.push(nic.ipaddress)
-        if (nic.secondaryip && nic.secondaryip.length > 0) {
-          this.nics.push(...nic.secondaryip.map(ip => ip.ipaddress))
-        }
-        this.newRule.vmguestip = this.nics[0]
+        const nics = response.listnicsresponse.nic || []
+        this.nicIpOptions = nics.flatMap(nic => buildNicIpOptions(nic, networkId))
+        this.newRule.vmguestip = this.nicIpOptions[0]?.ip
         this.addVmModalNicLoading = false
       }).catch(error => {
-        console.log(error)
         this.$notifyError(error)
         this.closeModal()
       })
@@ -808,12 +834,12 @@ export default {
       this.vmCount = 0
       this.vms = []
       this.addVmModalLoading = true
-      const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       if (!networkId) {
         this.addVmModalLoading = false
         return
       }
-      api('listVirtualMachines', {
+      getAPI('listVirtualMachines', {
         listAll: true,
         keyword: this.searchQuery,
         page: this.vmPage,
@@ -1062,5 +1088,9 @@ export default {
     margin-bottom: 10px;
     width: 50%;
     float: right;
+  }
+
+  .nic-select__network {
+    color: rgba(0, 0, 0, 0.45);
   }
 </style>

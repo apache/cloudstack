@@ -21,10 +21,16 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.utils.FileUtil;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections4.CollectionUtils;
 import org.libvirt.Connect;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.LibvirtException;
@@ -40,16 +46,17 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtKvmAgentHook;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 
 @ResourceWrapper(handles =  StartCommand.class)
 public final class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtStartCommandWrapper.class);
 
     @Override
     public Answer execute(final StartCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -62,7 +69,9 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
         Connect conn = null;
+        List<KVMStoragePool> secondaryStorages = new ArrayList<>();
         try {
+            mountSecondaryStoragesIfNeeded(command, libvirtComputingResource, secondaryStorages);
 
             vm = libvirtComputingResource.createVMFromSpec(vmSpec);
             conn = libvirtUtilitiesHelper.getConnectionByType(vm.getHvsType());
@@ -82,17 +91,25 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             }
 
             libvirtComputingResource.createVifs(vmSpec, vm);
-
-            s_logger.debug("starting " + vmName + ": " + vm.toString());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Starting {} : {}", vmName, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(vm.toString()));
+            }
             String vmInitialSpecification = vm.toString();
             String vmFinalSpecification = performXmlTransformHook(vmInitialSpecification, libvirtComputingResource);
             libvirtComputingResource.startVM(conn, vmName, vmFinalSpecification);
             performAgentStartHook(vmName, libvirtComputingResource);
+            applyManualVlanTrunkMembership(conn, vmName, nics, libvirtComputingResource);
 
             libvirtComputingResource.applyDefaultNetworkRules(conn, vmSpec, false);
 
+            if (vmSpec.getType() == VirtualMachine.Type.User) {
+                List<VolumeObjectTO> volumes = Arrays.stream(vmSpec.getDisks()).filter(diskTO -> diskTO.getData() instanceof VolumeObjectTO).
+                        map(diskTO -> (VolumeObjectTO) diskTO.getData()).collect(Collectors.toList());
+                libvirtComputingResource.recreateCheckpointsOnVm(volumes, vmName, conn);
+            }
+
             // pass cmdline info to system vms
-            if (vmSpec.getType() != VirtualMachine.Type.User || (vmSpec.getBootArgs() != null && vmSpec.getBootArgs().contains(UserVmManager.CKS_NODE))) {
+            if (vmSpec.getType() != VirtualMachine.Type.User || (vmSpec.getBootArgs() != null && (vmSpec.getBootArgs().contains(UserVmManager.CKS_NODE) || vmSpec.getBootArgs().contains(UserVmManager.SHAREDFSVM)))) {
                 // try to patch and SSH into the systemvm for up to 5 minutes
                 for (int count = 0; count < 10; count++) {
                     // wait and try passCmdLine for 30 seconds at most for CLOUDSTACK-2823
@@ -124,12 +141,12 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                         FileUtil.scpPatchFiles(controlIp, VRScripts.CONFIG_CACHE_LOCATION, Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT), pemFile, LibvirtComputingResource.systemVmPatchFiles, LibvirtComputingResource.BASEPATH);
                         if (!virtRouterResource.isSystemVMSetup(vmName, controlIp)) {
                             String errMsg = "Failed to patch systemVM";
-                            s_logger.error(errMsg);
+                            logger.error(errMsg);
                             return new StartAnswer(command, errMsg);
                         }
                     } catch (Exception e) {
                         String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
-                        s_logger.error(errMsg, e);
+                        logger.error(errMsg, e);
                         return new StartAnswer(command, String.format("%s due to: %s", errMsg, e.getMessage()));
                     }
                 }
@@ -138,19 +155,19 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             state = DomainState.VIR_DOMAIN_RUNNING;
             return new StartAnswer(command);
         } catch (final LibvirtException e) {
-            s_logger.warn("LibvirtException ", e);
+            logger.warn("LibvirtException ", e);
             if (conn != null) {
                 libvirtComputingResource.handleVmStartFailure(conn, vmName, vm);
             }
             return new StartAnswer(command, e.getMessage());
         } catch (final InternalErrorException e) {
-            s_logger.warn("InternalErrorException ", e);
+            logger.warn("InternalErrorException ", e);
             if (conn != null) {
                 libvirtComputingResource.handleVmStartFailure(conn, vmName, vm);
             }
             return new StartAnswer(command, e.getMessage());
         } catch (final URISyntaxException e) {
-            s_logger.warn("URISyntaxException ", e);
+            logger.warn("URISyntaxException ", e);
             if (conn != null) {
                 libvirtComputingResource.handleVmStartFailure(conn, vmName, vm);
             }
@@ -158,6 +175,32 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
         } finally {
             if (state != DomainState.VIR_DOMAIN_RUNNING) {
                 storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vmSpec);
+                for (KVMStoragePool secondaryStorage : secondaryStorages) {
+                    libvirtComputingResource.getStoragePoolMgr().deleteStoragePool(secondaryStorage.getType(), secondaryStorage.getUuid());
+                }
+            }
+        }
+    }
+
+    private void applyManualVlanTrunkMembership(Connect conn, String vmName, NicTO[] nics, LibvirtComputingResource libvirtComputingResource)
+            throws InternalErrorException {
+        for (NicTO nic : nics) {
+            if (nic.getBroadcastType() != BroadcastDomainType.Vlan) {
+                continue;
+            }
+            try {
+                LibvirtVMDef.InterfaceDef liveInterface = libvirtComputingResource.getInterface(conn, vmName, nic.getMac());
+                libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).ensureVlanTrunkMembership(liveInterface, nic);
+            } catch (CloudRuntimeException e) {
+                throw new InternalErrorException("Failed to locate live tap for trunk nic " + nic.getMac() + ": " + e.getMessage());
+            }
+        }
+    }
+
+    private void mountSecondaryStoragesIfNeeded(StartCommand command, LibvirtComputingResource libvirtComputingResource, List<KVMStoragePool> secondaryStorages) {
+        if (CollectionUtils.isNotEmpty(command.getSecondaryStorages())) {
+            for (String secondaryStorageUrl : command.getSecondaryStorages()) {
+                secondaryStorages.add(libvirtComputingResource.getStoragePoolMgr().getStoragePoolByURI(secondaryStorageUrl));
             }
         }
     }
@@ -167,7 +210,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             LibvirtKvmAgentHook onStartHook = libvirtComputingResource.getStartHook();
             onStartHook.handle(vmName);
         } catch (Exception e) {
-            s_logger.warn("Exception occurred when handling LibVirt VM onStart hook: {}", e);
+            logger.warn("Exception occurred when handling LibVirt VM onStart hook: {}", e);
         }
     }
 
@@ -178,11 +221,11 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             LibvirtKvmAgentHook t = libvirtComputingResource.getTransformer();
             vmFinalSpecification = (String) t.handle(vmInitialSpecification);
             if (null == vmFinalSpecification) {
-                s_logger.warn("Libvirt XML transformer returned NULL, will use XML specification unchanged.");
+                logger.warn("Libvirt XML transformer returned NULL, will use XML specification unchanged.");
                 vmFinalSpecification = vmInitialSpecification;
             }
         } catch(Exception e) {
-            s_logger.warn("Exception occurred when handling LibVirt XML transformer hook: {}", e);
+            logger.warn("Exception occurred when handling LibVirt XML transformer hook: {}", e);
             vmFinalSpecification = vmInitialSpecification;
         }
         return vmFinalSpecification;

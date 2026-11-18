@@ -24,7 +24,7 @@ import com.unboundid.ldap.sdk.SearchScope;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.zapodot.junit.ldap.EmbeddedLdapRule;
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder;
 
@@ -68,6 +68,7 @@ public class LdapUnboundidZapdotConnectionTest {
     }
 
     @Test
+    @SuppressWarnings("BanJNDI")
     public void testDirContext() throws Exception {
 
         // Test using the good ol' JDNI-LDAP integration
@@ -78,7 +79,9 @@ public class LdapUnboundidZapdotConnectionTest {
                 dirContext.search(DOMAIN_DSN, "(objectClass=person)", searchControls);
         assertEquals(24, Iterators.size(Iterators.forEnumeration(resultNamingEnumeration)));
     }
+
     @Test
+    @SuppressWarnings("BanJNDI")
     public void testContext() throws Exception {
 
         // Another test using the good ol' JDNI-LDAP integration, this time with the Context interface

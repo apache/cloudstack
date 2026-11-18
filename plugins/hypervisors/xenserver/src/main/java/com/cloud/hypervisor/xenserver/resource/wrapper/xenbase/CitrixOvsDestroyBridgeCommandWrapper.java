@@ -19,7 +19,6 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.OvsDestroyBridgeCommand;
@@ -32,7 +31,6 @@ import com.xensource.xenapi.Network;
 @ResourceWrapper(handles =  OvsDestroyBridgeCommand.class)
 public final class CitrixOvsDestroyBridgeCommandWrapper extends CommandWrapper<OvsDestroyBridgeCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixOvsDestroyBridgeCommandWrapper.class);
 
     @Override
     public Answer execute(final OvsDestroyBridgeCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -44,11 +42,11 @@ public final class CitrixOvsDestroyBridgeCommandWrapper extends CommandWrapper<O
 
             citrixResourceBase.destroyTunnelNetwork(conn, nw, command.getHostId());
 
-            s_logger.debug("OVS Bridge destroyed");
+            logger.debug("OVS Bridge destroyed");
 
             return new Answer(command, true, null);
         } catch (final Exception e) {
-            s_logger.warn("caught execption when destroying ovs bridge", e);
+            logger.warn("caught execption when destroying ovs bridge", e);
             return new Answer(command, false, e.getMessage());
         }
     }

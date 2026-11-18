@@ -25,8 +25,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.OvsFetchInterfaceAnswer;
 import com.cloud.agent.api.OvsFetchInterfaceCommand;
@@ -38,7 +36,6 @@ import com.cloud.utils.Ternary;
 @ResourceWrapper(handles =  OvsFetchInterfaceCommand.class)
 public final class LibvirtOvsFetchInterfaceCommandWrapper extends CommandWrapper<OvsFetchInterfaceCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtOvsFetchInterfaceCommandWrapper.class);
 
     private String getSubnetMaskForAddress(NetworkInterface networkInterface, InetAddress inetAddress) {
         for (InterfaceAddress address : networkInterface.getInterfaceAddresses()) {
@@ -94,7 +91,7 @@ public final class LibvirtOvsFetchInterfaceCommandWrapper extends CommandWrapper
     public Answer execute(final OvsFetchInterfaceCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final String label = command.getLabel();
 
-        s_logger.debug("Will look for network with name-label:" + label);
+        logger.debug("Will look for network with name-label:" + label);
         try {
             Ternary<String, String, String> interfaceDetails = getInterfaceDetails(label);
             return new OvsFetchInterfaceAnswer(command, true, "Interface " + label
@@ -102,7 +99,7 @@ public final class LibvirtOvsFetchInterfaceCommandWrapper extends CommandWrapper
                     interfaceDetails.third());
 
         } catch (final Exception e) {
-            s_logger.warn("Caught execption when fetching interface", e);
+            logger.warn("Caught execption when fetching interface", e);
             return new OvsFetchInterfaceAnswer(command, false, "EXCEPTION:"
                     + e.getMessage());
         }

@@ -19,15 +19,15 @@ package com.cloud.hypervisor.kvm.storage;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@StorageAdaptorInfo(storagePoolType=Storage.StoragePoolType.FiberChannel)
 public class FiberChannelAdapter extends MultipathSCSIAdapterBase {
 
-    private Logger LOGGER = Logger.getLogger(getClass());
+    private Logger LOGGER = LogManager.getLogger(getClass());
 
     private String hostname = null;
     private String hostnameFq = null;
@@ -46,6 +46,11 @@ public class FiberChannelAdapter extends MultipathSCSIAdapterBase {
         } catch (UnknownHostException e) {
             LOGGER.error("Error getting hostname", e);
         }
+    }
+
+    @Override
+    public Storage.StoragePoolType getStoragePoolType() {
+        return Storage.StoragePoolType.FiberChannel;
     }
 
     @Override

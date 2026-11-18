@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -82,7 +81,6 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 @Component
 public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
-    static final Logger s_logger = Logger.getLogger(UploadMonitorImpl.class);
 
     @Inject
     private UploadDao _uploadDao;
@@ -159,12 +157,12 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             EndPoint ep = _epSelector.select(secStore);
             if (ep == null) {
                 String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-                s_logger.error(errMsg);
+                logger.error(errMsg);
                 return;
             }
             ep.sendMessageAsync(ucmd, new UploadListener.Callback(ep.getId(), ul));
         } catch (Exception e) {
-            s_logger.warn("Unable to start upload of volume " + volume.getName() + " from " + secStore.getName() + " to " + url, e);
+            logger.warn("Unable to start upload of volume {} from {} to {}", volume, secStore, url, e);
             ul.setDisconnected();
             ul.scheduleStatusCheck(RequestType.GET_OR_RESTART);
         }
@@ -178,7 +176,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
         DataStore secStore = storeMgr.getImageStoreWithFreeCapacity(dataCenterId);
         if(secStore == null) {
-            s_logger.error("Unable to extract template, secondary storage to satisfy storage needs cannot be found!");
+            logger.error("Unable to extract template, secondary storage to satisfy storage needs cannot be found!");
             return null;
         }
 
@@ -196,12 +194,12 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
                 EndPoint ep = _epSelector.select(secStore);
                 if (ep == null) {
                     String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-                    s_logger.error(errMsg);
+                    logger.error(errMsg);
                     return null;
                 }
                 ep.sendMessageAsync(ucmd, new UploadListener.Callback(ep.getId(), ul));
             } catch (Exception e) {
-                s_logger.warn("Unable to start upload of " + template.getUniqueName() + " from " + secStore.getName() + " to " + url, e);
+                logger.warn("Unable to start upload of {} from {} to {}", template, secStore, url, e);
                 ul.setDisconnected();
                 ul.scheduleStatusCheck(RequestType.GET_OR_RESTART);
             }
@@ -222,7 +220,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
         EndPoint ep = _epSelector.select(store);
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-            s_logger.error(errMsg);
+            logger.error(errMsg);
             return null;
         }
 
@@ -233,8 +231,8 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             UploadVO upload = extractURLList.get(0);
             String uploadUrl = extractURLList.get(0).getUploadUrl();
             String[] token = uploadUrl.split("/");
-            // example: uploadUrl = https://10-11-101-112.realhostip.com/userdata/2fdd9a70-9c4a-4a04-b1d5-1e41c221a1f9.iso
-            // then token[2] = 10-11-101-112.realhostip.com, token[4] = 2fdd9a70-9c4a-4a04-b1d5-1e41c221a1f9.iso
+            // example: uploadUrl = https://10-11-101-112.example.com/userdata/2fdd9a70-9c4a-4a04-b1d5-1e41c221a1f9.iso
+            // then token[2] = 10-11-101-112.example.com, token[4] = 2fdd9a70-9c4a-4a04-b1d5-1e41c221a1f9.iso
             String hostname = ep.getPublicAddr().replace(".", "-") + ".";
             if ((token != null) && (token.length == 5) && (token[2].equals(hostname + _ssvmUrlDomain))) // ssvm publicip and domain suffix not changed
                 return extractURLList.get(0);
@@ -264,8 +262,8 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)store).getMountPoint(), path, uuid, null, null);
             Answer ans = ep.sendMessage(cmd);
             if (ans == null || !ans.getResult()) {
-                errorString = "Unable to create a link for " + type + " id:" + template.getId() + "," + (ans == null ? "" : ans.getDetails());
-                s_logger.error(errorString);
+                errorString = String.format("Unable to create a link for %s [%s]: %s", type, template, ans == null ? "" : ans.getDetails());
+                logger.error(errorString);
                 throw new CloudRuntimeException(errorString);
             }
 
@@ -321,7 +319,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             Answer ans = ep.sendMessage(cmd);
             if (ans == null || !ans.getResult()) {
                 errorString = "Unable to create a link for " + type + " id:" + entityId + "," + (ans == null ? "" : ans.getDetails());
-                s_logger.warn(errorString);
+                logger.warn(errorString);
                 throw new CloudRuntimeException(errorString);
             }
 
@@ -330,7 +328,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
                 SecondaryStorageVmVO ssVm = ssVms.get(0);
                 if (ssVm.getPublicIpAddress() == null) {
                     errorString = "A running secondary storage vm has a null public ip?";
-                    s_logger.error(errorString);
+                    logger.error(errorString);
                     throw new CloudRuntimeException(errorString);
                 }
                 //Construct actual URL locally now that the symlink exists at SSVM
@@ -367,7 +365,9 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             if (_ssvmUrlDomain != null && _ssvmUrlDomain.length() > 0) {
                 hostname = hostname + "." + _ssvmUrlDomain;
             } else {
-                hostname = hostname + ".realhostip.com";
+                logger.warn("SSL copy is enabled but secstorage.ssl.cert.domain is not configured; "
+                    + "using IP address directly. Configure a wildcard SSL certificate domain for proper HTTPS support.");
+                hostname = ipAddress;
             }
         }
         return scheme + "://" + hostname + "/userdata/" + uuid;
@@ -377,11 +377,6 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         final Map<String, String> configs = _configDao.getConfiguration("management-server", params);
         _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
-
-        String cert = configs.get("secstorage.secure.copy.cert");
-        if ("realhostip.com".equalsIgnoreCase(cert)) {
-            s_logger.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
-        }
 
         _ssvmUrlDomain = configs.get("secstorage.ssl.cert.domain");
 
@@ -427,10 +422,10 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
         HostVO storageHost = _serverDao.findById(sserverId);
         if (storageHost == null) {
-            s_logger.warn("Huh? Agent id " + sserverId + " does not correspond to a row in hosts table?");
+            logger.warn("Huh? Agent id " + sserverId + " does not correspond to a row in hosts table?");
             return;
         }
-        s_logger.debug("Handling upload sserverId " + sserverId);
+        logger.debug("Handling upload sserver {}", storageHost);
         List<UploadVO> uploadsInProgress = new ArrayList<UploadVO>();
         uploadsInProgress.addAll(_uploadDao.listByHostAndUploadStatus(sserverId, UploadVO.Status.UPLOAD_IN_PROGRESS));
         uploadsInProgress.addAll(_uploadDao.listByHostAndUploadStatus(sserverId, UploadVO.Status.COPY_IN_PROGRESS));
@@ -468,7 +463,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
                 }
 
             } catch (Exception e) {
-                s_logger.error("Caught the following Exception", e);
+                logger.error("Caught the following Exception", e);
             }
         }
     }
@@ -496,17 +491,17 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
                     new DeleteEntityDownloadURLCommand(path, extractJob.getType(), extractJob.getUploadUrl(), ((ImageStoreVO)secStore).getParent());
                 EndPoint ep = _epSelector.select(secStore);
                 if (ep == null) {
-                    s_logger.warn("UploadMonitor cleanup: There is no secondary storage VM for secondary storage host " + extractJob.getDataStoreId());
+                    logger.warn("UploadMonitor cleanup: There is no secondary storage VM for secondary storage host {}", secStore);
                     continue; //TODO: why continue? why not break?
                 }
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("UploadMonitor cleanup: Sending deletion of extract URL " + extractJob.getUploadUrl() + " to ssvm " + ep.getHostAddr());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("UploadMonitor cleanup: Sending deletion of extract URL " + extractJob.getUploadUrl() + " to ssvm " + ep.getHostAddr());
                 }
                 Answer ans = ep.sendMessage(cmd);
                 if (ans != null && ans.getResult()) {
                     _uploadDao.remove(extractJob.getId());
                 } else {
-                    s_logger.warn("UploadMonitor cleanup: Unable to delete the link for " + extractJob.getType() + " id=" + extractJob.getTypeId() + " url=" +
+                    logger.warn("UploadMonitor cleanup: Unable to delete the link for " + extractJob.getType() + " id=" + extractJob.getTypeId() + " url=" +
                         extractJob.getUploadUrl() + " on ssvm " + ep.getHostAddr());
                 }
             }

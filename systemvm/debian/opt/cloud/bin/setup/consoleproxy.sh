@@ -40,8 +40,14 @@ setup_console_proxy() {
   disable_rpfilter
   enable_fwding 0
   enable_irqbalance 0
+  if [[ -n "$NTP_SERVER_LIST" ]]; then
+    setup_ntp
+    systemctl restart ntp
+  fi
   rm -f /etc/logrotate.d/cloud
 
 }
 
 setup_console_proxy
+# System VMs are patched during bootstrap
+. /opt/cloud/bin/setup/patch.sh && patch_system_vm

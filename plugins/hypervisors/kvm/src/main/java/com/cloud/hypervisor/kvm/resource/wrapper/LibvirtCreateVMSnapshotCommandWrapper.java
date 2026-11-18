@@ -19,7 +19,7 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
@@ -35,7 +35,6 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles =  CreateVMSnapshotCommand.class)
 public final class LibvirtCreateVMSnapshotCommandWrapper extends CommandWrapper<CreateVMSnapshotCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtCreateVMSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final CreateVMSnapshotCommand cmd, final LibvirtComputingResource libvirtComputingResource) {
@@ -50,31 +49,31 @@ public final class LibvirtCreateVMSnapshotCommandWrapper extends CommandWrapper<
 
             if (dm == null) {
                 return new CreateVMSnapshotAnswer(cmd, false,
-                        "Create VM Snapshot Failed due to can not find vm: " + vmName);
+                        "Create Instance Snapshot Failed due to can not find Instance: " + vmName);
             }
 
             DomainState domainState = dm.getInfo().state ;
             if (domainState != DomainState.VIR_DOMAIN_RUNNING) {
                 return new CreateVMSnapshotAnswer(cmd, false,
-                        "Create VM Snapshot Failed due to  vm is not running: " + vmName + " with domainState = " + domainState);
+                        "Create Instance Snapshot Failed due to Instance is not running: " + vmName + " with domainState = " + domainState);
             }
 
-            String vmSnapshotXML = "<domainsnapshot>" + "  <name>" + vmSnapshotName + "</name>"
+            String vmSnapshotXML = "<domainsnapshot>" + "  <name>" + StringEscapeUtils.escapeXml(vmSnapshotName) + "</name>"
                     + "  <memory snapshot='internal' />" + "</domainsnapshot>";
 
             dm.snapshotCreateXML(vmSnapshotXML);
 
             return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), cmd.getVolumeTOs());
         } catch (LibvirtException e) {
-            String msg = " Create VM snapshot failed due to " + e.toString();
-            s_logger.warn(msg, e);
+            String msg = " Create Instance Snapshot failed due to " + e.toString();
+            logger.warn(msg, e);
             return new CreateVMSnapshotAnswer(cmd, false, msg);
         } finally {
             if (dm != null) {
                 try {
                     dm.free();
                 } catch (LibvirtException l) {
-                    s_logger.trace("Ignoring libvirt error.", l);
+                    logger.trace("Ignoring libvirt error.", l);
                 };
             }
         }

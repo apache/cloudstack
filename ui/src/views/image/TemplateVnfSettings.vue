@@ -381,7 +381,7 @@
 
 <script>
 import { ref, reactive } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -533,7 +533,7 @@ export default {
           }
         })
       }
-      api('listDetailOptions', { resourcetype: this.resourceType }).then(json => {
+      getAPI('listDetailOptions', { resourcetype: this.resourceType }).then(json => {
         this.vnfDetailOptionsInApi = json.listdetailoptionsresponse.detailoptions.details
         this.vnfDetailOptions = {}
         Object.keys(this.vnfDetailOptionsInApi).sort().forEach(k => {
@@ -719,7 +719,7 @@ export default {
         }
       }
 
-      api(apiName, params).then(json => {
+      postAPI(apiName, params).then(json => {
         this.vnfNics = json.updatetemplateresponse.template.vnfnics || []
         const details = json.updatetemplateresponse.template.vnfdetails || []
         this.vnfDetails = Object.keys(details).map(k => {

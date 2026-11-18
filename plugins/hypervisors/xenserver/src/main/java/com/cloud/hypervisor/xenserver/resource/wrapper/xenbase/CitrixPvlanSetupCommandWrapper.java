@@ -19,7 +19,6 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
@@ -36,7 +35,6 @@ import com.xensource.xenapi.Types.XenAPIException;
 @ResourceWrapper(handles =  PvlanSetupCommand.class)
 public final class CitrixPvlanSetupCommandWrapper extends CommandWrapper<PvlanSetupCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixPvlanSetupCommandWrapper.class);
 
     @Override
     public Answer execute(final PvlanSetupCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -55,15 +53,15 @@ public final class CitrixPvlanSetupCommandWrapper extends CommandWrapper<PvlanSe
         try {
             final XsLocalNetwork nw = citrixResourceBase.getNativeNetworkForTraffic(conn, TrafficType.Guest, networkTag);
             if (nw == null) {
-                s_logger.error("Network is not configured on the backend for pvlan " + primaryPvlan);
+                logger.error("Network is not configured on the backend for pvlan " + primaryPvlan);
                 throw new CloudRuntimeException("Network for the backend is not configured correctly for pvlan primary: " + primaryPvlan);
             }
             nwNameLabel = nw.getNetwork().getNameLabel(conn);
         } catch (final XenAPIException e) {
-            s_logger.warn("Fail to get network", e);
+            logger.warn("Fail to get network", e);
             return new Answer(command, false, e.toString());
         } catch (final XmlRpcException e) {
-            s_logger.warn("Fail to get network", e);
+            logger.warn("Fail to get network", e);
             return new Answer(command, false, e.toString());
         }
 
@@ -73,20 +71,20 @@ public final class CitrixPvlanSetupCommandWrapper extends CommandWrapper<PvlanSe
                     isolatedPvlan, "dhcp-name", dhcpName, "dhcp-ip", dhcpIp, "dhcp-mac", dhcpMac);
 
             if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                s_logger.warn("Failed to program pvlan for dhcp server with mac " + dhcpMac);
+                logger.warn("Failed to program pvlan for dhcp server with mac " + dhcpMac);
                 return new Answer(command, false, result);
             } else {
-                s_logger.info("Programmed pvlan for dhcp server with mac " + dhcpMac);
+                logger.info("Programmed pvlan for dhcp server with mac " + dhcpMac);
             }
         } else if (command.getType() == PvlanSetupCommand.Type.VM) {
             result = citrixResourceBase.callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-vm", "op", op, "nw-label", nwNameLabel, "primary-pvlan", primaryPvlan, "isolated-pvlan",
                     isolatedPvlan, "vm-mac", vmMac);
 
             if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                s_logger.warn("Failed to program pvlan for vm with mac " + vmMac);
+                logger.warn("Failed to program pvlan for vm with mac " + vmMac);
                 return new Answer(command, false, result);
             } else {
-                s_logger.info("Programmed pvlan for vm with mac " + vmMac);
+                logger.info("Programmed pvlan for vm with mac " + vmMac);
             }
         }
         return new Answer(command, true, result);

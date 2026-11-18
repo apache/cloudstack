@@ -123,7 +123,7 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
                         String mac = networkModel.getNextAvailableMacAddressInNetwork(networkId);
                         nicTo.setMac(mac);
                     } catch (InsufficientAddressCapacityException e) {
-                        throw new CloudRuntimeException("unable to allocate mac address on network: " + networkId);
+                        throw new CloudRuntimeException(String.format("unable to allocate mac address on network: %s", network.getUuid()));
                     }
                     nicTo.setDns1(profile.getIPv4Dns1());
                     nicTo.setDns2(profile.getIPv4Dns2());

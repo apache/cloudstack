@@ -63,11 +63,32 @@
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
           <div class="form__label">{{ $t('label.icmptype') }}</div>
-          <a-input v-model:value="newRule.icmptype"></a-input>
+          <a-select
+            v-model:value="newRule.icmptype"
+            @change="val => { updateIcmpCodes(val) }"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="(opt) in icmpTypes" :key="opt.index" :label="opt.description">
+              {{ opt.index + ' - ' + opt.description }}
+            </a-select-option>
+          </a-select>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
           <div class="form__label">{{ $t('label.icmpcode') }}</div>
-          <a-input v-model:value="newRule.icmpcode"></a-input>
+          <a-select
+            v-model:value="newRule.icmpcode"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="(opt) in icmpCodes" :key="opt.code" :label="opt.description">
+              {{ opt.code + ' - ' + opt.description }}
+            </a-select-option>
+          </a-select>
         </div>
         <div class="form__item">
           <a-button ref="submit" :disabled="!('createEgressFirewallRule' in $store.getters.apis)" type="primary" @click="addRule">
@@ -102,10 +123,10 @@
           {{ getCapitalise(record.protocol) }}
         </template>
         <template v-if="column.key === 'startport'">
-          {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
+          {{ record.icmptype >= 0 ? String(record.icmptype): record.startport >= 0 ? String(record.startport): 'All' }}
         </template>
         <template v-if="column.key === 'endport'">
-          {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
+          {{ record.icmpcode >= 0 ? String(record.icmpcode): record.endport >= 0 ? String(record.endport): 'All' }}
         </template>
         <template v-if="column.key === 'actions'">
           <tooltip-button
@@ -153,7 +174,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
@@ -196,6 +217,9 @@ export default {
         startport: null,
         endport: null
       },
+      protocolNumbers: [],
+      icmpTypes: [],
+      icmpCodes: [],
       totalCount: 0,
       page: 1,
       pageSize: 10,
@@ -233,6 +257,7 @@ export default {
     }
   },
   created () {
+    this.fetchNetworkProtocols()
     this.fetchData()
   },
   watch: {
@@ -248,9 +273,37 @@ export default {
   },
   inject: ['parentFetchData'],
   methods: {
+    fetchNetworkProtocols () {
+      getAPI('listNetworkProtocols', {
+        option: 'protocolnumber'
+      }).then(json => {
+        this.protocolNumbers = json.listnetworkprotocolsresponse?.networkprotocol || []
+      })
+      getAPI('listNetworkProtocols', {
+        option: 'icmptype'
+      }).then(json => {
+        this.icmpTypes.push({ index: -1, description: this.$t('label.all') })
+        const results = json.listnetworkprotocolsresponse?.networkprotocol || []
+        for (const result of results) {
+          this.icmpTypes.push(result)
+        }
+      })
+    },
+    updateIcmpCodes (val) {
+      this.newRule.icmpcode = -1
+      this.icmpCodes = []
+      this.icmpCodes.push({ code: -1, description: this.$t('label.all') })
+      const icmpType = this.icmpTypes.find(icmpType => icmpType.index === val)
+      if (icmpType && icmpType.details) {
+        const icmpTypeDetails = icmpType.details
+        for (const k of Object.keys(icmpTypeDetails)) {
+          this.icmpCodes.push({ code: parseInt(k), description: icmpTypeDetails[k] })
+        }
+      }
+    },
     fetchData () {
       this.loading = true
-      api('listEgressFirewallRules', {
+      getAPI('listEgressFirewallRules', {
         listAll: true,
         networkid: this.resource.id,
         page: this.page,
@@ -315,7 +368,7 @@ export default {
     },
     deleteRule (rule) {
       this.loading = true
-      api('deleteEgressFirewallRule', { id: rule.id }).then(response => {
+      postAPI('deleteEgressFirewallRule', { id: rule.id }).then(response => {
         const jobId = response.deleteegressfirewallruleresponse.jobid
         eventBus.emit('update-job-details', { jobId, resourceId: null })
         this.$pollJob({
@@ -351,7 +404,7 @@ export default {
     addRule () {
       if (this.loading) return
       this.loading = true
-      api('createEgressFirewallRule', { ...this.newRule }).then(response => {
+      postAPI('createEgressFirewallRule', { ...this.newRule }).then(response => {
         this.$pollJob({
           jobId: response.createegressfirewallruleresponse.jobid,
           successMessage: this.$t('message.success.add.egress.rule'),

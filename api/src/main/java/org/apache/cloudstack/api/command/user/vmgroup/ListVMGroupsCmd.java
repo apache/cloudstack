@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vmgroup;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,20 +26,19 @@ import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.vm.InstanceGroup;
 
-@APICommand(name = "listInstanceGroups", description = "Lists vm groups", responseObject = InstanceGroupResponse.class, entityType = {InstanceGroup.class},
+@APICommand(name = "listInstanceGroups", description = "Lists Instance groups", responseObject = InstanceGroupResponse.class, entityType = {InstanceGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVMGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListVMGroupsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "list instance groups by ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "List Instance groups by ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list instance groups by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List Instance groups by name")
     private String groupName;
 
     /////////////////////////////////////////////////////

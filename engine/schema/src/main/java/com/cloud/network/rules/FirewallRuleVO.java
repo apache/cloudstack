@@ -32,10 +32,13 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "firewall_rules")
@@ -81,8 +84,15 @@ public class FirewallRuleVO implements FirewallRule {
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date removed;
+
     @Column(name = "network_id")
     Long networkId;
+
+    @Column(name = "vpc_id")
+    Long vpcId;
 
     @Column(name = "icmp_code")
     Integer icmpCode;
@@ -189,8 +199,16 @@ public class FirewallRuleVO implements FirewallRule {
     }
 
     @Override
-    public long getNetworkId() {
+    public Long getNetworkId() {
         return networkId;
+    }
+
+    public Long getVpcId() {
+        return vpcId;
+    }
+
+    public void setVpcId(Long vpcId) {
+        this.vpcId = vpcId;
     }
 
     @Override
@@ -202,11 +220,15 @@ public class FirewallRuleVO implements FirewallRule {
         return created;
     }
 
+    public Date getRemoved() {
+        return removed;
+    }
+
     protected FirewallRuleVO() {
         uuid = UUID.randomUUID().toString();
     }
 
-    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol, long networkId, long accountId, long domainId,
+    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol, Long networkId, long accountId, long domainId,
             Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related, TrafficType trafficType) {
         this.xId = xId;
         if (xId == null) {
@@ -250,7 +272,7 @@ public class FirewallRuleVO implements FirewallRule {
     }
 
 
-    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol, long networkId, long accountId, long domainId,
+    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol, Long networkId, long accountId, long domainId,
                           Purpose purpose, List<String> sourceCidrs, List<String> destCidrs, Integer icmpCode, Integer icmpType, Long related, TrafficType trafficType) {
         this(xId,ipAddressId, portStart, portEnd, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType, related, trafficType);
         this.destinationCidrs = destCidrs;
@@ -258,7 +280,9 @@ public class FirewallRuleVO implements FirewallRule {
 
     @Override
     public String toString() {
-        return new StringBuilder("Rule[").append(id).append("-").append(purpose).append("-").append(state).append("]").toString();
+        return String.format("FirewallRule %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "networkId", "purpose", "state"));
     }
 
     @Override

@@ -17,6 +17,7 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { escapeHtml } from '@/utils/util'
 
 export default {
   name: 'systemvm',
@@ -24,9 +25,9 @@ export default {
   icon: 'thunderbolt-outlined',
   docHelp: 'adminguide/systemvm.html',
   permission: ['listSystemVms'],
-  searchFilters: ['name', 'zoneid', 'podid', 'hostid', 'systemvmtype', 'storageid'],
-  columns: ['name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'version', 'hostname', 'zonename'],
-  details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'version', 'zonename', 'created', 'activeviewersessions', 'isdynamicallyscalable', 'hostcontrolstate'],
+  searchFilters: ['name', 'zoneid', 'podid', 'hostid', 'systemvmtype', 'storageid', 'arch'],
+  columns: ['name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'version', 'hostname', 'arch', 'zonename'],
+  details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'arch', 'version', 'zonename', 'created', 'activeviewersessions', 'isdynamicallyscalable', 'hostcontrolstate', 'storageip'],
   resourceType: 'SystemVm',
   filters: () => {
     const filters = ['starting', 'running', 'stopping', 'stopped', 'destroyed', 'expunging', 'migrating', 'error', 'unknown', 'shutdown']
@@ -100,14 +101,15 @@ export default {
       label: 'label.change.service.offering',
       message: 'message.confirm.scale.up.system.vm',
       dataView: true,
-      show: (record) => { return record.state === 'Running' && record.hypervisor === 'VMware' || record.state === 'Stopped' },
+      show: (record) => { return record.state === 'Running' && (record.hypervisor === 'VMware' || record.hypervisor === 'KVM') || record.state === 'Stopped' },
       args: ['serviceofferingid'],
       mapping: {
         serviceofferingid: {
           api: 'listServiceOfferings',
           params: (record) => { return { virtualmachineid: record.id, issystem: true, systemvmtype: record.systemvmtype } }
         }
-      }
+      },
+      popup: true
     },
     {
       api: 'migrateSystemVm',
@@ -145,7 +147,7 @@ export default {
           options: ['ping', 'traceroute', 'arping']
         }
       },
-      response: (result) => { return result && result.diagnostics ? `<strong>Output</strong>:<br/>${result.diagnostics.stdout}<br/><strong>Error</strong>: ${result.diagnostics.stderr}<br/><strong>Exit Code</strong>: ${result.diagnostics.exitcode}` : 'Invalid response' }
+      response: (result) => { return result && result.diagnostics ? `<strong>Output</strong>:<br/>${escapeHtml(result.diagnostics.stdout)}<br/><strong>Error</strong>: ${escapeHtml(result.diagnostics.stderr)}<br/><strong>Exit Code</strong>: ${result.diagnostics.exitcode}` : 'Invalid response' }
     },
     {
       api: 'getDiagnosticsData',

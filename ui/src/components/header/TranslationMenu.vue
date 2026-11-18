@@ -26,6 +26,7 @@
         @click="onClick">
         <a-menu-item key="en" value="enUS">English</a-menu-item>
         <a-menu-item key="hi" value="hi">हिन्दी</a-menu-item>
+        <a-menu-item key="te" value="te">తెలుగు</a-menu-item>
         <a-menu-item key="ja_JP" value="jpJP">日本語</a-menu-item>
         <a-menu-item key="ko_KR" value="koKR">한국어</a-menu-item>
         <a-menu-item key="zh_CN" value="zhCN">简体中文</a-menu-item>
@@ -51,6 +52,7 @@
 import moment from 'moment'
 import 'moment/locale/zh-cn'
 import { loadLanguageAsync } from '@/locales'
+import { vueProps } from '@/vue-app'
 
 moment.locale('en')
 
@@ -62,7 +64,7 @@ export default {
     }
   },
   mounted () {
-    this.language = this.$localStorage.get('LOCALE') || 'en'
+    this.language = this.$localStorage.get('LOCALE') || vueProps.$config?.defaultLanguage || 'en'
     this.setLocale(this.language)
   },
   methods: {

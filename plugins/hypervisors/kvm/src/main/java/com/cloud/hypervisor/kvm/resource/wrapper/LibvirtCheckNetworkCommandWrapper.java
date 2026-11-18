@@ -29,6 +29,7 @@ import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import org.apache.commons.lang3.StringUtils;
 
 @ResourceWrapper(handles =  CheckNetworkCommand.class)
 public final class LibvirtCheckNetworkCommandWrapper extends CommandWrapper<CheckNetworkCommand, Answer, LibvirtComputingResource> {
@@ -37,8 +38,12 @@ public final class LibvirtCheckNetworkCommandWrapper extends CommandWrapper<Chec
     public Answer execute(final CheckNetworkCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final List<PhysicalNetworkSetupInfo> phyNics = command.getPhysicalNetworkInfoList();
         String errMsg = null;
+        String guestNetworkLabel = null;
 
         for (final PhysicalNetworkSetupInfo nic : phyNics) {
+            if (StringUtils.isNotBlank(nic.getGuestNetworkName())) {
+                guestNetworkLabel = nic.getGuestNetworkName();
+            }
             if (!libvirtComputingResource.checkNetwork(Networks.TrafficType.Guest, nic.getGuestNetworkName())) {
                 errMsg = "Can not find network: " + nic.getGuestNetworkName();
                 break;
@@ -50,6 +55,8 @@ public final class LibvirtCheckNetworkCommandWrapper extends CommandWrapper<Chec
                 break;
             }
         }
+
+        libvirtComputingResource.setGuestTrafficLabel(guestNetworkLabel);
 
         if (errMsg != null) {
             return new CheckNetworkAnswer(command, false, errMsg);

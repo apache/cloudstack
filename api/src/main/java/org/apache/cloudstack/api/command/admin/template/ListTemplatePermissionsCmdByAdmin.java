@@ -1,4 +1,4 @@
-// Licensedname = "listTemplatePermissions",  to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -22,7 +22,7 @@ import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCmd;
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 
-@APICommand(name = "listTemplatePermissions", description = "List template visibility and all accounts that have permissions to view this template.", responseObject = TemplatePermissionsResponse.class, responseView = ResponseView.Full,
+@APICommand(name = "listTemplatePermissions", description = "List Template visibility and all accounts that have permissions to view this Template.", responseObject = TemplatePermissionsResponse.class, responseView = ResponseView.Full,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false)
 public class ListTemplatePermissionsCmdByAdmin extends ListTemplatePermissionsCmd implements AdminCmd {}

@@ -56,7 +56,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>registerUserKeys</name>
 		<testcase>Registering the user</testcase>
@@ -77,7 +77,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createNetworkGroup</name>
 		<usercommand>true</usercommand>
@@ -89,7 +89,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>authorizeNetworkGroupIngress</name>
 		<testcase>Authorizing network group ingress</testcase>
@@ -124,7 +124,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -158,7 +158,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -187,8 +187,8 @@ under the License.
 				<param>vmid1</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createVolume</name>
 		<usercommand>true</usercommand>
@@ -213,8 +213,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<command>
 		<name>attachVolume</name>
 		<usercommand>true</usercommand>
@@ -230,7 +230,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -241,8 +241,8 @@ under the License.
 				<value>120</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -258,7 +258,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -269,8 +269,8 @@ under the License.
 				<value>60</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>stopVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -282,7 +282,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>startVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -294,7 +294,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>rebootVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -318,7 +318,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>attachVolume</name>
 		<usercommand>true</usercommand>
@@ -334,8 +334,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 		<command>
 		<name>stopVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -347,7 +347,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>startVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -359,7 +359,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>rebootVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -383,8 +383,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>deleteVolume</name>
 		<usercommand>true</usercommand>
@@ -396,7 +396,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createVolume</name>
 		<usercommand>true</usercommand>
@@ -421,8 +421,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<command>
 		<name>attachVolume</name>
 		<usercommand>true</usercommand>
@@ -438,8 +438,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<command>
 		<name>revokeNetworkGroupIngress</name>
 		<testcase>Revoking network group igress</testcase>
@@ -474,8 +474,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-		
+
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -492,7 +492,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>destroyVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -504,7 +504,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -515,10 +515,10 @@ under the License.
 				<value>120</value>
 			</item>
 		</parameters>
-	</command>	
-	
-	
-<!--  Delete user as a part of cleanup -->	
+	</command>
+
+
+<!--  Delete user as a part of cleanup -->
 	<command>
 		<name>deleteUser</name>
 		<testcase>Deleting the user</testcase>
@@ -528,6 +528,6 @@ under the License.
 				<param>userid</param>
 			</item>
 		</parameters>
-	</command>			
+	</command>
 
 </flatnetwork>

@@ -52,4 +52,6 @@ public interface InternalLoadBalancerElementService extends PluggableService {
      * @return
      */
     List<? extends VirtualRouterProvider> searchForInternalLoadBalancerElements(Long id, Long ntwkSvsProviderId, Boolean enabled);
+
+    VirtualRouterProvider.Type getProviderType();
 }

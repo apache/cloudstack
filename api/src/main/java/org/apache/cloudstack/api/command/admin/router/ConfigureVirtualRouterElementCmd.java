@@ -20,7 +20,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -43,7 +42,6 @@ import com.cloud.user.Account;
 @APICommand(name = "configureVirtualRouterElement", responseObject = VirtualRouterProviderResponse.class, description = "Configures a virtual router element.",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ConfigureVirtualRouterElementCmd.class.getName());
 
     @Inject
     private List<VirtualRouterElementService> _service;
@@ -56,7 +54,7 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = VirtualRouterProviderResponse.class,
                required = true,
-               description = "the ID of the virtual router provider")
+               description = "The ID of the virtual router provider")
     private Long id;
 
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = true, description = "Enabled/Disabled the service provider")
@@ -102,7 +100,7 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "configuring virtual router provider: " + id;
+        return "Configuring virtual router with provider that has ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -117,7 +115,7 @@ public class ConfigureVirtualRouterElementCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        CallContext.current().setEventDetails("Virtual router element: " + id);
+        CallContext.current().setEventDetails("Virtual router element ID: " + getResourceUuid(ApiConstants.ID));
         VirtualRouterProvider result = _service.get(0).configure(this);
         if (result != null) {
             VirtualRouterProviderResponse routerResponse = _responseGenerator.createVirtualRouterProviderResponse(result);

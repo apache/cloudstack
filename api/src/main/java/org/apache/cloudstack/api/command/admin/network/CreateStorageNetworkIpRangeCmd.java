@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,7 +41,6 @@ import com.cloud.user.Account;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateStorageNetworkIpRangeCmd.class);
 
 
     /////////////////////////////////////////////////////
@@ -52,24 +50,24 @@ public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = PodResponse.class,
                required = true,
-               description = "UUID of pod where the ip range belongs to")
+               description = "ID of pod where the IP range belongs to")
     private Long podId;
 
-    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, required = true, description = "the beginning IP address")
+    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, required = true, description = "The starting IP address")
     private String startIp;
 
-    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "the ending IP address")
+    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "The ending IP address")
     private String endIp;
 
     @Parameter(name = ApiConstants.VLAN,
                type = CommandType.INTEGER,
-               description = "Optional. The vlan the ip range sits on, default to Null when it is not specified which means your network is not on any Vlan. This is mainly for Vmware as other hypervisors can directly retrieve bridge from physical network traffic type table")
+               description = "Optional. The VLAN the IP range sits on, default to Null when it is not specified which means your network is not on any VLAN. This is mainly for VMware as other hypervisors can directly retrieve bridge from physical network traffic type table")
     private Integer vlan;
 
-    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, required = true, description = "the netmask for storage network")
+    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, required = true, description = "The netmask for storage network")
     private String netmask;
 
-    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "the gateway for storage network")
+    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "The gateway for storage network")
     private String gateway;
 
     /////////////////////////////////////////////////////
@@ -107,7 +105,7 @@ public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating storage ip range from " + getStartIp() + " to " + getEndIp() + " with vlan " + getVlan();
+        return "Creating storage IP range from " + getStartIp() + " to " + getEndIp() + " with VLAN " + getVlan();
     }
 
     @Override
@@ -119,7 +117,7 @@ public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } catch (Exception e) {
-            s_logger.warn("Create storage network IP range failed", e);
+            logger.warn("Create storage network IP range failed", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

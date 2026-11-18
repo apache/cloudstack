@@ -160,4 +160,22 @@ public class PasswordPolicyImplTest {
         passwordPolicySpy.validateIfPasswordMatchesRegex("abcd123", "user", null);
     }
 
+    @Test
+    public void validateCombinationOfPolicies() {
+        Mockito.doReturn(2).when(passwordPolicySpy).getPasswordPolicyMinimumSpecialCharacters(null);
+        Mockito.doReturn(1).when(passwordPolicySpy).getPasswordPolicyMinimumUpperCaseLetters(null);
+        Mockito.doReturn(1).when(passwordPolicySpy).getPasswordPolicyMinimumLowerCaseLetters(null);
+        Mockito.doReturn(1).when(passwordPolicySpy).getPasswordPolicyMinimumDigits(null);
+        Mockito.doReturn(8).when(passwordPolicySpy).getPasswordPolicyMinimumLength(null);
+        Mockito.doReturn(false).when(passwordPolicySpy).getPasswordPolicyAllowPasswordToContainUsername(null);
+
+        String password = "Ab1!@#cd";
+        passwordPolicySpy.validateIfPasswordContainsTheMinimumNumberOfSpecialCharacters(2, password, null);
+        passwordPolicySpy.validateIfPasswordContainsTheMinimumNumberOfUpperCaseLetters(1, password, null);
+        passwordPolicySpy.validateIfPasswordContainsTheMinimumNumberOfLowerCaseLetters(1, password, null);
+        passwordPolicySpy.validateIfPasswordContainsTheMinimumNumberOfDigits(1, password, null);
+        passwordPolicySpy.validateIfPasswordContainsTheMinimumLength(password, "user", null);
+        passwordPolicySpy.validateIfPasswordContainsTheUsername(password, "user", null);
+    }
+
 }

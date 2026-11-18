@@ -33,21 +33,19 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricAddressGroupResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = CreateTungstenFabricAddressGroupCmd.APINAME, description = "create Tungsten-Fabric address group",
+@APICommand(name = CreateTungstenFabricAddressGroupCmd.APINAME, description = "Create Tungsten-Fabric address group",
     responseObject = TungstenFabricAddressGroupResponse.class, requestHasSensitiveInfo = false,
     responseHasSensitiveInfo = false)
 public class CreateTungstenFabricAddressGroupCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateTungstenFabricAddressGroupCmd.class.getName());
     public static final String APINAME = "createTungstenFabricAddressGroup";
 
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Tungsten-Fabric address group name")

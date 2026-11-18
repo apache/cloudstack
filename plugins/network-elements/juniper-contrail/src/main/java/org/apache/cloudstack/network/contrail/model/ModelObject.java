@@ -22,7 +22,8 @@ import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.TreeSet;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.exception.InternalErrorException;
 
@@ -45,7 +46,7 @@ public interface ModelObject {
     public static class ModelReference implements Comparable<ModelReference>, Serializable {
 
         private static final long serialVersionUID = -2019113974956703526L;
-        private static final Logger s_logger = Logger.getLogger(ModelReference.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
         /*
          * WeakReference class is not serializable by definition. So, we cannot enforce its serialization unless we write the implementation of

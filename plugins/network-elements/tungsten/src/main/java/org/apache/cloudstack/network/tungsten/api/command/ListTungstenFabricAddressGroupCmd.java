@@ -36,27 +36,25 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricAddressGroupResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = ListTungstenFabricAddressGroupCmd.APINAME, description = "list Tungsten-Fabric address group",
+@APICommand(name = ListTungstenFabricAddressGroupCmd.APINAME, description = "List Tungsten-Fabric address group",
     responseObject = TungstenFabricAddressGroupResponse.class, requestHasSensitiveInfo = false,
     responseHasSensitiveInfo = false)
 public class ListTungstenFabricAddressGroupCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListTungstenFabricAddressGroupCmd.class.getName());
     public static final String APINAME = "listTungstenFabricAddressGroup";
 
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.ADDRESS_GROUP_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric address group")
+    @Parameter(name = ApiConstants.ADDRESS_GROUP_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric address group")
     private String addressGroupUuid;
 
     @Override

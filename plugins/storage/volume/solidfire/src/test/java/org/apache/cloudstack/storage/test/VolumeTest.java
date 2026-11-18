@@ -27,7 +27,7 @@ import javax.inject.Inject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -64,8 +64,6 @@ public class VolumeTest {
     DataCenterDao dcDao;
     @Inject
     PrimaryDataStoreDao primaryStoreDao;
-    // @Inject
-    // PrimaryDataStoreProviderManager primaryDataStoreProviderMgr;
     @Inject
     AgentManager agentMgr;
     Long dcId;
@@ -108,26 +106,16 @@ public class VolumeTest {
         List<HostVO> results = new ArrayList<HostVO>();
         results.add(host);
         Mockito.when(hostDao.listAll()).thenReturn(results);
-        Mockito.when(hostDao.findHypervisorHostInCluster(Matchers.anyLong())).thenReturn(results);
-        // CreateObjectAnswer createVolumeFromImageAnswer = new
-        // CreateObjectAnswer(null,UUID.randomUUID().toString(), null);
-
-        // Mockito.when(primaryStoreDao.findById(Mockito.anyLong())).thenReturn(primaryStore);
+        Mockito.when(hostDao.findHypervisorHostInCluster(ArgumentMatchers.anyLong())).thenReturn(results);
     }
 
     private PrimaryDataStoreInfo createPrimaryDataStore() {
         try {
-            // primaryDataStoreProviderMgr.configure("primary data store mgr",
-            // new HashMap<String, Object>());
-            // PrimaryDataStoreProvider provider =
-            // primaryDataStoreProviderMgr.getDataStoreProvider("Solidfre Primary Data Store Provider");
             Map<String, String> params = new HashMap<String, String>();
             params.put("url", "nfs://test/test");
             params.put("dcId", dcId.toString());
             params.put("clusterId", clusterId.toString());
             params.put("name", "my primary data store");
-            // PrimaryDataStoreInfo primaryDataStoreInfo =
-            // provider.registerDataStore(params);
             return null;
         } catch (Exception e) {
             return null;

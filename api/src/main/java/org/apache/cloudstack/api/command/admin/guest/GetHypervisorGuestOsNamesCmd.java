@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.HypervisorGuestOsNamesResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
@@ -35,8 +34,6 @@ import com.cloud.utils.Pair;
 @APICommand(name = GetHypervisorGuestOsNamesCmd.APINAME, description = "Gets the guest OS names in the hypervisor", responseObject = HypervisorGuestOsNamesResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0", authorized = {RoleType.Admin})
 public class GetHypervisorGuestOsNamesCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(GetHypervisorGuestOsNamesCmd.class.getName());
-
     public static final String APINAME = "getHypervisorGuestOsNames";
 
     /////////////////////////////////////////////////////
@@ -47,11 +44,11 @@ public class GetHypervisorGuestOsNamesCmd extends BaseAsyncCmd {
             validations = {ApiArgValidator.NotNullOrEmpty})
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.HYPERVISOR_VERSION, type = CommandType.STRING, required = true, description = "Hypervisor version to get the guest os names (atleast one hypervisor host with the version specified must be available)",
+    @Parameter(name = ApiConstants.HYPERVISOR_VERSION, type = CommandType.STRING, required = true, description = "Hypervisor version to get the guest OS names (at least one hypervisor host with the version specified must be available)",
             validations = {ApiArgValidator.NotNullOrEmpty})
     private String hypervisorVersion;
 
-    @Parameter(name = ApiConstants.KEYWORD, type = CommandType.STRING, required = false, description = "Keyword for guest os name")
+    @Parameter(name = ApiConstants.KEYWORD, type = CommandType.STRING, required = false, description = "Keyword for guest OS name")
     private String keyword;
 
     /////////////////////////////////////////////////////

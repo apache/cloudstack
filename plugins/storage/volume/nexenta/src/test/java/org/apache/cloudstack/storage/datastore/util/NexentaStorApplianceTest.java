@@ -43,7 +43,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -60,7 +60,6 @@ public class NexentaStorApplianceTest {
     public void init() {
         final String url = "nmsUrl=https://admin:nexenta@10.1.3.182:8457;volume=cloudstack;storageType=iscsi";
         NexentaUtil.NexentaPluginParameters parameters = NexentaUtil.parseNexentaPluginUrl(url);
-        //client = new NexentaNmsClient(parameters.getNmsUrl());
         client = mock(NexentaNmsClient.class);
         appliance = new NexentaStorAppliance(client, parameters);
     }

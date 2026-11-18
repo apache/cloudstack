@@ -29,5 +29,5 @@
 
     <bean id="DedicatedResourceManagerImpl"
         class="org.apache.cloudstack.dedicated.DedicatedResourceManagerImpl" />
-    
+
 </beans>

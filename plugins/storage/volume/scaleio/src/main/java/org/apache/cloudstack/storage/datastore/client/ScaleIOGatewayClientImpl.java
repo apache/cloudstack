@@ -34,6 +34,7 @@ import java.util.Map;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.cloudstack.storage.datastore.api.StorageConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
@@ -68,7 +69,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.pool.PoolStats;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -81,7 +83,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.base.Preconditions;
 
 public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
-    private static final Logger LOG = Logger.getLogger(ScaleIOGatewayClientImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private final URI apiURI;
     private final HttpClient httpClient;
@@ -90,7 +92,10 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     private String username;
     private String password;
-    private String sessionKey = null;
+    private String sessionKey;
+
+    private String gatewayVersion = null;
+    private int[] parsedVersion = null;
 
     // The session token is valid for 8 hours from the time it was created, unless there has been no activity for 10 minutes
     // Reference: https://cpsdocs.dellemc.com/bundle/PF_REST_API_RG/page/GUID-92430F19-9F44-42B6-B898-87D5307AE59B.html
@@ -100,7 +105,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     private static final long MAX_IDLE_TIME_IN_MILLISECS = MAX_IDLE_TIME_IN_MINS * 60 * 1000;
     private static final long BUFFER_TIME_IN_MILLISECS = 30 * 1000; // keep 30 secs buffer before the expiration (to avoid any last-minute operations)
 
-    private boolean authenticating = false;
+    private volatile boolean authenticating = false;
     private long createTime = 0;
     private long lastUsedTime = 0;
 
@@ -140,8 +145,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         this.username = username;
         this.password = password;
 
-        authenticate();
-        LOG.debug("API client for the PowerFlex gateway " + apiURI.getHost() + " is created successfully, with max connections: "
+        logger.debug("API client for the PowerFlex gateway " + apiURI.getHost() + " is created successfully, with max connections: "
                 + maxConnections + " and timeout: " + timeout + " secs");
     }
 
@@ -155,14 +159,14 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         HttpResponse response = null;
         try {
             authenticating = true;
-            LOG.debug("Authenticating gateway " + apiURI.getHost() + " with the request: " + request.toString());
+            logger.debug("Authenticating gateway " + apiURI.getHost() + " with the request: " + request.toString());
             response = httpClient.execute(request);
             if (isNullResponse(response)) {
-                LOG.warn("Invalid response received while authenticating, for the request: " + request.toString());
+                logger.warn("Invalid response received while authenticating, for the request: " + request.toString());
                 throw new CloudRuntimeException("Failed to authenticate PowerFlex API Gateway due to invalid response from the Gateway " + apiURI.getHost());
             }
 
-            LOG.debug("Received response: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase()
+            logger.debug("Received response: " + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase()
                     + ", for the authenticate request: " + request.toString());
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
                 throw new CloudRuntimeException("PowerFlex Gateway " + apiURI.getHost() + " login failed, please check the provided settings");
@@ -173,13 +177,13 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
                 throw new CloudRuntimeException("Failed to create a valid session for PowerFlex Gateway " + apiURI.getHost() + " to perform API requests");
             }
 
-            LOG.info("PowerFlex API Gateway " + apiURI.getHost() + " authenticated successfully");
+            logger.info("PowerFlex API Gateway " + apiURI.getHost() + " authenticated successfully");
             this.sessionKey = sessionKeyInResponse.replace("\"", "");
 
             long now = System.currentTimeMillis();
             createTime = lastUsedTime = now;
         } catch (final IOException e) {
-            LOG.error("Failed to authenticate PowerFlex API Gateway " + apiURI.getHost() + " due to: " + e.getMessage() + getConnectionManagerStats());
+            logger.error("Failed to authenticate PowerFlex API Gateway " + apiURI.getHost() + " due to: " + e.getMessage() + getConnectionManagerStats(), e);
             throw new CloudRuntimeException("Failed to authenticate PowerFlex API Gateway " + apiURI.getHost() + " due to: " + e.getMessage());
         } finally {
             authenticating = false;
@@ -191,21 +195,25 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     private synchronized void renewClientSessionOnExpiry() {
         if (isSessionExpired()) {
-            LOG.debug("Session expired for the PowerFlex API Gateway " + apiURI.getHost() + ", renewing");
+            logger.debug("Session expired for the PowerFlex API Gateway " + apiURI.getHost() + ", renewing");
             authenticate();
         }
     }
 
     private boolean isSessionExpired() {
+        if (sessionKey == null) {
+            logger.debug("Session never created for the Gateway " + apiURI.getHost());
+            return true;
+        }
         long now = System.currentTimeMillis() + BUFFER_TIME_IN_MILLISECS;
         if ((now - createTime) > MAX_VALID_SESSION_TIME_IN_MILLISECS) {
-            LOG.debug("Session expired for the Gateway " + apiURI.getHost() + ", token is invalid after " + MAX_VALID_SESSION_TIME_IN_HRS
+            logger.debug("Session expired for the Gateway " + apiURI.getHost() + ", token is invalid after " + MAX_VALID_SESSION_TIME_IN_HRS
                     + " hours from the time it was created");
             return true;
         }
 
         if ((now - lastUsedTime) > MAX_IDLE_TIME_IN_MILLISECS) {
-            LOG.debug("Session expired for the Gateway " + apiURI.getHost() + ", as there has been no activity for " + MAX_IDLE_TIME_IN_MINS + " mins");
+            logger.debug("Session expired for the Gateway " + apiURI.getHost() + ", as there has been no activity for " + MAX_IDLE_TIME_IN_MINS + " mins");
             return true;
         }
 
@@ -214,12 +222,12 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     private boolean isNullResponse(final HttpResponse response) {
         if (response == null) {
-            LOG.warn("Nil response");
+            logger.warn("Nil response");
             return true;
         }
 
         if (response.getStatusLine() == null) {
-            LOG.warn("No status line in the response");
+            logger.warn("No status line in the response");
             return true;
         }
 
@@ -231,7 +239,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             if (!renewAndRetryOnAuthFailure) {
                 throw new ServerApiException(ApiErrorCode.UNAUTHORIZED, "PowerFlex Gateway API call unauthorized, please check the provided settings");
             }
-            LOG.debug("PowerFlex Gateway API call unauthorized. Current token might be invalid, renew the session." + getConnectionManagerStats());
+            logger.debug("PowerFlex Gateway API call unauthorized. Current token might be invalid, renew the session." + getConnectionManagerStats());
             return true;
         }
         return false;
@@ -243,7 +251,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         }
 
         if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NO_CONTENT) {
-            LOG.warn("Requested resource does not exist");
+            logger.warn("Requested resource does not exist");
             return;
         }
 
@@ -258,7 +266,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
                 responseBody = EntityUtils.toString(response.getEntity());
             } catch (IOException ignored) {
             }
-            LOG.debug("HTTP request failed, status code: " + response.getStatusLine().getStatusCode() + ", response: "
+            logger.debug("HTTP request failed, status code: " + response.getStatusLine().getStatusCode() + ", response: "
                     + responseBody + getConnectionManagerStats());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "API failed due to: " + responseBody);
         }
@@ -279,13 +287,17 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         HttpResponse response = null;
         boolean responseConsumed = false;
         try {
-            while (authenticating); // wait for authentication request (if any) to complete (and to pick the new session key)
+            while (authenticating) { // wait for authentication request (if any)
+                // to complete (and to pick the new session key)
+                Thread.yield();
+            }
+
             final HttpGet request = new HttpGet(apiURI.toString() + path);
             request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString((this.username + ":" + this.sessionKey).getBytes()));
-            LOG.debug("Sending GET request: " + request.toString());
+            logger.debug("Sending GET request: " + request.toString());
             response = httpClient.execute(request);
             String responseStatus = (!isNullResponse(response)) ? (response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase()) : "nil";
-            LOG.debug("Received response: " + responseStatus + ", for the sent GET request: " + request.toString());
+            logger.debug("Received response: " + responseStatus + ", for the sent GET request: " + request.toString());
             if (checkAuthFailure(response, renewAndRetryOnAuthFailure)) {
                 EntityUtils.consumeQuietly(response.getEntity());
                 responseConsumed = true;
@@ -295,7 +307,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             }
             return processResponse(response, type);
         }  catch (final IOException e) {
-            LOG.error("Failed in GET method due to: " + e.getMessage() + getConnectionManagerStats(), e);
+            logger.error("Failed in GET method due to: " + e.getMessage() + getConnectionManagerStats(), e);
             checkResponseTimeOut(e);
         } finally {
             if (!responseConsumed && response != null) {
@@ -314,7 +326,10 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         HttpResponse response = null;
         boolean responseConsumed = false;
         try {
-            while (authenticating); // wait for authentication request (if any) to complete (and to pick the new session key)
+            while (authenticating) { // wait for authentication request (if any)
+                // to complete (and to pick the new session key)
+                Thread.yield();
+            }
             final HttpPost request = new HttpPost(apiURI.toString() + path);
             request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString((this.username + ":" + this.sessionKey).getBytes()));
             request.setHeader("content-type", "application/json");
@@ -328,10 +343,10 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
                     request.setEntity(new StringEntity(json));
                 }
             }
-            LOG.debug("Sending POST request: " + request.toString());
+            logger.debug("Sending POST request: " + request.toString());
             response = httpClient.execute(request);
             String responseStatus = (!isNullResponse(response)) ? (response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase()) : "nil";
-            LOG.debug("Received response: " + responseStatus + ", for the sent POST request: " + request.toString());
+            logger.debug("Received response: " + responseStatus + ", for the sent POST request: " + request.toString());
             if (checkAuthFailure(response, renewAndRetryOnAuthFailure)) {
                 EntityUtils.consumeQuietly(response.getEntity());
                 responseConsumed = true;
@@ -341,7 +356,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             }
             return processResponse(response, type);
         } catch (final IOException e) {
-            LOG.error("Failed in POST method due to: " + e.getMessage() + getConnectionManagerStats(), e);
+            logger.error("Failed in POST method due to: " + e.getMessage() + getConnectionManagerStats(), e);
             checkResponseTimeOut(e);
         } finally {
             if (!responseConsumed && response != null) {
@@ -529,15 +544,15 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
                 boolean revertStatus = revertSnapshot(sourceSnapshotVolumeId, destVolumeId);
                 if (!revertStatus) {
                     revertSnapshotResult = false;
-                    LOG.warn("Failed to revert snapshot for volume id: " + sourceSnapshotVolumeId);
-                    throw new CloudRuntimeException("Failed to revert snapshot for volume id: " + sourceSnapshotVolumeId);
+                    logger.warn("Failed to revert Snapshot for volume id: " + sourceSnapshotVolumeId);
+                    throw new CloudRuntimeException("Failed to revert Snapshot for volume id: " + sourceSnapshotVolumeId);
                 } else {
                     revertStatusIndex++;
                 }
             }
         } catch (final Exception e) {
-            LOG.error("Failed to revert vm snapshot due to: " + e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to revert vm snapshot due to: " + e.getMessage());
+            logger.error("Failed to revert Instance Snapshot due to: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to revert Instance Snapshot due to: " + e.getMessage());
         } finally {
             if (!revertSnapshotResult) {
                 //revert to volume with last state and delete the snapshot group, for already reverted volumes
@@ -609,13 +624,24 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             throw new CloudRuntimeException("Unable to revert, source snapshot volume and destination volume doesn't belong to same volume tree");
         }
 
+        String requestBody = buildOverwriteVolumeContentRequest(sourceSnapshotVolumeId);
+
         Boolean overwriteVolumeContentStatus = post(
                 "/instances/Volume::" + destVolumeId + "/action/overwriteVolumeContent",
-                String.format("{\"srcVolumeId\":\"%s\",\"allowOnExtManagedVol\":\"TRUE\"}", sourceSnapshotVolumeId), Boolean.class);
+                requestBody, Boolean.class);
         if (overwriteVolumeContentStatus != null) {
             return overwriteVolumeContentStatus;
         }
         return false;
+    }
+
+    private String buildOverwriteVolumeContentRequest(final String srcVolumeId) {
+        if (isVersionAtLeast(4, 0)) {
+            logger.debug("Using PowerFlex 4.0+ overwriteVolumeContent request body");
+            return String.format("{\"srcVolumeId\":\"%s\"}", srcVolumeId);
+        } else {
+            logger.debug("Using pre-4.0 overwriteVolumeContent request body");
+            return String.format("{\"srcVolumeId\":\"%s\",\"allowOnExtManagedVol\":\"TRUE\"}", srcVolumeId);                }
     }
 
     @Override
@@ -748,7 +774,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             }
         } catch (Exception ex) {
             if (ex instanceof ServerApiException && ex.getMessage().contains("Could not find the volume")) {
-                LOG.warn(String.format("API says deleting volume %s does not exist, handling gracefully", volumeId));
+                logger.warn(String.format("API says deleting volume %s does not exist, handling gracefully", volumeId));
                 return true;
             }
             throw ex;
@@ -765,18 +791,18 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         try {
             Volume volume = getVolume(srcVolumeId);
             if (volume == null || StringUtils.isEmpty(volume.getVtreeId())) {
-                LOG.warn("Couldn't find the volume(-tree), can not migrate the volume " + srcVolumeId);
+                logger.warn("Couldn't find the volume(-tree), can not migrate the volume " + srcVolumeId);
                 return false;
             }
 
             String srcPoolId = volume.getStoragePoolId();
-            LOG.info("Migrating the volume: " + srcVolumeId + " on the src pool: " + srcPoolId + " to the dest pool: " + destPoolId +
+            logger.info("Migrating the volume: " + srcVolumeId + " on the src pool: " + srcPoolId + " to the dest pool: " + destPoolId +
                     " in the same PowerFlex cluster");
 
             post("/instances/Volume::" + srcVolumeId + "/action/migrateVTree",
                     String.format("{\"destSPId\":\"%s\"}", destPoolId), Boolean.class);
 
-            LOG.debug("Wait until the migration is complete for the volume: " + srcVolumeId);
+            logger.debug("Wait until the migration is complete for the volume: " + srcVolumeId);
             long migrationStartTime = System.currentTimeMillis();
             boolean status = waitForVolumeMigrationToComplete(volume.getVtreeId(), timeoutInSecs);
 
@@ -784,13 +810,13 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             // volume, v-tree, snapshot ids remains same after the migration
             volume = getVolume(srcVolumeId);
             if (volume == null || volume.getStoragePoolId() == null) {
-                LOG.warn("Couldn't get the volume: " + srcVolumeId + " details after migration");
+                logger.warn("Couldn't get the volume: " + srcVolumeId + " details after migration");
                 return status;
             } else {
                 String volumeOnPoolId = volume.getStoragePoolId();
                 // confirm whether the volume is on the dest storage pool or not
                 if (status && destPoolId.equalsIgnoreCase(volumeOnPoolId)) {
-                    LOG.debug("Migration success for the volume: " + srcVolumeId);
+                    logger.debug("Migration success for the volume: " + srcVolumeId);
                     return true;
                 } else {
                     try {
@@ -813,23 +839,23 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
                         return status;
                     } catch (Exception ex) {
-                        LOG.warn("Exception on pause/rollback migration of the volume: " + srcVolumeId + " - " + ex.getLocalizedMessage());
+                        logger.warn("Exception on pause/rollback migration of the volume: " + srcVolumeId + " - " + ex.getLocalizedMessage());
                     }
                 }
             }
         } catch (final Exception e) {
-            LOG.error("Failed to migrate PowerFlex volume due to: " + e.getMessage(), e);
+            logger.error("Failed to migrate PowerFlex volume due to: " + e.getMessage(), e);
             throw new CloudRuntimeException("Failed to migrate PowerFlex volume due to: " + e.getMessage());
         }
 
-        LOG.debug("Migration failed for the volume: " + srcVolumeId);
+        logger.debug("Migration failed for the volume: " + srcVolumeId);
         return false;
     }
 
     private boolean waitForVolumeMigrationToComplete(final String volumeTreeId, int waitTimeoutInSecs) {
-        LOG.debug("Waiting for the migration to complete for the volume-tree " + volumeTreeId);
+        logger.debug("Waiting for the migration to complete for the volume-tree " + volumeTreeId);
         if (StringUtils.isEmpty(volumeTreeId)) {
-            LOG.warn("Invalid volume-tree id, unable to check the migration status of the volume-tree " + volumeTreeId);
+            logger.warn("Invalid volume-tree id, unable to check the migration status of the volume-tree " + volumeTreeId);
             return false;
         }
 
@@ -841,24 +867,24 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
                 VTreeMigrationInfo.MigrationStatus migrationStatus = getVolumeTreeMigrationStatus(volumeTreeId);
                 if (migrationStatus != null && migrationStatus == VTreeMigrationInfo.MigrationStatus.NotInMigration) {
-                    LOG.debug("Migration completed for the volume-tree " + volumeTreeId);
+                    logger.debug("Migration completed for the volume-tree " + volumeTreeId);
                     return true;
                 }
             } catch (Exception ex) {
-                LOG.warn("Exception while checking for migration status of the volume-tree: " + volumeTreeId + " - " + ex.getLocalizedMessage());
+                logger.warn("Exception while checking for migration status of the volume-tree: " + volumeTreeId + " - " + ex.getLocalizedMessage());
                 // don't do anything
             } finally {
                 waitTimeoutInSecs = waitTimeoutInSecs - delayTimeInSecs;
             }
         }
 
-        LOG.debug("Unable to complete the migration for the volume-tree " + volumeTreeId);
+        logger.debug("Unable to complete the migration for the volume-tree " + volumeTreeId);
         return false;
     }
 
     private VTreeMigrationInfo.MigrationStatus getVolumeTreeMigrationStatus(final String volumeTreeId) {
         if (StringUtils.isEmpty(volumeTreeId)) {
-            LOG.warn("Invalid volume-tree id, unable to get the migration status of the volume-tree " + volumeTreeId);
+            logger.warn("Invalid volume-tree id, unable to get the migration status of the volume-tree " + volumeTreeId);
             return null;
         }
 
@@ -874,13 +900,13 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
         Volume volume = getVolume(srcVolumeId);
         if (volume == null) {
-            LOG.warn("Unable to rollback volume migration, couldn't get details for the volume: " + srcVolumeId);
+            logger.warn("Unable to rollback volume migration, couldn't get details for the volume: " + srcVolumeId);
             return false;
         }
 
         VTreeMigrationInfo.MigrationStatus migrationStatus = getVolumeTreeMigrationStatus(volume.getVtreeId());
         if (migrationStatus != null && migrationStatus == VTreeMigrationInfo.MigrationStatus.NotInMigration) {
-            LOG.debug("Volume: " + srcVolumeId + " is not migrating, no need to rollback");
+            logger.debug("Volume: " + srcVolumeId + " is not migrating, no need to rollback");
             return true;
         }
 
@@ -893,12 +919,12 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
                 Thread.sleep(3000); // Try after few secs
                 migrationStatus = getVolumeTreeMigrationStatus(volume.getVtreeId()); // Get updated migration status
                 if (migrationStatus != null && migrationStatus == VTreeMigrationInfo.MigrationStatus.Paused) {
-                    LOG.debug("Migration for the volume: " + srcVolumeId + " paused");
+                    logger.debug("Migration for the volume: " + srcVolumeId + " paused");
                     paused = true;
                     break;
                 }
             } catch (Exception ex) {
-                LOG.warn("Exception while checking for migration pause status of the volume: " + srcVolumeId + " - " + ex.getLocalizedMessage());
+                logger.warn("Exception while checking for migration pause status of the volume: " + srcVolumeId + " - " + ex.getLocalizedMessage());
                 // don't do anything
             } finally {
                 retryCount--;
@@ -914,14 +940,14 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
                 return migrateVTreeStatus;
             }
         } else {
-            LOG.warn("Migration for the volume: " + srcVolumeId + " didn't pause, couldn't rollback");
+            logger.warn("Migration for the volume: " + srcVolumeId + " didn't pause, couldn't rollback");
         }
         return false;
     }
 
     private boolean pauseVolumeMigration(final String volumeId, final boolean forced) {
         if (StringUtils.isEmpty(volumeId)) {
-            LOG.warn("Invalid Volume Id, Unable to pause migration of the volume " + volumeId);
+            logger.warn("Invalid Volume Id, Unable to pause migration of the volume " + volumeId);
             return false;
         }
 
@@ -1125,6 +1151,15 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         return false;
     }
 
+    @Override
+    public List<String> getMdmAddresses() {
+        StorageConfiguration storageConfiguration = get("/Configuration", StorageConfiguration.class);
+        if (storageConfiguration != null && storageConfiguration.getMdmAddresses().length > 0) {
+            return Arrays.asList(storageConfiguration.getMdmAddresses());
+        }
+        return new ArrayList<>();
+    }
+
     private String getConnectionManagerStats() {
         StringBuilder sb = new StringBuilder();
         sb.append("\n").append("Client Connection Manager Stats => ");
@@ -1146,5 +1181,50 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
         sb.append("\n");
         return sb.toString();
+    }
+
+    private String fetchGatewayVersion() {
+        try {
+            JsonNode node = get("/version", JsonNode.class);
+            if (node != null && node.isTextual()) {
+                return node.asText();
+            }
+            if (node != null && node.has("version")) {
+                return node.get("version").asText();
+            }
+        } catch (Exception e) {
+            logger.warn("Could not fetch PowerFlex gateway version: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private int[] parseVersion(String version) {
+        if (StringUtils.isEmpty(version)) return new int[]{0, 0, 0};
+        String[] parts = version.replaceAll("\"", "").split("\\.");
+        int[] parsed = new int[3];
+        for (int i = 0; i < Math.min(parts.length, 3); i++) {
+            try {
+                parsed[i] = Integer.parseInt(parts[i].trim());
+            } catch (NumberFormatException e) {
+                parsed[i] = 0;
+            }
+        }
+        return parsed;
+    }
+
+    private synchronized int[] getGatewayVersion() {
+        if (parsedVersion == null) {
+            gatewayVersion = fetchGatewayVersion();
+            parsedVersion = parseVersion(gatewayVersion);
+            logger.info("PowerFlex Gateway version detected: " + gatewayVersion
+                    + " => parsed: " + Arrays.toString(parsedVersion));
+        }
+        return parsedVersion;
+    }
+
+    private boolean isVersionAtLeast(int major, int minor) {
+        int[] v = getGatewayVersion();
+        if (v[0] != major) return v[0] > major;
+        return v[1] >= minor;
     }
 }

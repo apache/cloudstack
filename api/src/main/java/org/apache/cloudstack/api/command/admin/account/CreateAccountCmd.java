@@ -21,7 +21,6 @@ import java.util.Map;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -38,13 +37,14 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
+import com.cloud.utils.PasswordGenerator;
 
 
 @APICommand(name = "createAccount", description = "Creates an account", responseObject = AccountResponse.class, entityType = {Account.class},
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
 public class CreateAccountCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateAccountCmd.class.getName());
 
+    private static final int GENERATED_PASSWORD_LENGTH = 12;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -52,12 +52,12 @@ public class CreateAccountCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT,
                type = CommandType.STRING,
-               description = "Name of the account to be created. The user will be added to this newly created account. If no account is specified, the username will be used as the account name.")
+               description = "Name of the Account to be created. The user will be added to this newly created account. If no Account is specified, the username will be used as the Account name.")
     private String accountName;
 
     @Parameter(name = ApiConstants.ACCOUNT_TYPE,
                type = CommandType.INTEGER,
-               description = "Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
+               description = "Type of the account. Specify 0 for user, 1 for root admin, and 2 for domain admin")
     private Integer accountType;
 
     @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, description = "Creates the account under the specified role.")
@@ -66,19 +66,19 @@ public class CreateAccountCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Creates the user under the specified domain.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, required = true, description = "email")
+    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, required = true, description = "E-mail")
     private String email;
 
-    @Parameter(name = ApiConstants.FIRSTNAME, type = CommandType.STRING, required = true, description = "firstname")
+    @Parameter(name = ApiConstants.FIRSTNAME, type = CommandType.STRING, required = true, description = "First name")
     private String firstName;
 
-    @Parameter(name = ApiConstants.LASTNAME, type = CommandType.STRING, required = true, description = "lastname")
+    @Parameter(name = ApiConstants.LASTNAME, type = CommandType.STRING, required = true, description = "Last name")
     private String lastName;
 
     @Parameter(name = ApiConstants.PASSWORD,
                type = CommandType.STRING,
-               required = true,
-               description = "Clear text password (Default hashed to SHA256SALT). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.")
+               description = "Clear text password (Default hashed to SHA256SALT). If you wish to use any other hashing algorithm, you will need to write a custom authentication adapter. See Docs section."
+                       + " If omitted, a random password is generated, e.g. for an account that will only ever authenticate externally via SAML/LDAP.")
     private String password;
 
     @Parameter(name = ApiConstants.TIMEZONE,
@@ -89,16 +89,16 @@ public class CreateAccountCmd extends BaseCmd {
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Unique username.")
     private String userName;
 
-    @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "Network domain for the account's networks")
+    @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "Network domain for the Account's Networks")
     private String networkDomain;
 
-    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
+    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "Details for Account used to store specific parameters")
     private Map<String, String> details;
 
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.STRING, description = "Account UUID, required for adding account from external provisioning system")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.STRING, description = "Account UUID, required for adding Account from external provisioning system")
     private String accountUUID;
 
-    @Parameter(name = ApiConstants.USER_ID, type = CommandType.STRING, description = "User UUID, required for adding account from external provisioning system")
+    @Parameter(name = ApiConstants.USER_ID, type = CommandType.STRING, description = "User UUID, required for adding Account from external provisioning system")
     private String userUUID;
 
     /////////////////////////////////////////////////////
@@ -179,7 +179,7 @@ public class CreateAccountCmd extends BaseCmd {
     @Override
     public void execute() {
         validateParams();
-        CallContext.current().setEventDetails("Account Name: " + getUsername() + ", Domain Id:" + getDomainId());
+        CallContext.current().setEventDetails("Account Name: " + getUsername() + ", Domain ID:" + getResourceUuid(ApiConstants.DOMAIN_ID));
         UserAccount userAccount =
             _accountService.createUserAccount(this);
         if (userAccount != null) {
@@ -193,10 +193,16 @@ public class CreateAccountCmd extends BaseCmd {
 
     /**
      * TODO: this should be done through a validator. for now replicating the validation logic in create account and user
+     *
+     * <p>An omitted password generates a random one instead of failing, since an account that will
+     * only ever authenticate externally (SAML/LDAP) has no need for the admin to set one. A password
+     * that is passed but blank is still rejected, as that is more likely a client error.
      */
     private void validateParams() {
-        if(StringUtils.isEmpty(getPassword())) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Empty passwords are not allowed");
+        if (getPassword() == null) {
+            password = PasswordGenerator.generateRandomPassword(GENERATED_PASSWORD_LENGTH);
+        } else if (StringUtils.isBlank(getPassword())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Blank passwords are not allowed");
         }
         if (getAccountType() == null && (getRoleId() == null || getRoleId() < 1L)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Neither account type and role ID are not provided");

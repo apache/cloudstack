@@ -21,10 +21,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import streamer.debug.FakeSink;
 import streamer.debug.FakeSource;
 
 public class BaseElement implements Element {
+
+    protected Logger logger = LogManager.getLogger(getClass());
 
     protected String id;
 
@@ -183,7 +187,6 @@ public class BaseElement implements Element {
 
         if (buf == null)
             throw new NullPointerException();
-        //return;
 
         if (outputPads.size() == 0)
             throw new RuntimeException("Number of outgoing connection is zero. Cannot send data to output. Data: " + buf + ".");

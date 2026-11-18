@@ -28,12 +28,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvid
 import org.apache.cloudstack.storage.datastore.driver.ScaleIOPrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.datastore.lifecycle.ScaleIOPrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.component.ComponentContext;
 
 public class ScaleIOPrimaryDatastoreProvider implements PrimaryDataStoreProvider {
-    private static final Logger LOGGER = Logger.getLogger(ScaleIOPrimaryDatastoreProvider.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private DataStoreLifeCycle lifeCycle;
     private PrimaryDataStoreDriver driver;

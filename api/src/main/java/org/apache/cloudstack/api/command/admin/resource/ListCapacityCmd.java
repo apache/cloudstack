@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,7 +39,6 @@ import com.cloud.exception.InvalidParameterValueException;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCapacityCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ListCapacityCmd.class.getName());
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
 
 
@@ -48,23 +46,23 @@ public class ListCapacityCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "lists capacity by the Zone ID")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "Lists capacity by the Zone ID")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "lists capacity by the Pod ID")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "Lists capacity by the Pod ID")
     private Long podId;
 
     @Parameter(name = ApiConstants.CLUSTER_ID,
                type = CommandType.UUID,
                entityType = ClusterResponse.class,
                since = "3.0.0",
-               description = "lists capacity by the Cluster ID")
+               description = "Lists capacity by the Cluster ID")
     private Long clusterId;
 
-    @Parameter(name = ApiConstants.FETCH_LATEST, type = CommandType.BOOLEAN, since = "3.0.0", description = "recalculate capacities and fetch the latest")
+    @Parameter(name = ApiConstants.FETCH_LATEST, type = CommandType.BOOLEAN, since = "3.0.0", description = "Recalculate capacities and fetch the latest")
     private Boolean fetchLatest;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.INTEGER, description = "lists capacity by type" + "* CAPACITY_TYPE_MEMORY = 0" + "* CAPACITY_TYPE_CPU = 1"
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.INTEGER, description = "Lists capacity by type" + "* CAPACITY_TYPE_MEMORY = 0" + "* CAPACITY_TYPE_CPU = 1"
         + "* CAPACITY_TYPE_STORAGE = 2" + "* CAPACITY_TYPE_STORAGE_ALLOCATED = 3" + "* CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP = 4" + "* CAPACITY_TYPE_PRIVATE_IP = 5"
         + "* CAPACITY_TYPE_SECONDARY_STORAGE = 6" + "* CAPACITY_TYPE_VLAN = 7" + "* CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP = 8" + "* CAPACITY_TYPE_LOCAL_STORAGE = 9"
         + "* CAPACITY_TYPE_GPU = 19" + "* CAPACITY_TYPE_CPU_CORE = 90.")
@@ -72,6 +70,9 @@ public class ListCapacityCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.SORT_BY, type = CommandType.STRING, since = "3.0.0", description = "Sort the results. Available values: Usage")
     private String sortBy;
+
+    @Parameter(name = ApiConstants.TAG, type = CommandType.STRING, description = "Tag for the resource type", since = "4.20.0")
+    private String tag;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -109,6 +110,10 @@ public class ListCapacityCmd extends BaseListCmd {
         return null;
     }
 
+    public String getTag() {
+        return tag;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -127,11 +132,12 @@ public class ListCapacityCmd extends BaseListCmd {
         Collections.sort(capacityResponses, new Comparator<CapacityResponse>() {
             public int compare(CapacityResponse resp1, CapacityResponse resp2) {
                 int res = resp1.getZoneName().compareTo(resp2.getZoneName());
+                // Group by zone
                 if (res != 0) {
                     return res;
-                } else {
-                    return resp1.getCapacityType().compareTo(resp2.getCapacityType());
                 }
+                // Sort by capacity type only if not already sorted by usage
+                return (getSortBy() != null) ? 0 : resp1.getCapacityType().compareTo(resp2.getCapacityType());
             }
         });
 

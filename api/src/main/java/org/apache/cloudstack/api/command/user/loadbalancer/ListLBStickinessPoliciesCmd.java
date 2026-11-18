@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
@@ -38,7 +37,6 @@ import com.cloud.user.Account;
 @APICommand(name = "listLBStickinessPolicies", description = "Lists load balancer stickiness policies.", responseObject = LBStickinessResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListLBStickinessPoliciesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListLBStickinessPoliciesCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////
@@ -47,17 +45,17 @@ public class ListLBStickinessPoliciesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.LBID,
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
-               description = "the ID of the load balancer rule")
+               description = "The ID of the load balancer rule")
     private Long lbRuleId;
 
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
             entityType = LBStickinessResponse.class,
-            description = "the ID of the load balancer stickiness policy")
+            description = "The ID of the load balancer stickiness policy")
     private Long id;
 
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "List resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     // ///////////////////////////////////////////////////

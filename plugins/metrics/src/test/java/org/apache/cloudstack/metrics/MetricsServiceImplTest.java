@@ -19,6 +19,7 @@ package org.apache.cloudstack.metrics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -26,8 +27,10 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ListVMsUsageHistoryCmd;
+import org.apache.cloudstack.api.ListVolumesUsageHistoryCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.StatsResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.response.VmMetricsStatsResponse;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Assert;
@@ -37,12 +40,18 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.UserVmVO;
@@ -77,6 +86,12 @@ public class MetricsServiceImplTest {
     @Mock
     VmStatsDao vmStatsDaoMock;
 
+    @Mock
+    AccountManager accountManager;
+
+    @Mock
+    VolumeDao volumeDao;
+
     @Captor
     ArgumentCaptor<String> stringCaptor1, stringCaptor2;
 
@@ -97,12 +112,26 @@ public class MetricsServiceImplTest {
 
     @Mock
     VmStatsVO vmStatsVOMock;
+    @Mock
+    Account mockAccount;
+    @Mock
+    ListVolumesUsageHistoryCmd listVolumesUsageHistoryCmdMock;
+    @Mock
+    VolumeVO volumeVOMock;
+    @Mock
+    SearchBuilder<VolumeVO> volumeSearchBuilderMock;
+    @Mock
+    SearchCriteria<VolumeVO> volumeSearchCriteriaMock;
+    @Mock
+    Filter filterMock;
+
 
     private void prepareSearchCriteriaWhenUseSetParameters() {
         Mockito.doNothing().when(scMock).setParameters(Mockito.anyString(), Mockito.any());
     }
 
     private void preparesearchForUserVmsInternalTest() {
+        Mockito.when(mockAccount.getType()).thenReturn(Account.Type.NORMAL);
         expectedVmListAndCounter = new Pair<>(Arrays.asList(userVmVOMock), 1);
 
         Mockito.doReturn(1L).when(listVMsUsageHistoryCmdMock).getStartIndex();
@@ -113,8 +142,10 @@ public class MetricsServiceImplTest {
         Mockito.doReturn(userVmVOMock).when(sbMock).entity();
         Mockito.doReturn(scMock).when(sbMock).create();
 
-        Mockito.doReturn(new Pair<List<UserVmVO>, Integer>(Arrays.asList(userVmVOMock), 1))
+        Mockito.doReturn(expectedVmListAndCounter)
         .when(userVmDaoMock).searchAndCount(Mockito.any(), Mockito.any());
+        Mockito.doReturn(expectedVmListAndCounter.first())
+                .when(userVmDaoMock).listByIds(Mockito.anyList());
     }
 
     @Test
@@ -126,12 +157,17 @@ public class MetricsServiceImplTest {
         Mockito.doReturn(null).when(listVMsUsageHistoryCmdMock).getName();
         Mockito.doReturn(null).when(listVMsUsageHistoryCmdMock).getKeyword();
 
-        Pair<List<UserVmVO>, Integer> result = spy.searchForUserVmsInternal(listVMsUsageHistoryCmdMock);
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.when(callContextMock.getCallingAccount()).thenReturn(mockAccount);
+            Pair<List<UserVmVO>, Integer> result = spy.searchForUserVmsInternal(listVMsUsageHistoryCmdMock);
 
-        Mockito.verify(scMock).setParameters(stringCaptor1.capture(), objectArrayCaptor.capture());
-        Assert.assertEquals("idIN", stringCaptor1.getValue());
-        Assert.assertEquals(Arrays.asList(fakeVmId1), objectArrayCaptor.getAllValues());
-        Assert.assertEquals(expectedVmListAndCounter, result);
+            Mockito.verify(scMock).setParameters(stringCaptor1.capture(), objectArrayCaptor.capture());
+            Assert.assertEquals("idIN", stringCaptor1.getValue());
+            Assert.assertEquals(fakeVmId1, objectArrayCaptor.getAllValues().get(0)[0]);
+            Assert.assertEquals(expectedVmListAndCounter, result);
+        }
     }
 
     @Test
@@ -143,13 +179,17 @@ public class MetricsServiceImplTest {
         Mockito.doReturn(expected).when(listVMsUsageHistoryCmdMock).getIds();
         Mockito.doReturn(null).when(listVMsUsageHistoryCmdMock).getName();
         Mockito.doReturn(null).when(listVMsUsageHistoryCmdMock).getKeyword();
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.when(callContextMock.getCallingAccount()).thenReturn(mockAccount);
+            Pair<List<UserVmVO>, Integer> result = spy.searchForUserVmsInternal(listVMsUsageHistoryCmdMock);
 
-        Pair<List<UserVmVO>, Integer> result = spy.searchForUserVmsInternal(listVMsUsageHistoryCmdMock);
-
-        Mockito.verify(scMock).setParameters(stringCaptor1.capture(), objectArrayCaptor.capture());
-        Assert.assertEquals("idIN", stringCaptor1.getValue());
-        Assert.assertEquals(expected, objectArrayCaptor.getAllValues());
-        Assert.assertEquals(expectedVmListAndCounter, result);
+            Mockito.verify(scMock).setParameters(stringCaptor1.capture(), objectArrayCaptor.capture());
+            Assert.assertEquals("idIN", stringCaptor1.getValue());
+            Assert.assertArrayEquals(expected.toArray(), objectArrayCaptor.getAllValues().get(0));
+            Assert.assertEquals(expectedVmListAndCounter, result);
+        }
     }
 
     @Test
@@ -161,12 +201,17 @@ public class MetricsServiceImplTest {
         Mockito.doReturn("fakeName").when(listVMsUsageHistoryCmdMock).getName();
         Mockito.doReturn(null).when(listVMsUsageHistoryCmdMock).getKeyword();
 
-        Pair<List<UserVmVO>, Integer> result = spy.searchForUserVmsInternal(listVMsUsageHistoryCmdMock);
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.when(callContextMock.getCallingAccount()).thenReturn(mockAccount);
+            Pair<List<UserVmVO>, Integer> result = spy.searchForUserVmsInternal(listVMsUsageHistoryCmdMock);
 
-        Mockito.verify(scMock).setParameters(stringCaptor1.capture(), objectArrayCaptor.capture());
-        Assert.assertEquals("displayName", stringCaptor1.getValue());
-        Assert.assertEquals("%fakeName%", objectArrayCaptor.getValue());
-        Assert.assertEquals(expectedVmListAndCounter, result);
+            Mockito.verify(scMock).setParameters(stringCaptor1.capture(), objectArrayCaptor.capture());
+            Assert.assertEquals("displayName", stringCaptor1.getValue());
+            Assert.assertEquals("%fakeName%", objectArrayCaptor.getValue()[0]);
+            Assert.assertEquals(expectedVmListAndCounter, result);
+        }
     }
 
     @Test
@@ -179,16 +224,21 @@ public class MetricsServiceImplTest {
         Mockito.doReturn(null).when(listVMsUsageHistoryCmdMock).getName();
         Mockito.doReturn("fakeKeyword").when(listVMsUsageHistoryCmdMock).getKeyword();
 
-        Pair<List<UserVmVO>, Integer> result = spy.searchForUserVmsInternal(listVMsUsageHistoryCmdMock);
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.when(callContextMock.getCallingAccount()).thenReturn(mockAccount);
+            Pair<List<UserVmVO>, Integer> result = spy.searchForUserVmsInternal(listVMsUsageHistoryCmdMock);
 
-        Mockito.verify(scMock, Mockito.times(2)).addOr(stringCaptor1.capture(), opCaptor.capture(), objectArrayCaptor.capture());
-        List<String> conditions = stringCaptor1.getAllValues();
-        List<Object[]> params = objectArrayCaptor.getAllValues();
-        Assert.assertEquals("displayName", conditions.get(0));
-        Assert.assertEquals("state", conditions.get(1));
-        Assert.assertEquals("%fakeKeyword%", params.get(0));
-        Assert.assertEquals("fakeKeyword", params.get(1));
-        Assert.assertEquals(expectedVmListAndCounter, result);
+            Mockito.verify(scMock, Mockito.times(2)).addOr(stringCaptor1.capture(), opCaptor.capture(), objectArrayCaptor.capture());
+            List<String> conditions = stringCaptor1.getAllValues();
+            List<Object[]> params = objectArrayCaptor.getAllValues();
+            Assert.assertEquals("displayName", conditions.get(0));
+            Assert.assertEquals("state", conditions.get(1));
+            Assert.assertEquals("%fakeKeyword%", params.get(0)[0]);
+            Assert.assertEquals("fakeKeyword", params.get(1)[0]);
+            Assert.assertEquals(expectedVmListAndCounter, result);
+        }
     }
 
     @Test
@@ -337,6 +387,58 @@ public class MetricsServiceImplTest {
             Assert.assertEquals("15.62%", statsResponseList.get(0).getCpuUsed());
         } finally {
             Locale.setDefault(originalLocale);
+        }
+    }
+
+    @Test
+    public void searchForVolumesInternalWithValidParameters() {
+        Mockito.doReturn(null).when(listVolumesUsageHistoryCmdMock).getId();
+        Mockito.doReturn(Arrays.asList(1L, 2L)).when(listVolumesUsageHistoryCmdMock).getIds();
+        Mockito.doReturn("volumeName").when(listVolumesUsageHistoryCmdMock).getName();
+        Mockito.doReturn("keyword").when(listVolumesUsageHistoryCmdMock).getKeyword();
+        Mockito.doReturn(volumeSearchBuilderMock).when(volumeDao).createSearchBuilder();
+        Mockito.doReturn(volumeVOMock).when(volumeSearchBuilderMock).entity();
+        SearchBuilder vmSearchBuilderMock = Mockito.mock(SearchBuilder.class);
+        Mockito.doReturn(vmSearchBuilderMock).when(userVmDaoMock).createSearchBuilder();
+        Mockito.doReturn(userVmVOMock).when(vmSearchBuilderMock).entity();
+        Mockito.doReturn(volumeSearchCriteriaMock).when(volumeSearchBuilderMock).create();
+        Mockito.doReturn(volumeSearchCriteriaMock).when(volumeDao).createSearchCriteria();
+        Mockito.doReturn(new Pair<>(Arrays.asList(volumeVOMock), 1)).when(volumeDao).searchAndCount(Mockito.any(), Mockito.any());
+        Mockito.doReturn(Arrays.asList(volumeVOMock)).when(volumeDao).listByIds(Mockito.anyList());
+
+
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.when(callContextMock.getCallingAccount()).thenReturn(mockAccount);
+            Pair<List<VolumeVO>, Integer> result = spy.searchForVolumesInternal(listVolumesUsageHistoryCmdMock);
+
+            Assert.assertNotNull(result);
+            Assert.assertEquals(1, result.second().intValue());
+            Assert.assertEquals(volumeVOMock, result.first().get(0));
+        }
+    }
+
+    @Test
+    public void searchForVolumesInternalWithValidParametersNoItem() {
+        Mockito.doReturn(1L).when(listVolumesUsageHistoryCmdMock).getId();
+        Mockito.doReturn(volumeSearchBuilderMock).when(volumeDao).createSearchBuilder();
+        Mockito.doReturn(volumeVOMock).when(volumeSearchBuilderMock).entity();
+        Mockito.doReturn(volumeSearchCriteriaMock).when(volumeSearchBuilderMock).create();
+        Mockito.doReturn(new Pair<>(Collections.emptyList(), 0)).when(volumeDao).searchAndCount(Mockito.any(), Mockito.any());
+
+
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.when(callContextMock.getCallingAccount()).thenReturn(mockAccount);
+            Mockito.when(callContextMock.getCallingAccountId()).thenReturn(1L);
+            Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(true);
+            Mockito.when(mockAccount.getType()).thenReturn(Account.Type.ADMIN);
+            Pair<List<VolumeVO>, Integer> result = spy.searchForVolumesInternal(listVolumesUsageHistoryCmdMock);
+
+            Assert.assertNotNull(result);
+            Assert.assertEquals(0, result.second().intValue());
         }
     }
 }

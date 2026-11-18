@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.dc.dao;
 
+import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
@@ -30,7 +31,8 @@ public class DataCenterDetailsDaoImpl extends ResourceDetailsDaoBase<DataCenterD
 
     private final SearchBuilder<DataCenterDetailVO> DetailSearch;
 
-    DataCenterDetailsDaoImpl() {
+    public DataCenterDetailsDaoImpl() {
+        super();
         DetailSearch = createSearchBuilder();
         DetailSearch.and("zoneId", DetailSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         DetailSearch.and("name", DetailSearch.entity().getName(), SearchCriteria.Op.EQ);
@@ -43,8 +45,8 @@ public class DataCenterDetailsDaoImpl extends ResourceDetailsDaoBase<DataCenterD
     }
 
     @Override
-    public String getConfigValue(long id, ConfigKey<?> key) {
-        DataCenterDetailVO vo = findDetail(id, key.key());
+    public String getConfigValue(long id, String key) {
+        ResourceDetail vo = findDetail(id, key);
         return vo == null ? null : getActualValue(vo);
     }
 

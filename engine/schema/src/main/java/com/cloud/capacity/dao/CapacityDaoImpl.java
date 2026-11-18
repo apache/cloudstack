@@ -26,12 +26,11 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
@@ -51,7 +50,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements CapacityDao {
-    private static final Logger s_logger = Logger.getLogger(CapacityDaoImpl.class);
 
     private static final String ADD_ALLOCATED_SQL = "UPDATE `cloud`.`op_host_capacity` SET used_capacity = used_capacity + ? WHERE host_id = ? AND capacity_type = ?";
     private static final String SUBTRACT_ALLOCATED_SQL =
@@ -206,14 +204,16 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
                 "(CASE WHEN ISNULL(service_offering.speed) THEN custom_speed.value ELSE service_offering.speed end) AS speed, " +
                 "(CASE WHEN ISNULL(service_offering.ram_size) THEN custom_ram_size.value ELSE service_offering.ram_size end) AS ram_size " +
                 "FROM vm_instance vi LEFT JOIN service_offering ON(((vi.service_offering_id = service_offering.id))) " +
-                "LEFT JOIN user_vm_details custom_cpu ON(((custom_cpu.vm_id = vi.id) AND (custom_cpu.name = 'CpuNumber'))) " +
-                "LEFT JOIN user_vm_details custom_speed ON(((custom_speed.vm_id = vi.id) AND (custom_speed.name = 'CpuSpeed'))) " +
-                "LEFT JOIN user_vm_details custom_ram_size ON(((custom_ram_size.vm_id = vi.id) AND (custom_ram_size.name = 'memory'))) ";
+                "LEFT JOIN vm_instance_details custom_cpu ON(((custom_cpu.vm_id = vi.id) AND (custom_cpu.name = 'CpuNumber'))) " +
+                "LEFT JOIN vm_instance_details custom_speed ON(((custom_speed.vm_id = vi.id) AND (custom_speed.name = 'CpuSpeed'))) " +
+                "LEFT JOIN vm_instance_details custom_ram_size ON(((custom_ram_size.vm_id = vi.id) AND (custom_ram_size.name = 'memory'))) ";
 
     private static final String WHERE_STATE_IS_NOT_DESTRUCTIVE =
             "WHERE ISNULL(vi.removed) AND vi.state NOT IN ('Destroyed', 'Error', 'Expunging')";
 
     private static final String LEFT_JOIN_VM_TEMPLATE = "LEFT JOIN vm_template ON vm_template.id = vi.vm_template_id ";
+
+    private static final String STORAGE_POOLS_WITH_CHILDREN = "SELECT DISTINCT parent FROM storage_pool WHERE parent != 0 AND removed IS NULL";
 
     public CapacityDaoImpl() {
         _hostIdTypeSearch = createSearchBuilder();
@@ -341,7 +341,8 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public List<SummedCapacity> listCapacitiesGroupedByLevelAndType(Integer capacityType, Long zoneId, Long podId, Long clusterId, int level, Long limit) {
+    public List<SummedCapacity> listCapacitiesGroupedByLevelAndType(Integer capacityType, Long zoneId, Long podId,
+        Long clusterId, int level, List<Long> hostIds, List<Long> poolIds, Long limit) {
 
         StringBuilder finalQuery = new StringBuilder();
         TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -379,6 +380,23 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         if (capacityType != null) {
             finalQuery.append(" AND capacity_type = ?");
             resourceIdList.add(capacityType.longValue());
+        }
+
+        // Exclude storage pools with children from capacity calculations to avoid double counting
+        finalQuery.append(" AND NOT (capacity.capacity_type = ").append(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED)
+                .append(" AND capacity.host_id IN (").append(STORAGE_POOLS_WITH_CHILDREN).append("))");
+
+        if (CollectionUtils.isNotEmpty(hostIds)) {
+            finalQuery.append(String.format(" AND capacity.host_id IN (%s)", StringUtils.join(hostIds, ",")));
+            if (capacityType == null) {
+                finalQuery.append(String.format(" AND capacity_type NOT IN (%s)", StringUtils.join(Capacity.STORAGE_CAPACITY_TYPES, ",")));
+            }
+        }
+        if (CollectionUtils.isNotEmpty(poolIds)) {
+            finalQuery.append(String.format(" AND capacity.host_id IN (%s)", StringUtils.join(poolIds, ",")));
+            if (capacityType == null) {
+                finalQuery.append(String.format(" AND capacity_type IN (%s)", StringUtils.join(Capacity.STORAGE_CAPACITY_TYPES, ",")));
+            }
         }
 
         switch (level) {
@@ -463,8 +481,37 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         }
     }
 
+    protected String getHostAndPoolConditionForFilteredCapacity(Integer capacityType, List<Long> hostIds, List<Long> poolIds) {
+        StringBuilder sql = new StringBuilder();
+        if (CollectionUtils.isEmpty(hostIds) && CollectionUtils.isEmpty(poolIds)) {
+            return "";
+        }
+        sql.append(" AND (");
+        boolean hostConditionAdded = false;
+        if (CollectionUtils.isNotEmpty(hostIds) && (capacityType == null || !Capacity.STORAGE_CAPACITY_TYPES.contains(capacityType.shortValue()))) {
+            sql.append(String.format("(capacity.host_id IN (%s)", StringUtils.join(hostIds, ",")));
+            if (capacityType == null) {
+                sql.append(String.format(" AND capacity_type NOT IN (%s)", StringUtils.join(Capacity.STORAGE_CAPACITY_TYPES, ",")));
+            }
+            sql.append(")");
+            hostConditionAdded = true;
+        }
+        if (CollectionUtils.isNotEmpty(poolIds) && (capacityType == null || Capacity.STORAGE_CAPACITY_TYPES.contains(capacityType.shortValue()))) {
+            if (hostConditionAdded) {
+                sql.append(" OR ");
+            }
+            sql.append(String.format("(capacity.host_id IN (%s)", StringUtils.join(poolIds, ",")));
+            if (capacityType == null || Capacity.STORAGE_CAPACITY_TYPES.contains(capacityType.shortValue())) {
+                sql.append(String.format(" AND capacity_type IN (%s)", StringUtils.join(Capacity.STORAGE_CAPACITY_TYPES, ",")));
+            }
+            sql.append(")");
+        }
+        sql.append(")");
+        return sql.toString();
+    }
+
     @Override
-    public List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId) {
+    public List<SummedCapacity> findFilteredCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId, List<Long> hostIds, List<Long> poolIds) {
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
@@ -501,6 +548,10 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         StringBuilder sql = new StringBuilder(LIST_CAPACITY_GROUP_BY_CAPACITY_PART1);
         List<Long> resourceIdList = new ArrayList<Long>();
 
+        // Exclude storage pools with children from capacity calculations to avoid double counting
+        sql.append(" AND NOT (capacity.capacity_type = ").append(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED)
+                .append(" AND capacity.host_id IN (").append(STORAGE_POOLS_WITH_CHILDREN).append("))");
+
         if (zoneId != null) {
             sql.append(" AND capacity.data_center_id = ?");
             resourceIdList.add(zoneId);
@@ -517,6 +568,8 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             sql.append(" AND capacity.capacity_type = ?");
             resourceIdList.add(capacityType.longValue());
         }
+
+        sql.append(getHostAndPoolConditionForFilteredCapacity(capacityType, hostIds, poolIds));
 
         if (podId == null && clusterId == null) {
             sql.append(" GROUP BY capacity_type, data_center_id");
@@ -593,6 +646,11 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         }
     }
 
+    @Override
+    public List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId) {
+        return findFilteredCapacityBy(capacityType, zoneId, podId, clusterId, null, null);
+    }
+
     public void updateAllocated(Long hostId, long allocatedAmount, short capacityType, boolean add) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
@@ -612,7 +670,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Exception updating capacity for host: " + hostId, e);
+            logger.warn("Exception updating capacity for host: " + hostId, e);
         }
     }
 
@@ -625,7 +683,19 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public List<Long> listClustersInZoneOrPodByHostCapacities(long id, long vmId, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone) {
+    public List<CapacityVO> listByHostIdTypes(Long hostId, List<Short> capacityTypes) {
+        SearchBuilder<CapacityVO> sb = createSearchBuilder();
+        sb.and("hostId", sb.entity().getHostOrPoolId(), SearchCriteria.Op.EQ);
+        sb.and("type", sb.entity().getCapacityType(), SearchCriteria.Op.IN);
+        sb.done();
+        SearchCriteria<CapacityVO> sc = sb.create();
+        sc.setParameters("hostId", hostId);
+        sc.setParameters("type", capacityTypes.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<Long> listClustersInZoneOrPodByHostCapacities(long id, long vmId, int requiredCpu, long requiredRam, boolean isZone) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
@@ -704,6 +774,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         public Long clusterId;
         public Long podId;
         public Long dcId;
+        public String tag;
 
         public SummedCapacity() {
         }
@@ -791,6 +862,14 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         }
         public void setAllocatedCapacity(Long sumAllocated) {
             this.sumAllocated = sumAllocated;
+        }
+
+        public String getTag() {
+            return tag;
+        }
+
+        public void setTag(String tag) {
+            this.tag = tag;
         }
     }
 
@@ -960,10 +1039,11 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public List<Long> orderHostsByFreeCapacity(Long zoneId, Long clusterId, short capacityTypeForOrdering){
+    public Pair<List<Long>, Map<Long, Double>> orderHostsByFreeCapacity(Long zoneId, Long clusterId, short capacityTypeForOrdering){
          TransactionLegacy txn = TransactionLegacy.currentTxn();
          PreparedStatement pstmt = null;
-         List<Long> result = new ArrayList<Long>();
+         List<Long> result = new ArrayList<>();
+         Map<Long, Double> hostCapacityMap = new HashMap<>();
          StringBuilder sql = new StringBuilder(ORDER_HOSTS_BY_FREE_CAPACITY_PART1);
          if (zoneId != null) {
              sql.append(" AND data_center_id = ?");
@@ -986,9 +1066,11 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
              ResultSet rs = pstmt.executeQuery();
              while (rs.next()) {
-                 result.add(rs.getLong(1));
+                 Long hostId = rs.getLong(1);
+                 result.add(hostId);
+                 hostCapacityMap.put(hostId, rs.getDouble(2));
              }
-             return result;
+             return new Pair<>(result, hostCapacityMap);
          } catch (SQLException e) {
              throw new CloudRuntimeException("DB Exception on: " + sql, e);
          } catch (Throwable e) {
@@ -997,7 +1079,65 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public List<Long> listPodsByHostCapacities(long zoneId, int requiredCpu, long requiredRam, short capacityType) {
+    public List<CapacityVO> listHostCapacityByCapacityTypes(Long zoneId, Long clusterId, List<Short> capacityTypes) {
+        SearchBuilder<CapacityVO> sb = createSearchBuilder();
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        sb.and("capacityTypes", sb.entity().getCapacityType(), SearchCriteria.Op.IN);
+        sb.and("capacityState", sb.entity().getCapacityState(), Op.EQ);
+        sb.done();
+
+        SearchCriteria<CapacityVO> sc = sb.create();
+        sc.setParameters("capacityState", "Enabled");
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        if (clusterId != null) {
+            sc.setParameters("clusterId", clusterId);
+        }
+        sc.setParameters("capacityTypes", capacityTypes.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<CapacityVO> listPodCapacityByCapacityTypes(Long zoneId, List<Short> capacityTypes) {
+        SearchBuilder<CapacityVO> sb = createSearchBuilder();
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("capacityTypes", sb.entity().getCapacityType(), SearchCriteria.Op.IN);
+        sb.and("capacityState", sb.entity().getCapacityState(), Op.EQ);
+        sb.done();
+        SearchCriteria<CapacityVO> sc = sb.create();
+        sc.setParameters("capacityState", "Enabled");
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        sc.setParameters("capacityTypes", capacityTypes.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<CapacityVO> listClusterCapacityByCapacityTypes(Long zoneId, Long podId, List<Short> capacityTypes) {
+        SearchBuilder<CapacityVO> sb = createSearchBuilder();
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("capacityTypes", sb.entity().getCapacityType(), SearchCriteria.Op.IN);
+        sb.and("capacityState", sb.entity().getCapacityState(), Op.EQ);
+        sb.done();
+
+        SearchCriteria<CapacityVO> sc = sb.create();
+        sc.setParameters("capacityState", "Enabled");
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        if (podId != null) {
+            sc.setParameters("podId", podId);
+        }
+        sc.setParameters("capacityTypes", capacityTypes.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<Long> listPodsByHostCapacities(long zoneId, int requiredCpu, long requiredRam) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
@@ -1126,7 +1266,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
             pstmt.executeUpdate();
         } catch (Exception e) {
-            s_logger.warn("Error updating CapacityVO", e);
+            logger.warn("Error updating CapacityVO", e);
         }
     }
 
@@ -1146,7 +1286,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
                 return rs.getFloat(1);
             }
         } catch (Exception e) {
-            s_logger.warn("Error checking cluster threshold", e);
+            logger.warn("Error checking cluster threshold", e);
         }
         return 0;
     }

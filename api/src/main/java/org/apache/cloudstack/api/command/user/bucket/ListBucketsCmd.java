@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.log4j.Logger;
 
 import java.util.List;
 
@@ -36,7 +35,6 @@ import java.util.List;
         Bucket.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListBucketsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListBucketsCmd.class.getName());
 
     private static final String s_name = "listbucketsresponse";
 

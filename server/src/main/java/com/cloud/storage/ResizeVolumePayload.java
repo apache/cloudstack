@@ -46,4 +46,12 @@ public class ResizeVolumePayload {
         this(newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, shrinkOk, instanceName, hosts, isManaged);
         this.newDiskOfferingId = newDiskOfferingId;
     }
+
+    public Long getNewDiskOfferingId() {
+        return newDiskOfferingId;
+    }
+
+    public void setNewDiskOfferingId(Long newDiskOfferingId) {
+        this.newDiskOfferingId = newDiskOfferingId;
+    }
 }

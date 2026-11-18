@@ -29,6 +29,8 @@ import com.cloud.utils.Ternary;
 
 public interface StorageAdaptor {
 
+    StoragePoolType getStoragePoolType();
+
     public KVMStoragePool getStoragePool(String uuid);
 
     // Get the storage pool from libvirt, but control if libvirt should refresh the pool (can take a long time)
@@ -41,6 +43,10 @@ public interface StorageAdaptor {
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage);
 
     public boolean deleteStoragePool(String uuid);
+
+    public default boolean deleteStoragePool(String uuid, Map<String, String> details) {
+        return true;
+    }
 
     public default KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
                                                       PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, Long usableSize, byte[] passphrase) {
@@ -117,23 +123,33 @@ public interface StorageAdaptor {
     KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout);
 
     /**
+     * Returns true if storage adaptor supports physical disk copy functionality.
+     */
+    default boolean supportsPhysicalDiskCopy(StoragePoolType type) {
+        return StoragePoolType.PowerFlex == type;
+    }
+
+    /**
      * Prepares the storage client.
-     * @param type type of the storage pool
      * @param uuid uuid of the storage pool
      * @param details any details of the storage pool that are required for client preparation
      * @return status, client details, & message in case failed
      */
-    default Ternary<Boolean, Map<String, String>, String> prepareStorageClient(StoragePoolType type, String uuid, Map<String, String> details) {
+    default Ternary<Boolean, Map<String, String>, String> prepareStorageClient(String uuid, Map<String, String> details) {
         return new Ternary<>(true, new HashMap<>(), "");
     }
 
     /**
      * Unprepares the storage client.
-     * @param type type of the storage pool
      * @param uuid uuid of the storage pool
+     * @param details any details of the storage pool that are required for client unpreparation
      * @return status, & message in case failed
      */
-    default Pair<Boolean, String> unprepareStorageClient(StoragePoolType type, String uuid) {
+    default Pair<Boolean, String> unprepareStorageClient(String uuid, Map<String, String> details) {
         return new Pair<>(true, "");
+    }
+
+    default void createTemplate(String templatePath, String templateUuid, int timeout, KVMStoragePool pool) {
+        // no-op
     }
 }

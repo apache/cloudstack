@@ -27,9 +27,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
-import org.apache.log4j.Logger;
 
-import com.cloud.network.dao.NetworkDomainDaoImpl;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -37,7 +35,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 
 public class AffinityGroupDomainMapDaoImpl extends GenericDaoBase<AffinityGroupDomainMapVO, Long> implements AffinityGroupDomainMapDao {
-    public static Logger logger = Logger.getLogger(NetworkDomainDaoImpl.class.getName());
 
     private SearchBuilder<AffinityGroupDomainMapVO> ListByAffinityGroup;
 

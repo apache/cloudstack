@@ -18,8 +18,12 @@ package org.apache.cloudstack.consoleproxy;
 
 import com.cloud.utils.component.Manager;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
+import org.apache.cloudstack.api.command.user.consoleproxy.ListConsoleSessionsCmd;
+import org.apache.cloudstack.api.response.ConsoleSessionResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import java.util.Date;
 
 public interface ConsoleAccessManager extends Manager, Configurable {
 
@@ -37,11 +41,25 @@ public interface ConsoleAccessManager extends Manager, Configurable {
             false,
             ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean> KvmMultipleConsoleViewersEnabled = new ConfigKey<>("Advanced", Boolean.class,
+            "consoleproxy.kvm.multiple.viewers.enabled",
+            "false",
+            "Determines whether multiple simultaneous console viewers are allowed for the same KVM user VM",
+            true,
+            ConfigKey.Scope.Global);
+
     ConsoleEndpoint generateConsoleEndpoint(Long vmId, String extraSecurityToken, String clientAddress);
 
     boolean isSessionAllowed(String sessionUuid);
 
     void removeSessions(String[] sessionUuids);
 
-    void acquireSession(String sessionUuid);
+    void acquireSession(String sessionUuid, String clientAddress);
+
+    String genAccessTicket(String host, String port, String sid, String tag, String sessionUuid);
+    String genAccessTicket(String host, String port, String sid, String tag, Date normalizedHashTime, String sessionUuid);
+
+    ListResponse<ConsoleSessionResponse> listConsoleSessions(ListConsoleSessionsCmd cmd);
+
+    ConsoleSession listConsoleSessionById(long id);
 }

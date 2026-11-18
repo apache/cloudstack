@@ -21,6 +21,10 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface DedicatedResources extends InfrastructureEntity, InternalIdentity, Identity {
+    enum Type {
+        Zone, Pod, Cluster, Host
+    }
+
     @Override
     long getId();
 

@@ -18,6 +18,7 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { isZoneCreated } from '@/utils/zone'
+import { isAdmin } from '@/role'
 
 export default {
   name: 'storage',
@@ -39,7 +40,7 @@ export default {
         }
       },
       columns: () => {
-        const fields = ['name', 'state', 'sizegb', 'type', 'vmname']
+        const fields = ['name', 'state', 'size', 'type', 'vmname', 'vmstate']
         const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
 
         if (store.getters.userInfo.roletype === 'Admin') {
@@ -63,7 +64,7 @@ export default {
 
         return fields
       },
-      details: ['name', 'id', 'type', 'storagetype', 'diskofferingdisplaytext', 'deviceid', 'sizegb', 'physicalsize', 'provisioningtype', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'diskiopstotal', 'miniops', 'maxiops', 'path'],
+      details: ['name', 'id', 'type', 'storagetype', 'diskofferingdisplaytext', 'kmskey', 'deviceid', 'sizegb', 'physicalsize', 'provisioningtype', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'diskiopstotal', 'miniops', 'maxiops', 'path', 'deleteprotection'],
       related: [{
         name: 'snapshot',
         title: 'label.snapshots',
@@ -92,7 +93,7 @@ export default {
         }
       ],
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'tags', 'serviceofferingid', 'diskofferingid']
+        const filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'tags', 'serviceofferingid', 'diskofferingid', 'kmskeyid', 'isencrypted']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
         }
@@ -151,7 +152,7 @@ export default {
           icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
-          args: ['name'],
+          args: ['name', 'deleteprotection'],
           mapping: {
             account: {
               value: (record) => { return record.account }
@@ -168,9 +169,10 @@ export default {
           label: 'label.action.take.snapshot',
           dataView: true,
           show: (record, store) => {
-            return record.state === 'Ready' && (record.hypervisor !== 'KVM' ||
-                record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
-                record.hypervisor === 'KVM' && record.vmstate !== 'Running')
+            return record.state === 'Ready' &&
+              (record.hypervisor !== 'KVM' ||
+               ['Stopped', 'Destroyed'].includes(record.vmstate) ||
+               store.features.kvmsnapshotenabled)
           },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/TakeSnapshot.vue')))
@@ -182,9 +184,10 @@ export default {
           label: 'label.action.recurring.snapshot',
           dataView: true,
           show: (record, store) => {
-            return record.state === 'Ready' && (record.hypervisor !== 'KVM' ||
-                record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
-                record.hypervisor === 'KVM' && record.vmstate !== 'Running')
+            return record.state === 'Ready' &&
+              (record.hypervisor !== 'KVM' ||
+               (['Stopped', 'Destroyed'].includes(record.vmstate)) ||
+               (store.features.kvmsnapshotenabled))
           },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RecurringSnapshotVolume.vue'))),
@@ -220,13 +223,32 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/MigrateVolume.vue')))
         },
         {
+          api: 'migrateVolumesToKMS',
+          icon: 'lock-outlined',
+          docHelp: 'adminguide/kms.html#migrating-existing-volumes-to-kms',
+          label: 'label.migrate.volume.to.kms',
+          message: 'message.action.migrate.volume.to.kms',
+          dataView: true,
+          popup: true,
+          show: (record, store) => {
+            return record.encryptformat && !record.kmskeyid &&
+              ['Ready', 'Allocated'].includes(record.state)
+          },
+          args: ['kmskeyid'],
+          mapping: {
+            volumeids: {
+              value: (record) => { return record.id }
+            }
+          }
+        },
+        {
           api: 'changeOfferingForVolume',
           icon: 'swap-outlined',
           docHelp: 'adminguide/storage.html#id2',
           label: 'label.change.offering.for.volume',
           args: ['id', 'diskofferingid', 'size', 'miniops', 'maxiops', 'automigrate'],
           dataView: true,
-          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeOfferingForVolume.vue')))
         },
@@ -254,9 +276,7 @@ export default {
           label: 'label.action.create.template.from.volume',
           dataView: true,
           show: (record) => {
-            return !['Destroy', 'Destroyed', 'Expunging', 'Expunged', 'Migrating', 'Uploading', 'UploadError', 'Creating'].includes(record.state) &&
-                ((record.type === 'ROOT' && record.vmstate === 'Stopped') ||
-                    (record.type !== 'ROOT' && !record.virtualmachineid && !['Allocated', 'Uploaded'].includes(record.state)))
+            return record.state === 'Ready' && (record.vmstate === 'Stopped' || !record.virtualmachineid)
           },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateTemplate.vue')))
@@ -311,7 +331,10 @@ export default {
       permission: ['listSnapshots'],
       resourceType: 'Snapshot',
       columns: () => {
-        var fields = ['name', 'state', 'volumename', 'intervaltype', 'physicalsize', 'created']
+        const fields = ['name', 'state', 'volumename', 'intervaltype', 'physicalsize', 'created']
+        if (store.getters.features.snapshotshowchainsize) {
+          fields.splice(fields.indexOf('created'), 0, 'chainsize', 'parentname')
+        }
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
           if (store.getters.listAllProjects) {
@@ -324,7 +347,13 @@ export default {
         fields.push('zonename')
         return fields
       },
-      details: ['name', 'id', 'volumename', 'volumetype', 'snapshottype', 'intervaltype', 'physicalsize', 'virtualsize', 'account', 'domain', 'created'],
+      details: () => {
+        const fields = ['name', 'id', 'volumename', 'volumetype', 'snapshottype', 'intervaltype', 'physicalsize', 'virtualsize', 'account', 'domain', 'created']
+        if (store.getters.features.snapshotshowchainsize) {
+          fields.splice(fields.indexOf('account'), 0, 'chainsize', 'parentname')
+        }
+        return fields
+      },
       tabs: [
         {
           name: 'details',
@@ -346,7 +375,7 @@ export default {
         }
       ],
       searchFilters: () => {
-        var filters = ['name', 'domainid', 'account', 'tags', 'zoneid']
+        const filters = ['name', 'domainid', 'account', 'tags', 'zoneid']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
           filters.push('imagestoreid')
@@ -381,6 +410,26 @@ export default {
           show: (record) => { return record.state === 'BackedUp' && record.revertable }
         },
         {
+          api: 'extractSnapshot',
+          icon: 'cloud-download-outlined',
+          label: 'label.action.download.snapshot',
+          message: 'message.action.download.snapshot',
+          dataView: true,
+          show: (record, store) => {
+            return (['Admin'].includes(store.userInfo.roletype) || // If admin or owner or belongs to current project
+                ((record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) ||
+                  (record.domainid === store.userInfo.domainid && record.projectid && store.project && store.project.id && record.projectid === store.project.id))) &&
+                    record.state === 'BackedUp'
+          },
+          args: ['zoneid'],
+          mapping: {
+            zoneid: {
+              value: (record) => { return record.zoneid }
+            }
+          },
+          response: (result) => { return `Please click <a href="${result.snapshot.url}" target="_blank">${result.snapshot.url}</a> to download.` }
+        },
+        {
           api: 'deleteSnapshot',
           icon: 'delete-outlined',
           label: 'label.action.delete.snapshot',
@@ -394,21 +443,85 @@ export default {
       ]
     },
     {
+      name: 'snapshotpolicy',
+      title: 'label.snapshotpolicies',
+      icon: 'build-outlined',
+      docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
+      permission: ['listSnapshotPolicies'],
+      resourceType: 'SnapshotPolicy',
+      params: { listall: true },
+      columns: () => {
+        var fields = ['intervaltype', 'maxsnaps', 'schedule', 'timezone', 'volumename']
+        return fields
+      },
+      searchFilters: ['volumeid'],
+      actions: [
+        {
+          api: 'createSnapshotPolicy',
+          icon: 'plus-outlined',
+          docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
+          label: 'label.action.create.recurring.snapshot',
+          listView: true,
+          show: () => { return 'createSnapshotPolicy' in store.getters.apis },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RecurringSnapshotVolume.vue'))),
+          mapping: {
+            intervaltype: {
+              options: ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY']
+            }
+          }
+        },
+        {
+          api: 'deleteSnapshotPolicies',
+          icon: 'delete-outlined',
+          label: 'label.delete.snapshot.policy',
+          message: 'message.action.delete.snapshot.policy',
+          dataView: true,
+          show: (record) => true,
+          args: ['id'],
+          mapping: {
+            id: {
+              value: (record) => record.id
+            }
+          }
+        }
+      ]
+    },
+    {
       name: 'backup',
-      title: 'label.backup',
+      title: 'label.backups',
       icon: 'cloud-upload-outlined',
       permission: ['listBackups'],
-      columns: [{ name: (record) => { return record.virtualmachinename } }, 'status', 'virtualmachinename', 'type', 'created', 'account', 'domain', 'zone'],
-      details: ['virtualmachinename', 'id', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
+      params: { listvmdetails: 'true' },
+      columns: ['name', 'status', 'compressionstatus', 'validationstatus', 'size', 'virtualsize', 'virtualmachinename', 'backupofferingname', 'intervaltype', 'type', 'created', 'account', 'domain', 'zone'],
+      details: ['name', 'description', 'virtualmachinename', 'id', 'intervaltype', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'backupofferingid', 'status', 'type', 'virtualmachineid'],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'instance.metadata',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/BackupMetadata.vue')))
+        }
+      ],
       actions: [
         {
           api: 'restoreBackup',
           icon: 'sync-outlined',
-          docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
+          docHelp: 'adminguide/virtual_machines.html#restoring-instance-backups',
           label: 'label.backup.restore',
           message: 'message.backup.restore',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' }
+          show: (record) => { return record.status === 'BackedUp' },
+          args: () => {
+            const fields = ['quickrestore']
+            if (isAdmin()) {
+              fields.push('hostid')
+            }
+            return fields
+          }
         },
         {
           api: 'restoreVolumeFromBackupAndAttachToVM',
@@ -416,9 +529,20 @@ export default {
           label: 'label.backup.attach.restore',
           message: 'message.backup.attach.restore',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' },
+          show: (record) => { return record.status === 'BackedUp' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RestoreAttachBackupVolume.vue')))
+        },
+        {
+          api: 'createVMFromBackup',
+          icon: 'caret-right-outlined',
+          docHelp: 'adminguide/virtual_machines.html#creating-a-new-instance-from-backup',
+          label: 'label.create.instance.from.backup',
+          message: 'message.backup.restore',
+          dataView: true,
+          popup: true,
+          show: (record) => { return record.status === 'BackedUp' },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateVMFromBackup.vue')))
         },
         {
           api: 'removeVirtualMachineFromBackupOffering',
@@ -426,7 +550,7 @@ export default {
           label: 'label.backup.offering.remove',
           message: 'message.backup.offering.remove',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' },
+          show: (record) => { return record.state !== 'Destroyed' && record.vmbackupofferingremoved !== true },
           args: ['forced', 'virtualmachineid'],
           mapping: {
             forced: {
@@ -448,6 +572,51 @@ export default {
           popup: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
           args: ['forced']
+        }
+      ]
+    },
+    {
+      name: 'backupschedule',
+      title: 'label.backup.schedules',
+      icon: 'build-outlined',
+      docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
+      permission: ['listBackupSchedule'],
+      resourceType: 'backupSchedule',
+      params: { listall: true },
+      columns: () => {
+        var fields = ['intervaltype', 'maxbackups', 'schedule', 'timezone', 'virtualmachinename']
+        return fields
+      },
+      searchFilters: ['virtualmachineid'],
+      actions: [
+        {
+          api: 'createBackupSchedule',
+          icon: 'plus-outlined',
+          docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
+          label: 'label.action.create.backup.schedule',
+          listView: true,
+          show: () => { return 'createBackupSchedule' in store.getters.apis },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/backup/CreateBackupSchedule.vue'))),
+          mapping: {
+            intervaltype: {
+              options: ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY']
+            }
+          }
+        },
+        {
+          api: 'deleteBackupSchedule',
+          icon: 'delete-outlined',
+          label: 'label.delete.backup.schedule',
+          message: 'message.action.delete.backup.schedule',
+          dataView: true,
+          show: (record) => true,
+          args: ['id'],
+          mapping: {
+            id: {
+              value: (record) => record.id
+            }
+          }
         }
       ]
     },
@@ -507,6 +676,149 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
+    },
+    {
+      name: 'sharedfs',
+      title: 'label.shared.filesystems',
+      icon: 'file-text-outlined',
+      permission: ['listSharedFileSystems'],
+      resourceType: 'SharedFS',
+      columns: () => {
+        const fields = ['name', 'state', 'sizegb']
+        const metricsFields = ['diskkbsread', 'diskkbswrite', 'utilization', 'physicalsize']
+
+        if (store.getters.metrics) {
+          fields.push(...metricsFields)
+        }
+        if (store.getters.userInfo.roletype === 'Admin') {
+          fields.push('storage')
+          fields.push('account')
+        } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
+          fields.push('account')
+        }
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
+        fields.push('zonename')
+
+        return fields
+      },
+      details: ['id', 'name', 'description', 'state', 'filesystem', 'diskofferingdisplaytext', 'ipaddress', 'sizegb', 'provider', 'protocol', 'provisioningtype', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'account', 'domain', 'created'],
+      tabs: [{
+        component: shallowRef(defineAsyncComponent(() => import('@/views/storage/SharedFSTab.vue')))
+      }],
+      searchFilters: () => {
+        var filters = ['name', 'zoneid', 'domainid', 'account', 'networkid', 'serviceofferingid', 'diskofferingid']
+        return filters
+      },
+      actions: [
+        {
+          api: 'createSharedFileSystem',
+          icon: 'plus-outlined',
+          docHelp: 'adminguide/storage.html#creating-a-new-file-share',
+          label: 'label.create.sharedfs',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateSharedFS.vue')))
+        },
+        {
+          api: 'updateSharedFileSystem',
+          icon: 'edit-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.update.sharedfs',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UpdateSharedFS.vue')))
+        },
+        {
+          api: 'startSharedFileSystem',
+          icon: 'caret-right-outlined',
+          label: 'label.action.start.sharedfs',
+          message: 'message.action.start.sharedfs',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          dataView: true,
+          popup: true,
+          groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          show: (record) => { return ['Stopped'].includes(record.state) }
+        },
+        {
+          api: 'stopSharedFileSystem',
+          icon: 'poweroff-outlined',
+          label: 'label.action.stop.sharedfs',
+          message: 'message.action.stop.sharedfs',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          dataView: true,
+          popup: true,
+          groupAction: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
+          args: ['forced'],
+          show: (record) => { return ['Ready'].includes(record.state) }
+        },
+        {
+          api: 'restartSharedFileSystem',
+          icon: 'reload-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.action.restart.sharedfs',
+          message: 'message.action.restart.sharedfs',
+          dataView: true,
+          popup: true,
+          args: ['cleanup'],
+          show: (record) => { return ['Stopped', 'Ready', 'Detached'].includes(record.state) }
+        },
+        {
+          api: 'changeSharedFileSystemDiskOffering',
+          icon: 'swap-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.change.disk.offering',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeSharedFSDiskOffering.vue'))),
+          show: (record) => { return ['Stopped', 'Ready'].includes(record.state) }
+        },
+        {
+          api: 'changeSharedFileSystemServiceOffering',
+          icon: 'arrows-alt-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.change.service.offering',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeSharedFSServiceOffering.vue'))),
+          show: (record) => { return ['Stopped'].includes(record.state) }
+        },
+        {
+          api: 'destroySharedFileSystem',
+          icon: 'delete-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.destroy.sharedfs',
+          message: 'message.action.destroy.sharedfs',
+          dataView: true,
+          popup: true,
+          groupAction: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, expunge: values.expunge, forced: values.forced } }) },
+          args: ['expunge', 'forced'],
+          show: (record) => { return !['Destroyed', 'Expunging', 'Error'].includes(record.state) }
+        },
+        {
+          api: 'recoverSharedFileSystem',
+          icon: 'medicine-box-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.recover.sharedfs',
+          message: 'message.action.recover.sharedfs',
+          dataView: true,
+          show: (record) => { return record.state === 'Destroyed' }
+        },
+        {
+          api: 'expungeSharedFileSystem',
+          icon: 'delete-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.expunge.sharedfs',
+          message: 'message.action.expunge.sharedfs',
+          dataView: true,
+          popup: true,
+          show: (record) => { return ['Destroyed', 'Expunging', 'Error'].includes(record.state) }
         }
       ]
     }

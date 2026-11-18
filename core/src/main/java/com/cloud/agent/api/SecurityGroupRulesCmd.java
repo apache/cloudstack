@@ -27,7 +27,6 @@ import java.util.zip.DeflaterOutputStream;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -39,7 +38,6 @@ public class SecurityGroupRulesCmd extends Command {
     public static final char RULE_COMMAND_SEPARATOR = ';';
     protected static final String EGRESS_RULE = "E:";
     protected static final String INGRESS_RULE = "I:";
-    private static final Logger LOGGER = Logger.getLogger(SecurityGroupRulesCmd.class);
 
     private final String guestIp;
     private final String guestIp6;
@@ -233,7 +231,7 @@ public class SecurityGroupRulesCmd extends Command {
             dzip.close();
             encodedResult = Base64.encodeBase64String(out.toByteArray());
         } catch (final IOException e) {
-            LOGGER.warn("Exception while compressing security group rules");
+            logger.warn("Exception while compressing security group rules");
         }
         return encodedResult;
     }

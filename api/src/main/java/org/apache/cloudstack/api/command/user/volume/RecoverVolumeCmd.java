@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.volume;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -39,7 +38,6 @@ import com.cloud.user.Account;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class RecoverVolumeCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(RecoverVolumeCmd.class.getName());
 
     private static final String s_name = "recovervolumeresponse";
 
@@ -89,7 +87,7 @@ public class RecoverVolumeCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Volume Id: " + getId());
+        CallContext.current().setEventDetails("Volume ID: " + getResourceUuid(ApiConstants.ID));
         Volume result = _volumeService.recoverVolume(getId());
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, result);

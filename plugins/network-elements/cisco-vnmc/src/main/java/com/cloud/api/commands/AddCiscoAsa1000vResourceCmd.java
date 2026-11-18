@@ -18,7 +18,6 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,7 +42,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "addCiscoAsa1000vResource", responseObject = CiscoAsa1000vResourceResponse.class, description = "Adds a Cisco Asa 1000v appliance",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddCiscoAsa1000vResourceCmd extends BaseCmd {
-    private static final Logger s_logger = Logger.getLogger(AddCiscoAsa1000vResourceCmd.class.getName());
     private static final String s_name = "addCiscoAsa1000vResource";
     @Inject
     CiscoAsa1000vService _ciscoAsa1000vService;
@@ -56,7 +54,7 @@ public class AddCiscoAsa1000vResourceCmd extends BaseCmd {
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
                required = true,
-               description = "the Physical Network ID")
+               description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, required = true, description = "Hostname or ip address of the Cisco ASA 1000v appliance.")
@@ -68,7 +66,7 @@ public class AddCiscoAsa1000vResourceCmd extends BaseCmd {
                description = "Nexus port profile associated with inside interface of ASA 1000v")
     private String inPortProfile;
 
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the Cluster ID")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "The Cluster ID")
     private Long clusterId;
 
     /////////////////////////////////////////////////////

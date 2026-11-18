@@ -24,27 +24,35 @@ export default {
   icon: 'database-outlined',
   docHelp: 'conceptsandterminology/concepts.html#about-hosts',
   permission: ['listHostsMetrics'],
-  searchFilters: ['name', 'zoneid', 'podid', 'clusterid', 'hypervisor'],
+  searchFilters: ['name', 'zoneid', 'podid', 'clusterid', 'arch', 'hypervisor'],
   resourceType: 'Host',
   filters: () => {
-    const filters = ['enabled', 'disabled', 'maintenance', 'up', 'down', 'alert']
+    const filters = ['enabled', 'disabled', 'maintenance', 'up', 'down', 'disconnected', 'alert']
     return filters
   },
   params: { type: 'routing' },
   columns: () => {
-    const fields = ['name', 'state', 'resourcestate', 'ipaddress', 'hypervisor', 'instances', 'powerstate', 'version']
-    const metricsFields = ['cpunumber', 'cputotalghz', 'cpuusedghz', 'cpuallocatedghz', 'memorytotalgb', 'memoryusedgb', 'memoryallocatedgb', 'networkread', 'networkwrite']
+    const fields = [
+      'name', 'state', 'resourcestate', 'ipaddress', 'arch', 'hypervisor',
+      { field: 'systeminstances', customTitle: 'system.vms' }, 'version'
+    ]
+    const metricsFields = ['instances', 'powerstate', 'cpunumber', 'cputotalghz', 'cpuusedghz', 'cpuallocatedghz', 'memorytotalgb', 'memoryusedgb', 'memoryallocatedgb', 'gputotal', 'gpuused', 'networkread', 'networkwrite']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }
     fields.push('clustername')
     fields.push('zonename')
+    fields.push('managementservername')
     return fields
   },
-  details: ['name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'type', 'clustername', 'podname', 'zonename', 'disconnected', 'created'],
+  details: ['name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'externalprovisioner', 'arch', 'type', 'clustername', 'podname', 'zonename', 'vlanfilteringenabled', 'vlantrunkxmlsupported', 'lastpinged', 'storageaccessgroups', 'clusterstorageaccessgroups', 'podstorageaccessgroups', 'zonestorageaccessgroups', 'managementservername', 'disconnected', 'created', 'externaldetails'],
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+  }, {
+    name: 'gpu',
+    resourceType: 'Host',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/GPUTab.vue')))
   }, {
     name: 'events',
     resourceType: 'Host',
@@ -74,12 +82,17 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['name', 'hosttags', 'istagarule', 'oscategoryid'],
-      mapping: {
-        oscategoryid: {
-          api: 'listOsCategories'
-        }
-      }
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostUpdate')))
+    },
+    {
+      api: 'updateHostPassword',
+      icon: 'key-outlined',
+      label: 'label.action.change.password',
+      dataView: true,
+      popup: true,
+      show: (record) => { return record.hypervisor !== 'External' },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ChangeHostPassword.vue')))
     },
     {
       api: 'provisionCertificate',
@@ -90,7 +103,7 @@ export default {
       show: (record) => {
         return record.hypervisor === 'KVM' || record.hypervisor === store.getters.customHypervisorName
       },
-      args: ['hostid'],
+      args: ['hostid', 'forced'],
       mapping: {
         hostid: {
           value: (record) => { return record.id }
@@ -161,6 +174,7 @@ export default {
       docHelp: 'adminguide/hosts.html#out-of-band-management',
       dataView: true,
       popup: true,
+      show: (record) => { return record.hypervisor !== 'External' },
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ConfigureHostOOBM')))
     },
     {
@@ -171,7 +185,7 @@ export default {
       docHelp: 'adminguide/hosts.html#out-of-band-management',
       dataView: true,
       show: (record) => {
-        return !(record?.outofbandmanagement?.enabled === true)
+        return record.hypervisor !== 'External' && !(record?.outofbandmanagement?.enabled === true)
       },
       args: ['hostid'],
       mapping: {
@@ -188,7 +202,7 @@ export default {
       docHelp: 'adminguide/hosts.html#out-of-band-management',
       dataView: true,
       show: (record) => {
-        return record?.outofbandmanagement?.enabled === true
+        return record.hypervisor !== 'External' && record?.outofbandmanagement?.enabled === true
       },
       args: ['hostid'],
       mapping: {
@@ -205,7 +219,7 @@ export default {
       docHelp: 'adminguide/hosts.html#out-of-band-management',
       dataView: true,
       show: (record) => {
-        return record?.outofbandmanagement?.enabled === true
+        return record.hypervisor !== 'External' && record?.outofbandmanagement?.enabled === true
       },
       args: ['hostid', 'action'],
       mapping: {
@@ -225,7 +239,7 @@ export default {
       docHelp: 'adminguide/hosts.html#out-of-band-management',
       dataView: true,
       show: (record) => {
-        return record?.outofbandmanagement?.enabled === true
+        return record.hypervisor !== 'External' && record?.outofbandmanagement?.enabled === true
       },
       args: ['hostid', 'password'],
       mapping: {
@@ -260,7 +274,7 @@ export default {
       docHelp: 'adminguide/reliability.html#ha-for-hosts',
       dataView: true,
       show: (record) => {
-        return !(record?.hostha?.haenable === true)
+        return record.hypervisor !== 'External' && !(record?.hostha?.haenable === true)
       },
       args: ['hostid'],
       mapping: {
@@ -289,7 +303,7 @@ export default {
     },
     {
       api: 'startRollingMaintenance',
-      icon: 'setting-outlined',
+      icon: 'control-outlined',
       label: 'label.start.rolling.maintenance',
       message: 'label.start.rolling.maintenance',
       docHelp: 'adminguide/hosts.html#kvm-rolling-maintenance',

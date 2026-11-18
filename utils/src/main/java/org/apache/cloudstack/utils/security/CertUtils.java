@@ -45,7 +45,8 @@ import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -77,7 +78,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class CertUtils {
 
-    private static final Logger LOG = Logger.getLogger(CertUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(CertUtils.class);
 
     public static KeyPair generateRandomKeyPair(final int keySize) throws NoSuchProviderException, NoSuchAlgorithmException {
         Security.addProvider(new BouncyCastleProvider());
@@ -92,14 +93,23 @@ public class CertUtils {
             Security.addProvider(new BouncyCastleProvider());
             keyFactory = KeyFactory.getInstance("RSA", "BC");
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
-            LOG.error("Unable to create KeyFactory:" + e.getMessage());
+            LOGGER.error("Unable to create KeyFactory:" + e.getMessage());
         }
         return keyFactory;
     }
 
-    public static X509Certificate pemToX509Certificate(final String pem) throws CertificateException, IOException {
-        final PEMParser pemParser = new PEMParser(new StringReader(pem));
-        return new JcaX509CertificateConverter().setProvider("BC").getCertificate((X509CertificateHolder) pemParser.readObject());
+    public static List<X509Certificate> pemToX509Certificates(final String pem) throws CertificateException, IOException {
+        final List<X509Certificate> certs = new ArrayList<>();
+        try (final PEMParser pemParser = new PEMParser(new StringReader(pem))) {
+            final JcaX509CertificateConverter certConverter = new JcaX509CertificateConverter().setProvider("BC");
+            Object parsedObj;
+            while ((parsedObj = pemParser.readObject()) != null) {
+                if (parsedObj instanceof X509CertificateHolder) {
+                    certs.add(certConverter.getCertificate((X509CertificateHolder) parsedObj));
+                }
+            }
+        }
+        return certs;
     }
 
     public static String x509CertificateToPem(final X509Certificate cert) throws IOException {

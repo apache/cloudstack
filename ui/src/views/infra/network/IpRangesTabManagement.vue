@@ -129,7 +129,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -226,7 +226,7 @@ export default {
     },
     fetchData () {
       this.componentLoading = true
-      api('listPods', {
+      getAPI('listPods', {
         zoneid: this.resource.zoneid,
         page: this.page,
         pagesize: this.pageSize
@@ -272,7 +272,7 @@ export default {
     },
     handleDeleteIpRange (record) {
       this.componentLoading = true
-      api('deleteManagementNetworkIpRange', {
+      postAPI('deleteManagementNetworkIpRange', {
         podid: record.id,
         startip: record.startip,
         endip: record.endip,
@@ -311,7 +311,7 @@ export default {
         const values = toRaw(this.form)
         this.componentLoading = true
         this.addIpRangeModal = false
-        api('createManagementNetworkIpRange', {
+        postAPI('createManagementNetworkIpRange', {
           podid: values.pod,
           gateway: values.gateway,
           netmask: values.netmask,

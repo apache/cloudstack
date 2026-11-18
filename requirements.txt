@@ -17,7 +17,5 @@
 
 # Marvin dependencies are installed via its bundle
 
-pre-commit
-
 # Install the SolidFire SDK for Python
 solidfire-sdk-python

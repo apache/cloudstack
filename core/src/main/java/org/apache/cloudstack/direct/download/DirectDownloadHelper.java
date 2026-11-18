@@ -24,11 +24,14 @@ import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.Collections;
 
 public class DirectDownloadHelper {
 
-    public static final Logger LOGGER = Logger.getLogger(DirectDownloadHelper.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(DirectDownloadHelper.class);
 
     /**
      * Get direct template downloader from direct download command and destination pool
@@ -49,7 +52,8 @@ public class DirectDownloadHelper {
         } else if (cmd instanceof MetalinkDirectDownloadCommand) {
             return new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPoolLocalPath, cmd.getTemplateId(),
                     cmd.getChecksum(), cmd.getHeaders(), cmd.getConnectTimeout(), cmd.getSoTimeout(),
-                    temporaryDownloadPath, cmd.isFollowRedirects());
+                    temporaryDownloadPath, cmd.isFollowRedirects(),
+                    cmd.getAllowedCidrs() != null ? cmd.getAllowedCidrs() : Collections.emptyList());
         } else {
             throw new IllegalArgumentException("Unsupported protocol, please provide HTTP(S), NFS or a metalink");
         }

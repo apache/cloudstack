@@ -17,13 +17,31 @@
 package org.apache.cloudstack.api.command.admin.vpc;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
+import org.apache.cloudstack.api.response.BgpPeerResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 
 import com.cloud.network.vpc.Vpc;
 
+import java.util.List;
+
 @APICommand(name = "createVPC", description = "Creates a VPC", responseObject = VpcResponse.class, responseView = ResponseView.Full, entityType = {Vpc.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateVPCCmdByAdmin extends CreateVPCCmd implements AdminCmd {}
+public class CreateVPCCmdByAdmin extends CreateVPCCmd implements AdminCmd {
+    @Parameter(name = ApiConstants.BGP_PEER_IDS,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = BgpPeerResponse.class,
+            description = "Ids of the Bgp Peer for the VPC",
+            since = "4.20.0")
+    private List<Long> bgpPeerIds;
+
+
+    public List<Long> getBgpPeerIds() {
+        return bgpPeerIds;
+    }
+}

@@ -26,7 +26,11 @@ from marvin.lib.base import (Account,
                              ServiceOffering,
                              DiskOffering,
                              VirtualMachine)
-from marvin.lib.common import (get_domain, get_zone, get_suitable_test_template)
+from marvin.lib.common import (get_domain,
+                             get_zone,
+                             get_suitable_test_template,
+                             list_volumes,
+                             list_storage_pools)
 
 # Import System modules
 from nose.plugins.attrib import attr
@@ -107,6 +111,22 @@ class TestImportAndUnmanageVolumes(cloudstackTestCase):
     def test_01_detach_unmanage_import_volume(self):
         """Test attach/detach/unmanage/import volume
         """
+
+        volumes = list_volumes(
+            self.apiclient,
+            virtualmachineid=self.virtual_machine.id,
+            type='ROOT',
+            listall=True
+        )
+        volume = volumes[0]
+        volume_pool_response = list_storage_pools(
+            self.apiclient,
+            id=volume.storageid
+        )
+        volume_pool = volume_pool_response[0]
+        if volume_pool.type.lower() == "powerflex":
+            self.skipTest("This test is not supported for storage pool type %s on hypervisor KVM" % volume_pool.type)
+
         # Create DATA volume
         volume = Volume.create(
             self.apiclient,

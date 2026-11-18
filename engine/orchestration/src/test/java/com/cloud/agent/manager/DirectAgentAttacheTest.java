@@ -22,9 +22,12 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ServerResource;
+
+import java.util.UUID;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DirectAgentAttacheTest {
@@ -36,9 +39,11 @@ public class DirectAgentAttacheTest {
 
     long _id = 0L;
 
+    String _uuid = UUID.randomUUID().toString();
+
     @Before
     public void setup() {
-        directAgentAttache = new DirectAgentAttache(_agentMgr, _id, "myDirectAgentAttache", _resource, false);
+        directAgentAttache = new DirectAgentAttache(_agentMgr, _id, _uuid, "myDirectAgentAttache", Hypervisor.HypervisorType.KVM, _resource, false);
 
         MockitoAnnotations.initMocks(directAgentAttache);
     }

@@ -30,6 +30,8 @@ import com.cloud.utils.fsm.StateObject;
 
 public interface Volume extends ControlledEntity, Identity, InternalIdentity, BasedOn, StateObject<Volume.State>, Displayable {
 
+    static final long DISK_OFFERING_SUITABILITY_CHECK_VOLUME_ID = -1;
+
     // Managed storage volume parameters (specified in the compute/disk offering for PowerFlex)
     String BANDWIDTH_LIMIT_IN_MBPS = "bandwidthLimitInMbps";
     String IOPS_LIMIT = "iopsLimit";
@@ -58,7 +60,9 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         UploadError(false, "Volume upload encountered some error"),
         UploadAbandoned(false, "Volume upload is abandoned since the upload was never initiated within a specified time"),
         Attaching(true, "The volume is attaching to a VM from Ready state."),
-        Restoring(true, "The volume is being restored from backup.");
+        Restoring(true, "The volume is being restored from backup."),
+        Consolidating(true, "The volume is being flattened."),
+        RestoreError(false, "The volume restore encountered an error.");
 
         boolean _transitional;
 
@@ -151,6 +155,10 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroy, Event.RestoreRequested, Restoring, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Restoring, Event.RestoreSucceeded, Ready, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Restoring, Event.RestoreFailed, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<>(Ready, Event.ConsolidationRequested, Consolidating, null));
+            s_fsm.addTransition(new StateMachine2.Transition<>(Consolidating, Event.OperationSucceeded, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<>(Consolidating, Event.OperationFailed, RestoreError, null));
+            s_fsm.addTransition(new StateMachine2.Transition<>(RestoreError, Event.RestoreFailed, RestoreError, null));
         }
     }
 
@@ -177,7 +185,8 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         OperationTimeout,
         RestoreRequested,
         RestoreSucceeded,
-        RestoreFailed;
+        RestoreFailed,
+        ConsolidationRequested
     }
 
     /**
@@ -269,11 +278,21 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 
     void setExternalUuid(String externalUuid);
 
-    public Long getPassphraseId();
+    Long getPassphraseId();
 
-    public void setPassphraseId(Long id);
+    void setPassphraseId(Long id);
 
-    public String getEncryptFormat();
+    Long getKmsKeyId();
 
-    public void setEncryptFormat(String encryptFormat);
+    void setKmsKeyId(Long id);
+
+    Long getKmsWrappedKeyId();
+
+    void setKmsWrappedKeyId(Long id);
+
+    String getEncryptFormat();
+
+    void setEncryptFormat(String encryptFormat);
+
+    boolean isDeleteProtection();
 }

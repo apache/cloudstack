@@ -141,7 +141,7 @@
           </template>
           <a-switch v-model:checked="form.changecidr" />
         </a-form-item>
-        <a-form-item name="networkdomain" ref="networkdomain" v-if="isUpdatingIsolatedNetwork">
+        <a-form-item name="networkdomain" ref="networkdomain" v-if="hasNetworkDomain">
           <template #label>
             <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.guestvmcidr.description"/>
           </template>
@@ -208,6 +208,15 @@
           </template>
           <a-switch v-model:checked="form.displaynetwork" />
         </a-form-item>
+        <a-form-item name="keepMacAddressOnPublicNic" ref="keepMacAddressOnPublicNic" v-if="isAdmin() && isUpdatingIsolatedNetwork && !resource?.vpcid">
+          <template #label>
+            <tooltip-label
+              :title="$t('label.keep.mac.address.on.public.nic')"
+              :tooltip="apiParams.keepmacaddressonpublicnic?.description"
+            />
+          </template>
+          <a-switch v-model:checked="form.keepMacAddressOnPublicNic" />
+        </a-form-item>
         <a-form-item name="forced" ref="forced" v-if="isAdmin()">
           <template #label>
             <tooltip-label :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
@@ -226,7 +235,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -274,7 +283,7 @@ export default {
       ip6dns1: this.resource.ip6dns1,
       ip6dns2: this.resource.ip6dns2
     }
-    if (this.isUpdatingIsolatedNetwork) {
+    if (this.hasNetworkDomain) {
       this.resourceValues.networkdomain = this.resource.networkdomain
     }
     for (var field in this.resourceValues) {
@@ -288,6 +297,12 @@ export default {
   computed: {
     isUpdatingIsolatedNetwork () {
       return this.resource && this.resource.type === 'Isolated'
+    },
+    isUpdatingSharedNetwork () {
+      return this.resource && this.resource.type === 'Shared'
+    },
+    hasNetworkDomain () {
+      return this.isUpdatingIsolatedNetwork || this.isUpdatingSharedNetwork
     },
     selectedNetworkOfferingSupportsDns () {
       if (this.networkOffering) {
@@ -304,7 +319,8 @@ export default {
       this.form = reactive({
         displaynetwork: this.resource.displaynetwork,
         privatemtu: this.resource.privatemtu,
-        publicmtu: this.resource.publicmtu
+        publicmtu: this.resource.publicmtu,
+        keepMacAddressOnPublicNic: this.resource.keepmacaddressonpublicnic
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -322,7 +338,7 @@ export default {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
     fetchMtuForZone () {
-      api('listZones', {
+      getAPI('listZones', {
         id: this.resource.zoneid
       }).then(json => {
         this.setMTU = json?.listzonesresponse?.zone?.[0]?.allowuserspecifyvrmtu || false
@@ -342,7 +358,7 @@ export default {
         params.id = this.resource.networkofferingid
       }
       this.networkOfferingLoading = true
-      api('listNetworkOfferings', params).then(json => {
+      getAPI('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
       }).finally(() => {
         this.networkOfferingLoading = false
@@ -387,18 +403,20 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
         this.loading = true
-        var manualFields = ['name', 'networkofferingid']
+        const manualFields = ['name', 'networkofferingid']
         const params = {
           id: this.resource.id,
           name: values.name
         }
-        for (var field in values) {
+        for (const field in values) {
           if (manualFields.includes(field)) continue
-          var fieldValue = values[field]
-          if (fieldValue !== undefined &&
-            fieldValue !== null &&
-            (!(field in this.resourceValues) || this.resourceValues[field] !== fieldValue)) {
-            params[field] = fieldValue
+          const fieldValue = values[field]
+          if (fieldValue !== undefined && fieldValue !== null && (!(field in this.resourceValues) || this.resourceValues[field] !== fieldValue)) {
+            if (field === 'keepMacAddressOnPublicNic') {
+              params.keepmacaddressonpublicnic = fieldValue
+            } else {
+              params[field] = fieldValue
+            }
           }
         }
         if (values.networkofferingid !== undefined &&
@@ -407,7 +425,7 @@ export default {
           this.networkOfferings[values.networkofferingid].id !== this.resource.networkofferingid) {
           params.networkofferingid = this.networkOfferings[values.networkofferingid].id
         }
-        api('updateNetwork', params).then(json => {
+        postAPI('updateNetwork', params).then(json => {
           const jobId = json.updatenetworkresponse.jobid
           this.$pollJob({
             jobId,

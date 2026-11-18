@@ -39,10 +39,6 @@ public interface UserAccount extends InternalIdentity {
 
     String getState();
 
-    String getApiKey();
-
-    String getSecretKey();
-
     Date getCreated();
 
     Date getRemoved();

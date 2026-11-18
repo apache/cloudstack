@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -36,7 +37,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -46,11 +46,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "listBackups",
-        description = "Lists VM backups",
+        description = "Lists Instance backups",
         responseObject = BackupResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
-    private static final Logger s_logger = Logger.getLogger(ListBackupsCmd.class);
 
     @Inject
     private BackupManager backupManager;
@@ -62,20 +61,51 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
             entityType = BackupResponse.class,
-            description = "id of the backup")
+            description = "ID of the backup")
     private Long id;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
-            description = "id of the VM")
+            description = "ID of the Instance")
     private Long vmId;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "list backups by zone id")
+            description = "List backups by zone id")
     private Long zoneId;
+
+    @Parameter(name = ApiConstants.NAME,
+            type = CommandType.STRING,
+            since = "4.21.0",
+            description = "list backups by name")
+    private String name;
+
+    @Parameter(name = ApiConstants.BACKUP_OFFERING_ID,
+            type = CommandType.UUID,
+            entityType = BackupOfferingResponse.class,
+            since = "4.21.0",
+            description = "list backups by backup offering")
+    private Long backupOfferingId;
+
+    @Parameter(name = ApiConstants.STATUS,
+            type = CommandType.STRING,
+            since = "4.23.0",
+            description = "list backups by status")
+    private String backupStatus;
+
+    @Parameter(name = ApiConstants.TYPE,
+            type = CommandType.STRING,
+            since = "24.0",
+            description = "list backups by type")
+    private String backupType;
+
+    @Parameter(name = ApiConstants.LIST_VM_DETAILS,
+            type = CommandType.BOOLEAN,
+            since = "4.21.0",
+            description = "list backups with VM details")
+    private Boolean listVmDetails;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -89,8 +119,28 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
         return vmId;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public Long getBackupOfferingId() {
+        return backupOfferingId;
+    }
+
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public String getBackupStatus() {
+        return backupStatus;
+    }
+
+    public String getBackupType() {
+        return backupType;
+    }
+
+    public Boolean getListVmDetails() {
+        return listVmDetails;
     }
 
     /////////////////////////////////////////////////////
@@ -103,7 +153,7 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
             if (backup == null) {
                 continue;
             }
-            BackupResponse backupResponse = _responseGenerator.createBackupResponse(backup);
+            BackupResponse backupResponse = backupManager.createBackupResponse(backup, this.getListVmDetails());
             responses.add(backupResponse);
         }
         final ListResponse<BackupResponse> response = new ListResponse<>();
@@ -118,7 +168,7 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
             Pair<List<Backup>, Integer> result = backupManager.listBackups(this);
             setupResponseBackupList(result.first(), result.second());
         } catch (Exception e) {
-            s_logger.debug("Exception while listing backups", e);
+            logger.error("Exception while listing backups", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

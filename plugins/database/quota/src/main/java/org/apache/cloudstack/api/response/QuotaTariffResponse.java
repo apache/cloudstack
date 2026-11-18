@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.response;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import java.math.BigDecimal;
@@ -47,53 +48,49 @@ public class QuotaTariffResponse extends BaseResponse {
     private BigDecimal tariffValue;
 
     @SerializedName("effectiveDate")
-    @Param(description = "the start date of the quota tariff")
+    @Param(description = "The start date of the quota tariff")
     private Date effectiveOn = null;
 
     @SerializedName("usageTypeDescription")
-    @Param(description = "usage type description")
+    @Param(description = "Usage type description")
     private String usageTypeDescription;
 
     @SerializedName("currency")
-    @Param(description = "currency")
+    @Param(description = "Currency")
     private String currency;
 
     @SerializedName("endDate")
-    @Param(description = "the end date of the quota tariff")
+    @Param(description = "The end date of the quota tariff")
     private Date endDate;
 
     @SerializedName("activationRule")
-    @Param(description = "activation rule of the quota tariff")
+    @Param(description = "Activation rule of the quota tariff")
     private String activationRule;
 
     @SerializedName("name")
-    @Param(description = "name")
+    @Param(description = "Name")
     private String name;
 
     @SerializedName("description")
-    @Param(description = "description")
+    @Param(description = "Description")
     private String description;
 
-    @SerializedName("uuid")
-    @Param(description = "uuid")
-    private String uuid;
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "The ID of the tariff")
+    private String id;
 
     @SerializedName("removed")
-    @Param(description = "when the quota tariff was removed")
+    @Param(description = "When the quota tariff was removed")
     private Date removed;
+
+    @SerializedName("position")
+    @Param(description = "Position in the execution sequence for tariffs of the same type")
+    private Integer position;
+
 
     public QuotaTariffResponse() {
         super();
         this.setObjectName("quotatariff");
-    }
-
-    public QuotaTariffResponse(final int usageType) {
-        super();
-        this.usageType = usageType;
-    }
-
-    public String getUsageName() {
-        return usageName;
     }
 
     public void setUsageName(String usageName) {
@@ -108,16 +105,8 @@ public class QuotaTariffResponse extends BaseResponse {
         this.usageType = usageType;
     }
 
-    public String getUsageUnit() {
-        return usageUnit;
-    }
-
     public void setUsageUnit(String usageUnit) {
         this.usageUnit = usageUnit;
-    }
-
-    public String getUsageDiscriminator() {
-        return usageDiscriminator;
     }
 
     public void setUsageDiscriminator(String usageDiscriminator) {
@@ -132,24 +121,12 @@ public class QuotaTariffResponse extends BaseResponse {
         this.tariffValue = tariffValue;
     }
 
-    public String getUsageTypeDescription() {
-        return usageTypeDescription;
-    }
-
     public void setUsageTypeDescription(String usageTypeDescription) {
         this.usageTypeDescription = usageTypeDescription;
     }
 
-    public Date getEffectiveOn() {
-        return effectiveOn;
-    }
-
     public void setEffectiveOn(Date effectiveOn) {
         this.effectiveOn = effectiveOn;
-    }
-
-    public String getCurrency() {
-        return currency;
     }
 
     public void setCurrency(String currency) {
@@ -188,20 +165,24 @@ public class QuotaTariffResponse extends BaseResponse {
         this.description = description;
     }
 
-    public String getUuid() {
-        return uuid;
+    public String getId() {
+        return id;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-    public Date getRemoved() {
-        return removed;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    public Integer getPosition() {
+        return position;
+    }
+
+    public void setPosition(Integer position) {
+        this.position = position;
     }
 
 }

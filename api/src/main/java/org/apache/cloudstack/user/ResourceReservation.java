@@ -18,8 +18,11 @@
 //
 package org.apache.cloudstack.user;
 
-import com.cloud.configuration.Resource;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.configuration.Resource;
+
+import java.util.Date;
 
 /**
  * an interface defining an {code}AutoClosable{code} reservation object
@@ -33,5 +36,11 @@ ResourceReservation extends InternalIdentity {
 
     Resource.ResourceType getResourceType();
 
+    Long getResourceId();
+
+    String getTag();
+
     Long getReservedAmount();
+
+    Date getCreated();
 }

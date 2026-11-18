@@ -27,7 +27,7 @@ import static org.apache.cloudstack.api.ApiConstants.S3_END_POINT;
 import static org.apache.cloudstack.api.ApiConstants.S3_HTTPS_FLAG;
 import static org.apache.cloudstack.api.ApiConstants.S3_MAX_ERROR_RETRY;
 import static org.apache.cloudstack.api.ApiConstants.S3_SIGNER;
-import static org.apache.cloudstack.api.ApiConstants.S3_SECRET_KEY;
+import static org.apache.cloudstack.api.ApiConstants.SECRET_KEY;
 import static org.apache.cloudstack.api.ApiConstants.S3_SOCKET_TIMEOUT;
 import static org.apache.cloudstack.api.ApiConstants.S3_USE_TCP_KEEPALIVE;
 import static org.apache.cloudstack.api.BaseCmd.CommandType.BOOLEAN;
@@ -38,7 +38,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.cloud.utils.storage.S3.ClientOptions;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -59,14 +58,13 @@ import com.cloud.storage.ImageStore;
 @APICommand(name = "addImageStoreS3", description = "Adds S3 Image Store", responseObject = ImageStoreResponse.class, since = "4.7.0",
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public final class AddImageStoreS3CMD extends BaseCmd implements ClientOptions {
-    public static final Logger s_logger = Logger.getLogger(AddImageStoreS3CMD.class.getName());
 
     private static final String s_name = "addImageStoreS3Response";
 
     @Parameter(name = S3_ACCESS_KEY, type = STRING, required = true, description = "S3 access key")
     private String accessKey;
 
-    @Parameter(name = S3_SECRET_KEY, type = STRING, required = true, description = "S3 secret key")
+    @Parameter(name = SECRET_KEY, type = STRING, required = true, description = "S3 secret key")
     private String secretKey;
 
     @Parameter(name = S3_END_POINT, type = STRING, required = true, description = "S3 endpoint")
@@ -103,7 +101,7 @@ public final class AddImageStoreS3CMD extends BaseCmd implements ClientOptions {
         Map<String, String> dm = new HashMap();
 
         dm.put(ApiConstants.S3_ACCESS_KEY, getAccessKey());
-        dm.put(ApiConstants.S3_SECRET_KEY, getSecretKey());
+        dm.put(ApiConstants.SECRET_KEY, getSecretKey());
         dm.put(ApiConstants.S3_END_POINT, getEndPoint());
         dm.put(ApiConstants.S3_BUCKET_NAME, getBucketName());
 
@@ -141,7 +139,7 @@ public final class AddImageStoreS3CMD extends BaseCmd implements ClientOptions {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add S3 Image Store.");
             }
         } catch (DiscoveryException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }

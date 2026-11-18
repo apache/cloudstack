@@ -29,7 +29,10 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -47,7 +50,7 @@ import com.cloud.utils.fsm.StateObject;
 @Entity
 @Table(name = "snapshot_store_ref")
 public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMachine.State>, DataObjectInStore {
-    private static final Logger s_logger = Logger.getLogger(SnapshotDataStoreVO.class);
+    protected transient Logger logger = LogManager.getLogger(getClass());
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -79,11 +82,24 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Column(name = "parent_snapshot_id")
     private long parentSnapshotId;
 
+    @Column(name = "end_of_chain")
+    private Boolean endOfChain;
+
     @Column(name = "job_id")
     private String jobId;
 
     @Column(name = "install_path")
     private String installPath;
+
+    @Column(name = "kvm_checkpoint_path")
+    private String kvmCheckpointPath;
+
+    @Column(name = "download_url", length = 2048)
+    private String extractUrl;
+
+    @Column(name = "download_url_created")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date extractUrlCreated = null;
 
     @Column(name = "update_count", updatable = true, nullable = false)
     protected long updatedCount;
@@ -218,14 +234,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     @Override
     public String toString() {
-        return new StringBuilder("SnapshotDataStore[").append(id)
-            .append("-")
-            .append(snapshotId)
-            .append("-")
-            .append(dataStoreId)
-            .append(installPath)
-            .append("]")
-            .toString();
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "snapshotId", "dataStoreId", "state", "installPath", "kvmCheckpointPath");
     }
 
     public long getUpdatedCount() {
@@ -297,7 +306,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
             refCnt--;
         }
         else {
-            s_logger.warn("We should not try to decrement a zero reference count even though our code has guarded");
+            logger.warn("We should not try to decrement a zero reference count even though our code has guarded");
         }
     }
 
@@ -307,6 +316,22 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     public void setVolumeId(Long volumeId) {
         this.volumeId = volumeId;
+    }
+
+    public String getExtractUrl() {
+        return extractUrl;
+    }
+
+    public void setExtractUrl(String extractUrl) {
+        this.extractUrl = extractUrl;
+    }
+
+    public Date getExtractUrlCreated() {
+        return extractUrlCreated;
+    }
+
+    public void setExtractUrlCreated(Date extractUrlCreated) {
+        this.extractUrlCreated = extractUrlCreated;
     }
 
     public void setCreated(Date created) {
@@ -351,5 +376,21 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     public void setDisplay(boolean display) {
         this.display = display;
+    }
+
+    public String getKvmCheckpointPath() {
+        return kvmCheckpointPath;
+    }
+
+    public void setKvmCheckpointPath(String kvmCheckpointPath) {
+        this.kvmCheckpointPath = kvmCheckpointPath;
+    }
+
+    public boolean isEndOfChain() {
+        return BooleanUtils.toBoolean(endOfChain);
+    }
+
+    public void setEndOfChain(boolean endOfChain) {
+        this.endOfChain = endOfChain;
     }
 }

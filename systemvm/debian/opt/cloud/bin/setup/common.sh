@@ -164,7 +164,9 @@ enable_fwding() {
 
 enable_passive_ftp() {
   log_it "cloud: enabling passive FTP for guest VMs"
-  echo "$1" > /proc/sys/net/netfilter/nf_conntrack_helper
+  # Linux 6.0 removed the nf_conntrack_helper sysctl, the ftp helper is
+  # attached by raw table rules for static nat and port forwarding
+  modprobe nf_nat_ftp
 }
 
 disable_rpfilter() {
@@ -326,7 +328,10 @@ setup_common() {
   then
     setup_interface "0" $ETH0_IP $ETH0_MASK $GW
   fi
-  setup_interface "1" $ETH1_IP $ETH1_MASK $GW
+  if [ -n "$ETH1_IP" ]
+  then
+    setup_interface "1" $ETH1_IP $ETH1_MASK $GW
+  fi
   if [ -n "$ETH2_IP" ]
   then
     setup_interface "2" $ETH2_IP $ETH2_MASK $GW
@@ -478,7 +483,7 @@ setup_dnsmasq() {
   then
       sed -i -e "/^[#]*dhcp-option.*=119.*$/d" /etc/dnsmasq.conf
       echo "dhcp-option-force=119,$DNS_SEARCH_ORDER" >> /etc/dnsmasq.conf
-      # set the domain search order as a space seprated list for option 15
+      # set the domain search order as a space separated list for option 15
       DNS_SEARCH_ORDER=$(echo $DNS_SEARCH_ORDER | sed 's/,/ /g')
       #send domain name to dhcp clients
       sed -i s/[#]*dhcp-option=15.*$/dhcp-option=15,\""$DNS_SEARCH_ORDER"\"/ /etc/dnsmasq.conf
@@ -539,7 +544,7 @@ setup_dnsmasq() {
   [ $ETH0_IP ] && echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
   [ $ETH0_IP6 ] && echo "dhcp-option=option6:dns-server,$NS6" >> /etc/dnsmasq.conf
   #adding the name data-server to the /etc/hosts for allowing the access to user-data service and ssh-key reset in every subnet.
-  #removing the existing entires to avoid duplicates on restarts.
+  #removing the existing entries to avoid duplicates on restarts.
   sed -i  '/data-server/d' /etc/hosts
   if [ -n "$ETH0_IP" ]
           then
@@ -680,7 +685,7 @@ getPublicIp() {
 
 setup_ntp() {
     log_it "Setting up NTP"
-    NTP_CONF_FILE="/etc/ntp.conf"
+    NTP_CONF_FILE="/etc/ntpsec/ntp.conf"
     if [ -f $NTP_CONF_FILE ]
     then
         IFS=',' read -a server_list <<< "$NTP_SERVER_LIST"
@@ -689,16 +694,16 @@ setup_ntp() {
         do
             server=$(echo ${server_list[iterator]} | tr -d '\r')
             PATTERN="server $server"
-            sed -i "0,/^#server/s//$PATTERN\n#server/" $NTP_CONF_FILE
+            sed -i "0,/^# server/s//$PATTERN\n# server/" $NTP_CONF_FILE
         done
-        systemctl enable ntp
+        systemctl enable --now --no-block ntp
     else
         log_it "NTP configuration file not found"
     fi
 }
 
 routing_svcs() {
-   echo "haproxy apache2" > /var/cache/cloud/enabled_svcs
+   echo "haproxy apache2 frr" > /var/cache/cloud/enabled_svcs
    echo "cloud nfs-common portmap" > /var/cache/cloud/disabled_svcs
    if [ "$RROUTER" -eq "1" ]
    then
@@ -731,7 +736,7 @@ parse_cmd_line() {
       KEY=$(echo $i | cut -d= -f1)
       VALUE=$(echo $i | cut -d= -f2)
       echo -en ${COMMA} >> ${CHEF_TMP_FILE}
-      # Two lines so values do not accidentally interpretted as escapes!!
+      # Two lines so values do not accidentally interpreted as escapes!!
       echo -n \"${KEY}\"': '\"${VALUE}\" >> ${CHEF_TMP_FILE}
       COMMA=",\n\t"
       case $KEY in
@@ -797,6 +802,9 @@ parse_cmd_line() {
             ;;
         ip6firewall)
             export IP6_FIREWALL=$VALUE
+            ;;
+        is_routed)
+            export IS_ROUTED=$VALUE
             ;;
         domain)
             export DOMAIN=$VALUE
@@ -917,9 +925,6 @@ parse_cmd_line() {
           ;;
         privateMtu)
           export PRIVATEMTU=$VALUE
-          ;;
-        useHttpsToUpload)
-          export USEHTTPS=$VALUE
           ;;
         vncport)
           export VNCPORT=$VALUE

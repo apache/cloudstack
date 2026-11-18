@@ -18,6 +18,7 @@ package com.cloud.host.dao;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cloud.host.DetailVO;
 import com.cloud.utils.db.GenericDao;
@@ -32,4 +33,12 @@ public interface HostDetailsDao extends GenericDao<DetailVO, Long> {
     void deleteDetails(long hostId);
 
     List<DetailVO> findByName(String name);
+
+    void removeExternalDetails(long hostId);
+
+    void replaceExternalDetails(long hostId, Map<String, String> details);
+
+    // Ids of hosts with Host.HOST_VLAN_FILTERING_ENABLED=true, i.e. hosts able to run a multi-VLAN trunk nic.
+    Set<Long> findHostIdsWithVlanFilteringEnabled();
+
 }

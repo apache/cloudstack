@@ -16,9 +16,9 @@
 # under the License.
 
 import logging
+import os
 import random
 import time
-import socket
 
 # All tests inherit from cloudstackTestCase
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -29,13 +29,15 @@ from marvin.lib.base import Account, DiskOffering, ServiceOffering, Snapshot, St
 from marvin.lib.base import VirtualMachine, Volume, VmSnapshot
 
 # common - commonly used methods for all tests are listed here
-from marvin.lib.common import get_domain, get_template, get_zone, list_clusters, list_hosts, list_virtual_machines, \
+from marvin.lib.common import get_domain, get_zone, list_clusters, list_hosts, list_virtual_machines, \
     list_volumes
 
 # utils - utility classes for common cleanup, external library wrappers, etc.
 from marvin.lib.utils import cleanup_resources, validateList
 from marvin.codes import PASS
 from nose.plugins.attrib import attr
+
+from linstor_test_utils import ServiceReady, get_guest_template
 
 # Prerequisites:
 #  Only one zone
@@ -225,45 +227,6 @@ class TestData:
             },
         }
 
-class ServiceReady:
-    @classmethod
-    def ready(cls, hostname: str, port: int) -> bool:
-        try:
-            s = socket.create_connection((hostname, port), timeout=1)
-            s.close()
-            return True
-        except (ConnectionRefusedError, socket.timeout, OSError):
-            return False
-
-    @classmethod
-    def wait(
-            cls,
-            hostname,
-            port,
-            wait_interval = 5,
-            timeout = 90,
-            service_name = 'ssh') -> bool:
-        """
-        Wait until the controller can be reached.
-        :param hostname:
-        :param port: port of the application
-        :param wait_interval:
-        :param timeout: time to wait until exit with False
-        :param service_name: name of the service to wait
-        :return:
-        """
-        starttime = int(round(time.time() * 1000))
-        while not cls.ready(hostname, port):
-            if starttime + timeout * 1000 < int(round(time.time() * 1000)):
-                raise RuntimeError("{s} {h} cannot be reached.".format(s=service_name, h=hostname))
-            time.sleep(wait_interval)
-        return True
-
-    @classmethod
-    def wait_ssh_ready(cls, hostname, wait_interval = 1, timeout = 90):
-        return cls.wait(hostname, 22, wait_interval, timeout, "ssh")
-
-
 class TestLinstorVolumes(cloudstackTestCase):
     _volume_vm_id_and_vm_id_do_not_match_err_msg = "The volume's VM ID and the VM's ID do not match."
     _vm_not_in_running_state_err_msg = "The VM is not in the 'Running' state."
@@ -283,10 +246,21 @@ class TestLinstorVolumes(cloudstackTestCase):
 
         cls.testdata = TestData(first_host.ipaddress).testdata
 
+        # Registering a Linstor pool makes the management server read the resource-group capacity from
+        # the controller. If the controller enforces authentication, that call needs an API token,
+        # supplied as the 'lin.auth.apitoken' add-pool detail. Provide it via LINSTOR_API_TOKEN so it is
+        # never hard-coded; leave it unset for an unauthenticated controller.
+        api_token = os.environ.get("LINSTOR_API_TOKEN")
+        if api_token:
+            for storage_key in (TestData.primaryStorage,
+                                 TestData.primaryStorageSameInstance,
+                                 TestData.primaryStorageDistinctInstance):
+                cls.testdata[storage_key]["details"]["lin.auth.apitoken"] = api_token
+
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
         cls.cluster = list_clusters(cls.apiClient)[0]
-        cls.template = get_template(cls.apiClient, cls.zone.id, hypervisor=TestData.hypervisor_type)
+        cls.template = get_guest_template(cls.apiClient, cls.zone.id, hypervisor=TestData.hypervisor_type)
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 
         # Create test account
@@ -953,9 +927,72 @@ class TestLinstorVolumes(cloudstackTestCase):
 
         snapshot.delete(self.apiClient)
 
+    @attr(tags=['basic'], required_hardware=False)
+    def test_10_create_template_from_snapshot(self):
+        """
+        Create a template from a snapshot and start an instance from it
+        """
+        self.virtual_machine.stop(self.apiClient)
+
+        volume = list_volumes(
+            self.apiClient,
+            virtualmachineid = self.virtual_machine.id,
+            type = "ROOT",
+            listall = True,
+        )
+        snapshot = Snapshot.create(
+            self.apiClient,
+            volume_id=volume[0].id,
+            account=self.account.name,
+            domainid=self.domain.id,
+        )
+        self.cleanup.append(snapshot)
+
+        self.assertIsNotNone(snapshot, "Could not create snapshot")
+
+        services = {
+            "displaytext": "IntegrationTestTemplate",
+            "name": "int-test-template",
+            "ostypeid": self.template.ostypeid,
+            "ispublic": "true"
+        }
+
+        custom_template = Template.create_from_snapshot(
+            self.apiClient,
+            snapshot,
+            services,
+        )
+        self.cleanup.append(custom_template)
+
+        # create VM from custom template
+        test_virtual_machine = VirtualMachine.create(
+            self.apiClient,
+            self.testdata[TestData.virtualMachine2],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            serviceofferingid=self.compute_offering.id,
+            templateid=custom_template.id,
+            domainid=self.domain.id,
+            startvm=False,
+            mode='basic',
+        )
+        self.cleanup.append(test_virtual_machine)
+
+        TestLinstorVolumes._start_vm(test_virtual_machine)
+
+        test_virtual_machine.stop(self.apiClient)
+
+        test_virtual_machine.delete(self.apiClient, True)
+        self.cleanup.remove(test_virtual_machine)
+
+        custom_template.delete(self.apiClient)
+        self.cleanup.remove(custom_template)
+        snapshot.delete(self.apiClient)
+        self.cleanup.remove(snapshot)
+
 
     @attr(tags=['advanced', 'migration'], required_hardware=False)
-    def test_10_migrate_volume_to_same_instance_pool(self):
+    def test_11_migrate_volume_to_same_instance_pool(self):
         """Migrate volume to the same instance pool"""
 
         if not self.testdata[TestData.migrationTests]:
@@ -1088,7 +1125,7 @@ class TestLinstorVolumes(cloudstackTestCase):
         test_virtual_machine.delete(self.apiClient, True)
 
     @attr(tags=['advanced', 'migration'], required_hardware=False)
-    def test_11_migrate_volume_to_distinct_instance_pool(self):
+    def test_12_migrate_volume_to_distinct_instance_pool(self):
         """Migrate volume to distinct instance pool"""
 
         if not self.testdata[TestData.migrationTests]:
@@ -1221,7 +1258,7 @@ class TestLinstorVolumes(cloudstackTestCase):
         test_virtual_machine.delete(self.apiClient, True)
 
     @attr(tags=["basic"], required_hardware=False)
-    def test_12_create_vm_snapshots(self):
+    def test_13_create_vm_snapshots(self):
         """Test to create VM snapshots
         """
         vm = TestLinstorVolumes._start_vm(self.virtual_machine)
@@ -1251,7 +1288,7 @@ class TestLinstorVolumes(cloudstackTestCase):
         )
 
     @attr(tags=["basic"], required_hardware=False)
-    def test_13_revert_vm_snapshots(self):
+    def test_14_revert_vm_snapshots(self):
         """Test to revert VM snapshots
         """
 
@@ -1313,7 +1350,7 @@ class TestLinstorVolumes(cloudstackTestCase):
         )
 
     @attr(tags=["basic"], required_hardware=False)
-    def test_14_delete_vm_snapshots(self):
+    def test_15_delete_vm_snapshots(self):
         """Test to delete vm snapshots
         """
 

@@ -21,8 +21,11 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public abstract class SnapshotStrategyBase implements SnapshotStrategy {
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     SnapshotService snapshotSvr;
 

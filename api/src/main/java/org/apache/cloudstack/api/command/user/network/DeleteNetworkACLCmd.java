@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.network;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,16 +32,15 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteNetworkACL", description = "Deletes a network ACL", responseObject = SuccessResponse.class,
+@APICommand(name = "deleteNetworkACL", description = "Deletes a Network ACL", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteNetworkACLCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteNetworkACLCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLItemResponse.class, required = true, description = "the ID of the network ACL")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLItemResponse.class, required = true, description = "The ID of the Network ACL")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -63,7 +61,7 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting Network ACL ID=" + id);
+        return "Deleting Network ACL with ID:" + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -84,14 +82,14 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Network ACL item ID: " + id);
+        CallContext.current().setEventDetails("Network ACL item ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _networkACLService.revokeNetworkACLItem(id);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete network ACL item");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Network ACL item");
         }
     }
 

@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.systemvm;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,25 +29,23 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "patchSystemVm", description = "Attempts to live patch systemVMs - CPVM, SSVM ",
         responseObject = SuccessResponse.class, requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false, authorized = { RoleType.Admin }, since = "4.17.0")
 public class PatchSystemVMCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(PatchSystemVMCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SystemVmResponse.class,
-            description = "patches systemVM - CPVM/SSVM with the specified ID")
+            description = "Patches System VM - CPVM/SSVM with the specified ID")
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN,
             description = "If true, initiates copy of scripts and restart of the agent, even if the scripts version matches." +
                     "To be used with ID parameter only")
-    private Boolean force;
+    private Boolean forced;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -60,7 +57,7 @@ public class PatchSystemVMCmd extends BaseAsyncCmd {
     }
 
     public boolean isForced() {
-        return force != null && force;
+        return forced != null && forced;
     }
 
     /////////////////////////////////////////////////////
@@ -74,7 +71,7 @@ public class PatchSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return String.format("Attempting to live patch System VM with Id: %s ", this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        return String.format("Attempting to live patch System VM with ID: %s ", getResourceUuid(ApiConstants.ID));
     }
 
     @Override

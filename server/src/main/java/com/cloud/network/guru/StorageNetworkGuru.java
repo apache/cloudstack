@@ -19,7 +19,6 @@ package com.cloud.network.guru;
 import javax.inject.Inject;
 
 import com.cloud.network.NetworkModel;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpAddressVO;
@@ -38,16 +37,16 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(StorageNetworkGuru.class);
     @Inject
     StorageNetworkManager _sNwMgr;
+    @Inject
+    NetworkModel _networkModel;
     @Inject
     NetworkDao _nwDao;
 
@@ -76,13 +75,13 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         if (isMyTrafficType(offering.getTrafficType()) && offering.isSystemOnly()) {
             return true;
         } else {
-            s_logger.trace("It's not storage network offering, skip it.");
+            logger.trace("It's not storage network offering, skip it.");
             return false;
         }
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
         if (!canHandle(offering)) {
             return null;
         }
@@ -132,7 +131,8 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         vlan = ip.getVlan();
         nic.setIPv4Address(ip.getIpAddress());
-        nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.getMac(), NetworkModel.MACIdentifier.value())));
+        String macAddress = _networkModel.getUniqueMacAddress(ip.getMac(), network.getId(), dest.getDataCenter().getId());
+        nic.setMacAddress(macAddress);
         nic.setFormat(AddressFormat.Ip4);
         nic.setIPv4Netmask(ip.getNetmask());
         nic.setBroadcastType(BroadcastDomainType.Storage);
@@ -143,7 +143,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             nic.setBroadcastUri(null);
         }
         nic.setIsolationUri(null);
-        s_logger.debug("Allocated a storage nic " + nic + " for " + vm);
+        logger.debug("Allocated a storage nic " + nic + " for " + vm);
     }
 
     @Override
@@ -154,7 +154,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         }
 
         _sNwMgr.releaseIpAddress(nic.getIPv4Address());
-        s_logger.debug("Release an storage ip " + nic.getIPv4Address());
+        logger.debug("Release an storage ip " + nic.getIPv4Address());
         nic.deallocate();
         return true;
     }

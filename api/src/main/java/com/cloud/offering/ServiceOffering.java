@@ -33,6 +33,9 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
     static final String internalLbVmDefaultOffUniqueName = "Cloud.Com-InternalLBVm";
     // leaving cloud.com references as these are identifyers and no real world addresses (check against DB)
 
+
+    static final String PURGE_DB_ENTITIES_KEY = "purge.db.entities";
+
     enum State {
         Inactive, Active,
     }
@@ -139,4 +142,8 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
     Boolean getDiskOfferingStrictness();
 
     void setDiskOfferingStrictness(boolean diskOfferingStrictness);
+
+    Long getVgpuProfileId();
+
+    Integer getGpuCount();
 }

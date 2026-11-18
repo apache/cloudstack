@@ -16,12 +16,16 @@
 // under the License.
 package com.cloud.user;
 
+import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordChangeRequired;
+
 import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -41,50 +45,88 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.serializer.GsonHelper;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.projects.dao.ProjectInvitationDao;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.SSHKeyPairDao;
+import com.cloud.user.dao.UserAccountDao;
+import com.cloud.user.dao.UserDao;
+import com.google.gson.reflect.TypeToken;
+import com.cloud.utils.db.TransactionCallbackWithException;
+
+import org.apache.cloudstack.acl.APIAclChecker;
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.ApiKeyPairManagerImpl;
+import org.apache.cloudstack.acl.ApiKeyPairPermissionVO;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.acl.RolePermissionEntity;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairService;
+import org.apache.cloudstack.acl.dao.ApiKeyPairDao;
+import org.apache.cloudstack.acl.dao.ApiKeyPairPermissionsDao;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeyRulesCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
-import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.api.response.ApiKeyPairResponse;
+import org.apache.cloudstack.api.response.BaseRolePermissionResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
 import org.apache.cloudstack.auth.UserAuthenticator;
 import org.apache.cloudstack.auth.UserAuthenticator.ActionOnFailedAuthentication;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
+import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.DnsServer;
+import org.apache.cloudstack.dns.DnsZone;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
+import org.apache.cloudstack.webhook.WebhookHelper;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
@@ -117,6 +159,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.dao.HostDao;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
@@ -131,6 +175,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.RemoteAccessVpnVO;
+import com.cloud.network.dao.SslCertDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.security.SecurityGroupManager;
@@ -162,15 +207,14 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account.State;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.SSHKeyPairDao;
-import com.cloud.user.dao.UserAccountDao;
-import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.UuidUtils;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -201,9 +245,10 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.api.BaseCmd;
+import org.joda.time.DateTime;
 
 public class AccountManagerImpl extends ManagerBase implements AccountManager, Manager {
-    public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
 
     @Inject
     private AccountDao _accountDao;
@@ -218,7 +263,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject
     private InstanceGroupDao _vmGroupDao;
     @Inject
-    private UserAccountDao _userAccountDao;
+    private ApiKeyPairDao apiKeyPairDao;
+    @Inject
+    private ApiKeyPairService apiKeyPairService;
+    @Inject
+    private ApiKeyPairPermissionsDao apiKeyPairPermissionsDao;
+    @Inject
+    private ApiKeyPairManagerImpl keyPairManager;
+    @Inject
+    private UserAccountDao userAccountDao;
     @Inject
     private VolumeDao _volumeDao;
     @Inject
@@ -270,7 +323,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject
     private ProjectAccountDao _projectAccountDao;
     @Inject
+    private ProjectInvitationDao projectInvitationDao;
+    @Inject
     private IPAddressDao _ipAddressDao;
+    @Inject
+    private HostDao hostDao;
     @Inject
     private VpcManager _vpcMgr;
     @Inject
@@ -281,6 +338,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private AutoScaleManager _autoscaleMgr;
     @Inject
     private VolumeApiService volumeService;
+    @Inject
+    private QueryService queryService;
     @Inject
     private AffinityGroupDao _affinityGroupDao;
     @Inject
@@ -301,6 +360,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private UserDataDao userDataDao;
     @Inject
     private NetworkPermissionDao networkPermissionDao;
+    @Inject
+    private SslCertDao sslCertDao;
+    @Inject
+    private KMSManager kmsManager;
 
     private List<QuerySelector> _querySelectors;
 
@@ -323,6 +386,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private IpAddressManager _ipAddrMgr;
     @Inject
     private RoleService roleService;
+    @Inject
+    private RoutedIpv4Manager routedIpv4Manager;
 
     @Inject
     private PasswordPolicy passwordPolicy;
@@ -342,6 +407,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     protected static Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = new HashMap<>();
 
     private List<UserTwoFactorAuthenticator> userTwoFactorAuthenticationProviders;
+
+    private long validUserLastAuthTimeDurationInMs = 0L;
+    private static final long DEFAULT_USER_AUTH_TIME_DURATION_MS = 350L;
 
     public static ConfigKey<Boolean> enableUserTwoFactorAuthentication = new ConfigKey<>("Advanced",
             Boolean.class,
@@ -372,8 +440,44 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             "totp",
             "The default user two factor authentication provider. Eg. totp, staticpin", true, ConfigKey.Scope.Domain);
 
+    public static final ConfigKey<Boolean> apiKeyAccess = new ConfigKey<>(ConfigKey.CATEGORY_SYSTEM, Boolean.class,
+            "api.key.access",
+            "true",
+            "Determines whether API (api-key/secret-key) access is allowed or not. Editable only by Root Admin.",
+            true,
+            ConfigKey.Scope.Domain);
+
+    private Map<RoleType, Set<String>> annotationRoleBasedApisMap = new HashMap<>();
+
+    static ConfigKey<Boolean> userAllowMultipleAccounts = new ConfigKey<>("Advanced",
+            Boolean.class,
+            "user.allow.multiple.accounts",
+            "false",
+            "Determines if the same username can be added to more than one account in the same domain (SAML-only).",
+            true,
+            ConfigKey.Scope.Domain);
+
+    public static ConfigKey<String> listOfRoleTypesAllowedForOperationsOfSameRoleType = new ConfigKey<>("Hidden",
+            String.class,
+            "role.types.allowed.for.operations.on.accounts.of.same.role.type",
+            "Admin, ResourceAdmin, DomainAdmin",
+            "Comma separated list of role types that are allowed to do operations on accounts or users of the same role type within a domain.",
+            true,
+            ConfigKey.Scope.Domain);
+
+    public static ConfigKey<Boolean> allowOperationsOnUsersInSameAccount = new ConfigKey<>("Hidden",
+            Boolean.class,
+            "allow.operations.on.users.in.same.account",
+            "true",
+            "Allow operations on users among them in the same account",
+            true,
+            ConfigKey.Scope.Domain);
+
     protected AccountManagerImpl() {
         super();
+        for (RoleType roleType : RoleType.values()) {
+            annotationRoleBasedApisMap.put(roleType, new HashSet<>());
+        }
     }
 
     public List<UserAuthenticator> getUserAuthenticators() {
@@ -432,6 +536,20 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         _querySelectors = querySelectors;
     }
 
+    protected void deleteWebhooksForAccount(long accountId) {
+        try {
+            WebhookHelper webhookService = ComponentContext.getDelegateComponentOfType(WebhookHelper.class);
+            webhookService.deleteWebhooksForAccount(accountId);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            logger.debug("No WebhookHelper bean found");
+        }
+    }
+
+    @Override
+    public List<String> getApiNameList() {
+        return apiNameList;
+    }
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
@@ -470,22 +588,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         if (apiNameList == null) {
             long startTime = System.nanoTime();
-            apiNameList = new ArrayList<String>();
-            Set<Class<?>> cmdClasses = new LinkedHashSet<Class<?>>();
+            apiNameList = new ArrayList<>();
+            Set<Class<?>> cmdClasses = new LinkedHashSet<>();
             for (PluggableService service : services) {
-                s_logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
+                logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
                 cmdClasses.addAll(service.getCommands());
             }
             apiNameList = createApiNameList(cmdClasses);
             long endTime = System.nanoTime();
-            s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
+            logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
         }
         _executor.scheduleAtFixedRate(new AccountCleanupTask(), _cleanupInterval, _cleanupInterval, TimeUnit.SECONDS);
         return true;
     }
 
     protected List<String> createApiNameList(Set<Class<?>> cmdClasses) {
-        List<String> apiNameList = new ArrayList<String>();
+        List<String> apiNameList = new ArrayList<>();
 
         for (Class<?> cmdClass : cmdClasses) {
             APICommand apiCmdAnnotation = cmdClass.getAnnotation(APICommand.class);
@@ -497,8 +615,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             String apiName = apiCmdAnnotation.name();
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Found api: " + apiName);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Found api: " + apiName);
             }
 
             apiNameList.add(apiName);
@@ -528,12 +646,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (acct == null) {
                 return false;  //account is deleted or does not exist
             }
-            if ((isRootAdmin(accountId)) || (isDomainAdmin(accountId)) || (isResourceDomainAdmin(accountId))) {
-                return true;
-            } else if (acct.getType() == Account.Type.READ_ONLY_ADMIN) {
-                return true;
-            }
-
+            return (isRootAdmin(accountId)) || (isDomainAdmin(accountId)) || (isResourceDomainAdmin(accountId)) || (acct.getType() == Account.Type.READ_ONLY_ADMIN);
         }
         return false;
     }
@@ -548,8 +661,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (SecurityChecker checker : _securityCheckers) {
                 try {
                     if (checker.checkAccess(acct, null, null, "SystemCapability")) {
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace("Root Access granted to " + acct + " by " + checker.getName());
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("Root Access granted to " + acct + " by " + checker.getName());
                         }
                         return true;
                     }
@@ -571,8 +684,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (SecurityChecker checker : _securityCheckers) {
                 try {
                     if (checker.checkAccess(acct, null, null, "DomainCapability")) {
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace("DomainAdmin Access granted to " + acct + " by " + checker.getName());
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("DomainAdmin Access granted to " + acct + " by " + checker.getName());
                         }
                         return true;
                     }
@@ -587,12 +700,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public boolean isNormalUser(long accountId) {
         AccountVO acct = _accountDao.findById(accountId);
-        if (acct != null && acct.getType() == Account.Type.NORMAL) {
-            return true;
-        }
-        return false;
+        return acct != null && acct.getType() == Account.Type.NORMAL;
     }
 
+    @Override
     public boolean isResourceDomainAdmin(Long accountId) {
         if (accountId != null) {
             AccountVO acct = _accountDao.findById(accountId);
@@ -602,8 +713,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (SecurityChecker checker : _securityCheckers) {
                 try {
                     if (checker.checkAccess(acct, null, null, "DomainResourceCapability")) {
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace("ResourceDomainAdmin Access granted to " + acct + " by " + checker.getName());
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("ResourceDomainAdmin Access granted to " + acct + " by " + checker.getName());
                         }
                         return true;
                     }
@@ -620,18 +731,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (account == null) {
             return false;  //account is deleted or does not exist
         }
-        if (isRootAdmin(accountId) || (account.getType() == Account.Type.ADMIN)) {
-            return true;
-        }
-        return false;
+        return isRootAdmin(accountId) || (account.getType() == Account.Type.ADMIN);
     }
 
     @Override
     public void checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
             if (checker.checkAccess(caller, domain)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access granted to " + caller + " to " + domain + " by " + checker.getName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Access granted to " + caller + " to " + domain + " by " + checker.getName());
                 }
                 return;
             }
@@ -654,7 +762,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (ControlledEntity entity : entities) {
                 if (ownerId == null) {
                     ownerId = entity.getAccountId();
-                } else if (ownerId.longValue() != entity.getAccountId()) {
+                } else if (! ownerId.equals(entity.getAccountId())) {
                     throw new PermissionDeniedException("Entity " + entity + " and entity " + prevEntity + " belong to different accounts");
                 }
                 prevEntity = entity;
@@ -663,42 +771,33 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(caller.getId())) {
             // no need to make permission checks if the system/root admin makes the call
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("No need to make permission check for System/RootAdmin account, returning true");
+            if (logger.isTraceEnabled()) {
+                logger.trace("No need to make permission check for System/RootAdmin account, returning true");
             }
 
             return;
         }
 
-        HashMap<Long, List<ControlledEntity>> domains = new HashMap<Long, List<ControlledEntity>>();
+        HashMap<Long, List<ControlledEntity>> domains = new HashMap<>();
 
         for (ControlledEntity entity : entities) {
-            long domainId = entity.getDomainId();
-            if (entity.getAccountId() != -1 && domainId == -1) { // If account exists domainId should too so calculate
-                // it. This condition might be hit for templates or entities which miss domainId in their tables
-                Account account = ApiDBUtils.findAccountById(entity.getAccountId());
-                domainId = account != null ? account.getDomainId() : -1;
-            }
+            long domainId = getDomainIdFor(entity);
             if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate)
-                    && !(entity instanceof Network && accessType != null && (accessType == AccessType.UseEntry || accessType == AccessType.OperateEntry))
-                    && !(entity instanceof AffinityGroup) && !(entity instanceof VirtualRouter)) {
-                List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
+                    && !(entity instanceof Network && (accessType == AccessType.UseEntry || accessType == AccessType.OperateEntry))
+                    && !(entity instanceof AffinityGroup) && !(entity instanceof VirtualRouter)
+                    && !(entity instanceof DnsServer) && !(entity instanceof DnsZone)) {
                 // for templates, we don't have to do cross domains check
-                if (toBeChecked == null) {
-                    toBeChecked = new ArrayList<ControlledEntity>();
-                    domains.put(domainId, toBeChecked);
-                }
-                toBeChecked.add(entity);
+                domains.computeIfAbsent(domainId, k -> new ArrayList<>()).add(entity);
             }
             boolean granted = false;
             for (SecurityChecker checker : _securityCheckers) {
                 if (checker.checkAccess(caller, entity, accessType, apiName)) {
-                    if (s_logger.isDebugEnabled()) {
+                    if (logger.isDebugEnabled()) {
                         User user = CallContext.current().getCallingUser();
                         String userName = "";
                         if (user != null)
                             userName = user.getUsername();
-                        s_logger.debug("Access to " + entity + " granted to " + caller + " by " + checker.getName() + " on behalf of user " + userName);
+                        logger.debug("Access to {} granted to {} by {} on behalf of user {}", entity, caller, checker.getName(), userName);
                     }
                     granted = true;
                     break;
@@ -730,6 +829,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     }
 
+    private long getDomainIdFor(ControlledEntity entity) {
+        long domainId = entity.getDomainId();
+        if (entity.getAccountId() != -1 && domainId == -1) {
+            // If account exists domainId should too so calculate it.
+            // This condition might be hit for templates or entities which miss domainId in their tables
+            Account account = ApiDBUtils.findAccountById(entity.getAccountId());
+            domainId = account != null ? account.getDomainId() : -1;
+        }
+        return domainId;
+    }
+
     @Override
     public void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource) {
         Class<?> resourceClass = resource.getClass();
@@ -738,9 +848,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         } else if (Domain.class.isAssignableFrom(resourceClass)) {
             checkAccess(account, (Domain) resource);
         } else if (InfrastructureEntity.class.isAssignableFrom(resourceClass)) {
-            s_logger.trace("Validation of access to infrastructure entity has been disabled in CloudStack version 4.4.");
+            logger.trace("Validation of access to infrastructure entity has been disabled in CloudStack version 4.4.");
         }
-        s_logger.debug(String.format("Account [%s] has access to resource.", account.getUuid()));
+        logger.debug("Account [{}] has access to resource.", account);
     }
 
     @Override
@@ -763,7 +873,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // Currently just for resource domain admin
         List<DataCenterVO> dcList = _dcDao.findZonesByDomainId(account.getDomainId());
-        if (dcList != null && dcList.size() != 0) {
+        if (CollectionUtils.isNotEmpty(dcList)) {
             return dcList.get(0).getId();
         } else {
             throw new CloudRuntimeException("Failed to find any private zone for Resource domain admin.");
@@ -778,23 +888,23 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
                     UserAccountVO user = null;
-                    user = _userAccountDao.lockRow(id, true);
+                    user = userAccountDao.lockRow(id, true);
                     user.setLoginAttempts(attempts);
                     if (toDisable) {
                         user.setState(State.DISABLED.toString());
                     }
-                    _userAccountDao.update(id, user);
+                    userAccountDao.update(id, user);
                 }
             });
         } catch (Exception e) {
-            s_logger.error("Failed to update login attempts for user with id " + id);
+            logger.error("Failed to update login attempts for user {}", () -> userAccountDao.findById(id));
         }
     }
 
     private boolean doSetUserStatus(long userId, State state) {
         UserVO userForUpdate = _userDao.createForUpdate();
         userForUpdate.setState(state);
-        return _userDao.update(Long.valueOf(userId), userForUpdate);
+        return _userDao.update(userId, userForUpdate);
     }
 
     @Override
@@ -803,7 +913,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         AccountVO acctForUpdate = _accountDao.createForUpdate();
         acctForUpdate.setState(State.ENABLED);
         acctForUpdate.setNeedsCleanup(false);
-        success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
+        success = _accountDao.update(accountId, acctForUpdate);
         return success;
     }
 
@@ -816,14 +926,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             } else if (account.getState().equals(State.ENABLED)) {
                 AccountVO acctForUpdate = _accountDao.createForUpdate();
                 acctForUpdate.setState(State.LOCKED);
-                success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
+                success = _accountDao.update(accountId, acctForUpdate);
             } else {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Attempting to lock a non-enabled account, current state is " + account.getState() + " (accountId: " + accountId + "), locking failed.");
+                if (logger.isInfoEnabled()) {
+                    logger.info("Attempting to lock a non-enabled account {}, current state is {}, locking failed.", account, account.getState());
                 }
             }
         } else {
-            s_logger.warn("Failed to lock account " + accountId + ", account not found.");
+            logger.warn("Failed to lock account " + accountId + ", account not found.");
         }
         return success;
     }
@@ -834,18 +944,33 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // delete the account record
         if (!_accountDao.remove(accountId)) {
-            s_logger.error("Unable to delete account " + accountId);
+            logger.error("Unable to delete account {}", account);
             return false;
         }
 
         account.setState(State.REMOVED);
         _accountDao.update(accountId, account);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Removed account " + accountId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Removed account {}", account);
         }
 
         return cleanupAccount(account, callerUserId, caller);
+    }
+
+    protected void removeUserApiKeys(Long userId) {
+        List<ApiKeyPairVO> apiKeyPairs = apiKeyPairDao.listApiKeysByUserOrApiKeyId(userId, null).first();
+        apiKeyPairs.forEach(keyPair -> _accountService.deleteApiKey(keyPair));
+    }
+
+    protected void cleanupPluginsResourcesIfNeeded(Account account) {
+        try {
+            KubernetesServiceHelper kubernetesServiceHelper =
+                    ComponentContext.getDelegateComponentOfType(KubernetesServiceHelper.class);
+            kubernetesServiceHelper.cleanupForAccount(account);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            logger.debug("No KubernetesServiceHelper bean found");
+        }
     }
 
     protected boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) {
@@ -856,14 +981,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // cleanup the users from the account
             List<UserVO> users = _userDao.listByAccount(accountId);
             for (UserVO user : users) {
+                removeUserApiKeys(user.getId());
                 if (!_userDao.remove(user.getId())) {
-                    s_logger.error("Unable to delete user: " + user + " as a part of account " + account + " cleanup");
+                    logger.error("Unable to delete user: " + user + " as a part of account " + account + " cleanup");
                     accountCleanupNeeded = true;
                 }
             }
 
             // delete autoscaling VM groups
-            if (!_autoscaleMgr.deleteAutoScaleVmGroupsByAccount(accountId)) {
+            if (!_autoscaleMgr.deleteAutoScaleVmGroupsByAccount(account)) {
                 accountCleanupNeeded = true;
             }
 
@@ -871,7 +997,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // delete global load balancer rules for the account.
             List<org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleVO> gslbRules = _gslbRuleDao.listByAccount(accountId);
             if (gslbRules != null && !gslbRules.isEmpty()) {
-                _gslbService.revokeAllGslbRulesForAccount(caller, accountId);
+                _gslbService.revokeAllGslbRulesForAccount(caller, account);
             }
 
             // delete the account from project accounts
@@ -885,19 +1011,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 _messageBus.publish(_name, MESSAGE_REMOVE_ACCOUNT_EVENT, PublishScope.LOCAL, accountId);
             }
 
-            // delete all vm groups belonging to accont
+            // delete all vm groups belonging to account
             List<InstanceGroupVO> groups = _vmGroupDao.listByAccountId(accountId);
             for (InstanceGroupVO group : groups) {
                 if (!_vmMgr.deleteVmGroup(group.getId())) {
-                    s_logger.error("Unable to delete group: " + group.getId());
+                    logger.error("Unable to delete group: {}", group);
                     accountCleanupNeeded = true;
                 }
             }
 
             // Delete the snapshots dir for the account. Have to do this before destroying the VMs.
-            boolean success = _snapMgr.deleteSnapshotDirsForAccount(accountId);
+            boolean success = _snapMgr.deleteSnapshotDirsForAccount(account);
             if (success) {
-                s_logger.debug("Successfully deleted snapshots directories for all volumes under account " + accountId + " across all zones");
+                logger.debug("Successfully deleted snapshots directories for all volumes under account {} across all zones", account);
             }
 
             // clean up templates
@@ -908,31 +1034,33 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     try {
                         allTemplatesDeleted = _tmpltMgr.delete(callerUserId, template.getId(), null);
                     } catch (Exception e) {
-                        s_logger.warn("Failed to delete template while removing account: " + template.getName() + " due to: ", e);
+                        logger.warn("Failed to delete template {} while removing account {} due to: ", template, account, e);
                         allTemplatesDeleted = false;
                     }
                 }
             }
 
             if (!allTemplatesDeleted) {
-                s_logger.warn("Failed to delete templates while removing account id=" + accountId);
+                logger.warn("Failed to delete Templates while removing Account {}", account);
                 accountCleanupNeeded = true;
             }
 
             // Destroy VM Snapshots
-            List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.listByAccountId(Long.valueOf(accountId));
+            List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.listByAccountId(accountId);
             for (VMSnapshot vmSnapshot : vmSnapshots) {
                 try {
                     _vmSnapshotMgr.deleteVMSnapshot(vmSnapshot.getId());
                 } catch (Exception e) {
-                    s_logger.debug("Failed to cleanup vm snapshot " + vmSnapshot.getId() + " due to " + e.toString());
+                    logger.debug("Failed to cleanup Instance Snapshot {} due to {}", vmSnapshot, e.toString());
                 }
             }
 
+            cleanupPluginsResourcesIfNeeded(account);
+
             // Destroy the account's VMs
             List<UserVmVO> vms = _userVmDao.listByAccountId(accountId);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Expunging # of vms (accountId=" + accountId + "): " + vms.size());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Expunging # of Instances (Account={}): {}", account, vms.size());
             }
 
             for (UserVmVO vm : vms) {
@@ -940,14 +1068,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     try {
                         _vmMgr.destroyVm(vm.getId(), false);
                     } catch (Exception e) {
-                        e.printStackTrace();
-                        s_logger.warn("Failed destroying instance " + vm.getUuid() + " as part of account deletion.");
+                        logger.warn("Failed destroying instance {} as part of account deletion.", vm, e);
                     }
                 }
                 // no need to catch exception at this place as expunging vm
                 // should pass in order to perform further cleanup
                 if (!_vmMgr.expunge(vm)) {
-                    s_logger.error("Unable to expunge vm: " + vm.getId());
+                    logger.error("Unable to expunge vm: {}", vm);
                     accountCleanupNeeded = true;
                 }
             }
@@ -958,7 +1085,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 try {
                     volumeService.deleteVolume(volume.getId(), caller);
                 } catch (Exception ex) {
-                    s_logger.warn("Failed to cleanup volumes as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
+                    logger.warn("Failed to cleanup volumes as a part of account {} cleanup due to Exception: ", account, ex);
                     accountCleanupNeeded = true;
                 }
             }
@@ -968,7 +1095,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             List<VpnUserVO> vpnUsers = _vpnUser.listByAccount(accountId);
 
             for (VpnUserVO vpnUser : vpnUsers) {
-                _remoteAccessVpnMgr.removeVpnUser(accountId, vpnUser.getUsername(), caller);
+                _remoteAccessVpnMgr.removeVpnUser(account, vpnUser.getUsername(), caller);
             }
 
             try {
@@ -976,7 +1103,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     _remoteAccessVpnMgr.destroyRemoteAccessVpnForIp(vpn.getServerAddressId(), caller, false);
                 }
             } catch (ResourceUnavailableException ex) {
-                s_logger.warn("Failed to cleanup remote access vpn resources as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
+                logger.warn("Failed to cleanup remote access vpn resources as a part of account {} cleanup due to Exception: ", account, ex);
                 accountCleanupNeeded = true;
             }
 
@@ -988,23 +1115,23 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             // Cleanup security groups
             int numRemoved = _securityGroupDao.removeByAccountId(accountId);
-            s_logger.info("deleteAccount: Deleted " + numRemoved + " network groups for account " + accountId);
+            logger.info("deleteAccount: Deleted {} network groups for account {}", numRemoved, account);
 
             // Cleanup affinity groups
             int numAGRemoved = _affinityGroupDao.removeByAccountId(accountId);
-            s_logger.info("deleteAccount: Deleted " + numAGRemoved + " affinity groups for account " + accountId);
+            logger.info("deleteAccount: Deleted {} affinity groups for account {}", numAGRemoved, account);
 
             // Delete all the networks
             boolean networksDeleted = true;
-            s_logger.debug("Deleting networks for account " + account.getId());
+            logger.debug("Deleting networks for account {}", account);
             List<NetworkVO> networks = _networkDao.listByOwner(accountId);
             if (networks != null) {
-                Collections.sort(networks, new Comparator<NetworkVO>() {
+                networks.sort(new Comparator<>() {
                     @Override
                     public int compare(NetworkVO network1, NetworkVO network2) {
                         if (network1.getGuestType() != network2.getGuestType() && Network.GuestType.Isolated.equals(network2.getGuestType())) {
                             return -1;
-                        };
+                        }
                         return 1;
                     }
                 });
@@ -1016,27 +1143,27 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     ReservationContext context = new ReservationContextImpl(null, null, getActiveUser(callerUserId), caller);
 
                     if (!_networkMgr.destroyNetwork(network.getId(), context, false)) {
-                        s_logger.warn("Unable to destroy network " + network + " as a part of account id=" + accountId + " cleanup.");
+                        logger.warn("Unable to destroy network {} as a part of account {} cleanup.", network, account);
                         accountCleanupNeeded = true;
                         networksDeleted = false;
                     } else {
-                        s_logger.debug("Network " + network.getId() + " successfully deleted as a part of account id=" + accountId + " cleanup.");
+                        logger.debug("Network {} successfully deleted as a part of account {} cleanup.", network, account);
                     }
                 }
             }
 
             // Delete all VPCs
             boolean vpcsDeleted = true;
-            s_logger.debug("Deleting vpcs for account " + account.getId());
+            logger.debug("Deleting vpcs for account {}", account);
             List<? extends Vpc> vpcs = _vpcMgr.getVpcsForAccount(account.getId());
             for (Vpc vpc : vpcs) {
 
                 if (!_vpcMgr.destroyVpc(vpc, caller, callerUserId)) {
-                    s_logger.warn("Unable to destroy VPC " + vpc + " as a part of account id=" + accountId + " cleanup.");
+                    logger.warn("Unable to destroy VPC {} as a part of account {} cleanup.", vpc, account);
                     accountCleanupNeeded = true;
                     vpcsDeleted = false;
                 } else {
-                    s_logger.debug("VPC " + vpc.getId() + " successfully deleted as a part of account id=" + accountId + " cleanup.");
+                    logger.debug("VPC {} successfully deleted as a part of account {} cleanup.", vpc, account);
                 }
             }
 
@@ -1044,37 +1171,43 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 // release ip addresses belonging to the account
                 List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
                 for (IpAddress ip : ipsToRelease) {
-                    s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
-                    if (!_ipAddrMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
-                        s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
+                    logger.debug("Releasing ip {} as a part of account {} cleanup", ip, account);
+                    if (!_ipAddrMgr.disassociatePublicIpAddress(ip, callerUserId, caller)) {
+                        logger.warn("Failed to release ip address {} as a part of account {} cleanup", ip, account);
                         accountCleanupNeeded = true;
                     }
                 }
             }
 
             // Delete Site 2 Site VPN customer gateway
-            s_logger.debug("Deleting site-to-site VPN customer gateways for account " + accountId);
+            logger.debug("Deleting site-to-site VPN customer gateways for account {}", account);
             if (!_vpnMgr.deleteCustomerGatewayByAccount(accountId)) {
-                s_logger.warn("Fail to delete site-to-site VPN customer gateways for account " + accountId);
+                logger.warn("Fail to delete site-to-site VPN customer gateways for account {}", account);
             }
 
             // Delete autoscale resources if any
             try {
-                _autoscaleMgr.cleanUpAutoScaleResources(accountId);
+                _autoscaleMgr.cleanUpAutoScaleResources(account);
             } catch (CloudRuntimeException ex) {
-                s_logger.warn("Failed to cleanup AutoScale resources as a part of account id=" + accountId + " cleanup due to exception:", ex);
+                logger.warn("Failed to cleanup AutoScale resources as a part of account {} cleanup due to exception:", account, ex);
                 accountCleanupNeeded = true;
             }
 
             // release account specific Virtual vlans (belong to system Public Network) - only when networks are cleaned
             // up successfully
             if (networksDeleted) {
-                if (!_configMgr.releaseAccountSpecificVirtualRanges(accountId)) {
+                if (!_configMgr.releaseAccountSpecificVirtualRanges(account)) {
                     accountCleanupNeeded = true;
                 } else {
-                    s_logger.debug("Account specific Virtual IP ranges " + " are successfully released as a part of account id=" + accountId + " cleanup.");
+                    logger.debug("Account specific Virtual IP ranges are successfully released as a part of account {} cleanup.", account);
                 }
             }
+
+            // remove dedicated IPv4 subnets
+            routedIpv4Manager.removeIpv4SubnetsForZoneByAccountId(accountId);
+
+            // remove dedicated BGP peers
+            routedIpv4Manager.removeBgpPeersByAccountId(accountId);
 
             // release account specific guest vlans
             List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(accountId);
@@ -1082,14 +1215,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 _dataCenterVnetDao.releaseDedicatedGuestVlans(map.getId());
             }
             int vlansReleased = _accountGuestVlanMapDao.removeByAccountId(accountId);
-            s_logger.info("deleteAccount: Released " + vlansReleased + " dedicated guest vlan ranges from account " + accountId);
+            logger.info("deleteAccount: Released {} dedicated guest vlan ranges from account {}", vlansReleased, account);
 
             // release account specific acquired portable IP's. Since all the portable IP's must have been already
             // disassociated with VPC/guest network (due to deletion), so just mark portable IP as free.
             List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
             for (IpAddress ip : ipsToRelease) {
                 if (ip.isPortable()) {
-                    s_logger.debug("Releasing portable ip " + ip + " as a part of account id=" + accountId + " cleanup");
+                    logger.debug("Releasing portable ip {} as a part of account {} cleanup", ip, account);
                     _ipAddrMgr.releasePortableIpAddress(ip.getId());
                 }
             }
@@ -1097,10 +1230,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // release dedication if any
             List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listByAccountId(accountId);
             if (dedicatedResources != null && !dedicatedResources.isEmpty()) {
-                s_logger.debug("Releasing dedicated resources for account " + accountId);
+                logger.debug("Releasing dedicated resources for account {}", account);
                 for (DedicatedResourceVO dr : dedicatedResources) {
                     if (!_dedicatedDao.remove(dr.getId())) {
-                        s_logger.warn("Fail to release dedicated resources for account " + accountId);
+                        logger.warn("Fail to release dedicated resources for account {}", account);
                     }
                 }
             }
@@ -1126,13 +1259,30 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // Delete registered UserData
             userDataDao.removeByAccountId(accountId);
 
+            // Delete SSL certificates
+            sslCertDao.removeByAccountId(accountId);
+
+            // Delete Webhooks
+            deleteWebhooksForAccount(accountId);
+
+            // Delete KMS keys
+            try {
+                if (!kmsManager.deleteKMSKeysByAccountId(accountId)) {
+                    logger.warn("Failed to delete all KMS keys for account {}", account);
+                    accountCleanupNeeded = true;
+                }
+            } catch (Exception e) {
+                logger.error("Error deleting KMS keys for account {}: {}", account, e.getMessage(), e);
+                accountCleanupNeeded = true;
+            }
+
             return true;
         } catch (Exception ex) {
-            s_logger.warn("Failed to cleanup account " + account + " due to ", ex);
+            logger.warn("Failed to cleanup account " + account + " due to ", ex);
             accountCleanupNeeded = true;
             return true;
         } finally {
-            s_logger.info("Cleanup for account " + account.getId() + (accountCleanupNeeded ? " is needed." : " is not needed."));
+            logger.info("Cleanup for account {} {}", account, accountCleanupNeeded ? "is needed." : "is not needed.");
             if (accountCleanupNeeded) {
                 _accountDao.markForCleanup(accountId);
             } else {
@@ -1146,8 +1296,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public boolean disableAccount(long accountId) throws ConcurrentOperationException, ResourceUnavailableException {
         boolean success = false;
         if (accountId <= 2) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("disableAccount -- invalid account id: " + accountId);
+            if (logger.isInfoEnabled()) {
+                logger.info("disableAccount -- invalid account id: " + accountId);
             }
             return false;
         }
@@ -1158,7 +1308,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         } else {
             AccountVO acctForUpdate = _accountDao.createForUpdate();
             acctForUpdate.setState(State.DISABLED);
-            success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
+            success = _accountDao.update(accountId, acctForUpdate);
 
             if (success) {
                 boolean disableAccountResult = false;
@@ -1166,7 +1316,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     disableAccountResult = doDisableAccount(accountId);
                 } finally {
                     if (!disableAccountResult) {
-                        s_logger.warn("Failed to disable account " + account + " resources as a part of disableAccount call, marking the account for cleanup");
+                        logger.warn("Failed to disable account " + account + " resources as a part of disableAccount call, marking the account for cleanup");
                         _accountDao.markForCleanup(accountId);
                     } else {
                         acctForUpdate = _accountDao.createForUpdate();
@@ -1187,11 +1337,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 try {
                     _itMgr.advanceStop(vm.getUuid(), false);
                 } catch (OperationTimedoutException ote) {
-                    s_logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getHostName(), ote);
+                    logger.warn("Operation for stopping vm timed out, unable to stop vm {}", vm, ote);
                     success = false;
                 }
             } catch (AgentUnavailableException aue) {
-                s_logger.warn("Agent running on host " + vm.getHostId() + " is unavailable, unable to stop vm " + vm.getHostName(), aue);
+                logger.warn("Agent running on host {} is unavailable, unable to stop vm {}", () -> hostDao.findById(vm.getHostId()), vm::toString, () -> aue);
                 success = false;
             }
         }
@@ -1252,11 +1402,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // Check permissions
         checkAccess(getCurrentCallingAccount(), domain);
 
-        if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
-            throw new InvalidParameterValueException("The user " + userName + " already exists in domain " + domainId);
+        if (!userAllowMultipleAccounts.valueInScope(ConfigKey.Scope.Domain, domainId) && !userAccountDao.validateUsernameInDomain(userName, domainId)) {
+            throw new InvalidParameterValueException(String.format("The user %s already exists in domain %s", userName, domain));
         }
 
-        if (networkDomain != null && networkDomain.length() > 0) {
+        if (StringUtils.isNotEmpty(networkDomain)) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
@@ -1266,19 +1416,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         final String accountNameFinal = accountName;
         final Long domainIdFinal = domainId;
-        final String accountUUIDFinal = accountUUID;
-        Pair<Long, Account> pair = Transaction.execute(new TransactionCallback<Pair<Long, Account>>() {
+        final String resolvedAccountUUID = accountUUID != null ? accountUUID : UUID.randomUUID().toString();
+
+        // Check role escalation before the transaction — this is a read-only check
+        // that iterates all API commands and doesn't need a write transaction open.
+        AccountVO requestedAccount = new AccountVO(accountNameFinal, domainIdFinal, networkDomain, accountType, roleId, resolvedAccountUUID);
+        checkRoleEscalation(getCurrentCallingAccount(), requestedAccount);
+
+        Pair<Long, Account> pair = Transaction.execute(new TransactionCallback<>() {
             @Override
             public Pair<Long, Account> doInTransaction(TransactionStatus status) {
-                // create account
-                String accountUUID = accountUUIDFinal;
-                if (accountUUID == null) {
-                    accountUUID = UUID.randomUUID().toString();
-                }
-                AccountVO account = createAccount(accountNameFinal, accountType, roleId, domainIdFinal, networkDomain, details, accountUUID);
+                AccountVO account = createAccount(accountNameFinal, accountType, roleId, domainIdFinal, networkDomain, details, resolvedAccountUUID);
                 long accountId = account.getId();
-
-                checkRoleEscalation(getCurrentCallingAccount(), account);
 
                 // create the first user for the account
                 UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone, userUUID, source);
@@ -1286,11 +1435,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (accountType == Account.Type.RESOURCE_DOMAIN_ADMIN) {
                     // set registration token
                     byte[] bytes = (domainIdFinal + accountNameFinal + userName + System.currentTimeMillis()).getBytes();
-                    String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
+                    String registrationToken = UuidUtils.nameUUIDFromBytes(bytes).toString();
                     user.setRegistrationToken(registrationToken);
                 }
 
-                return new Pair<Long, Account>(user.getId(), account);
+                return new Pair<>(user.getId(), account);
             }
         });
 
@@ -1299,7 +1448,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // create correct account and group association based on accountType
         if (accountType != Account.Type.PROJECT) {
-            Map<Long, Long> accountGroupMap = new HashMap<Long, Long>();
+            Map<Long, Long> accountGroupMap = new HashMap<>();
             accountGroupMap.put(account.getId(), (long) (accountType.ordinal() + 1));
             _messageBus.publish(_name, MESSAGE_ADD_ACCOUNT_EVENT, PublishScope.LOCAL, accountGroupMap);
         }
@@ -1308,7 +1457,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         CallContext.current().putContextParameter(User.class, userId);
 
         // check success
-        return _userAccountDao.findById(userId);
+        return userAccountDao.findById(userId);
     }
 
     /*
@@ -1319,6 +1468,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      - New role should not be of type Admin with domain other than ROOT domain
      */
     protected void validateRoleChange(Account account, Role role, Account caller) {
+        if (account.getRoleId() != null && account.getRoleId().equals(role.getId())) {
+            return;
+        }
         Role currentRole = roleService.findRole(account.getRoleId());
         Role callerRole = roleService.findRole(caller.getRoleId());
         String errorMsg = String.format("Unable to update account role to %s, ", role.getName());
@@ -1334,6 +1486,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new PermissionDeniedException(String.format("%s as either current or new role has higher " +
                     "privileges than the caller", errorMsg));
         }
+        if (account.isDefault()) {
+            throw new PermissionDeniedException(String.format("%s as the account is a default account", errorMsg));
+        }
         if (role.getRoleType().equals(RoleType.Admin) && account.getDomainId() != Domain.ROOT_DOMAIN) {
             throw new PermissionDeniedException(String.format("%s as the user does not belong to the ROOT domain",
                     errorMsg));
@@ -1343,9 +1498,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     /**
      * if there is any permission under the requested role that is not permitted for the caller, refuse
      */
-    private void checkRoleEscalation(Account caller, Account requested) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
+    protected void checkRoleEscalation(Account caller, Account requested) {
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
                     caller.getAccountName(),
                     caller.getUuid(),
                     caller.getRoleId(),
@@ -1356,10 +1511,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
         for (String command : apiNameList) {
             try {
-                checkApiAccess(apiCheckers, requested, command);
+                checkApiAccess(apiCheckers, requested, command, null);
             } catch (PermissionDeniedException pde) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format(
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format(
                             "Checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
                             command,
                             requested.getAccountName(),
@@ -1371,26 +1526,89 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
             // so requested can, now make sure caller can as well
             try {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("permission to \"%s\" is requested",
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("permission to \"%s\" is requested",
                             command));
                 }
-                checkApiAccess(apiCheckers, caller, command);
+                checkApiAccess(apiCheckers, caller, command, null);
             } catch (PermissionDeniedException pde) {
-                String msg = String.format("User of Account %s/%s (%s) can not create an account with access to more privileges they have themself.",
-                        caller.getAccountName(),
-                        caller.getDomainId(),
-                        caller.getUuid());
-                s_logger.warn(msg);
+                String msg = String.format("User of Account %s and domain %s can not create an account with access to more privileges they have themself.",
+                        caller, _domainMgr.getDomain(caller.getDomainId()));
+                logger.warn(msg);
                 throw new PermissionDeniedException(msg,pde);
             }
         }
+
+        List<APIAclChecker> aclCheckers = getApiACLCheckers();
+
+        List<String> allApis = new ArrayList<>(apiNameList);
+        List<String> requestedAllowed = allApis;
+        List<String> callerAllowed = new ArrayList<>();
+        try {
+            for (final APIAclChecker apiChecker : aclCheckers) {
+                requestedAllowed = apiChecker.getApisAllowedToAccount(requested, requestedAllowed);
+            }
+            callerAllowed = requestedAllowed;
+            for (final APIAclChecker apiChecker : aclCheckers) {
+                callerAllowed = apiChecker.getApisAllowedToAccount(caller, callerAllowed);
+            }
+        } catch (PermissionDeniedException e) {
+            String msg = String.format("User of account: %s cannot assign this role on the requested account: %s", caller.getAccountName(), requested.getAccountName());
+            String logMsg = String.format("%s: %s", msg, e.getMessage());
+            logger.error(logMsg, e);
+            throw new PermissionDeniedException(msg);
+        }
+
+        if (callerAllowed.size() < requestedAllowed.size()) {
+            List<String> escalatedApis = new ArrayList<>(requestedAllowed);
+            escalatedApis.removeAll(callerAllowed);
+            String msg = String.format("User of Account %s and domain %s cannot create an account with access to more privileges than they have. Escalated APIs: %s",
+                    caller, _domainMgr.getDomain(caller.getDomainId()), CollectionUtils.isNotEmpty(escalatedApis) ? escalatedApis.size() : "None");
+            logger.warn(msg);
+            throw new PermissionDeniedException(msg);
+        }
     }
 
-    private void checkApiAccess(List<APIChecker> apiCheckers, Account caller, String command) {
+    private void checkApiAccess(List<APIChecker> apiCheckers, Account caller, String command, ApiKeyPair keyPair, ApiKeyPairPermission... apiKeyPairPermissions) {
         for (final APIChecker apiChecker : apiCheckers) {
-            apiChecker.checkAccess(caller, command);
+            apiChecker.checkAccess(caller, command, keyPair, apiKeyPairPermissions);
         }
+    }
+
+    @Override
+    public void checkApiAccess(Account caller, String command, String apiKey) {
+        List<APIChecker> apiCheckers = getEnabledApiCheckers();
+
+        List<ApiKeyPairPermission> keyPairPermissions = new ArrayList<>();
+        ApiKeyPair keyPair = null;
+        if (apiKey != null) {
+            Ternary<User, Account, ApiKeyPair> keyPairTernary = findUserByApiKey(apiKey);
+            if (keyPairTernary != null) {
+                keyPairPermissions = keyPairManager.findAllPermissionsByKeyPairId(keyPairTernary.third().getId(), caller.getRoleId());
+                keyPair = keyPairTernary.third();
+            }
+        }
+
+        checkApiAccess(apiCheckers, caller, command, keyPair, keyPairPermissions.toArray(new ApiKeyPairPermission[0]));
+    }
+
+    @Override
+    public void checkApiAccess(Account caller, String command) {
+        List<APIChecker> apiCheckers = getEnabledApiCheckers();
+        checkApiAccess(apiCheckers, caller, command, null);
+    }
+
+    protected List<APIAclChecker> getApiACLCheckers() {
+        List<APIChecker> apiCheckers = getEnabledApiCheckers();
+
+        // Only ACL checkers should influence the set of APIs allowed to an account.
+        List<APIAclChecker> aclCheckers = new ArrayList<>();
+        for (APIChecker apiChecker : apiCheckers) {
+            if (apiChecker instanceof APIAclChecker) {
+                aclCheckers.add((APIAclChecker) apiChecker);
+            }
+        }
+        return aclCheckers;
     }
 
     @NotNull
@@ -1400,8 +1618,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         for (APIChecker apiChecker : apiAccessCheckers) {
             if (apiChecker.isEnabled()) {
                 usableApiCheckers.add(apiChecker);
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("using api checker \"%s\"",
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("using api checker \"%s\"",
                             apiChecker.getName()));
                 }
             }
@@ -1412,10 +1630,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
     public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID,
-            User.Source source) {
+                             User.Source source) {
+        return createUser(userName, password, firstName, lastName, email, timeZone, accountName, domainId, userUUID, source, false);
+    }
+
+
+    @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
+    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID,
+            User.Source source, boolean isPasswordChangeRequired) {
         // default domain to ROOT if not specified
         if (domainId == null) {
             domainId = Domain.ROOT_DOMAIN;
+        }
+
+        if (isPasswordChangeRequired && (source == User.Source.SAML2 || source == User.Source.SAML2DISABLED || source == User.Source.LDAP)) {
+            logger.warn("Enforcing password change is not permitted for source [{}].", source);
+            throw new InvalidParameterValueException("CloudStack does not support enforcing password change for SAML or LDAP users.");
         }
 
         Domain domain = _domainMgr.getDomain(domainId);
@@ -1429,42 +1659,61 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         Account account = _accountDao.findEnabledAccount(accountName, domainId);
         if (account == null || account.getType() == Account.Type.PROJECT) {
-            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain id=" + domainId + " to create user");
+            throw new InvalidParameterValueException(String.format("Unable to find account %s in domain %s to create user", accountName, domain));
         }
 
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new PermissionDeniedException("Account id : " + account.getId() + " is a system account, can't add a user to it");
+            throw new PermissionDeniedException(String.format("Account: %s is a system account, can't add a user to it", account));
         }
 
-        if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
+        if (!userAllowMultipleAccounts.valueInScope(ConfigKey.Scope.Domain, domainId) && !userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
         }
-        UserVO user = null;
+        List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
+        for (UserVO duplicatedUser : duplicatedUsers) {
+            // users can't exist in same account
+            assertUserNotAlreadyInAccount(duplicatedUser, account);
+        }
+
+        verifyCallerPrivilegeForUserOrAccountOperations(account);
+        UserVO user;
         user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone, userUUID, source);
+        if (isPasswordChangeRequired) {
+            long callerAccountId = CallContext.current().getCallingAccountId();
+            if ((isRootAdmin(callerAccountId) || isDomainAdmin(callerAccountId))) {
+                _userDetailsDao.addDetail(user.getId(), PasswordChangeRequired, "true", false);
+            }
+        }
         return user;
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
-    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID) {
+    public UserVO createUser(String userName, String password, String firstName, String lastName, String email,
+                             String timeZone, String accountName, Long domainId, String userUUID, boolean isPasswordChangeRequired) {
 
-        return createUser(userName, password, firstName, lastName, email, timeZone, accountName, domainId, userUUID, User.Source.UNKNOWN);
+        return createUser(userName, password, firstName, lastName, email, timeZone, accountName, domainId, userUUID, User.Source.UNKNOWN, isPasswordChangeRequired);
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_UPDATE, eventDescription = "Updating User")
     public UserAccount updateUser(UpdateUserCmd updateUserCmd) {
         UserVO user = retrieveAndValidateUser(updateUserCmd);
-        s_logger.debug("Updating user with Id: " + user.getUuid());
+        Account account = retrieveAndValidateAccount(user);
+        User caller = CallContext.current().getCallingUser();
+        checkAccess(caller, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
+
+        logger.debug("Updating user {}", user);
 
         validateAndUpdateApiAndSecretKeyIfNeeded(updateUserCmd, user);
-        Account account = retrieveAndValidateAccount(user);
+        validateAndUpdateUserApiKeyAccess(updateUserCmd, user);
 
         validateAndUpdateFirstNameIfNeeded(updateUserCmd, user);
         validateAndUpdateLastNameIfNeeded(updateUserCmd, user);
         validateAndUpdateUsernameIfNeeded(updateUserCmd, user, account);
 
-        validateUserPasswordAndUpdateIfNeeded(updateUserCmd.getPassword(), user, updateUserCmd.getCurrentPassword());
+        validateUserPasswordAndUpdateIfNeeded(updateUserCmd.getPassword(), user, updateUserCmd.getCurrentPassword(), false);
         String email = updateUserCmd.getEmail();
         if (StringUtils.isNotBlank(email)) {
             user.setEmail(email);
@@ -1477,8 +1726,132 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (mandate2FA != null && mandate2FA) {
             user.setUser2faEnabled(true);
         }
+        validateAndUpdatePasswordChangeRequired(caller, updateUserCmd, user, account);
         _userDao.update(user.getId(), user);
-        return _userAccountDao.findById(user.getId());
+        return userAccountDao.findById(user.getId());
+    }
+
+    private void validateAndUpdatePasswordChangeRequired(User caller, UpdateUserCmd updateUserCmd, UserVO user, Account account) {
+        if (updateUserCmd.isPasswordChangeRequired()) {
+            if (user.getState() != State.ENABLED || account.getState() != State.ENABLED) {
+                throw new CloudRuntimeException("CloudStack does not support enforcing password change for locked/disabled User or Account.");
+            }
+
+            User.Source userSource = user.getSource();
+            if (userSource == User.Source.SAML2 || userSource == User.Source.SAML2DISABLED || userSource == User.Source.LDAP) {
+                logger.warn("Enforcing password change is not permitted for source [{}].", user.getSource());
+                throw new InvalidParameterValueException("CloudStack does not support enforcing password change for SAML or LDAP users.");
+            }
+        }
+
+        boolean isCallerSameAsUser = user.getId() == caller.getId();
+        boolean isPasswordResetRequired = updateUserCmd.isPasswordChangeRequired() && !isCallerSameAsUser;
+        // Admins only can enforce passwordChangeRequired for user
+        if (isRootAdmin(caller.getAccountId()) || isDomainAdmin(caller.getAccountId())) {
+            if (isPasswordResetRequired) {
+                _userDetailsDao.addDetail(user.getId(), PasswordChangeRequired, "true", false);
+            }
+        }
+
+        if (StringUtils.isNotBlank(updateUserCmd.getPassword())) {
+            // Remove passwordChangeRequired if user updating own pwd or admin has not enforced it
+            if (isCallerSameAsUser || !isPasswordResetRequired) {
+                _userDetailsDao.removeDetail(user.getId(), PasswordChangeRequired);
+            }
+        }
+    }
+
+    @Override
+    public void verifyCallerPrivilegeForUserOrAccountOperations(Account userAccount) {
+        logger.debug(String.format("Verifying whether the caller has the correct privileges based on the user's role type and API permissions: %s", userAccount));
+
+        if (!Account.Type.PROJECT.equals(userAccount.getType())) {
+            checkCallerRoleTypeAllowedForUserOrAccountOperations(userAccount, null);
+            checkCallerApiPermissionsForUserOrAccountOperations(userAccount);
+        }
+    }
+
+    @Override
+    public void refreshRoleCheckersCacheOnPermissionsChange(Role role) {
+        List<APIAclChecker> aclCheckers = getApiACLCheckers();
+        for (final APIAclChecker aclChecker : aclCheckers) {
+            aclChecker.refreshRoleCacheOnPermissionsChange(role);
+        }
+    }
+
+    @Override
+    public void verifyCallerPrivilegeForUserOrAccountOperations(User user) {
+        logger.debug("Verifying whether the caller has the correct privileges based on the user's role type and API permissions: {}", user);
+
+        Account userAccount = getAccount(user.getAccountId());
+        if (!Account.Type.PROJECT.equals(userAccount.getType())) {
+            checkCallerRoleTypeAllowedForUserOrAccountOperations(userAccount, user);
+            checkCallerApiPermissionsForUserOrAccountOperations(userAccount);
+        }
+    }
+
+    @Override
+    public void checkCallerRoleTypeAllowedForUserOrAccountOperations(Account userAccount, User user) {
+        Account callingAccount = getCurrentCallingAccount();
+        RoleType callerRoleType = getRoleType(callingAccount);
+        RoleType userAccountRoleType = getRoleType(userAccount);
+
+        if (RoleType.Unknown == callerRoleType || RoleType.Unknown == userAccountRoleType) {
+            String errMsg = String.format("The role type of caller account [%s, %s] or target account [%s, %s] is unknown",
+                    callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid());
+            throw new PermissionDeniedException(errMsg);
+        }
+
+        boolean isCallerSystemOrDefaultAdmin = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM || callingAccount.getId() == Account.ACCOUNT_ID_ADMIN;
+        if (isCallerSystemOrDefaultAdmin) {
+            logger.trace(String.format("Admin account [%s, %s] performing this operation for user account [%s, %s] ", callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid()));
+        } else if (callerRoleType.getId() < userAccountRoleType.getId()) {
+            logger.trace(String.format("The calling account [%s, %s] has a higher role type than the user account [%s, %s]",
+                    callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid()));
+        } else if (callerRoleType.getId() == userAccountRoleType.getId()) {
+            if (callingAccount.getId() != userAccount.getId()) {
+                String allowedRoleTypes = listOfRoleTypesAllowedForOperationsOfSameRoleType.valueInScope(ConfigKey.Scope.Domain, callingAccount.getDomainId());
+                boolean updateAllowed = allowedRoleTypes != null &&
+                        Arrays.stream(allowedRoleTypes.split(","))
+                                .map(String::trim)
+                                .anyMatch(role -> role.equals(callerRoleType.toString()));
+                if (BooleanUtils.isFalse(updateAllowed)) {
+                    String errMsg = String.format("The calling account [%s, %s] is not allowed to perform this operation on users from other accounts " +
+                            "of the same role type within the domain", callingAccount.getName(), callingAccount.getUuid());
+                    logger.error(errMsg);
+                    throw new PermissionDeniedException(errMsg);
+                }
+            } else if ((callingAccount.getId() == userAccount.getId()) && user != null) {
+                Boolean allowOperationOnUsersinSameAccount = allowOperationsOnUsersInSameAccount.valueInScope(ConfigKey.Scope.Domain, callingAccount.getDomainId());
+                User callingUser = CallContext.current().getCallingUser();
+                if (callingUser.getId() != user.getId() && BooleanUtils.isFalse(allowOperationOnUsersinSameAccount)) {
+                    String errMsg = "The user operations are not allowed by the users in the same account";
+                    logger.error(errMsg);
+                    throw new PermissionDeniedException(errMsg);
+                }
+            }
+        } else {
+            String errMsg = String.format("The calling account [%s, %s] has a lower role type than the user account [%s, %s]",
+                    callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid());
+            throw new PermissionDeniedException(errMsg);
+        }
+    }
+
+    protected void checkCallerApiPermissionsForUserOrAccountOperations(Account userAccount) {
+        Account callingAccount = getCurrentCallingAccount();
+        boolean isCallerRootAdmin = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(callingAccount.getId());
+
+        if (isCallerRootAdmin) {
+            logger.trace(String.format("Admin account [%s, %s] performing this operation for user account [%s, %s] ", callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid()));
+        } else if (isRootAdmin(userAccount.getAccountId())) {
+            String errMsg = String.format("Account [%s, %s] cannot perform this operation for user account [%s, %s] ", callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid());
+            logger.error(errMsg);
+            throw new PermissionDeniedException(errMsg);
+        } else {
+            logger.debug(String.format("Checking calling account [%s, %s] permission to perform this operation for user account [%s, %s] ", callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid()));
+            checkRoleEscalation(callingAccount, userAccount);
+            logger.debug(String.format("Calling account [%s, %s] is allowed to perform this operation for user account [%s, %s] ", callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid()));
+        }
     }
 
     /**
@@ -1494,9 +1867,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      *
      * If all checks pass, we encode the given password with the most preferable password mechanism given in {@link #_userPasswordEncoders}.
      */
-    protected void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword) {
+    public void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword, boolean skipCurrentPassValidation) {
         if (newPassword == null) {
-            s_logger.trace("No new password to update for user: " + user.getUuid());
+            logger.trace("No new password to update for user: {}", user);
             return;
         }
         if (StringUtils.isBlank(newPassword)) {
@@ -1505,7 +1878,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         User.Source userSource = user.getSource();
         if (userSource == User.Source.SAML2 || userSource == User.Source.SAML2DISABLED || userSource == User.Source.LDAP) {
-            s_logger.warn(String.format("Unable to update the password for user [%d], as its source is [%s].", user.getId(), user.getSource().toString()));
+            logger.warn("Unable to update the password for user [{}], as its source is [{}].", user, user.getSource().toString());
             throw new InvalidParameterValueException("CloudStack does not support updating passwords for SAML or LDAP users. Please contact your cloud administrator for assistance.");
         }
 
@@ -1515,16 +1888,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         boolean isRootAdminExecutingPasswordUpdate = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(callingAccount.getId());
         boolean isDomainAdmin = isDomainAdmin(callingAccount.getId());
         boolean isAdmin = isDomainAdmin || isRootAdminExecutingPasswordUpdate;
+        boolean skipValidation = isAdmin || skipCurrentPassValidation;
         if (isAdmin) {
-            s_logger.trace(String.format("Admin account [uuid=%s] executing password update for user [%s] ", callingAccount.getUuid(), user.getUuid()));
+            logger.trace("Admin account [{}] executing password update for user [{}] ", callingAccount, user);
         }
-        if (!isAdmin && StringUtils.isBlank(currentPassword)) {
+        if (!skipValidation && StringUtils.isBlank(currentPassword)) {
             throw new InvalidParameterValueException("To set a new password the current password must be provided.");
         }
         if (CollectionUtils.isEmpty(_userPasswordEncoders)) {
             throw new CloudRuntimeException("No user authenticators configured!");
         }
-        if (!isAdmin) {
+        if (!skipValidation) {
             validateCurrentPassword(user, currentPassword);
         }
         UserAuthenticator userAuthenticator = _userPasswordEncoders.get(0);
@@ -1542,11 +1916,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         for (UserAuthenticator userAuthenticator : _userPasswordEncoders) {
             Pair<Boolean, ActionOnFailedAuthentication> authenticationResult = userAuthenticator.authenticate(user.getUsername(), currentPassword, userAccount.getDomainId(), null);
             if (authenticationResult == null) {
-                s_logger.trace(String.format("Authenticator [%s] is returning null for the authenticate mehtod.", userAuthenticator.getClass()));
+                logger.trace(String.format("Authenticator [%s] is returning null for the authenticate method.", userAuthenticator.getClass()));
                 continue;
             }
             if (BooleanUtils.toBoolean(authenticationResult.first())) {
-                s_logger.debug(String.format("User [id=%s] re-authenticated [authenticator=%s] during password update.", user.getUuid(), userAuthenticator.getName()));
+                logger.debug("User [{}] re-authenticated [authenticator={}] during password update.", user, userAuthenticator.getName());
                 currentPasswordMatchesDataBasePassword = true;
                 break;
             }
@@ -1564,7 +1938,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      *  <li> The username must be unique in each domain. Therefore, if there is already another user with the same username, an {@link InvalidParameterValueException} is thrown.
      * </ul>
      */
-    protected void validateAndUpdateUsernameIfNeeded(UpdateUserCmd updateUserCmd, UserVO user, Account account) {
+    protected void validateAndUpdateUsernameIfNeeded(UpdateUserCmd updateUserCmd, UserVO newUser, Account newAccount) {
         String userName = updateUserCmd.getUsername();
         if (userName == null) {
             return;
@@ -1572,18 +1946,21 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (StringUtils.isBlank(userName)) {
             throw new InvalidParameterValueException("Username cannot be empty.");
         }
-        List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
-        for (UserVO duplicatedUser : duplicatedUsers) {
-            if (duplicatedUser.getId() == user.getId()) {
+        List<UserVO> existingUsers = _userDao.findUsersByName(userName);
+        for (UserVO existingUser : existingUsers) {
+            if (existingUser.getId() == newUser.getId()) {
                 continue;
             }
-            Account duplicatedUserAccountWithUserThatHasTheSameUserName = _accountDao.findById(duplicatedUser.getAccountId());
-            if (duplicatedUserAccountWithUserThatHasTheSameUserName.getDomainId() == account.getDomainId()) {
-                DomainVO domain = _domainDao.findById(duplicatedUserAccountWithUserThatHasTheSameUserName.getDomainId());
-                throw new InvalidParameterValueException(String.format("Username [%s] already exists in domain [id=%s,name=%s]", duplicatedUser.getUsername(), domain.getUuid(), domain.getName()));
+
+            // duplicate usernames cannot exist in same domain unless explicitly configured
+            if (!userAllowMultipleAccounts.valueInScope(ConfigKey.Scope.Domain, newAccount.getDomainId())) {
+                assertUserNotAlreadyInDomain(existingUser, newAccount);
             }
+
+            // can't rename a username to an existing one in the same account
+            assertUserNotAlreadyInAccount(existingUser, newAccount);
         }
-        user.setUsername(userName);
+        newUser.setUsername(userName);
     }
 
     /**
@@ -1637,10 +2014,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new CloudRuntimeException("Unable to find user account with ID: " + user.getAccountId());
         }
         if (account.getType() == Account.Type.PROJECT) {
-            throw new InvalidParameterValueException("Unable to find user with ID: " + user.getUuid());
+            throw new InvalidParameterValueException(String.format("Unable to find user with: %s", user));
         }
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new PermissionDeniedException("user UUID : " + user.getUuid() + " is a system account; update is not allowed.");
+            throw new PermissionDeniedException(String.format("user: %s is a system account; update is not allowed.", user));
         }
         checkAccess(getCurrentCallingAccount(), AccessType.OperateEntry, true, account);
         return account;
@@ -1655,7 +2032,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     /**
-     * Validates user API and Secret keys. If a new pair of keys is provided, we update them in the user POJO.
+     * Validates user API and Secret keys. If a new pair of keys is provided, we update them in the key pair POJO.
      * <ul>
      * <li>When updating the keys, it must be provided a pair (API and Secret keys); otherwise, an {@link InvalidParameterValueException} is thrown.
      * <li>If a pair of keys is provided, we validate to see if there is an user already using the provided API key. If there is someone else using, we throw an {@link InvalidParameterValueException} because two users cannot have the same API key.
@@ -1668,20 +2045,57 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         boolean isApiKeyBlank = StringUtils.isBlank(apiKey);
         boolean isSecretKeyBlank = StringUtils.isBlank(secretKey);
         if (isApiKeyBlank ^ isSecretKeyBlank) {
-            throw new InvalidParameterValueException("Please provide a userApiKey/userSecretKey pair");
+            throw new InvalidParameterValueException("Please provide a valid API and secret key pair.");
         }
         if (isApiKeyBlank && isSecretKeyBlank) {
             return;
         }
-        Pair<User, Account> apiKeyOwner = _accountDao.findUserAccountByApiKey(apiKey);
-        if (apiKeyOwner != null) {
-            User userThatHasTheProvidedApiKey = apiKeyOwner.first();
-            if (userThatHasTheProvidedApiKey.getId() != user.getId()) {
-                throw new InvalidParameterValueException(String.format("The API key [%s] already exists in the system. Please provide a unique key.", apiKey));
+
+        ApiKeyPairVO lastUserKeyPair = apiKeyPairDao.getLastApiKeyCreatedByUser(user.getId());
+        if (lastUserKeyPair == null) {
+            throw new InvalidParameterValueException(String.format("User [%s] has no active API key pairs to be updated.", user.getUsername()));
+        }
+
+        Ternary<User, Account, ApiKeyPair> keyPairTernary = findUserByApiKey(apiKey);
+        if (keyPairTernary != null) {
+            throw new InvalidParameterValueException(String.format("The API key [%s] already exists in the system. Please provide a unique key.", apiKey));
+        }
+
+        lastUserKeyPair.setApiKey(apiKey);
+        lastUserKeyPair.setSecretKey(secretKey);
+        apiKeyPairDao.update(lastUserKeyPair.getId(), lastUserKeyPair);
+    }
+
+    protected void validateAndUpdateUserApiKeyAccess(UpdateUserCmd updateUserCmd, UserVO user) {
+        if (updateUserCmd.getApiKeyAccess() != null) {
+            try {
+                ApiConstants.ApiKeyAccess access = ApiConstants.ApiKeyAccess.valueOf(updateUserCmd.getApiKeyAccess().toUpperCase());
+                user.setApiKeyAccess(access.toBoolean());
+                Long callingUserId = CallContext.current().getCallingUserId();
+                Account callingAccount = CallContext.current().getCallingAccount();
+                ActionEventUtils.onActionEvent(callingUserId, callingAccount.getAccountId(), callingAccount.getDomainId(),
+                        EventTypes.API_KEY_ACCESS_UPDATE, "Api key access was changed for the User to " + access,
+                        user.getId(), ApiCommandResourceType.User.toString());
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("ApiKeyAccess value can only be Enabled/Disabled/Inherit");
             }
         }
-        user.setApiKey(apiKey);
-        user.setSecretKey(secretKey);
+    }
+
+    protected void validateAndUpdateAccountApiKeyAccess(UpdateAccountCmd updateAccountCmd, AccountVO account) {
+        if (updateAccountCmd.getApiKeyAccess() != null) {
+            try {
+                ApiConstants.ApiKeyAccess access = ApiConstants.ApiKeyAccess.valueOf(updateAccountCmd.getApiKeyAccess().toUpperCase());
+                account.setApiKeyAccess(access.toBoolean());
+                Long callingUserId = CallContext.current().getCallingUserId();
+                Account callingAccount = CallContext.current().getCallingAccount();
+                ActionEventUtils.onActionEvent(callingUserId, callingAccount.getAccountId(), callingAccount.getDomainId(),
+                        EventTypes.API_KEY_ACCESS_UPDATE, "Api key access was changed for the Account to " + access,
+                        account.getId(), ApiCommandResourceType.Account.toString());
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("ApiKeyAccess value can only be Enabled/Disabled/Inherit");
+            }
+        }
     }
 
     /**
@@ -1715,15 +2129,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // don't allow disabling user belonging to project's account
         if (account.getType() == Account.Type.PROJECT) {
-            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+            throw new InvalidParameterValueException(String.format("Unable to find active user %s", user));
         }
 
         // If the user is a System user, return an error
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new InvalidParameterValueException("User id : " + userId + " is a system user, disabling is not allowed");
+            throw new InvalidParameterValueException(String.format("User: %s is a system user, disabling is not allowed", user));
         }
 
         checkAccess(caller, AccessType.OperateEntry, true, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
 
         boolean success = doSetUserStatus(userId, State.DISABLED);
         if (success) {
@@ -1731,9 +2146,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             CallContext.current().putContextParameter(User.class, user.getUuid());
 
             // user successfully disabled
-            return _userAccountDao.findById(userId);
+            return userAccountDao.findById(userId);
         } else {
-            throw new CloudRuntimeException("Unable to disable user " + userId);
+            throw new CloudRuntimeException(String.format("Unable to disable user %s", user));
         }
     }
 
@@ -1756,17 +2171,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if (account.getType() == Account.Type.PROJECT) {
-            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+            throw new InvalidParameterValueException(String.format("Unable to find active user %s", user));
         }
 
         // If the user is a System user, return an error
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new InvalidParameterValueException("User id : " + userId + " is a system user, enabling is not allowed");
+            throw new InvalidParameterValueException(String.format("User: %s is a system user, enabling is not allowed", user));
         }
 
         checkAccess(caller, AccessType.OperateEntry, true, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
 
-        boolean success = Transaction.execute(new TransactionCallback<Boolean>() {
+        boolean success = Transaction.execute(new TransactionCallback<>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 boolean success = doSetUserStatus(userId, State.ENABLED);
@@ -1784,9 +2200,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             CallContext.current().putContextParameter(User.class, user.getUuid());
 
-            return _userAccountDao.findById(userId);
+            return userAccountDao.findById(userId);
         } else {
-            throw new CloudRuntimeException("Unable to enable user " + userId);
+            throw new CloudRuntimeException(String.format("Unable to enable user %s", user));
         }
     }
 
@@ -1813,18 +2229,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // If the user is a System user, return an error. We do not allow this
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new PermissionDeniedException("user id : " + userId + " is a system user, locking is not allowed");
+            throw new PermissionDeniedException(String.format("user: %s is a system user, locking is not allowed", user));
         }
 
         checkAccess(caller, AccessType.OperateEntry, true, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
 
         // make sure the account is enabled too
         // if the user is either locked already or disabled already, don't change state...only lock currently enabled
-// users
-        boolean success = true;
+        // users
+        boolean success;
         if (user.getState().equals(State.LOCKED)) {
             // already locked...no-op
-            return _userAccountDao.findById(userId);
+            return userAccountDao.findById(userId);
         } else if (user.getState().equals(State.ENABLED)) {
             success = doSetUserStatus(user.getId(), State.LOCKED);
 
@@ -1841,8 +2258,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 success = (success && lockAccount(user.getAccountId()));
             }
         } else {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Attempting to lock a non-enabled user, current state is " + user.getState() + " (userId: " + user.getId() + "), locking failed.");
+            if (logger.isInfoEnabled()) {
+                logger.info("Attempting to lock a non-enabled user {}, current state is {}, locking failed.", user, user.getState());
             }
             success = false;
         }
@@ -1851,9 +2268,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             CallContext.current().putContextParameter(User.class, user.getUuid());
 
-            return _userAccountDao.findById(userId);
+            return userAccountDao.findById(userId);
         } else {
-            throw new CloudRuntimeException("Unable to lock user " + userId);
+            throw new CloudRuntimeException(String.format("Unable to lock user %s", user));
         }
     }
 
@@ -1868,11 +2285,20 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
 
+        if (caller.getId() == accountId) {
+            Domain domain = _domainDao.findById(account.getDomainId());
+            throw new InvalidParameterValueException(String.format("Deletion of your own account is not allowed. To delete account %s (ID: %s, Domain: %s), " +
+                            "request to another user with permissions to perform the operation.",
+                    account.getAccountName(), account.getUuid(), domain.getUuid()));
+        }
+
         if (!isDeleteNeeded(account, accountId, caller)) {
             return true;
         }
 
         checkIfAccountManagesProjects(accountId);
+        verifyCallerPrivilegeForUserOrAccountOperations(account);
+        validateNoDeleteProtectedVmsForAccount(account);
 
         CallContext.current().putContextParameter(Account.class, account.getUuid());
 
@@ -1889,13 +2315,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
     }
 
-    private boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
+    protected boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
         if (account == null) {
-            s_logger.info(String.format("The account, identified by id %d, doesn't exist", accountId ));
+            logger.info(String.format("The account, identified by id %d, doesn't exist", accountId ));
             return false;
         }
         if (account.getRemoved() != null) {
-            s_logger.info("The account:" + account.getAccountName() + " is already removed");
+            logger.info("The account:{} is already removed", account);
             return false;
         }
         // don't allow removing Project account
@@ -1912,12 +2338,29 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return true;
     }
 
+    private void validateNoDeleteProtectedVmsForAccount(Account account) {
+        long accountId = account.getId();
+        List<VMInstanceVO> deleteProtectedVms = _vmDao.listDeleteProtectedVmsByAccountId(accountId);
+        if (CollectionUtils.isEmpty(deleteProtectedVms)) {
+            return;
+        }
+
+        if (logger.isDebugEnabled()) {
+            List<String> vmUuids = deleteProtectedVms.stream().map(VMInstanceVO::getUuid).collect(Collectors.toList());
+            logger.debug("Cannot delete Account {}, delete protection enabled for Instances: {}", account, vmUuids);
+        }
+
+        throw new InvalidParameterValueException(
+                String.format("Cannot delete Account '%s'. One or more Instances have delete protection enabled.",
+                        account.getAccountName()));
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_ENABLE, eventDescription = "enabling account", async = true)
     public AccountVO enableAccount(String accountName, Long domainId, Long accountId) {
 
         // Check if account exists
-        Account account = null;
+        Account account;
         if (accountId != null) {
             account = _accountDao.findById(accountId);
         } else {
@@ -1925,16 +2368,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if (account == null || account.getType() == Account.Type.PROJECT) {
-            throw new InvalidParameterValueException("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
+            throw new InvalidParameterValueException(String.format("Unable to find account by accountId: %d OR by name: %s in domain %s", accountId, accountName, _domainMgr.getDomain(domainId)));
         }
 
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new PermissionDeniedException("Account id : " + accountId + " is a system account, enable is not allowed");
+            throw new PermissionDeniedException(String.format("Account: %s is a system account, enable is not allowed", account));
         }
 
         // Check if user performing the action is allowed to modify this account
         Account caller = getCurrentCallingAccount();
         checkAccess(caller, AccessType.OperateEntry, true, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(account);
 
         boolean success = enableAccount(account.getId());
         if (success) {
@@ -1943,7 +2387,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             return _accountDao.findById(account.getId());
         } else {
-            throw new CloudRuntimeException("Unable to enable account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
+            throw new CloudRuntimeException(String.format("Unable to enable account %s[%s] in domain %s", accountName, account.getUuid(), _domainMgr.getDomain(domainId)));
         }
     }
 
@@ -1952,7 +2396,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public AccountVO lockAccount(String accountName, Long domainId, Long accountId) {
         Account caller = getCurrentCallingAccount();
 
-        Account account = null;
+        Account account;
         if (accountId != null) {
             account = _accountDao.findById(accountId);
         } else {
@@ -1964,16 +2408,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new PermissionDeniedException("Account id : " + accountId + " is a system account, lock is not allowed");
+            throw new PermissionDeniedException(String.format("Account: %s is a system account, lock is not allowed", account));
         }
 
         checkAccess(caller, AccessType.OperateEntry, true, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(account);
 
         if (lockAccount(account.getId())) {
             CallContext.current().putContextParameter(Account.class, account.getUuid());
             return _accountDao.findById(account.getId());
         } else {
-            throw new CloudRuntimeException("Unable to lock account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
+            throw new CloudRuntimeException(String.format("Unable to lock account %s by accountId: %d OR by name: %s in domain %s", account, accountId, accountName, _domainMgr.getDomain(domainId)));
         }
     }
 
@@ -1982,7 +2427,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public AccountVO disableAccount(String accountName, Long domainId, Long accountId) throws ConcurrentOperationException, ResourceUnavailableException {
         Account caller = getCurrentCallingAccount();
 
-        Account account = null;
+        Account account;
         if (accountId != null) {
             account = _accountDao.findById(accountId);
         } else {
@@ -1990,20 +2435,21 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if (account == null || account.getType() == Account.Type.PROJECT) {
-            throw new InvalidParameterValueException("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
+            throw new InvalidParameterValueException(String.format("Unable to find account by accountId: %d OR by name: %s in domain %s", accountId, accountName, _domainMgr.getDomain(domainId)));
         }
 
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new PermissionDeniedException("Account id : " + accountId + " is a system account, disable is not allowed");
+            throw new PermissionDeniedException(String.format("Account: %s is a system account, disable is not allowed", account));
         }
 
         checkAccess(caller, AccessType.OperateEntry, true, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(account);
 
         if (disableAccount(account.getId())) {
             CallContext.current().putContextParameter(Account.class, account.getUuid());
             return _accountDao.findById(account.getId());
         } else {
-            throw new CloudRuntimeException("Unable to update account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
+            throw new CloudRuntimeException(String.format("Unable to update account %s by accountId: %d OR by name: %s in domain %s", account, accountId, accountName, _domainMgr.getDomain(domainId)));
         }
     }
 
@@ -2019,8 +2465,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         String networkDomain = cmd.getNetworkDomain();
         final Map<String, String> details = cmd.getDetails();
 
-        boolean success = false;
-        Account account = null;
+        boolean success;
+        Account account;
         if (accountId != null) {
             account = _accountDao.findById(accountId);
         } else {
@@ -2031,8 +2477,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // Check if account exists
         if (account == null || account.getType() == Account.Type.PROJECT) {
-            s_logger.error("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
-            throw new InvalidParameterValueException("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
+            logger.error("Unable to find account by accountId: {} OR by name: {} in domain {}", accountId, accountName, _domainMgr.getDomain(domainId));
+            throw new InvalidParameterValueException(String.format("Unable to find account by accountId: %d OR by name: %s in domain %s", accountId, accountName, _domainMgr.getDomain(domainId)));
         }
 
         // Don't allow to modify system account
@@ -2043,20 +2489,24 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // Check if user performing the action is allowed to modify this account
         Account caller = getCurrentCallingAccount();
         checkAccess(caller, _domainMgr.getDomain(account.getDomainId()));
+        verifyCallerPrivilegeForUserOrAccountOperations(account);
+
+        validateAndUpdateAccountApiKeyAccess(cmd, acctForUpdate);
 
         if(newAccountName != null) {
 
             if (newAccountName.isEmpty()) {
-                throw new InvalidParameterValueException("The new account name for account '" + account.getUuid() + "' " +
-                        "within domain '" + domainId + "'  is empty string. Account will be not renamed.");
+                throw new InvalidParameterValueException(String.format("The new account name for " +
+                        "account '%s' within domain '%s' is empty string. Account will be not renamed.",
+                        account, _domainMgr.getDomain(domainId)));
             }
 
             // check if the new proposed account name is absent in the domain
             Account existingAccount = _accountDao.findActiveAccount(newAccountName, domainId);
             if (existingAccount != null && existingAccount.getId() != account.getId()) {
-                throw new InvalidParameterValueException("The account with the proposed name '" +
-                        newAccountName + "' exists in the domain '" +
-                        domainId + "' with existing account id '" + existingAccount.getId() + "'");
+                throw new InvalidParameterValueException(String.format("The account with the " +
+                                "proposed name '%s' exists in the domain '%s' with existing account %s",
+                        newAccountName, _domainMgr.getDomain(domainId), existingAccount));
             }
 
             acctForUpdate.setAccountName(newAccountName);
@@ -2076,9 +2526,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             final List<Role> roles = cmd.roleService.listRoles();
             final boolean roleNotFound = roles.stream().filter(r -> r.getId() == roleId).count() == 0;
             if (roleNotFound) {
-                throw new InvalidParameterValueException("Role with ID '" + roleId.toString() + "' " +
-                        "is not found or not available for the account '" + account.getUuid() + "' " +
-                        "in the domain '" + domainId + "'.");
+                throw new InvalidParameterValueException(String.format("Role with ID '%s' is not " +
+                        "found or not available for the account '%s' in the domain '%s'.",
+                        roleId, account, _domainMgr.getDomain(domainId)));
             }
 
             Role role = roleService.findRole(roleId);
@@ -2111,37 +2561,56 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             CallContext.current().putContextParameter(Account.class, account.getUuid());
             return _accountDao.findById(account.getId());
         } else {
-            throw new CloudRuntimeException("Unable to update account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
+            throw new CloudRuntimeException(String.format("Unable to update account %s by accountId: %d OR by name: %s in domain %d", account, accountId, accountName, domainId));
         }
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_DELETE, eventDescription = "deleting User")
     public boolean deleteUser(DeleteUserCmd deleteUserCmd) {
-        UserVO user = getValidUserVO(deleteUserCmd.getId());
-
+        final Long id = deleteUserCmd.getId();
+        User caller = CallContext.current().getCallingUser();
+        UserVO user = getValidUserVO(id);
         Account account = _accountDao.findById(user.getAccountId());
+
+        if (caller.getId() == id) {
+            Domain domain = _domainDao.findById(account.getDomainId());
+            throw new InvalidParameterValueException(String.format("The caller is requesting to delete itself. As a security measure, ACS will not allow this operation." +
+                    " To delete user %s (ID: %s, Domain: %s), request to another user with permission to execute the operation.", user.getUsername(), user.getUuid(), domain.getUuid()));
+        }
 
         // don't allow to delete the user from the account of type Project
         checkAccountAndAccess(user, account);
-        return Transaction.execute((TransactionCallback<Boolean>) status -> deleteAndCleanupUser(user));
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
+
+        return deleteAndCleanupUser(user);
     }
 
+    /**
+     * Removes the specified user and performs cleanup operations associated with the user.
+     *
+     * @param user the user to be deleted and cleaned up
+     * @return true if the user was successfully marked as removed, false otherwise
+     */
     protected boolean deleteAndCleanupUser(User user) {
-        long userId = user.getId();
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            long userId = user.getId();
 
-        _projectAccountDao.removeUserFromProjects(userId);
+            removeUserApiKeys(userId);
+            _projectMgr.cleanupProjectsForUser(null, user);
 
-        return _userDao.remove(userId);
+            return _userDao.remove(userId);
+        });
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_MOVE, eventDescription = "moving User to a new account")
-    public boolean moveUser(MoveUserCmd cmd) {
+    public boolean moveUser(MoveUserCmd cmd) throws ResourceAllocationException {
         final Long id = cmd.getId();
         UserVO user = getValidUserVO(id);
         Account oldAccount = _accountDao.findById(user.getAccountId());
         checkAccountAndAccess(user, oldAccount);
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
         long domainId = oldAccount.getDomainId();
 
         long newAccountId = getNewAccountId(domainId, cmd.getAccountName(), cmd.getAccountId());
@@ -2150,7 +2619,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public boolean moveUser(long id, Long domainId, Account newAccount) {
+    public boolean moveUser(long id, Long domainId, Account newAccount) throws ResourceAllocationException {
         UserVO user = getValidUserVO(id);
         Account oldAccount = _accountDao.findById(user.getAccountId());
         checkAccountAndAccess(user, oldAccount);
@@ -2158,34 +2627,30 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return moveUser(user, newAccount.getId());
     }
 
-    private boolean moveUser(UserVO user, long newAccountId) {
+    private boolean moveUser(UserVO user, long newAccountId) throws ResourceAllocationException {
         if (newAccountId == user.getAccountId()) {
             // could do a not silent fail but the objective of the user is reached
             return true; // no need to create a new user object for this user
         }
 
-        return Transaction.execute(new TransactionCallback<Boolean>() {
-            @Override
-            public Boolean doInTransaction(TransactionStatus status) {
-                UserVO newUser = new UserVO(user);
-                user.setExternalEntity(user.getUuid());
-                user.setUuid(UUID.randomUUID().toString());
-                user.setApiKey(null);
-                user.setSecretKey(null);
-                _userDao.update(user.getId(), user);
-                newUser.setAccountId(newAccountId);
-                boolean success = _userDao.remove(user.getId());
-                UserVO persisted = _userDao.persist(newUser);
-                return success && persisted.getUuid().equals(user.getExternalEntity());
-            }
+        return Transaction.execute((TransactionCallbackWithException<Boolean, ResourceAllocationException>) status -> {
+            UserVO newUser = new UserVO(user);
+            user.setExternalEntity(user.getUuid());
+            user.setUuid(UUID.randomUUID().toString());
+            _userDao.update(user.getId(), user);
+            newUser.setAccountId(newAccountId);
+            UserVO persisted = _userDao.persist(newUser);
+            _projectMgr.moveProjectAssociationsToUser(user, persisted);
+            boolean success = _userDao.remove(user.getId());
+            return success && persisted.getUuid().equals(user.getExternalEntity());
         });
     }
 
     private long getNewAccountId(long domainId, String accountName, Long accountId) {
         Account newAccount = null;
         if (StringUtils.isNotBlank(accountName)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Getting id for account by name '" + accountName + "' in domain " + domainId);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Getting id for account by name '" + accountName + "' in domain " + domainId);
             }
             newAccount = _accountDao.findEnabledAccount(accountName, domainId);
         }
@@ -2207,7 +2672,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
     }
 
-    private void checkAccountAndAccess(UserVO user, Account account) {
+    protected void checkAccountAndAccess(UserVO user, Account account) {
         // don't allow to delete the user from the account of type Project
         if (account.getType() == Account.Type.PROJECT) {
             throw new InvalidParameterValueException("Project users cannot be deleted or moved.");
@@ -2217,7 +2682,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         CallContext.current().putContextParameter(User.class, user.getUuid());
     }
 
-    private UserVO getValidUserVO(long id) {
+    protected UserVO getValidUserVO(long id) {
         UserVO user = _userDao.findById(id);
 
         if (user == null || user.getRemoved() != null) {
@@ -2238,39 +2703,39 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             try {
                 GlobalLock lock = GlobalLock.getInternLock("AccountCleanup");
                 if (lock == null) {
-                    s_logger.debug("Couldn't get the global lock");
+                    logger.debug("Couldn't get the global lock");
                     return;
                 }
 
                 if (!lock.lock(30)) {
-                    s_logger.debug("Couldn't lock the db");
+                    logger.debug("Couldn't lock the db");
                     return;
                 }
 
                 try {
                     // Cleanup removed accounts
                     List<AccountVO> removedAccounts = _accountDao.findCleanupsForRemovedAccounts(null);
-                    s_logger.info("Found " + removedAccounts.size() + " removed accounts to cleanup");
+                    logger.info("Found " + removedAccounts.size() + " removed accounts to cleanup");
                     for (AccountVO account : removedAccounts) {
-                        s_logger.debug("Cleaning up " + account.getId());
+                        logger.debug("Cleaning up {}", account);
                         cleanupAccount(account, getSystemUser().getId(), getSystemAccount());
                     }
 
                     // cleanup disabled accounts
                     List<AccountVO> disabledAccounts = _accountDao.findCleanupsForDisabledAccounts();
-                    s_logger.info("Found " + disabledAccounts.size() + " disabled accounts to cleanup");
+                    logger.info("Found " + disabledAccounts.size() + " disabled accounts to cleanup");
                     for (AccountVO account : disabledAccounts) {
-                        s_logger.debug("Disabling account " + account.getId());
+                        logger.debug("Disabling account {}", account);
                         try {
                             disableAccount(account.getId());
                         } catch (Exception e) {
-                            s_logger.error("Skipping due to error on account " + account.getId(), e);
+                            logger.error("Skipping due to error on account {}", account, e);
                         }
                     }
 
                     // cleanup inactive domains
                     List<? extends Domain> inactiveDomains = _domainMgr.findInactiveDomains();
-                    s_logger.info("Found " + inactiveDomains.size() + " inactive domains to cleanup");
+                    logger.info("Found " + inactiveDomains.size() + " inactive domains to cleanup");
                     for (Domain inactiveDomain : inactiveDomains) {
                         long domainId = inactiveDomain.getId();
                         try {
@@ -2279,47 +2744,47 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                                 // release dedication if any, before deleting the domain
                                 List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listByDomainId(domainId);
                                 if (dedicatedResources != null && !dedicatedResources.isEmpty()) {
-                                    s_logger.debug("Releasing dedicated resources for domain" + domainId);
+                                    logger.debug("Releasing dedicated resources for domain {}", inactiveDomain);
                                     for (DedicatedResourceVO dr : dedicatedResources) {
                                         if (!_dedicatedDao.remove(dr.getId())) {
-                                            s_logger.warn("Fail to release dedicated resources for domain " + domainId);
+                                            logger.warn("Fail to release dedicated resources for domain {}", inactiveDomain);
                                         }
                                     }
                                 }
-                                s_logger.debug("Removing inactive domain id=" + domainId);
+                                logger.debug("Removing inactive domain {}", inactiveDomain);
                                 _domainMgr.removeDomain(domainId);
                             } else {
-                                s_logger.debug("Can't remove inactive domain id=" + domainId + " as it has accounts that need cleanup");
+                                logger.debug("Can't remove inactive domain {} as it has accounts that need cleanup", inactiveDomain);
                             }
                         } catch (Exception e) {
-                            s_logger.error("Skipping due to error on domain " + domainId, e);
+                            logger.error("Skipping due to error on domain {}", inactiveDomain, e);
                         }
                     }
 
                     // cleanup inactive projects
                     List<ProjectVO> inactiveProjects = _projectDao.listByState(Project.State.Disabled);
-                    s_logger.info("Found " + inactiveProjects.size() + " disabled projects to cleanup");
+                    logger.info("Found " + inactiveProjects.size() + " disabled projects to cleanup");
                     for (ProjectVO project : inactiveProjects) {
                         try {
                             Account projectAccount = getAccount(project.getProjectAccountId());
                             if (projectAccount == null) {
-                                s_logger.debug("Removing inactive project id=" + project.getId());
+                                logger.debug("Removing inactive project {}", project);
                                 _projectMgr.deleteProject(CallContext.current().getCallingAccount(), CallContext.current().getCallingUserId(), project);
                             } else {
-                                s_logger.debug("Can't remove disabled project " + project + " as it has non removed account id=" + project.getId());
+                                logger.debug("Can't remove disabled project {} as it has non removed account {}", project, projectAccount);
                             }
                         } catch (Exception e) {
-                            s_logger.error("Skipping due to error on project " + project, e);
+                            logger.error("Skipping due to error on project " + project, e);
                         }
                     }
 
                 } catch (Exception e) {
-                    s_logger.error("Exception ", e);
+                    logger.error("Exception ", e);
                 } finally {
                     lock.unlock();
                 }
             } catch (Exception e) {
-                s_logger.error("Exception ", e);
+                logger.error("Exception ", e);
             }
         }
     }
@@ -2336,7 +2801,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("ProjectId and account/domainId can't be specified together");
         }
 
-        if (projectId != null) {
+        if (projectId != null && projectId != -1L) {
             Project project = _projectMgr.getProject(projectId);
             if (project == null) {
                 throw new InvalidParameterValueException("Unable to find project by id=" + projectId);
@@ -2357,13 +2822,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             Account owner = _accountDao.findActiveAccount(accountName, domainId);
             if (owner == null) {
-                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                throw new InvalidParameterValueException(String.format("Unable to find account %s in domain %s", accountName, domain));
             }
             checkAccess(caller, domain);
 
             return owner;
         } else if (!isAdmin(caller.getId()) && accountName != null && domainId != null) {
-            if (!accountName.equals(caller.getAccountName()) || domainId.longValue() != caller.getDomainId()) {
+            if (!accountName.equals(caller.getAccountName()) || domainId != caller.getDomainId()) {
                 throw new PermissionDeniedException("Can't create/list resources for account " + accountName + " in domain " + domainId + ", permission denied");
             } else {
                 return caller;
@@ -2388,12 +2853,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public UserAccount getActiveUserAccount(String username, Long domainId) {
-        return _userAccountDao.getUserAccount(username, domainId);
+        return userAccountDao.getUserAccount(username, domainId);
     }
 
     @Override
     public List<UserAccount> getActiveUserAccountByEmail(String email, Long domainId) {
-        List<UserAccountVO> userAccountByEmail = _userAccountDao.getUserAccountByEmail(email, domainId);
+        List<UserAccountVO> userAccountByEmail = userAccountDao.getUserAccountByEmail(email, domainId);
         List<UserAccount> userAccounts = userAccountByEmail.stream()
                 .map(userAccountVO -> (UserAccount) userAccountVO)
                 .collect(Collectors.toList());
@@ -2406,8 +2871,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    public Account getActiveAccountByUuid(String accountUuid) {
+        return _accountDao.findByUuid(accountUuid);
+    }
+
+    @Override
     public Account getAccount(long accountId) {
         return _accountDao.findByIdIncludingRemoved(accountId);
+    }
+
+    @Override
+    public Account getAccountByUuid(String accountUuid) {
+        return _accountDao.findByUuidIncludingRemoved(accountUuid);
     }
 
     @Override
@@ -2424,6 +2899,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    public User getOneActiveUserForAccount(Account account) {
+        List<UserVO> users = _userDao.listByAccount(account.getId());
+        if (CollectionUtils.isEmpty(users)) {
+            return null;
+        }
+        return users.get(0);
+    }
+
+    @Override
     public User getUserIncludingRemoved(long userId) {
         return _userDao.findByIdIncludingRemoved(userId);
     }
@@ -2437,7 +2921,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void markUserRegistered(long userId) {
         UserVO userForUpdate = _userDao.createForUpdate();
         userForUpdate.setRegistered(true);
-        _userDao.update(Long.valueOf(userId), userForUpdate);
+        _userDao.update(userId, userForUpdate);
     }
 
     @Override
@@ -2454,8 +2938,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if ((domainId != Domain.ROOT_DOMAIN) && (accountType == Account.Type.ADMIN)) {
-            throw new InvalidParameterValueException(
-                    "Invalid account type " + accountType + " given for an account in domain " + domainId + "; unable to create user of admin role type in non-ROOT domain.");
+            throw new InvalidParameterValueException(String.format("Invalid account type %s given for " +
+                    "an account in domain %s; unable to create user of admin role type in non-ROOT domain.", accountType, domain));
         }
 
         // Validate account/user/domain settings
@@ -2475,21 +2959,24 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (accountType == Account.Type.RESOURCE_DOMAIN_ADMIN) {
             List<DataCenterVO> dc = _dcDao.findZonesByDomainId(domainId);
             if (dc.isEmpty()) {
-                throw new InvalidParameterValueException("The account cannot be created as domain " + domain.getName() + " is not associated with any private Zone");
+                throw new InvalidParameterValueException(String.format("The account cannot be created as domain %s is not associated with any private Zone", domain));
             }
         }
 
+        AccountVO newAccount = new AccountVO(accountName, domainId, networkDomain, accountType, roleId, uuid);
+        verifyCallerPrivilegeForUserOrAccountOperations(newAccount);
+
         // Create the account
-        return Transaction.execute(new TransactionCallback<AccountVO>() {
+        return Transaction.execute(new TransactionCallback<>() {
             @Override
             public AccountVO doInTransaction(TransactionStatus status) {
                 AccountVO account = _accountDao.persist(new AccountVO(accountName, domainId, networkDomain, accountType, roleId, uuid));
 
                 if (account == null) {
-                    throw new CloudRuntimeException("Failed to create account name " + accountName + " in domain id=" + domainId);
+                    throw new CloudRuntimeException(String.format("Failed to create account name %s in domain id=%s", accountName, _domainMgr.getDomain(domainId)));
                 }
 
-                Long accountId = account.getId();
+                long accountId = account.getId();
 
                 if (details != null) {
                     _accountDetailsDao.persist(accountId, details);
@@ -2507,11 +2994,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     protected UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String userUUID, User.Source source) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
 
-        passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(password, userName, getAccount(accountId).getDomainId());
+        Account callingAccount = getCurrentCallingAccount();
+        if (callingAccount.getId() != Account.ACCOUNT_ID_SYSTEM) {
+            passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(password, userName, getAccount(accountId).getDomainId());
+        }
 
         String encodedPassword = null;
         for (UserAuthenticator authenticator : _userPasswordEncoders) {
@@ -2535,7 +3025,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public void logoutUser(long userId) {
-        UserAccount userAcct = _userAccountDao.findById(userId);
+        UserAccount userAcct = userAccountDao.findById(userId);
         if (userAcct != null) {
             ActionEventUtils.onActionEvent(userId, userAcct.getAccountId(), userAcct.getDomainId(), EventTypes.EVENT_USER_LOGOUT, "user has logged out", userId, ApiCommandResourceType.User.toString());
         } // else log some kind of error event? This likely means the user doesn't exist, or has been deleted...
@@ -2543,118 +3033,28 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public UserAccount authenticateUser(final String username, final String password, final Long domainId, final InetAddress loginIpAddress, final Map<String, Object[]> requestParameters) {
+        long authStartTimeInMs = System.currentTimeMillis();
         UserAccount user = null;
         final String[] oAuthProviderArray = (String[])requestParameters.get(ApiConstants.PROVIDER);
         final String[] secretCodeArray = (String[])requestParameters.get(ApiConstants.SECRET_CODE);
         String oauthProvider = ((oAuthProviderArray == null) ? null : oAuthProviderArray[0]);
         String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);
 
-
         if ((password != null && !password.isEmpty()) || (oauthProvider != null && secretCode != null)) {
             user = getUserAccount(username, password, domainId, requestParameters);
         } else {
-            String key = _configDao.getValue("security.singlesignon.key");
-            if (key == null) {
-                // the SSO key is gone, don't authenticate
-                return null;
-            }
-
-            String singleSignOnTolerance = _configDao.getValue("security.singlesignon.tolerance.millis");
-            if (singleSignOnTolerance == null) {
-                // the SSO tolerance is gone (how much time before/after system time we'll allow the login request to be
-                // valid),
-                // don't authenticate
-                return null;
-            }
-
-            long tolerance = Long.parseLong(singleSignOnTolerance);
-            String signature = null;
-            long timestamp = 0L;
-            String unsignedRequest = null;
-            StringBuffer unsignedRequestBuffer = new StringBuffer();
-
-            // - build a request string with sorted params, make sure it's all lowercase
-            // - sign the request, verify the signature is the same
-            List<String> parameterNames = new ArrayList<String>();
-
-            for (Object paramNameObj : requestParameters.keySet()) {
-                parameterNames.add((String)paramNameObj); // put the name in a list that we'll sort later
-            }
-
-            Collections.sort(parameterNames);
-
-            try {
-                for (String paramName : parameterNames) {
-                    // parameters come as name/value pairs in the form String/String[]
-                    String paramValue = ((String[])requestParameters.get(paramName))[0];
-
-                    if ("signature".equalsIgnoreCase(paramName)) {
-                        signature = paramValue;
-                    } else {
-                        if ("timestamp".equalsIgnoreCase(paramName)) {
-                            String timestampStr = paramValue;
-                            try {
-                                // If the timestamp is in a valid range according to our tolerance, verify the request
-                                // signature, otherwise return null to indicate authentication failure
-                                timestamp = Long.parseLong(timestampStr);
-                                long currentTime = System.currentTimeMillis();
-                                if (Math.abs(currentTime - timestamp) > tolerance) {
-                                    if (s_logger.isDebugEnabled()) {
-                                        s_logger.debug("Expired timestamp passed in to login, current time = " + currentTime + ", timestamp = " + timestamp);
-                                    }
-                                    return null;
-                                }
-                            } catch (NumberFormatException nfe) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Invalid timestamp passed in to login: " + timestampStr);
-                                }
-                                return null;
-                            }
-                        }
-
-                        if (unsignedRequestBuffer.length() != 0) {
-                            unsignedRequestBuffer.append("&");
-                        }
-                        unsignedRequestBuffer.append(paramName).append("=").append(URLEncoder.encode(paramValue, "UTF-8"));
-                    }
-                }
-
-                if ((signature == null) || (timestamp == 0L)) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Missing parameters in login request, signature = " + signature + ", timestamp = " + timestamp);
-                    }
-                    return null;
-                }
-
-                unsignedRequest = unsignedRequestBuffer.toString().toLowerCase().replaceAll("\\+", "%20");
-
-                Mac mac = Mac.getInstance("HmacSHA1");
-                SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(), "HmacSHA1");
-                mac.init(keySpec);
-                mac.update(unsignedRequest.getBytes());
-                byte[] encryptedBytes = mac.doFinal();
-                String computedSignature = new String(Base64.encodeBase64(encryptedBytes));
-                boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
-                if (!equalSig) {
-                    s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
-                } else {
-                    user = _userAccountDao.getUserAccount(username, domainId);
-                }
-            } catch (Exception ex) {
-                s_logger.error("Exception authenticating user", ex);
-                return null;
-            }
+            user = getUserAccountForSSO(username, domainId, requestParameters);
         }
 
         if (user != null) {
             // don't allow to authenticate system user
             if (user.getId() == User.UID_SYSTEM) {
-                s_logger.error("Failed to authenticate user: " + username + " in domain " + domainId);
+                logger.error("Failed to authenticate user: " + username + " in domain " + domainId);
                 return null;
             }
             // don't allow baremetal system user
             if (BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME.equals(user.getUsername())) {
-                s_logger.error("Won't authenticate user: " + username + " in domain " + domainId);
+                logger.error("Won't authenticate user: " + username + " in domain " + domainId);
                 return null;
             }
 
@@ -2667,40 +3067,60 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             final Boolean ApiSourceCidrChecksEnabled = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.value();
 
             if (ApiSourceCidrChecksEnabled) {
-                s_logger.debug("CIDRs from which account '" + account.toString() + "' is allowed to perform API calls: " + accessAllowedCidrs);
+                logger.debug("CIDRs from which account '{}' is allowed to perform API calls: {}", account, accessAllowedCidrs);
 
                 // Block when is not in the list of allowed IPs
                 if (!NetUtils.isIpInCidrList(loginIpAddress, accessAllowedCidrs.split(","))) {
-                    s_logger.warn("Request by account '" + account.toString() + "' was denied since " + loginIpAddress.toString().replace("/", "") + " does not match " + accessAllowedCidrs);
+                    logger.warn("Request by account '{}' was denied since {} does not match {}", account, loginIpAddress.toString().replace("/", ""), accessAllowedCidrs);
                     throw new CloudAuthenticationException("Failed to authenticate user '" + username + "' in domain '" + domain.getPath() + "' from ip "
                             + loginIpAddress.toString().replace("/", "") + "; please provide valid credentials");
                 }
             }
 
+            ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN, "user has logged in from IP Address " + loginIpAddress, user.getId(), ApiCommandResourceType.User.toString());
+
+            validUserLastAuthTimeDurationInMs = System.currentTimeMillis() - authStartTimeInMs;
             // Here all is fine!
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("User: %s in domain %d has successfully logged in, auth time duration - %d ms", username, domainId, validUserLastAuthTimeDurationInMs));
             }
 
-            ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN, "user has logged in from IP Address " + loginIpAddress, user.getId(), ApiCommandResourceType.User.toString());
+            user.setDetails(_userDetailsDao.listDetailsKeyPairs(user.getId()));
 
             return user;
         } else {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("User: " + username + " in domain " + domainId + " has failed to log in");
+            if (logger.isDebugEnabled()) {
+                logger.debug("User: " + username + " in domain " + domainId + " has failed to log in");
             }
+
+            long waitTimeDurationInMs;
+            long invalidUserAuthTimeDurationInMs = System.currentTimeMillis() - authStartTimeInMs;
+            if (validUserLastAuthTimeDurationInMs > 0) {
+                waitTimeDurationInMs = validUserLastAuthTimeDurationInMs - invalidUserAuthTimeDurationInMs;
+            } else {
+                waitTimeDurationInMs = DEFAULT_USER_AUTH_TIME_DURATION_MS - invalidUserAuthTimeDurationInMs;
+            }
+
+            if (waitTimeDurationInMs > 0) {
+                try {
+                    Thread.sleep(waitTimeDurationInMs);
+                } catch (final InterruptedException e) {
+                    // ignored
+                }
+            }
+
             return null;
         }
     }
 
     private UserAccount getUserAccount(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Attempting to log in user: " + username + " in domain " + domainId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Attempting to log in user: " + username + " in domain " + domainId);
         }
-        UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
+        UserAccount userAccount = userAccountDao.getUserAccount(username, domainId);
 
         boolean authenticated = false;
-        HashSet<ActionOnFailedAuthentication> actionsOnFailedAuthenticaion = new HashSet<ActionOnFailedAuthentication>();
+        HashSet<ActionOnFailedAuthentication> actionsOnFailedAuthenticaion = new HashSet<>();
         User.Source userSource = userAccount != null ? userAccount.getSource() : User.Source.UNKNOWN;
         for (UserAuthenticator authenticator : _userAuthenticators) {
             final String[] secretCodeArray = (String[])requestParameters.get(ApiConstants.SECRET_CODE);
@@ -2726,19 +3146,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         boolean updateIncorrectLoginCount = actionsOnFailedAuthenticaion.contains(ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
 
         if (authenticated) {
-
             Domain domain = _domainMgr.getDomain(domainId);
-            String domainName = null;
-            if (domain != null) {
-                domainName = domain.getName();
-            }
-            userAccount = _userAccountDao.getUserAccount(username, domainId);
+            userAccount = userAccountDao.getUserAccount(username, domainId);
 
             if (!userAccount.getState().equalsIgnoreCase(Account.State.ENABLED.toString()) || !userAccount.getAccountState().equalsIgnoreCase(Account.State.ENABLED.toString())) {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
+                if (logger.isInfoEnabled()) {
+                    logger.info("User {} in domain {} is disabled/locked (or account is disabled/locked)", userAccount, domain);
                 }
-                throw new CloudAuthenticationException("User " + username + " (or their account) in domain " + domainName + " is disabled/locked. Please contact the administrator.");
+                throw new CloudAuthenticationException(String.format("User %s (or their account) in domain %s is disabled/locked. Please contact the administrator.", userAccount, domain));
             }
             // Whenever the user is able to log in successfully, reset the login attempts to zero
             if (!isInternalAccount(userAccount.getId())) {
@@ -2747,12 +3162,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             return userAccount;
         } else {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to authenticate user with username " + username + " in domain " + domainId);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Unable to authenticate user with username " + username + " in domain " + domainId);
             }
 
             if (userAccount == null) {
-                s_logger.warn("Unable to find an user with username " + username + " in domain " + domainId);
+                logger.warn("Unable to find an user with username " + username + " in domain " + domainId);
                 return null;
             }
 
@@ -2762,10 +3177,101 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     updateLoginAttemptsWhenIncorrectLoginAttemptsEnabled(userAccount, updateIncorrectLoginCount, _allowedLoginAttempts);
                 }
             } else {
-                s_logger.info("User " + userAccount.getUsername() + " is disabled/locked");
+                logger.info("User " + userAccount.getUsername() + " is disabled/locked");
             }
             return null;
         }
+    }
+
+    private UserAccount getUserAccountForSSO(String username, Long domainId, Map<String, Object[]> requestParameters) {
+        String key = _configDao.getValue("security.singlesignon.key");
+        if (key == null) {
+            // the SSO key is gone, don't authenticate
+            return null;
+        }
+
+        String singleSignOnTolerance = _configDao.getValue("security.singlesignon.tolerance.millis");
+        if (singleSignOnTolerance == null) {
+            // the SSO tolerance is gone (how much time before/after system time we'll allow the login request to be
+            // valid),
+            // don't authenticate
+            return null;
+        }
+
+        UserAccount user = null;
+        long tolerance = Long.parseLong(singleSignOnTolerance);
+        String signature = null;
+        long timestamp = 0L;
+        String unsignedRequest;
+        StringBuffer unsignedRequestBuffer = new StringBuffer();
+
+        // - build a request string with sorted params, make sure it's all lowercase
+        // - sign the request, verify the signature is the same
+
+        // put the name in a list that we'll sort later
+        List<String> parameterNames = new ArrayList<>(requestParameters.keySet());
+
+        Collections.sort(parameterNames);
+
+        try {
+            for (String paramName : parameterNames) {
+                // parameters come as name/value pairs in the form String/String[]
+                String paramValue = ((String[])requestParameters.get(paramName))[0];
+
+                if ("signature".equalsIgnoreCase(paramName)) {
+                    signature = paramValue;
+                } else {
+                    if ("timestamp".equalsIgnoreCase(paramName)) {
+                        String timestampStr = paramValue;
+                        try {
+                            // If the timestamp is in a valid range according to our tolerance, verify the request
+                            // signature, otherwise return null to indicate authentication failure
+                            timestamp = Long.parseLong(timestampStr);
+                            long currentTime = System.currentTimeMillis();
+                            if (Math.abs(currentTime - timestamp) > tolerance) {
+                                logger.debug("Expired timestamp passed in to login, current time = {}, timestamp = {}", currentTime, timestamp);
+                                return null;
+                            }
+                        } catch (NumberFormatException nfe) {
+                            logger.debug("Invalid timestamp passed in to login: {}", timestampStr);
+                            return null;
+                        }
+                    }
+
+                    if (unsignedRequestBuffer.length() != 0) {
+                        unsignedRequestBuffer.append("&");
+                    }
+                    unsignedRequestBuffer.append(paramName).append("=").append(URLEncoder.encode(paramValue, StringUtils.getPreferredCharset()));
+                }
+            }
+
+            if ((signature == null) || (timestamp == 0L)) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Missing parameters in login request, signature = " + signature + ", timestamp = " + timestamp);
+                }
+                return null;
+            }
+
+            unsignedRequest = unsignedRequestBuffer.toString().toLowerCase().replaceAll("\\+", "%20");
+
+            Mac mac = Mac.getInstance("HmacSHA1");
+            SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(), "HmacSHA1");
+            mac.init(keySpec);
+            mac.update(unsignedRequest.getBytes());
+            byte[] encryptedBytes = mac.doFinal();
+            String computedSignature = new String(Base64.encodeBase64(encryptedBytes));
+            boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
+            if (!equalSig) {
+                logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
+            } else {
+                user = userAccountDao.getUserAccount(username, domainId);
+            }
+        } catch (Exception ex) {
+            logger.error("Exception authenticating user", ex);
+            return null;
+        }
+
+        return user;
     }
 
     protected void updateLoginAttemptsWhenIncorrectLoginAttemptsEnabled(UserAccount account, boolean updateIncorrectLoginCount,
@@ -2776,48 +3282,282 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         if (attemptsMade < allowedLoginAttempts) {
             updateLoginAttempts(account.getId(), attemptsMade, false);
-            s_logger.warn("Login attempt failed. You have " +
+            logger.warn("Login attempt failed. You have " +
                     (allowedLoginAttempts - attemptsMade) + " attempt(s) remaining");
         } else {
             updateLoginAttempts(account.getId(), allowedLoginAttempts, true);
-            s_logger.warn("User " + account.getUsername() +
-                    " has been disabled due to multiple failed login attempts." + " Please contact admin.");
+            logger.warn("User {} has been disabled due to multiple failed login attempts. Please contact admin.", account);
         }
     }
 
     @Override
-    public Pair<User, Account> findUserByApiKey(String apiKey) {
-        return _accountDao.findUserAccountByApiKey(apiKey);
+    public Ternary<User, Account, ApiKeyPair> findUserByApiKey(String apiKey) {
+        ApiKeyPairVO keyPairVO = apiKeyPairDao.findByApiKey(apiKey);
+        if (keyPairVO == null) {
+            return null;
+        }
+
+        User user = _userDao.getUser(keyPairVO.getUserId());
+        Account account = _accountDao.findById(keyPairVO.getAccountId());
+        return new Ternary<>(user, account, keyPairVO);
     }
 
     @Override
-    public Map<String, String> getKeys(GetUserKeysCmd cmd) {
-        final long userId = cmd.getID();
-        return getKeys(userId);
-    }
-
-    @Override
-    public Map<String, String> getKeys(Long userId) {
+    public Pair<Boolean, Map<String, String>> getKeys(GetUserKeysCmd cmd) {
+        final long userId = cmd.getId();
         User user = getActiveUser(userId);
         if (user == null) {
-            throw new InvalidParameterValueException("Unable to find user by id");
+            throw new InvalidParameterValueException(String.format("Unable to find active user with ID [%s].", userId));
         }
-        final ControlledEntity account = getAccount(getUserAccountById(userId).getAccountId()); //Extracting the Account from the userID of the requested user.
+        final Account account = getAccount(user.getAccountId());
         User caller = CallContext.current().getCallingUser();
-        preventRootDomainAdminAccessToRootAdminKeys(caller, account);
         checkAccess(caller, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
 
-        Map<String, String> keys = new HashMap<String, String>();
-        keys.put("apikey", user.getApiKey());
-        keys.put("secretkey", user.getSecretKey());
+        String accessingApiKey = getAccessingApiKey(cmd);
+        ApiKeyPair keyPair;
+        if (accessingApiKey != null) {
+            ApiKeyPair accessingKeyPair = apiKeyPairService.findByApiKey(accessingApiKey);
+            if (userId == accessingKeyPair.getUserId()) {
+                keyPair = apiKeyPairService.findByApiKey(accessingApiKey);
+            } else {
+                keyPair = _accountService.getLatestUserKeyPair(userId);
+            }
+        } else {
+            keyPair = _accountService.getLatestUserKeyPair(userId);
+        }
 
-        return keys;
+        Map<String, String> keys = new HashMap<>();
+        boolean isAllowed = keyPair != null && isAccessingKeypairSuperset(keyPair, cmd);
+        keys.put("apikey", isAllowed ? keyPair.getApiKey() : null);
+        keys.put("secretkey", isAllowed ? keyPair.getSecretKey() : null);
+
+        Boolean apiKeyAccess = user.getApiKeyAccess();
+        if (apiKeyAccess == null) {
+            apiKeyAccess = account.getApiKeyAccess();
+            if (apiKeyAccess == null) {
+                apiKeyAccess = AccountManagerImpl.apiKeyAccess.valueIn(account.getDomainId());
+            }
+        }
+
+        return new Pair<>(apiKeyAccess, keys);
+    }
+
+    @Override
+    public ListResponse<ApiKeyPairResponse> listKeys(ListUserKeysCmd cmd) {
+        ListResponse<ApiKeyPairResponse> finalResponse = new ListResponse<>();
+        List<ApiKeyPairResponse> responses = new ArrayList<>();
+
+        if (cmd.getKeyId() != null || cmd.getApiKeyFilter() != null) {
+            fetchOnlyOneKeyPair(responses, cmd);
+            finalResponse.setResponses(responses);
+            return finalResponse;
+        }
+
+        Integer total = fetchMultipleKeyPairs(responses, cmd);
+        finalResponse.setResponses(responses, total);
+        return finalResponse;
+    }
+
+    private void fetchOnlyOneKeyPair(List<ApiKeyPairResponse> responses, ListUserKeysCmd cmd) {
+        ApiKeyPair keyPair;
+        if (cmd.getKeyId() != null) {
+            keyPair = _accountService.getKeyPairById(cmd.getKeyId());
+        } else {
+            keyPair = _accountService.getKeyPairByApiKey(cmd.getApiKeyFilter());
+        }
+
+        validateKeyPairIsNotNull(keyPair);
+        validateAccessingKeyPairPermissionsIsSupersetOfAccessedKeyPair(keyPair, cmd);
+        validateAccessToApiKey(keyPair);
+        removeApiKeyPairIfExpired(keyPair);
+
+        addKeypairResponse(keyPair, responses, cmd);
+    }
+
+    private void validateAccessToApiKey(ApiKeyPair keyPair) {
+        Account caller = getCurrentCallingAccount();
+        logger.debug("Verifying if caller [{}] has access to API key pair whose ID is [{}].", caller.getAccountName(), keyPair.getUuid());
+        Account account = _accountDao.findById(keyPair.getAccountId());
+        checkAccess(caller, null, false, account);
+        _accountService.validateCallingUserHasAccessToDesiredUser(keyPair.getUserId());
+    }
+
+    private Integer fetchMultipleKeyPairs(List<ApiKeyPairResponse> responses, ListUserKeysCmd cmd) {
+        List<Long> users;
+        if (cmd.getUserId() != null) {
+            _accountService.validateCallingUserHasAccessToDesiredUser(cmd.getUserId());
+            users = List.of(cmd.getUserId());
+        } else {
+            User callerUser = CallContext.current().getCallingUser();
+            users = cmd.getListAll() && isAdmin(callerUser.getAccountId()) ? queryService.searchForAccessibleUsers() : List.of(callerUser.getId());
+        }
+
+        Pair<List<ApiKeyPairVO>, Integer> keyPairs = apiKeyPairDao.listByUserIdsPaginated(users, cmd);
+        keyPairs.first().stream()
+                .filter(keyPair -> isAccessingKeypairSuperset(keyPair, cmd))
+                .forEach(keyPair -> {
+                    addKeypairResponse(keyPair, responses, cmd);
+                    removeApiKeyPairIfExpired(keyPair);
+                });
+
+        return keyPairs.second();
+    }
+
+    @Override
+    public List<ApiKeyPairPermission> listKeyRules(ListUserKeyRulesCmd cmd) {
+        ApiKeyPair keyPair = apiKeyPairService.findById(cmd.getId());
+
+        validateKeyPairIsNotNull(keyPair);
+        validateAccessingKeyPairPermissionsIsSupersetOfAccessedKeyPair(keyPair, cmd);
+        _accountService.validateCallingUserHasAccessToDesiredUser(keyPair.getUserId());
+
+        Account account = _accountDao.findById(keyPair.getAccountId());
+        return apiKeyPairService.findAllPermissionsByKeyPairId(keyPair.getId(), account.getRoleId());
+    }
+
+    private void validateKeyPairIsNotNull(ApiKeyPair keyPair) {
+        if (keyPair == null) {
+            logger.info("Keypair not found.");
+            throw new InvalidParameterValueException("Could not complete request.");
+        }
+    }
+
+    private void validateAccessingKeyPairPermissionsIsSupersetOfAccessedKeyPair(ApiKeyPair keyPair, BaseCmd cmd) {
+        if (!isAccessingKeypairSuperset(keyPair, cmd)) {
+            logger.info("Accessing API key pair [{}] has less permissions than accessed API key pair.", keyPair.getId());
+            throw new PermissionDeniedException("Could not complete request.");
+        }
+    }
+
+    private Boolean isAccessingKeypairSuperset(ApiKeyPair accessedKeyPair, BaseCmd cmd) {
+        String apiKey = getAccessingApiKey(cmd);
+        if (apiKey == null) {
+            return Boolean.TRUE;
+        }
+        ApiKeyPair accessingKeyPair = apiKeyPairService.findByApiKey(apiKey);
+        return isApiKeySupersetOfPermission(new ArrayList<>(getAllKeypairPermissions(accessingKeyPair.getApiKey())), new ArrayList<>(getAllKeypairPermissions(accessedKeyPair.getApiKey())));
+    }
+
+    @Override
+    public String getAccessingApiKey(BaseCmd cmd) {
+        try {
+            Map<String, String> requestPayload = cmd.getFullUrlParams();
+
+            if (cmd instanceof BaseAsyncCmd && ((BaseAsyncCmd) cmd).getJob() instanceof AsyncJobVO) {
+                String asyncJobPayload = ((AsyncJobVO) ((BaseAsyncCmd) cmd).getJob()).getCmdInfo();
+                requestPayload = GsonHelper.getGson().fromJson(asyncJobPayload, new TypeToken<HashMap<String, String>>() {}.getType());
+            }
+
+            boolean accessedByApiKey = requestPayload.keySet().stream().anyMatch(ApiConstants.SIGNATURE::equalsIgnoreCase);
+            if (accessedByApiKey) {
+                String apiKey = requestPayload.entrySet().stream()
+                        .filter(e -> ApiConstants.API_KEY.equalsIgnoreCase(e.getKey()))
+                        .map(Map.Entry::getValue).findFirst().orElse(null);
+                if (apiKey != null) {
+                    logger.info("Request's API key is [{}].", apiKey);
+                    return apiKey;
+                }
+            }
+        } catch (NullPointerException e) {
+            logger.trace("Unable to identify request API key due to: {}.", e.getMessage());
+        }
+
+        logger.info("Request's signature or API key were not identified; assuming it has been authenticated via session.");
+        return null;
+    }
+
+    private Boolean isApiKeySupersetOfPermission(List<RolePermissionEntity> baseKeyPairPermissions, List<RolePermissionEntity> comparedPermissions) {
+        Map<String, RolePermissionEntity> apiNameToBaseKeyPermissions = roleService.getRoleRulesAndPermissions(baseKeyPairPermissions);
+
+        return roleService.roleHasPermission(apiNameToBaseKeyPermissions, comparedPermissions);
+    }
+
+    private void removeApiKeyPairIfExpired(ApiKeyPair apiKeyPair) {
+        if (apiKeyPair.hasEndDatePassed()) {
+            internalDeleteApiKey(apiKeyPair);
+        }
+    }
+
+    @ActionEvent(eventType = EventTypes.EVENT_DELETE_SECRET_API_KEY, eventDescription = "deleting API key pair")
+    public void deleteApiKey(DeleteUserKeysCmd cmd) {
+        ApiKeyPair keyPair = apiKeyPairService.findById(cmd.getId());
+        if (keyPair == null) {
+            throw new InvalidParameterValueException(String.format("No keypair found with the ID [%s].", cmd.getId()));
+        }
+        _accountService.validateCallingUserHasAccessToDesiredUser(keyPair.getUserId());
+
+        deleteApiKey(keyPair);
+    }
+
+    @Override
+    public void validateCallingUserHasAccessToDesiredUser(Long userId) {
+        User desiredUser = _userDao.getUser(userId);
+        if (desiredUser == null) {
+            throw new CloudRuntimeException(String.format("Unable to find user with ID [%s].", userId));
+        }
+        verifyCallerPrivilegeForUserOrAccountOperations(desiredUser);
+    }
+
+    @Override
+    public void deleteApiKey(ApiKeyPair keyPair) {
+        User user = _userDao.findByIdIncludingRemoved(keyPair.getUserId());
+        if (user == null) {
+            throw new InvalidParameterValueException("User associated with the API key pair does not exist.");
+        }
+
+        if ((BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME.equals(user.getUsername()) || user.getId() == User.UID_SYSTEM)
+                && Boolean.parseBoolean(_configDao.getValue(Config.BaremetalProvisionDoneNotificationEnabled.key()))) {
+            throw new PermissionDeniedException(String.format("User ID [%s] is a system account and the global setting " +
+                    "baremetal.provision.done.notification is enabled. Therefore, it is not possible to delete API key pairs. If you wish to delete " +
+                    "the baremetal user/account or their API Key, please disable the baremetal.provision.done.notification configuration.", user.getUuid()));
+        }
+        internalDeleteApiKey(keyPair);
+    }
+
+    @Override
+    public List<? extends ApiKeyPairPermission> getAllExplicitKeyPairPermissions(Long keyPairId) {
+        return apiKeyPairPermissionsDao.findAllByApiKeyPairId(keyPairId);
+    }
+
+    private void internalDeleteApiKey(ApiKeyPair keyPair) {
+        List<? extends ApiKeyPairPermission> permissions = getAllExplicitKeyPairPermissions(keyPair.getId());
+        for (ApiKeyPairPermission permission : permissions) {
+            apiKeyPairPermissionsDao.remove(permission.getId());
+        }
+        apiKeyPairDao.remove(keyPair.getId());
+    }
+
+    private void addKeypairResponse(ApiKeyPair keyPair, List<ApiKeyPairResponse> responses, ListUserKeysCmd cmd) {
+        if (keyPair == null) {
+            return;
+        }
+        ApiKeyPairResponse response = cmd._responseGenerator.createKeyPairResponse(keyPair);
+        if (Boolean.TRUE.equals(cmd.getShowPermissions())) {
+            Account account = _accountDao.findById(keyPair.getAccountId());
+            List<ApiKeyPairPermission> apiKeyPairPermissions = apiKeyPairService.findAllPermissionsByKeyPairId(keyPair.getId(), account.getRoleId());
+            response.setPermissions(apiKeyPairPermissions.stream().map(apiKeyPairPermission -> {
+                BaseRolePermissionResponse rolePermissionResponse = new BaseRolePermissionResponse();
+                rolePermissionResponse.setRule(apiKeyPairPermission.getRule());
+                rolePermissionResponse.setDescription(apiKeyPairPermission.getDescription());
+                rolePermissionResponse.setRulePermission(apiKeyPairPermission.getPermission());
+
+                return rolePermissionResponse;
+            }).collect(Collectors.toList()));
+        }
+        response.setObjectName(ApiConstants.USER_API_KEY);
+        responses.add(response);
+    }
+
+    @Override
+    public ApiKeyPair getKeyPairById(Long id) {
+        return apiKeyPairDao.findById(id);
     }
 
     protected void preventRootDomainAdminAccessToRootAdminKeys(User caller, ControlledEntity account) {
         if (isDomainAdminForRootDomain(caller) && isRootAdmin(account.getAccountId())) {
             String msg = String.format("Caller Username %s does not have access to root admin keys", caller.getUsername());
-            s_logger.error(msg);
+            logger.error(msg);
             throw new PermissionDeniedException(msg);
         }
     }
@@ -2825,6 +3565,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     protected boolean isDomainAdminForRootDomain(User callingUser) {
         AccountVO caller = _accountDao.findById(callingUser.getAccountId());
         return caller.getType() == Account.Type.DOMAIN_ADMIN && caller.getDomainId() == Domain.ROOT_DOMAIN;
+    }
+
+    @Override
+    public ApiKeyPair getKeyPairByApiKey(String apiKey) {
+        return apiKeyPairDao.findByApiKey(apiKey);
     }
 
     @Override
@@ -2851,39 +3596,43 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_REGISTER_FOR_SECRET_API_KEY, eventDescription = "register for the developer API keys")
-    public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
+    public ApiKeyPair createApiKeyAndSecretKey(RegisterUserKeysCmd cmd) {
         Account caller = getCurrentCallingAccount();
-        final Long userId = cmd.getId();
-
-        User user = getUserIncludingRemoved(userId);
+        User user = _userDao.findById(cmd.getUserId());
         if (user == null) {
-            throw new InvalidParameterValueException("unable to find user by id");
+            throw new InvalidParameterValueException(String.format("Unable to find user by ID: %d", cmd.getUserId()));
         }
+
+        final String name = cmd.getName();
+        final long userId = user.getId();
+        final String description = cmd.getDescription();
+        final Date startDate = cmd.getStartDate();
+        final Date endDate = cmd.getEndDate();
+        final List<Map<String, Object>> rules = cmd.getRules();
 
         Account account = _accountDao.findById(user.getAccountId());
-        preventRootDomainAdminAccessToRootAdminKeys(user, account);
         checkAccess(caller, null, true, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
 
-        // don't allow updating system user
-        if (user.getId() == User.UID_SYSTEM) {
-            throw new PermissionDeniedException("user id : " + user.getId() + " is system account, update is not allowed");
-        }
-        // don't allow baremetal system user
-        if (BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME.equals(user.getUsername())) {
-            throw new PermissionDeniedException("user id : " + user.getId() + " is system account, update is not allowed");
+        if (BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME.equals(user.getUsername()) || user.getId() == User.UID_SYSTEM) {
+            throw new PermissionDeniedException(String.format("User ID: [%s] is a system account and, thus, the operation is not allowed.", user.getId()));
         }
 
-        // generate both an api key and a secret key, update the user table with the keys, return the keys to the user
-        final String[] keys = new String[2];
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                keys[0] = createUserApiKey(userId);
-                keys[1] = createUserSecretKey(userId);
-            }
+        Date now = DateTime.now().toDate();
+
+        if (endDate != null && endDate.compareTo(now) <= 0) {
+            throw new InvalidParameterValueException("Keypair cannot be created with expired date, please input a date in the future.");
+        }
+        if (ObjectUtils.allNotNull(startDate, endDate) && startDate.compareTo(endDate) > -1) {
+            throw new InvalidParameterValueException("Please specify an end date that is after the start date.");
+        }
+
+        final ApiKeyPairVO newApiKeyPair = new ApiKeyPairVO(name, userId, description, startDate, endDate, account);
+        return Transaction.execute((TransactionCallback<ApiKeyPairVO>) status -> {
+            createUserApiKey(userId, newApiKeyPair);
+            createUserSecretKey(userId, newApiKeyPair);
+            return validateAndPersistKeyPairAndPermissions(account, newApiKeyPair, rules, cmd);
         });
-
-        return keys;
     }
 
     @Override
@@ -2898,69 +3647,143 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         Account account = _accountDao.findById(user.getAccountId());
         checkAccess(caller, null, true, account);
         final String[] keys = new String[2];
+        ApiKeyPairVO newTokenKeyPair = new ApiKeyPairVO();
+        newTokenKeyPair.setName(String.valueOf(userId));
+        newTokenKeyPair.setAccountId(user.getAccountId());
+        newTokenKeyPair.setDomainId(account.getDomainId());
+        newTokenKeyPair.setUserId(userId);
+
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                keys[0] = AccountManagerImpl.this.createUserApiKey(userId);
-                keys[1] = AccountManagerImpl.this.createUserSecretKey(userId);
+                keys[0] = createUserApiKey(userId, newTokenKeyPair);
+                keys[1] = createUserSecretKey(userId, newTokenKeyPair);
+                apiKeyPairDao.persist(newTokenKeyPair);
             }
         });
         return keys;
     }
 
-    private String createUserApiKey(long userId) {
-        try {
-            UserVO updatedUser = _userDao.createForUpdate();
+    /**
+     * Persists the API key pair and its corresponding permissions. Verifies whether
+     * the key pair being created is a superset of its owner's permissions.
+     * @param account Account owner of the key pair.
+     * @param newApiKeyPair The key pair object to be persisted.
+     * @param rules The set of rules of the key pair.
+     * @param cmd The API's command.
+     * @return The persisted key pair object.
+     */
+    @DB
+    private ApiKeyPairVO validateAndPersistKeyPairAndPermissions(Account account, ApiKeyPairVO newApiKeyPair,
+                                                                 List<Map<String, Object>> rules, RegisterUserKeysCmd cmd) {
+        String accessingApiKey = getAccessingApiKey(cmd);
+        final Role accountRole = roleService.findRole(account.getRoleId());
+        List<RolePermissionEntity> allPermissions = accessingApiKey == null ?
+                roleService.findAllRolePermissionsEntityBy(accountRole.getId(), true) : getAllKeypairPermissions(accessingApiKey);
 
-            String encodedKey = null;
-            Pair<User, Account> userAcct = null;
+        List<RolePermissionEntity> permissions = new ArrayList<>();
+        for (Map<String, Object> ruleDetail : rules) {
+            String rule = ruleDetail.get(ApiConstants.RULE).toString();
+            RolePermission.Permission rulePermission = (RolePermission.Permission) ruleDetail.get(ApiConstants.PERMISSION);
+            String ruleDescription = (String) ruleDetail.get(ApiConstants.DESCRIPTION);
+            permissions.add(new ApiKeyPairPermissionVO(0, rule, rulePermission, ruleDescription));
+        }
+
+        if (permissions.isEmpty() && accessingApiKey != null && doesKeyPairHaveExplicitPermissions(accessingApiKey)) {
+            logger.debug("No rules were specified for the new API key pair. Since the accessing API key [{}]" +
+                    " has explicit permissions, these permissions will be defined as the rule set for the new pair.", accessingApiKey);
+            permissions = allPermissions.stream().map(permission -> (
+                        new ApiKeyPairPermissionVO(0, permission.getRule().getRuleString(), permission.getPermission(), permission.getDescription())
+                    )).collect(Collectors.toList());
+        }
+
+        if (!isApiKeySupersetOfPermission(allPermissions, permissions)) {
+            throw new InvalidParameterValueException(String.format("The key pair being created has a bigger set of permissions than the account [%s] " +
+                    "that owns it. This is not allowed.", account.getUuid()));
+        }
+
+        ApiKeyPairVO savedApiKeyPair = apiKeyPairDao.persist(newApiKeyPair);
+        permissions.forEach(permission -> {
+            ApiKeyPairPermissionVO permissionVO = (ApiKeyPairPermissionVO) permission;
+            permissionVO.setApiKeyPairId(savedApiKeyPair.getId());
+            apiKeyPairPermissionsDao.persist(permissionVO);
+        });
+        return savedApiKeyPair;
+    }
+
+    private boolean doesKeyPairHaveExplicitPermissions(String apiKey) {
+        ApiKeyPair apiKeyPair = keyPairManager.findByApiKey(apiKey);
+        if (apiKeyPair == null) {
+            logger.info("Unable to find API key pair entity with the API key [{}].", apiKey);
+            return false;
+        }
+
+        return !getAllExplicitKeyPairPermissions(apiKeyPair.getId()).isEmpty();
+    }
+
+    @Override
+    public List<RolePermissionEntity> getAllKeypairPermissions(String apiKey) {
+        if (apiKey == null) {
+            throw new InvalidParameterValueException("API key not present in the request's URL and, thus, unable to fetch API key rules.");
+        }
+        ApiKeyPair apiKeyPair = keyPairManager.findByApiKey(apiKey);
+        Account account = _accountDao.findById(apiKeyPair.getAccountId());
+        List<ApiKeyPairPermission> keyPairPermissions = keyPairManager.findAllPermissionsByKeyPairId(apiKeyPair.getId(), account.getRoleId());
+        return new ArrayList<>(keyPairPermissions);
+    }
+
+    private String createUserApiKey(long userId, ApiKeyPairVO newApiKeyPair) {
+        try {
+            String encodedKey;
+            ApiKeyPair keyPair;
             int retryLimit = 10;
             do {
                 // FIXME: what algorithm should we use for API keys?
                 KeyGenerator generator = KeyGenerator.getInstance("HmacSHA1");
                 SecretKey key = generator.generateKey();
                 encodedKey = Base64.encodeBase64URLSafeString(key.getEncoded());
-                userAcct = _accountDao.findUserAccountByApiKey(encodedKey);
+                keyPair = apiKeyPairDao.findByApiKey(encodedKey);
                 retryLimit--;
-            } while ((userAcct != null) && (retryLimit >= 0));
+            } while ((keyPair != null) && (retryLimit >= 0));
 
-            if (userAcct != null) {
+            if (keyPair != null) {
                 return null;
             }
-            updatedUser.setApiKey(encodedKey);
-            _userDao.update(userId, updatedUser);
+            newApiKeyPair.setApiKey(encodedKey);
             return encodedKey;
         } catch (NoSuchAlgorithmException ex) {
-            s_logger.error("error generating secret key for user id=" + userId, ex);
+            logger.error("error generating secret key for user {}", userAccountDao.findById(userId), ex);
         }
         return null;
     }
 
-    private String createUserSecretKey(long userId) {
+    private String createUserSecretKey(long userId, ApiKeyPairVO newApiKeyPair) {
         try {
-            UserVO updatedUser = _userDao.createForUpdate();
-            String encodedKey = null;
+            String encodedKey;
             int retryLimit = 10;
-            UserVO userBySecretKey = null;
+            ApiKeyPairVO keyPairVO;
             do {
                 KeyGenerator generator = KeyGenerator.getInstance("HmacSHA1");
                 SecretKey key = generator.generateKey();
                 encodedKey = Base64.encodeBase64URLSafeString(key.getEncoded());
-                userBySecretKey = _userDao.findUserBySecretKey(encodedKey);
+                keyPairVO = apiKeyPairDao.findBySecretKey(encodedKey);
                 retryLimit--;
-            } while ((userBySecretKey != null) && (retryLimit >= 0));
+            } while ((keyPairVO != null) && (retryLimit >= 0));
 
-            if (userBySecretKey != null) {
+            if (keyPairVO != null) {
                 return null;
             }
 
-            updatedUser.setSecretKey(encodedKey);
-            _userDao.update(userId, updatedUser);
+            newApiKeyPair.setSecretKey(encodedKey);
             return encodedKey;
         } catch (NoSuchAlgorithmException ex) {
-            s_logger.error("error generating secret key for user id=" + userId, ex);
+            logger.error("error generating secret key for user {}", userAccountDao.findById(userId), ex);
         }
         return null;
+    }
+
+    public ApiKeyPair getLatestUserKeyPair(Long userId) {
+        return ApiDBUtils.searchForLatestUserKeyPair(userId);
     }
 
     @Override
@@ -3049,8 +3872,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 throw new InvalidParameterValueException("Account and projectId can't be specified together");
             }
 
-            Account userAccount = null;
-            Domain domain = null;
+            Account userAccount;
+            Domain domain;
             if (domainId != null) {
                 userAccount = _accountDao.findActiveAccount(accountName, domainId);
                 domain = _domainDao.findById(domainId);
@@ -3064,7 +3887,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 // check permissions
                 permittedAccounts.add(userAccount.getId());
             } else {
-                throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domain.getUuid());
+                throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domain);
             }
         }
 
@@ -3169,13 +3992,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public UserAccount getUserByApiKey(String apiKey) {
-        return _userAccountDao.getUserByApiKey(apiKey);
+        ApiKeyPairVO keyPair = apiKeyPairDao.findByApiKey(apiKey);
+
+        if (keyPair == null) {
+            return null;
+        }
+
+        return userAccountDao.findById(keyPair.getUserId());
     }
 
     @Override
     public List<String> listAclGroupsByAccount(Long accountId) {
-        if (_querySelectors == null || _querySelectors.size() == 0) {
-            return new ArrayList<String>();
+        if (CollectionUtils.isEmpty(_querySelectors)) {
+            return new ArrayList<>();
         }
 
         QuerySelector qs = _querySelectors.get(0);
@@ -3183,7 +4012,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public Long finalyzeAccountId(final String accountName, final Long domainId, final Long projectId, final boolean enabledOnly) {
+    public Long finalizeAccountId(final String accountName, final Long domainId, final Long projectId, final boolean enabledOnly) {
         if (accountName != null) {
             if (domainId == null) {
                 throw new InvalidParameterValueException("Account must be specified with domainId parameter");
@@ -3199,7 +4028,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (!enabledOnly || account.getState() == Account.State.ENABLED) {
                     return account.getId();
                 } else {
-                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");
+                    throw new PermissionDeniedException(String.format("Can't add resources to the account %s in state=%s as it's no longer active", account, account.getState()));
                 }
             } else {
                 // idList is not used anywhere, so removed it now
@@ -3228,11 +4057,54 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public UserAccount getUserAccountById(Long userId) {
-        UserAccount userAccount = _userAccountDao.findById(userId);
-        Map<String, String> details = _userDetailsDao.listDetailsKeyPairs(userId);
-        userAccount.setDetails(details);
+    public Long finalizeAccountId(Long accountId, String accountName, Long domainId, Long projectId) {
+        if (projectId != null) {
+            if (ObjectUtils.anyNotNull(accountId, accountName)) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Project and account can not be specified together.");
+            }
+            return getActiveProjectAccountByProjectId(projectId);
+        }
+        if (accountId != null) {
+            if (getActiveAccountById(accountId) != null) {
+                return accountId;
+            }
+            throw new InvalidParameterValueException("Unable to find account with the specified ID.");
+        }
 
+        if (accountName == null && domainId == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Either %s or %s must be informed.", ApiConstants.ACCOUNT_ID, ApiConstants.PROJECT_ID));
+        }
+
+        try {
+            Account activeAccount = getActiveAccountByName(accountName, domainId);
+            if (activeAccount != null) {
+                return activeAccount.getId();
+            }
+        } catch (InvalidParameterValueException exception) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Both %s and %s are needed if using either. Consider using %s instead.",
+                    ApiConstants.ACCOUNT, ApiConstants.DOMAIN_ID, ApiConstants.ACCOUNT_ID));
+        }
+        throw new InvalidParameterValueException(String.format("Unable to find account with name [%s] on the specified domain.", accountName));
+    }
+
+    protected long getActiveProjectAccountByProjectId(long projectId) {
+        Project project = _projectMgr.getProject(projectId);
+        if (project == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find project with the specified ID.");
+        }
+        if (project.getState() != Project.State.Active) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Project is not active.");
+        }
+        return project.getProjectAccountId();
+    }
+
+    @Override
+    public UserAccount getUserAccountById(Long userId) {
+        UserAccount userAccount = userAccountDao.findById(userId);
+        if (userAccount != null) {
+            Map<String, String> details = _userDetailsDao.listDetailsKeyPairs(userId);
+            userAccount.setDetails(details);
+        }
         return userAccount;
     }
 
@@ -3240,8 +4112,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void checkAccess(Account account, ServiceOffering so, DataCenter zone) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
             if (checker.checkAccess(account, so, zone)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access granted to " + account + " to " + so + " by " + checker.getName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Access granted to " + account + " to " + so + " by " + checker.getName());
                 }
                 return;
             }
@@ -3255,8 +4127,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
             if (checker.checkAccess(account, dof, zone)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access granted to " + account + " to " + dof + " by " + checker.getName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Access granted to " + account + " to " + dof + " by " + checker.getName());
                 }
                 return;
             }
@@ -3270,8 +4142,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void checkAccess(Account account, NetworkOffering nof, DataCenter zone) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
             if (checker.checkAccess(account, nof, zone)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access granted to " + account + " to " + nof + " by " + checker.getName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Access granted to " + account + " to " + nof + " by " + checker.getName());
                 }
                 return;
             }
@@ -3285,8 +4157,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
             if (checker.checkAccess(account, vof, zone)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access granted to " + account + " to " + vof + " by " + checker.getName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Access granted to " + account + " to " + vof + " by " + checker.getName());
                 }
                 return;
             }
@@ -3297,11 +4169,26 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    public void checkAccess(Account account, BackupOffering bof) throws PermissionDeniedException {
+        for (SecurityChecker checker : _securityCheckers) {
+            if (checker.checkAccess(account, bof)) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Access granted to " + account + " to " + bof + " by " + checker.getName());
+                }
+                return;
+            }
+        }
+
+        assert false : "How can all of the security checkers pass on checking this caller?";
+        throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + bof);
+    }
+
+    @Override
     public void checkAccess(User user, ControlledEntity entity) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
             if (checker.checkAccess(user, entity)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Access granted to " + user + "to " + entity + "by " + checker.getName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Access granted to " + user + "to " + entity + "by " + checker.getName());
                 }
                 return;
             }
@@ -3317,7 +4204,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {UseSecretKeyInResponse, enableUserTwoFactorAuthentication,
-                userTwoFactorAuthenticationDefaultProvider, mandateUserTwoFactorAuthentication, userTwoFactorAuthenticationIssuer};
+                userTwoFactorAuthenticationDefaultProvider, mandateUserTwoFactorAuthentication, userTwoFactorAuthenticationIssuer, apiKeyAccess,
+                userAllowMultipleAccounts, listOfRoleTypesAllowedForOperationsOfSameRoleType, allowOperationsOnUsersInSameAccount};
     }
 
     public List<UserTwoFactorAuthenticator> getUserTwoFactorAuthenticationProviders() {
@@ -3390,6 +4278,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         Account owner = _accountService.getActiveAccountById(caller.getId());
 
         if (Boolean.TRUE.equals(cmd.getEnable())) {
+            if (cmd.getUserId() != null) {
+                throw new InvalidParameterValueException("User ID should not be provided when enabling 2FA for the current user");
+            }
             checkAccess(caller, null, true, owner);
             Long userId = CallContext.current().getCallingUserId();
 
@@ -3402,7 +4293,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     protected UserTwoFactorAuthenticationSetupResponse enableTwoFactorAuthentication(Long userId, String providerName) {
-        UserAccountVO userAccount = _userAccountDao.findById(userId);
+        UserAccountVO userAccount = userAccountDao.findById(userId);
         UserVO userVO = _userDao.findById(userId);
         Long domainId = userAccount.getDomainId();
         if (Boolean.FALSE.equals(enableUserTwoFactorAuthentication.valueIn(domainId)) && Boolean.FALSE.equals(mandateUserTwoFactorAuthentication.valueIn(domainId))) {
@@ -3411,7 +4302,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         if (StringUtils.isEmpty(providerName)) {
             providerName = userTwoFactorAuthenticationDefaultProvider.valueIn(domainId);
-            s_logger.debug(String.format("Provider name is not given to setup 2FA, so using the default 2FA provider %s", providerName));
+            logger.debug(String.format("Provider name is not given to setup 2FA, so using the default 2FA provider %s", providerName));
         }
 
         UserTwoFactorAuthenticator provider = getUserTwoFactorAuthenticationProvider(providerName);
@@ -3435,9 +4326,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     protected UserTwoFactorAuthenticationSetupResponse disableTwoFactorAuthentication(Long userId, Account caller, Account owner) {
-        UserVO userVO = null;
+        UserVO userVO;
         if (userId != null) {
             userVO = validateUser(userId);
+            verifyCallerPrivilegeForUserOrAccountOperations(userVO);
             owner = _accountService.getActiveAccountById(userVO.getAccountId());
         } else {
             userId = CallContext.current().getCallingUserId();
@@ -3490,16 +4382,33 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (userDetailVO != null && UserAccountVO.Setup2FAstatus.VERIFIED.name().equals(userDetailVO.getValue())) {
                 return user;
             }
-            s_logger.info(String.format("Clearing 2FA configurations for %s as it is still in setup on a new login request", user));
+            logger.info("Clearing 2FA configurations for {} as it is still in setup on a new login request", user);
             if (userDetailVO != null) {
                 _userDetailsDao.remove(userDetailVO.getId());
             }
-            UserAccountVO userAccountVO = _userAccountDao.findById(user.getId());
+            UserAccountVO userAccountVO = userAccountDao.findById(user.getId());
             userAccountVO.setUser2faEnabled(false);
             userAccountVO.setUser2faProvider(null);
             userAccountVO.setKeyFor2fa(null);
-            _userAccountDao.update(user.getId(), userAccountVO);
+            userAccountDao.update(user.getId(), userAccountVO);
             return userAccountVO;
         });
+    }
+
+    void assertUserNotAlreadyInAccount(User existingUser, Account newAccount) {
+        System.out.println(existingUser.getAccountId());
+        System.out.println(newAccount.getId());
+        if (existingUser.getAccountId() == newAccount.getId()) {
+            AccountVO existingAccount = _accountDao.findById(newAccount.getId());
+            throw new InvalidParameterValueException(String.format("Username [%s] already exists in account [id=%s,name=%s]", existingUser.getUsername(), existingAccount.getUuid(), existingAccount.getAccountName()));
+        }
+    }
+
+    void assertUserNotAlreadyInDomain(User existingUser, Account originalAccount) {
+        Account existingAccount = _accountDao.findById(existingUser.getAccountId());
+        if (existingAccount.getDomainId() == originalAccount.getDomainId()) {
+            DomainVO existingDomain = _domainDao.findById(existingAccount.getDomainId());
+            throw new InvalidParameterValueException(String.format("Username [%s] already exists in domain [id=%s,name=%s] user account [id=%s,name=%s]", existingUser.getUsername(), existingDomain.getUuid(), existingDomain.getName(), existingAccount.getUuid(), existingAccount.getAccountName()));
+        }
     }
 }

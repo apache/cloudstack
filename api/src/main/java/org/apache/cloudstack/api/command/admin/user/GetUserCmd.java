@@ -16,28 +16,26 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.user;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.UserResponse;
-
+import org.apache.cloudstack.api.ApiArgValidator;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.UserAccount;
 
 @APICommand(name = "getUser", description = "Find user account by API key", responseObject = UserResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class GetUserCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(GetUserCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.USER_API_KEY, type = CommandType.STRING, required = true, description = "API key of the user")
+    @Parameter(name = ApiConstants.USER_API_KEY, type = CommandType.STRING, required = true, description = "API key of the user", validations = {ApiArgValidator.NotNullOrEmpty})
     private String apiKey;
 
     /////////////////////////////////////////////////////

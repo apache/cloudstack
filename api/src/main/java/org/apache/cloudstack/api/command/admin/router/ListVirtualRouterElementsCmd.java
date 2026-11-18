@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,7 +41,6 @@ import com.cloud.network.element.VirtualRouterElementService;
 @APICommand(name = "listVirtualRouterElements", description = "Lists all available virtual router elements.", responseObject = VirtualRouterProviderResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVirtualRouterElementsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListVirtualRouterElementsCmd.class.getName());
 
     // TODO, VirtualRouterElementServer is not singleton in system!
     @Inject
@@ -51,16 +49,16 @@ public class ListVirtualRouterElementsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VirtualRouterProviderResponse.class, description = "list virtual router elements by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VirtualRouterProviderResponse.class, description = "List virtual router elements by id")
     private Long id;
 
     @Parameter(name = ApiConstants.NSP_ID,
                type = CommandType.UUID,
                entityType = ProviderResponse.class,
-               description = "list virtual router elements by network service provider id")
+               description = "List virtual router elements by network service provider id")
     private Long nspId;
 
-    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "list network offerings by enabled state")
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "List network offerings by enabled state")
     private Boolean enabled;
 
     /////////////////////////////////////////////////////

@@ -17,11 +17,8 @@
 package org.apache.cloudstack.api.command.admin.internallb;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -46,10 +43,6 @@ import com.cloud.network.VirtualRouterProvider;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class ListInternalLoadBalancerElementsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListInternalLoadBalancerElementsCmd.class.getName());
-
-    @Inject
-    private InternalLoadBalancerElementService _service;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -57,16 +50,16 @@ public class ListInternalLoadBalancerElementsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ID,
                type = CommandType.UUID,
                entityType = InternalLoadBalancerElementResponse.class,
-               description = "list internal load balancer elements by id")
+               description = "List internal load balancer elements by ID")
     private Long id;
 
     @Parameter(name = ApiConstants.NSP_ID,
                type = CommandType.UUID,
                entityType = ProviderResponse.class,
-               description = "list internal load balancer elements by network service provider id")
+               description = "List internal load balancer elements by network service provider ID")
     private Long nspId;
 
-    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "list internal load balancer elements by enabled state")
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "List internal load balancer elements by enabled state")
     private Boolean enabled;
 
     /////////////////////////////////////////////////////
@@ -88,12 +81,21 @@ public class ListInternalLoadBalancerElementsCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException {
-        List<? extends VirtualRouterProvider> providers = _service.searchForInternalLoadBalancerElements(getId(), getNspId(), getEnabled());
+        List<InternalLoadBalancerElementService> services;
+        if (id == null && nspId == null) {
+            services = _networkService.getInternalLoadBalancerElements();
+        } else {
+            InternalLoadBalancerElementService elementService = id != null ? _networkService.getInternalLoadBalancerElementById(id) : _networkService.getInternalLoadBalancerElementByNetworkServiceProviderId(nspId);
+            services = Collections.singletonList(elementService);
+        }
         ListResponse<InternalLoadBalancerElementResponse> response = new ListResponse<InternalLoadBalancerElementResponse>();
         List<InternalLoadBalancerElementResponse> providerResponses = new ArrayList<InternalLoadBalancerElementResponse>();
-        for (VirtualRouterProvider provider : providers) {
-            InternalLoadBalancerElementResponse providerResponse = _responseGenerator.createInternalLbElementResponse(provider);
-            providerResponses.add(providerResponse);
+        for (InternalLoadBalancerElementService service : services) {
+            List<? extends VirtualRouterProvider> providers = service.searchForInternalLoadBalancerElements(getId(), getNspId(), getEnabled());
+            for (VirtualRouterProvider provider : providers) {
+                InternalLoadBalancerElementResponse providerResponse = _responseGenerator.createInternalLbElementResponse(provider);
+                providerResponses.add(providerResponse);
+            }
         }
         response.setResponses(providerResponses);
         response.setResponseName(getCommandName());

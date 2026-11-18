@@ -17,12 +17,6 @@
 
 package org.apache.cloudstack.api.command.admin.internallb;
 
-import java.util.List;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -47,10 +41,6 @@ import com.cloud.user.Account;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ConfigureInternalLoadBalancerElementCmd.class.getName());
-
-    @Inject
-    private List<InternalLoadBalancerElementService> _service;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -60,7 +50,7 @@ public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = InternalLoadBalancerElementResponse.class,
                required = true,
-               description = "the ID of the internal lb provider")
+               description = "The ID of the internal lb provider")
     private Long id;
 
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = true, description = "Enables/Disables the Internal Load Balancer element")
@@ -94,13 +84,14 @@ public class ConfigureInternalLoadBalancerElementCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "configuring internal load balancer element: " + id;
+        return "Configuring internal load balancer element with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        CallContext.current().setEventDetails("Internal load balancer element: " + id);
-        VirtualRouterProvider result = _service.get(0).configureInternalLoadBalancerElement(getId(), getEnabled());
+        CallContext.current().setEventDetails("Internal load balancer element: " + getResourceUuid(ApiConstants.ID));
+        InternalLoadBalancerElementService service = _networkService.getInternalLoadBalancerElementById(id);
+        VirtualRouterProvider result = service.configureInternalLoadBalancerElement(getId(), getEnabled());
         if (result != null) {
             InternalLoadBalancerElementResponse routerResponse = _responseGenerator.createInternalLbElementResponse(result);
             routerResponse.setResponseName(getCommandName());

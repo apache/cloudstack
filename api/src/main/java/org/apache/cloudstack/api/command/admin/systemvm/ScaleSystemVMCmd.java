@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.systemvm;
 
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -46,7 +45,6 @@ import com.cloud.vm.VirtualMachine;
         + "The system vm must be in a \"Stopped\" state for " + "this command to take effect.", entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ScaleSystemVMCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ScaleSystemVMCmd.class.getName());
     private static final String s_name = "changeserviceforsystemvmresponse";
 
     /////////////////////////////////////////////////////
@@ -57,10 +55,10 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SystemVmResponse.class, required = true, description = "The ID of the system vm")
     private Long id;
 
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, required = true, description = "the service offering ID to apply to the system vm")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, required = true, description = "The service offering ID to apply to the system vm")
     private Long serviceOfferingId;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "name value pairs of custom parameters for cpuspeed, memory and cpunumber. example details[i].name=value")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Name value pairs of custom parameters for cpuspeed, memory and cpunumber. example details[i].name=value")
     private Map<String, String> details;
 
     /////////////////////////////////////////////////////
@@ -76,7 +74,7 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
     }
 
     public Map<String, String> getDetails() {
-        return details;
+        return convertDetailsToMap(details);
     }
 
     /////////////////////////////////////////////////////
@@ -100,7 +98,7 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("SystemVm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("System VM ID: " + getResourceUuid(ApiConstants.ID));
 
         ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {
@@ -111,16 +109,16 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
         try {
             result = _mgr.upgradeSystemVM(this);
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (ManagementServerException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (VirtualMachineMigrationException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
         if (result != null) {
@@ -139,6 +137,6 @@ public class ScaleSystemVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Upgrading system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()) + " to service offering: " + this._uuidMgr.getUuid(ServiceOffering.class, getServiceOfferingId());
+        return "Upgrading System VM with ID: " + getResourceUuid(ApiConstants.ID) + " to service offering: " + getResourceUuid(ApiConstants.SERVICE_OFFERING_ID);
     }
 }

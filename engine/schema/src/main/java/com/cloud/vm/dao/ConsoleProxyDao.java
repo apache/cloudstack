@@ -45,7 +45,7 @@ public interface ConsoleProxyDao extends GenericDao<ConsoleProxyVO, Long> {
 
     public List<ConsoleProxyLoadInfo> getDatacenterSessionLoadMatrix();
 
-    public List<Pair<Long, Integer>> getDatacenterStoragePoolHostInfo(long dcId, boolean countAllPoolTypes);
+    public boolean hasDatacenterStoragePoolHostInfo(long dcId, boolean sharedOnly);
 
     public List<Pair<Long, Integer>> getProxyLoadMatrix();
 

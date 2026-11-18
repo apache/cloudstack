@@ -17,7 +17,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,6 +27,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.SslCertResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.commons.lang3.BooleanUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -42,28 +42,33 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
 
-    public static final Logger s_logger = Logger.getLogger(AssignCertToLoadBalancerCmd.class.getName());
 
 
     @Parameter(name = ApiConstants.LBID,
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the load balancer rule")
+               description = "The ID of the load balancer rule")
     Long lbRuleId;
 
     @Parameter(name = ApiConstants.CERTIFICATE_ID,
                type = CommandType.UUID,
                entityType = SslCertResponse.class,
                required = true,
-               description = "the ID of the certificate")
+               description = "The ID of the certificate")
     Long certId;
+
+    @Parameter(name = ApiConstants.FORCED,
+            type = CommandType.BOOLEAN,
+            since = "4.22",
+            description = "Force assign the certificate. If there is a certificate assigned to the LB, it will be removed at first.")
+    private Boolean forced;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException {
         //To change body of implemented methods use File | Settings | File Templates.
-        if (_lbService.assignCertToLoadBalancer(getLbRuleId(), getCertId())) {
+        if (_lbService.assignCertToLoadBalancer(getLbRuleId(), getCertId(), isForced())) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
@@ -78,7 +83,7 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Assigning a certificate to a load balancer";
+        return "Assigning certificate with ID: " + getResourceUuid(ApiConstants.CERTIFICATE_ID) + " to load balancer with ID: " + getResourceUuid(ApiConstants.LBID);
     }
 
     @Override
@@ -96,5 +101,20 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
 
     public Long getLbRuleId() {
         return lbRuleId;
+    }
+
+    public boolean isForced() {
+        return BooleanUtils.toBoolean(forced);
+    }
+
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.networkSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        LoadBalancer lb = _entityMgr.findById(LoadBalancer.class, getLbRuleId());
+        return (lb != null)? lb.getNetworkId(): null;
     }
 }

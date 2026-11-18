@@ -27,11 +27,13 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -87,7 +89,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 
 public class ManagementServerMock {
-    private static final Logger s_logger = Logger.getLogger(ManagementServerMock.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private AccountManager _accountMgr;
@@ -126,7 +128,6 @@ public class ManagementServerMock {
         try {
             field = cls.getDeclaredField(name);
         } catch (Exception ex) {
-            s_logger.warn("class: " + cls.getName() + "\t" + ex);
             return;
         }
         field.setAccessible(true);
@@ -135,7 +136,6 @@ public class ManagementServerMock {
                 try {
                     field.set(cmd, value);
                 } catch (Exception ex) {
-                    s_logger.warn(ex);
                     return;
                 }
                 break;
@@ -144,7 +144,6 @@ public class ManagementServerMock {
                     try {
                         field.setLong(cmd, -1L);
                     } catch (Exception ex) {
-                        s_logger.warn(ex);
                         return;
                     }
                 }
@@ -153,7 +152,6 @@ public class ManagementServerMock {
                 try {
                     field.set(cmd, value);
                 } catch (Exception ex) {
-                    s_logger.warn(ex);
                     return;
                 }
                 break;
@@ -161,7 +159,6 @@ public class ManagementServerMock {
                 try {
                     field.set(cmd, value);
                 } catch (Exception ex) {
-                    s_logger.warn(ex);
                     return;
                 }
                 break;
@@ -186,8 +183,6 @@ public class ManagementServerMock {
         if (nets != null && !nets.isEmpty()) {
             NetworkVO public_net = nets.get(0);
             public_net_id = public_net.getId();
-        } else {
-            s_logger.debug("no public network found in the zone: " + _zone.getId());
         }
         Account system = _accountMgr.getSystemAccount();
 
@@ -200,11 +195,9 @@ public class ManagementServerMock {
         setParameter(cmd, "networkID", BaseCmd.CommandType.LONG, public_net_id);
         setParameter(cmd, "zoneId", BaseCmd.CommandType.LONG, _zone.getId());
         setParameter(cmd, "vlan", BaseCmd.CommandType.STRING, "untagged");
-        s_logger.debug("createPublicVlanIpRange execute : zone id: " + _zone.getId() + ", public net id: " + public_net_id);
         try {
             _configService.createVlanAndPublicIpRange(cmd);
         } catch (Exception e) {
-            s_logger.debug("createPublicVlanIpRange: " + e);
         }
     }
 
@@ -228,15 +221,7 @@ public class ManagementServerMock {
                 return null;
             }
         };
-        try {
-            Mockito.when(_agentMgr.send(Matchers.anyLong(), Matchers.any(Commands.class))).thenAnswer(callback);
-        } catch (AgentUnavailableException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (OperationTimedoutException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        sendCommands(callback);
         long id = _userVmDao.getNextInSequence(Long.class, "id");
         UserVmVO vm =
             new UserVmVO(id, name, name, tmpl.getId(), HypervisorType.XenServer, tmpl.getGuestOSId(), false, false, _zone.getDomainId(), Account.ACCOUNT_ID_SYSTEM,
@@ -250,10 +235,19 @@ public class ManagementServerMock {
         try {
             _vmMgr.addVmToNetwork(vm, network, profile);
         } catch (Exception ex) {
-            // TODO Auto-generated catch block
-            //ex.printStackTrace();
+            // ignored
         }
         return vm;
+    }
+
+    private void sendCommands(Answer<?> callback) {
+        try {
+            Mockito.when(_agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Commands.class))).thenAnswer(callback);
+        } catch (AgentUnavailableException e) {
+            logger.warn("no agent running", e);
+        } catch (OperationTimedoutException e) {
+            logger.warn("agent not responding (in time)", e);
+        }
     }
 
     private void deleteHost() {
@@ -276,15 +270,7 @@ public class ManagementServerMock {
                 return null;
             }
         };
-
-        try {
-            Mockito.when(_agentMgr.send(Matchers.anyLong(), Matchers.any(Commands.class))).thenAnswer(callback);
-        } catch (AgentUnavailableException e) {
-            e.printStackTrace();
-        } catch (OperationTimedoutException e) {
-            e.printStackTrace();
-        }
-
+        sendCommands(callback);
         _userVmDao.remove(vm.getId());
     }
 
@@ -360,7 +346,6 @@ public class ManagementServerMock {
         Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> providers =
             _networkService.listNetworkServiceProviders(_znet.getId(), Provider.JuniperContrailRouter.getName(), null, null, null);
         if (providers.second() == 0) {
-            s_logger.debug("Add " + Provider.JuniperContrailRouter.getName() + " to network " + _znet.getName());
             PhysicalNetworkServiceProvider provider = _networkService.addProviderToPhysicalNetwork(_znet.getId(), Provider.JuniperContrailRouter.getName(), null, null);
             _networkService.updateNetworkServiceProvider(provider.getId(), PhysicalNetworkServiceProvider.State.Enabled.toString(), null);
         } else {
@@ -371,12 +356,10 @@ public class ManagementServerMock {
         }
 
         providers = _networkService.listNetworkServiceProviders(_znet.getId(), null, PhysicalNetworkServiceProvider.State.Enabled.toString(), null, null);
-        s_logger.debug(_znet.getName() + " has " + providers.second().toString() + " Enabled providers");
         for (PhysicalNetworkServiceProvider provider : providers.first()) {
             if (provider.getProviderName().equals(Provider.JuniperContrailRouter.getName())) {
                 continue;
             }
-            s_logger.debug("Disabling " + provider.getProviderName());
             _networkService.updateNetworkServiceProvider(provider.getId(), PhysicalNetworkServiceProvider.State.Disabled.toString(), null);
         }
     }
@@ -387,7 +370,7 @@ public class ManagementServerMock {
             ConfigurationManager mgr = (ConfigurationManager)_configService;
             _zone =
                 mgr.createZone(User.UID_SYSTEM, "default", "8.8.8.8", null, "8.8.4.4", null, null /* cidr */, "ROOT", Domain.ROOT_DOMAIN, NetworkType.Advanced, null,
-                    null /* networkDomain */, false, false, null, null, false);
+                    null /* networkDomain */, false, false, null, null, false, null);
         }
     }
 

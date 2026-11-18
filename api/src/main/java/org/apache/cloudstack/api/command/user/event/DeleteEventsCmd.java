@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.event;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,14 +31,12 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.Event;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
 @APICommand(name = "deleteEvents", description = "Delete one or more events.", responseObject = SuccessResponse.class, entityType = {Event.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteEventsCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(DeleteEventsCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////
@@ -50,18 +47,18 @@ public class DeleteEventsCmd extends BaseCmd {
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = EventResponse.class,
-               description = "the IDs of the events")
+               description = "The IDs of the events")
     private List<Long> ids;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "end date range to delete events"
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "End date range to delete events"
         + " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
     private Date endDate;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "start date range to delete events"
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "Start date range to delete events"
         + " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
     private Date startDate;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "delete by event type")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "Delete by event type")
     private String type;
 
     // ///////////////////////////////////////////////////
@@ -99,17 +96,12 @@ public class DeleteEventsCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        if (ids == null && type == null && endDate == null) {
-            throw new InvalidParameterValueException("either ids, type or enddate must be specified");
-        } else if (startDate != null && endDate == null) {
-            throw new InvalidParameterValueException("enddate must be specified with startdate parameter");
-        }
         boolean result = _mgr.deleteEvents(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to delete Events, one or more parameters has invalid values");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to delete any events. One or more parameters have invalid values.");
         }
     }
 }

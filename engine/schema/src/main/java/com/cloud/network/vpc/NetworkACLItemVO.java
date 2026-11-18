@@ -35,6 +35,7 @@ import javax.persistence.Transient;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "network_acl_item")
@@ -168,7 +169,9 @@ public class NetworkACLItemVO implements NetworkACLItem, Cloneable {
 
     @Override
     public String toString() {
-        return new StringBuilder("Rule[").append(id).append("-").append("NetworkACL").append("-").append(state).append("]").toString();
+        return String.format("NetworkACLItem %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "aclId", "state"));
     }
 
     @Override

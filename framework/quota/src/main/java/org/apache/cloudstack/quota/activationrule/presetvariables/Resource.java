@@ -40,8 +40,12 @@ public class Resource {
         this.domainId = domainId;
     }
 
+    /***
+     * Converts the preset variable into a valid JSON object that will be injected into the JS interpreter.
+     * This method should not be overridden or changed.
+     */
     @Override
-    public String toString() {
+    public final String toString() {
         return ToStringBuilder.reflectionToString(this, ToStringStyle.JSON_STYLE);
     }
 

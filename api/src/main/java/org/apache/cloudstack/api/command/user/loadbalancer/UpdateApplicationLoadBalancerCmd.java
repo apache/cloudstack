@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -34,16 +33,15 @@ import com.cloud.network.rules.FirewallRule;
 @APICommand(name = "updateLoadBalancer", description = "Updates an internal load balancer", responseObject = ApplicationLoadBalancerResponse.class, since = "4.4.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateApplicationLoadBalancerCmd extends BaseAsyncCustomIdCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateApplicationLoadBalancerCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the load balancer")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "The ID of the load balancer")
     private Long id;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////
@@ -74,7 +72,7 @@ public class UpdateApplicationLoadBalancerCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public String getEventDescription() {
-        return "updating load balancer: " + getId();
+        return "Updating load balancer with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
 
@@ -83,7 +81,7 @@ public class UpdateApplicationLoadBalancerCmd extends BaseAsyncCustomIdCmd {
     /////////////////////////////////////////////////////
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Load balancer ID: " + getId());
+        CallContext.current().setEventDetails("Load balancer ID: " + getResourceUuid(ApiConstants.ID));
         ApplicationLoadBalancerRule rule = _appLbService.updateApplicationLoadBalancer(getId(), this.getCustomId(), getDisplay());
         ApplicationLoadBalancerResponse lbResponse = _responseGenerator.createLoadBalancerContainerReponse(rule, _lbService.getLbInstances(getId()));
         setResponseObject(lbResponse);

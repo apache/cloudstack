@@ -18,11 +18,17 @@
  */
 package com.cloud.hypervisor.kvm.storage;
 
+import com.ceph.rados.IoCTX;
+import com.ceph.rados.Rados;
+import com.ceph.rbd.Rbd;
+import com.ceph.rbd.RbdException;
+import com.ceph.rbd.RbdImage;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
-import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
+import com.cloud.storage.Storage;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -33,6 +39,7 @@ import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -53,6 +60,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import javax.naming.ConfigurationException;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -66,8 +74,8 @@ public class KVMStorageProcessorTest {
 
     @Mock
     KVMStoragePoolManager storagePoolManager;
-    @Mock
-    LibvirtComputingResource resource;
+
+    LibvirtComputingResource resource = Mockito.mock(LibvirtComputingResource.class);
 
     @InjectMocks
     private KVMStorageProcessor storageProcessor;
@@ -101,9 +109,17 @@ public class KVMStorageProcessorTest {
     @Mock
     LibvirtVMDef.DiskDef diskDefMock;
 
+    @Mock
+    Logger loggerMock;
+
 
     private static final String directDownloadTemporaryPath = "/var/lib/libvirt/images/dd";
     private static final long templateSize = 80000L;
+
+    private static final String RBD_POOL_NAME = "cloudstack";
+    private static final String RBD_IMAGE_NAME = "b7a1f0a9-0f0e-4a1a-9a35-1c1a2e0f1b5e";
+    private static final String SNAPSHOT_NAME = "8f1c1f0b-9d3e-4c2a-8a3d-6f0b2c9e1d47";
+    private static final long SNAPSHOT_SIZE = 196624L;
 
     private AutoCloseable closeable;
 
@@ -158,22 +174,12 @@ public class KVMStorageProcessorTest {
     }
 
     @Test
-    public void validateGetSnapshotTemporaryPath(){
-        String path = "/path/to/disk";
-        String snapshotName = "snapshot";
-        String expectedResult = "/path/to/snapshot";
-
-        String result = storageProcessor.getSnapshotTemporaryPath(path, snapshotName);
-        Assert.assertEquals(expectedResult, result);
-    }
-
-    @Test
     public void validateGetSnapshotPathInPrimaryStorage(){
         String path = "/path/to/disk";
         String snapshotName = "snapshot";
         String expectedResult = String.format("%s%s%s%s%s", path, File.separator, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, File.separator, snapshotName);
 
-        String result = storageProcessor.getSnapshotPathInPrimaryStorage(path, snapshotName);
+        String result = storageProcessor.getSnapshotOrCheckpointPathInPrimaryStorage(path, snapshotName, false);
         Assert.assertEquals(expectedResult, result);
     }
 
@@ -241,6 +247,7 @@ public class KVMStorageProcessorTest {
     public void validateTakeVolumeSnapshotFailToCreateSnapshotThrowLibvirtException() throws LibvirtException{
         Mockito.doReturn(diskToSnapshotAndDisksToAvoidMock).when(storageProcessorSpy).getDiskToSnapshotAndDisksToAvoid(Mockito.any(), Mockito.anyString(), Mockito.any());
         Mockito.doReturn(new HashSet<>()).when(diskToSnapshotAndDisksToAvoidMock).second();
+        Mockito.doReturn("").when(resource).getSnapshotTemporaryPath(Mockito.anyString(), Mockito.anyString());
         Mockito.doThrow(LibvirtException.class).when(domainMock).snapshotCreateXML(Mockito.anyString(), Mockito.anyInt());
 
         storageProcessorSpy.takeVolumeSnapshot(new ArrayList<>(), "", "", domainMock);
@@ -253,6 +260,7 @@ public class KVMStorageProcessorTest {
         Mockito.doReturn(diskToSnapshotAndDisksToAvoidMock).when(storageProcessorSpy).getDiskToSnapshotAndDisksToAvoid(Mockito.any(), Mockito.anyString(), Mockito.any());
         Mockito.doReturn(expectedResult).when(diskToSnapshotAndDisksToAvoidMock).first();
         Mockito.doReturn(new HashSet<>()).when(diskToSnapshotAndDisksToAvoidMock).second();
+        Mockito.doReturn("").when(resource).getSnapshotTemporaryPath(Mockito.anyString(), Mockito.anyString());
         Mockito.doReturn(null).when(domainMock).snapshotCreateXML(Mockito.anyString(), Mockito.anyInt());
 
         String result = storageProcessorSpy.takeVolumeSnapshot(new ArrayList<>(), "", "", domainMock);
@@ -261,15 +269,11 @@ public class KVMStorageProcessorTest {
     }
 
     @Test
-    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithQemuImgExceptionReturnErrorMessage() throws QemuImgException {
-        KVMPhysicalDisk baseFile = Mockito.mock(KVMPhysicalDisk.class);
+    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithQemuImgExceptionReturnErrorMessage() {
         String errorMessage = "error";
         KVMStoragePool primaryPoolMock = Mockito.mock(KVMStoragePool.class);
         KVMPhysicalDisk baseFileMock = Mockito.mock(KVMPhysicalDisk.class);
         VolumeObjectTO volumeMock = Mockito.mock(VolumeObjectTO.class);
-        QemuImgFile srcFileMock = Mockito.mock(QemuImgFile.class);
-        QemuImgFile destFileMock = Mockito.mock(QemuImgFile.class);
-        QemuImg qemuImgMock = Mockito.mock(QemuImg.class);
 
         Mockito.when(baseFileMock.getPath()).thenReturn("/path/to/baseFile");
         Mockito.when(primaryPoolMock.createFolder(Mockito.anyString())).thenReturn(true);
@@ -280,22 +284,21 @@ public class KVMStorageProcessorTest {
                      Mockito.lenient().doThrow(new QemuImgException(errorMessage)).when(mock).convert(Mockito.any(QemuImgFile.class), Mockito.any(QemuImgFile.class), Mockito.any(Map.class),
                              Mockito.any(List.class), Mockito.any(QemuImageOptions.class),Mockito.nullable(String.class), Mockito.any(Boolean.class));
              }))) {
-            String test = storageProcessor.convertBaseFileToSnapshotFileInPrimaryStorageDir(primaryPoolMock, baseFileMock, "/path/to/snapshot", volumeMock, 0);
+            String test = storageProcessor.convertBaseFileToSnapshotFileInStorageDir(primaryPoolMock, baseFileMock, "/path/to/snapshot", TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, volumeMock, 0);
             Assert.assertNotNull(test);
         }
     }
 
     @Test
-    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithLibvirtExceptionReturnErrorMessage() throws Exception {
+    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithLibvirtExceptionReturnErrorMessage() {
         KVMPhysicalDisk baseFile = Mockito.mock(KVMPhysicalDisk.class);
         String snapshotPath = "snapshotPath";
-        QemuImg qemuImg = Mockito.mock(QemuImg.class);
 
         Mockito.doReturn(true).when(kvmStoragePoolMock).createFolder(Mockito.anyString());
         try (MockedConstruction<QemuImg> ignored = Mockito.mockConstructionWithAnswer(QemuImg.class, invocation -> {
             throw Mockito.mock(LibvirtException.class);
         })) {
-            String result = storageProcessorSpy.convertBaseFileToSnapshotFileInPrimaryStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, volumeObjectToMock, 1);
+            String result = storageProcessorSpy.convertBaseFileToSnapshotFileInStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, volumeObjectToMock, 1);
             Assert.assertNotNull(result);
         }
     }
@@ -309,48 +312,8 @@ public class KVMStorageProcessorTest {
         try (MockedConstruction<QemuImg> ignored = Mockito.mockConstruction(QemuImg.class, (mock, context) -> {
             Mockito.doNothing().when(mock).convert(Mockito.any(QemuImgFile.class), Mockito.any(QemuImgFile.class));
         })) {
-            String result = storageProcessorSpy.convertBaseFileToSnapshotFileInPrimaryStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, volumeObjectToMock, 1);
+            String result = storageProcessorSpy.convertBaseFileToSnapshotFileInStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, volumeObjectToMock, 1);
             Assert.assertNull(result);
-        }
-    }
-
-    @Test (expected = CloudRuntimeException.class)
-    public void validateMergeSnapshotIntoBaseFileErrorOnMergeThrowCloudRuntimeException() throws Exception {
-        try (MockedStatic<Script> ignored = Mockito.mockStatic(
-                Script.class); MockedStatic<LibvirtUtilitiesHelper> ignored2 = Mockito.mockStatic(
-                LibvirtUtilitiesHelper.class)) {
-            Mockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn("");
-            Mockito.when(LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any()))
-                   .thenReturn(true);
-
-            storageProcessorSpy.mergeSnapshotIntoBaseFile(domainMock, "", "", "", volumeObjectToMock, connectMock);
-        }
-    }
-
-    @Test
-    public void validateMergeSnapshotIntoBaseFileMergeSuccessDoNothing() throws Exception {
-        try (MockedStatic<Script> scriptMockedStatic = Mockito.mockStatic(
-                Script.class); MockedStatic<LibvirtUtilitiesHelper> libvirtUtilitiesHelperMockedStatic = Mockito.mockStatic(
-                LibvirtUtilitiesHelper.class)) {
-            Mockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn(null);
-            Mockito.when(LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any()))
-                        .thenReturn(true);
-            Mockito.doNothing().when(storageProcessorSpy).manuallyDeleteUnusedSnapshotFile(Mockito.anyBoolean(),
-                    Mockito.any());
-
-            storageProcessorSpy.mergeSnapshotIntoBaseFile(domainMock, "", "", "", volumeObjectToMock, connectMock);
-            libvirtUtilitiesHelperMockedStatic.verify(() -> LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any()), Mockito.times(1));
-            scriptMockedStatic.verify(() -> Script.runSimpleBashScript(Mockito.anyString()), Mockito.times(1));
-
-        }
-    }
-
-    @Test (expected = CloudRuntimeException.class)
-    public void validateManuallyDeleteUnusedSnapshotFileLibvirtDoesNotSupportsFlagDeleteExceptionOnFileDeletionThrowsException() throws IOException {
-        try (MockedStatic<Files> ignored = Mockito.mockStatic(Files.class)) {
-            Mockito.when(Files.deleteIfExists(Mockito.any(Path.class))).thenThrow(IOException.class);
-
-            storageProcessorSpy.manuallyDeleteUnusedSnapshotFile(false, "");
         }
     }
 
@@ -486,5 +449,320 @@ public class KVMStorageProcessorTest {
         Mockito.when(diskDefMock.getDiskPath()).thenReturn("diskDef");
         attachOrDetachDeviceTest( false, "vmName", diskDefMock);
         Mockito.verify(domainMock, Mockito.times(1)).detachDevice(Mockito.anyString());
+    }
+
+    @Test
+    public void generateBackupXmlTestNoParents() {
+        String result = storageProcessorSpy.generateBackupXml(null, null, "vda", "path");
+
+        Assert.assertFalse(result.contains("<incremental>"));
+    }
+
+    @Test
+    public void generateBackupXmlTestWithParents() {
+        String result = storageProcessorSpy.generateBackupXml(null, new String[]{"checkpointname"}, "vda", "path");
+
+        Assert.assertTrue(result.contains("<incremental>checkpointname</incremental>"));
+    }
+
+    @Test
+    public void createFolderOnCorrectStorageTestSecondaryIsNull() {
+        storageProcessorSpy.createFolderOnCorrectStorage(kvmStoragePoolMock, null, new Pair<>("t", "u"));
+
+        Mockito.verify(kvmStoragePoolMock).createFolder("u");
+    }
+
+    @Test
+    public void createFolderOnCorrectStorageTestSecondaryIsNotNull() {
+        KVMStoragePool secondaryStoragePoolMock = Mockito.mock(KVMStoragePool.class);
+
+        storageProcessorSpy.createFolderOnCorrectStorage(kvmStoragePoolMock, secondaryStoragePoolMock, new Pair<>("t", "u"));
+
+        Mockito.verify(secondaryStoragePoolMock).createFolder("u");
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void getDiskLabelToSnapshotTestNoDisks() throws LibvirtException {
+        storageProcessorSpy.getDiskLabelToSnapshot(new ArrayList<>(), null, Mockito.mock(Domain.class));
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void getDiskLabelToSnapshotTestDiskHasNoPath() throws LibvirtException {
+        LibvirtVMDef.DiskDef diskDefMock1 = Mockito.mock(LibvirtVMDef.DiskDef.class);
+        Mockito.doReturn(null).when(diskDefMock1).getDiskPath();
+
+        storageProcessorSpy.getDiskLabelToSnapshot(List.of(diskDefMock1), "Path", Mockito.mock(Domain.class));
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void getDiskLabelToSnapshotTestDiskPathDoesNotMatch() throws LibvirtException {
+        LibvirtVMDef.DiskDef diskDefMock1 = Mockito.mock(LibvirtVMDef.DiskDef.class);
+        Mockito.doReturn("test").when(diskDefMock1).getDiskPath();
+
+        storageProcessorSpy.getDiskLabelToSnapshot(List.of(diskDefMock1), "Path", Mockito.mock(Domain.class));
+    }
+
+    @Test
+    public void getDiskLabelToSnapshotTestDiskMatches() throws LibvirtException {
+        LibvirtVMDef.DiskDef diskDefMock1 = Mockito.mock(LibvirtVMDef.DiskDef.class);
+        Mockito.doReturn("Path").when(diskDefMock1).getDiskPath();
+        Mockito.doReturn("vda").when(diskDefMock1).getDiskLabel();
+
+        String result = storageProcessorSpy.getDiskLabelToSnapshot(List.of(diskDefMock1), "Path", Mockito.mock(Domain.class));
+
+        Assert.assertEquals("vda", result);
+    }
+
+    /**
+     * Wires a mocked Ceph stack for {@link KVMStorageProcessor#takeRbdVolumeSnapshotOfStoppedVm} and returns the
+     * mocked disk. The Rbd instance is created inside the method under test, so it is mocked by construction.
+     */
+    private KVMPhysicalDisk prepareRbdSnapshotMocks(Rados radosMock, IoCTX ioCtxMock) throws Exception {
+        KVMPhysicalDisk diskMock = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.lenient().doReturn(RBD_IMAGE_NAME).when(diskMock).getName();
+
+        Mockito.lenient().doReturn(RBD_POOL_NAME).when(kvmStoragePoolMock).getSourceDir();
+        Mockito.lenient().doReturn("10.0.0.1").when(kvmStoragePoolMock).getSourceHost();
+        Mockito.lenient().doReturn("cloudstack").when(kvmStoragePoolMock).getAuthUserName();
+        Mockito.lenient().doReturn("secret").when(kvmStoragePoolMock).getAuthSecret();
+
+        Mockito.doReturn(radosMock).when(storageProcessorSpy).radosConnect(kvmStoragePoolMock);
+        Mockito.doReturn(ioCtxMock).when(radosMock).ioCtxCreate(RBD_POOL_NAME);
+        Mockito.lenient().doReturn(SNAPSHOT_SIZE).when(storageProcessorSpy).getRbdSnapshotSize(Mockito.anyString(), Mockito.anyString(),
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+
+        return diskMock;
+    }
+
+    /**
+     * A duplicated snapCreate call used to throw "snapshot already exists" on every single RBD snapshot, which then
+     * skipped the cleanup below and leaked the image's exclusive-lock.
+     */
+    @Test
+    public void takeRbdVolumeSnapshotOfStoppedVmTestCreatesSnapshotExactlyOnce() throws Exception {
+        Rados radosMock = Mockito.mock(Rados.class);
+        IoCTX ioCtxMock = Mockito.mock(IoCTX.class);
+        RbdImage rbdImageMock = Mockito.mock(RbdImage.class);
+        KVMPhysicalDisk diskMock = prepareRbdSnapshotMocks(radosMock, ioCtxMock);
+
+        try (MockedConstruction<Rbd> rbd = Mockito.mockConstruction(Rbd.class, ((mock, context) ->
+                Mockito.doReturn(rbdImageMock).when(mock).open(RBD_IMAGE_NAME)))) {
+
+            Long result = storageProcessorSpy.takeRbdVolumeSnapshotOfStoppedVm(kvmStoragePoolMock, diskMock, SNAPSHOT_NAME);
+
+            Assert.assertEquals(Long.valueOf(SNAPSHOT_SIZE), result);
+            Mockito.verify(rbdImageMock, Mockito.times(1)).snapCreate(SNAPSHOT_NAME);
+            Mockito.verify(rbd.constructed().get(0)).close(rbdImageMock);
+            Mockito.verify(radosMock).ioCtxDestroy(ioCtxMock);
+        }
+    }
+
+    /**
+     * While the image stays open this client holds the RBD exclusive-lock, and a later 'rbd snap rollback'
+     * (revertSnapshot) from another host fails with EROFS. The handles must be released even when the snapshot fails.
+     */
+    @Test
+    public void takeRbdVolumeSnapshotOfStoppedVmTestReleasesHandlesWhenSnapshotFails() throws Exception {
+        Rados radosMock = Mockito.mock(Rados.class);
+        IoCTX ioCtxMock = Mockito.mock(IoCTX.class);
+        RbdImage rbdImageMock = Mockito.mock(RbdImage.class);
+        KVMPhysicalDisk diskMock = prepareRbdSnapshotMocks(radosMock, ioCtxMock);
+        Mockito.doThrow(new RbdException("Failed to create snapshot")).when(rbdImageMock).snapCreate(SNAPSHOT_NAME);
+
+        try (MockedConstruction<Rbd> rbd = Mockito.mockConstruction(Rbd.class, ((mock, context) ->
+                Mockito.doReturn(rbdImageMock).when(mock).open(RBD_IMAGE_NAME)))) {
+
+            Long result = storageProcessorSpy.takeRbdVolumeSnapshotOfStoppedVm(kvmStoragePoolMock, diskMock, SNAPSHOT_NAME);
+
+            Assert.assertNull(result);
+            Mockito.verify(rbd.constructed().get(0)).close(rbdImageMock);
+            Mockito.verify(radosMock).ioCtxDestroy(ioCtxMock);
+        }
+    }
+
+    @Test
+    public void testParseClvmSnapshotPath_ValidPath() {
+        String snapshotPath = "/dev/vg-storage/volume-uuid-123/snapshot-uuid-456";
+        Storage.StoragePoolType poolType = Storage.StoragePoolType.CLVM_NG;
+
+        try {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "parseClvmSnapshotPath", String.class, Storage.StoragePoolType.class);
+            method.setAccessible(true);
+            String[] result = (String[]) method.invoke(storageProcessorSpy, snapshotPath, poolType);
+
+            Assert.assertNotNull("Should return parsed array for valid path", result);
+            Assert.assertEquals("Should return 4 elements", 4, result.length);
+            Assert.assertEquals("VG name should be vg-storage", "vg-storage", result[0]);
+            Assert.assertEquals("Volume UUID should be volume-uuid-123", "volume-uuid-123", result[1]);
+            Assert.assertEquals("Snapshot UUID should be snapshot-uuid-456", "snapshot-uuid-456", result[2]);
+            Assert.assertNotNull("MD5 hash should be computed", result[3]);
+        } catch (Exception e) {
+            Assert.fail("Failed to test parseClvmSnapshotPath: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testParseClvmSnapshotPath_InvalidPathFormat() {
+        String snapshotPath = "/dev/vg-storage/invalid";
+        Storage.StoragePoolType poolType = Storage.StoragePoolType.CLVM;
+
+        try {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "parseClvmSnapshotPath", String.class, Storage.StoragePoolType.class);
+            method.setAccessible(true);
+            String[] result = (String[]) method.invoke(storageProcessorSpy, snapshotPath, poolType);
+
+            Assert.assertNull("Should return null for invalid path format", result);
+        } catch (Exception e) {
+            Assert.fail("Failed to test parseClvmSnapshotPath: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testDeleteClvmSnapshot_SuccessfulDeletion() {
+        String snapshotPath = "/dev/vg-storage/volume-uuid/snapshot-uuid";
+        Storage.StoragePoolType poolType = Storage.StoragePoolType.CLVM_NG;
+
+        try (MockedConstruction<Script> scriptConstruction = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            Mockito.when(mock.execute()).thenReturn(null);
+        })) {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "deleteClvmSnapshot", String.class, Storage.StoragePoolType.class, boolean.class);
+            method.setAccessible(true);
+            boolean result = (boolean) method.invoke(storageProcessorSpy, snapshotPath, poolType, true);
+
+            Assert.assertTrue("Should return true for successful deletion", result);
+        } catch (Exception e) {
+            Assert.fail("Failed to test deleteClvmSnapshot: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testDeleteClvmSnapshot_SnapshotAlreadyDeleted() {
+        String snapshotPath = "/dev/vg-storage/volume-uuid/snapshot-uuid";
+        Storage.StoragePoolType poolType = Storage.StoragePoolType.CLVM;
+
+        try (MockedConstruction<Script> scriptConstruction = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            Mockito.when(mock.execute()).thenReturn("Error: snapshot does not exist");
+        })) {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "deleteClvmSnapshot", String.class, Storage.StoragePoolType.class, boolean.class);
+            method.setAccessible(true);
+            boolean result = (boolean) method.invoke(storageProcessorSpy, snapshotPath, poolType, true);
+
+            Assert.assertTrue("Should return true when snapshot already deleted", result);
+        } catch (Exception e) {
+            Assert.fail("Failed to test deleteClvmSnapshot: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testDeleteClvmSnapshot_DeletionFailedWithoutCheck() {
+        String snapshotPath = "/dev/vg-storage/volume-uuid/snapshot-uuid";
+        Storage.StoragePoolType poolType = Storage.StoragePoolType.CLVM_NG;
+
+        try (MockedConstruction<Script> scriptConstruction = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            Mockito.when(mock.execute()).thenReturn("Error: some other error");
+        })) {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "deleteClvmSnapshot", String.class, Storage.StoragePoolType.class, boolean.class);
+            method.setAccessible(true);
+            boolean result = (boolean) method.invoke(storageProcessorSpy, snapshotPath, poolType, false);
+
+            Assert.assertFalse("Should return false when deletion fails", result);
+        } catch (Exception e) {
+            Assert.fail("Failed to test deleteClvmSnapshot: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testDeleteClvmSnapshot_InvalidPath() {
+        String snapshotPath = "/invalid/path";
+        Storage.StoragePoolType poolType = Storage.StoragePoolType.CLVM;
+
+        try {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "deleteClvmSnapshot", String.class, Storage.StoragePoolType.class, boolean.class);
+            method.setAccessible(true);
+            boolean result = (boolean) method.invoke(storageProcessorSpy, snapshotPath, poolType, true);
+
+            Assert.assertFalse("Should return false for invalid path", result);
+        } catch (Exception e) {
+            Assert.fail("Failed to test deleteClvmSnapshot: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testComputeMd5Hash_ValidInput() {
+        String input = "snapshot-uuid-123";
+
+        try {
+            Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "computeMd5Hash", String.class);
+            method.setAccessible(true);
+            String result = (String) method.invoke(storageProcessorSpy, input);
+
+            Assert.assertNotNull("Should return non-null hash", result);
+            Assert.assertEquals("Hash should be 32 characters long (MD5)", 32, result.length());
+            Assert.assertTrue("Hash should contain only hex characters", result.matches("[0-9a-f]+"));
+        } catch (Exception e) {
+            Assert.fail("Failed to test computeMd5Hash: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testComputeMd5Hash_EmptyInput() {
+        String input = "";
+
+        try {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "computeMd5Hash", String.class);
+            method.setAccessible(true);
+            String result = (String) method.invoke(storageProcessorSpy, input);
+
+            Assert.assertNotNull("Should return non-null hash even for empty input", result);
+            Assert.assertEquals("Hash should be 32 characters long (MD5)", 32, result.length());
+        } catch (Exception e) {
+            Assert.fail("Failed to test computeMd5Hash: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testComputeMd5Hash_ConsistentResults() {
+        String input = "snapshot-uuid-456";
+
+        try {
+            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
+                    "computeMd5Hash", String.class);
+            method.setAccessible(true);
+            String result1 = (String) method.invoke(storageProcessorSpy, input);
+            String result2 = (String) method.invoke(storageProcessorSpy, input);
+
+            Assert.assertEquals("Same input should produce same hash", result1, result2);
+        } catch (Exception e) {
+            Assert.fail("Failed to test computeMd5Hash: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void ensureLibvirtSupportsEncryptedRbdHotplugRejectsOldLibvirt() {
+        Mockito.when(resource.getHypervisorLibvirtVersion()).thenReturn(10000000L); // libvirt 10.0.0
+        CloudRuntimeException ex = Assert.assertThrows(CloudRuntimeException.class,
+                () -> storageProcessor.ensureLibvirtSupportsEncryptedRbdHotplug(StoragePoolType.RBD));
+        Assert.assertTrue(ex.getMessage(), ex.getMessage().contains("Libvirt version 10.1.0 required"));
+    }
+
+    @Test
+    public void ensureLibvirtSupportsEncryptedRbdHotplugAllowsNewLibvirt() {
+        Mockito.when(resource.getHypervisorLibvirtVersion()).thenReturn(10001000L); // libvirt 10.1.0
+        storageProcessor.ensureLibvirtSupportsEncryptedRbdHotplug(StoragePoolType.RBD); // must not throw
+    }
+
+    @Test
+    public void ensureLibvirtSupportsEncryptedRbdHotplugIgnoresNonRbd() {
+        // The libvirt hot-plug apply-order bug is RBD-specific; other pool types are not gated, and the libvirt
+        // version is not even consulted for them.
+        storageProcessor.ensureLibvirtSupportsEncryptedRbdHotplug(StoragePoolType.NetworkFilesystem);
     }
 }

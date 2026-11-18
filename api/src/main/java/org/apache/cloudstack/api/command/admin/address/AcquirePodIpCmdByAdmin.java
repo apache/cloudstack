@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.address;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,14 +34,13 @@ import com.cloud.exception.ResourceUnavailableException;
 @APICommand(name = "acquirePodIpAddress", description = "Allocates IP addresses in respective Pod of a Zone", responseObject = AcquirePodIpCmdResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AcquirePodIpCmdByAdmin extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(AcquirePodIpCmdByAdmin.class.getName());
     private static final String s_name = "acquirepodipaddress";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.STRING, entityType = ZoneResponse.class, required = true, description = "the ID of the zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.STRING, entityType = ZoneResponse.class, required = true, description = "The ID of the zone")
     private String zoneId;
 
     @Parameter(name = ApiConstants.POD_ID, type = CommandType.STRING, entityType = ZoneResponse.class, required = false, description = "Pod ID")

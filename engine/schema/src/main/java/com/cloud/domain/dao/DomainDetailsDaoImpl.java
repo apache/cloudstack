@@ -22,6 +22,10 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+import org.apache.cloudstack.framework.config.ScopedConfigStorage;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.domain.DomainDetailVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.utils.db.QueryBuilder;
@@ -29,10 +33,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigKey.Scope;
-import org.apache.cloudstack.framework.config.ScopedConfigStorage;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
 public class DomainDetailsDaoImpl extends ResourceDetailsDaoBase<DomainDetailVO> implements DomainDetailsDao, ScopedConfigStorage {
@@ -111,17 +111,17 @@ public class DomainDetailsDaoImpl extends ResourceDetailsDaoBase<DomainDetailVO>
     }
 
     @Override
-    public String getConfigValue(long id, ConfigKey<?> key) {
+    public String getConfigValue(long id, String key) {
         DomainDetailVO vo = null;
         String enableDomainSettingsForChildDomain = _configDao.getValue("enable.domain.settings.for.child.domain");
         if (!Boolean.parseBoolean(enableDomainSettingsForChildDomain)) {
-            vo = findDetail(id, key.key());
+            vo = findDetail(id, key);
             return vo == null ? null : getActualValue(vo);
         }
         DomainVO domain = _domainDao.findById(id);
         // if value is not configured in domain then check its parent domain till ROOT
         while (domain != null) {
-            vo = findDetail(domain.getId(), key.key());
+            vo = findDetail(domain.getId(), key);
             if (vo != null) {
                 break;
             } else if (domain.getParent() != null) {

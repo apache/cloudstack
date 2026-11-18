@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.cloudstack.vm.VmImportService;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -42,7 +41,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 @APICommand(name = "listUnmanagedInstances",
-        description = "Lists unmanaged virtual machines for a given cluster.",
+        description = "Lists unmanaged Instances for a given cluster.",
         responseObject = UnmanagedInstanceResponse.class,
         responseView = ResponseObject.ResponseView.Full,
         entityType = {UnmanagedInstanceTO.class},
@@ -51,7 +50,6 @@ import com.cloud.user.Account;
         authorized = {RoleType.Admin},
         since = "4.14.0")
 public class ListUnmanagedInstancesCmd extends BaseListCmd {
-    public static final Logger LOGGER = Logger.getLogger(ListUnmanagedInstancesCmd.class.getName());
 
     @Inject
     public VmImportService vmImportService;
@@ -64,12 +62,12 @@ public class ListUnmanagedInstancesCmd extends BaseListCmd {
             type = CommandType.UUID,
             entityType = ClusterResponse.class,
             required = true,
-            description = "the cluster ID")
+            description = "The cluster ID")
     private Long clusterId;
 
     @Parameter(name = ApiConstants.NAME,
             type = CommandType.STRING,
-            description = "the hypervisor name of the instance")
+            description = "The hypervisor name of the Instance")
     private String name;
 
     /////////////////////////////////////////////////////

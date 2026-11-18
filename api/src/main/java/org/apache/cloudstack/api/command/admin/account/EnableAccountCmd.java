@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.account;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -39,7 +38,6 @@ import com.cloud.user.Account;
 @APICommand(name = "enableAccount", description = "Enables an account", responseObject = AccountResponse.class, entityType = {Account.class},
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class EnableAccountCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(EnableAccountCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -48,10 +46,10 @@ public class EnableAccountCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "Account id")
     private Long id;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Enables specified account.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Enables specified Account.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Enables specified account in this domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Enables specified Account in this domain.")
     private Long domainId;
 
     @Inject
@@ -100,7 +98,7 @@ public class EnableAccountCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to enable account");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to enable Account");
         }
     }
 

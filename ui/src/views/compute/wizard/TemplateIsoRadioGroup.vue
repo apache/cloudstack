@@ -127,10 +127,14 @@ export default {
   },
   methods: {
     onSelectTemplateIso () {
-      if (this.inputDecorator === 'templateid') {
-        this.value = !this.preFillContent.templateid ? this.selected : this.preFillContent.templateid
+      if (this.preFillContent?.allowtemplateisoselection) {
+        this.value = this.selected
       } else {
-        this.value = !this.preFillContent.isoid ? this.selected : this.preFillContent.isoid
+        if (this.inputDecorator === 'templateid') {
+          this.value = !this.preFillContent.templateid ? this.selected : this.preFillContent.templateid
+        } else {
+          this.value = !this.preFillContent.isoid ? this.selected : this.preFillContent.isoid
+        }
       }
 
       this.$emit('emit-update-template-iso', this.inputDecorator, this.value)

@@ -24,7 +24,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -48,7 +47,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "listBigSwitchBcfDevices", responseObject = BigSwitchBcfDeviceResponse.class, description = "Lists BigSwitch BCF Controller devices", since = "4.6.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListBigSwitchBcfDevicesCmd extends BaseListCmd {
-    public static final Logger S_LOGGER = Logger.getLogger(ListBigSwitchBcfDevicesCmd.class.getName());
     private static final String S_NAME = "listbigswitchbcfdeviceresponse";
     @Inject
     private BigSwitchBcfElementService bigswitchBcfElementService;
@@ -57,13 +55,13 @@ public class ListBigSwitchBcfDevicesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = BcfConstants.BIGSWITCH_BCF_DEVICE_ID,
                type = CommandType.UUID,
                entityType = BigSwitchBcfDeviceResponse.class,
-               description = "bigswitch BCF controller device ID")
+               description = "Bigswitch BCF controller device ID")
     private Long bigswitchBcfDeviceId;
 
     /////////////////////////////////////////////////////

@@ -31,7 +31,8 @@ import {
   showIconPlugin,
   resourceTypePlugin,
   fileSizeUtilPlugin,
-  genericUtilPlugin
+  genericUtilPlugin,
+  dialogUtilPlugin
 } from '@/utils/plugins'
 
 function createMockRouter (newRoutes = []) {
@@ -88,6 +89,7 @@ function createFactory (component, options) {
         resourceTypePlugin,
         fileSizeUtilPlugin,
         genericUtilPlugin,
+        dialogUtilPlugin,
         StoragePlugin
       ],
       mocks
@@ -99,10 +101,20 @@ function createFactory (component, options) {
   })
 }
 
+function createDataParams (object) {
+  const params = new URLSearchParams()
+
+  Object.entries(object).forEach(([key, value]) => {
+    params.append(key, value)
+  })
+  return params
+}
+
 export default {
   createFactory,
   createMockRouter,
   createMockI18n,
   createMockStore,
+  createDataParams,
   decodeHtml
 }

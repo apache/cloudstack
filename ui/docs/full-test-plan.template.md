@@ -33,7 +33,7 @@ Note: for User role test exclude after Account/User feature, for DomainAdmin rol
 - [ ] Create new instance
 
 **Compute > Kubernetes**
-This requires configuring and setting up CKS: http://docs.cloudstack.apache.org/en/latest/plugins/cloudstack-kubernetes-service.html
+This requires configuring and setting up CKS: https://docs.cloudstack.apache.org/en/latest/plugins/cloudstack-kubernetes-service.html
 - [ ] Basic search
 - [ ] Extended search
 - [ ] Sort
@@ -105,7 +105,7 @@ This requires configuring and setting up CKS: http://docs.cloudstack.apache.org/
 - [ ] Delete affinity group
 
 **Storage > Volumes**
-- [ ] Basic earch
+- [ ] Basic search
 - [ ] Extended search
 - [ ] Sort
 - [ ] Links
@@ -176,7 +176,7 @@ This requires configuring and setting up CKS: http://docs.cloudstack.apache.org/
 - [ ] Delete public IP address (only for isolated networks)
 - [ ] Add/delete egress rule (only for isolated networks)
 
-**Network > VPC **
+**Network > VPC**
 - [ ] Basic search
 - [ ] Extended search
 - [ ] Sort
@@ -484,7 +484,7 @@ This requires configuring and setting up CKS: http://docs.cloudstack.apache.org/
 - [ ] Disable/enable host
 - [ ] Enable/cancel maintenance mode
 - [ ] Enable/disable out-of-band management
-- [ ] Enable/disale HA
+- [ ] Enable/disable HA
 - [ ] Delete host (only if disabled)
 
 **Infrastructure > Primary Storage**

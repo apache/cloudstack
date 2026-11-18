@@ -21,10 +21,10 @@ package com.cloud.network.guru;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -170,7 +170,7 @@ public class BrocadeVcsGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork != null);
         assertTrue(designednetwork.getBroadcastDomainType() == BroadcastDomainType.Vcs);
     }
@@ -191,7 +191,7 @@ public class BrocadeVcsGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork == null);
     }
 
@@ -213,7 +213,7 @@ public class BrocadeVcsGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork == null);
     }
 
@@ -231,7 +231,6 @@ public class BrocadeVcsGuestNetworkGuruTest {
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
 
-        mock(DeploymentPlan.class);
 
         final NetworkVO network = mock(NetworkVO.class);
         when(network.getName()).thenReturn("testnetwork");
@@ -291,7 +290,6 @@ public class BrocadeVcsGuestNetworkGuruTest {
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
 
-        mock(DeploymentPlan.class);
 
         final NetworkVO network = mock(NetworkVO.class);
         when(network.getName()).thenReturn("testnetwork");

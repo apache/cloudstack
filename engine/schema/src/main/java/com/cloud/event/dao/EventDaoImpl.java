@@ -20,98 +20,113 @@ import java.util.Date;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.event.Event.State;
 import com.cloud.event.EventVO;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.UpdateBuilder;
 
 @Component
 public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements EventDao {
-    public static final Logger s_logger = Logger.getLogger(EventDaoImpl.class.getName());
-    protected final SearchBuilder<EventVO> CompletedEventSearch;
+
     protected final SearchBuilder<EventVO> ToArchiveOrDeleteEventSearch;
+    protected final SearchBuilder<EventVO> LastStartEventSearch;
 
     public EventDaoImpl() {
-        CompletedEventSearch = createSearchBuilder();
-        CompletedEventSearch.and("state", CompletedEventSearch.entity().getState(), SearchCriteria.Op.EQ);
-        CompletedEventSearch.and("startId", CompletedEventSearch.entity().getStartId(), SearchCriteria.Op.EQ);
-        CompletedEventSearch.and("archived", CompletedEventSearch.entity().getArchived(), Op.EQ);
-        CompletedEventSearch.done();
-
         ToArchiveOrDeleteEventSearch = createSearchBuilder();
         ToArchiveOrDeleteEventSearch.and("id", ToArchiveOrDeleteEventSearch.entity().getId(), Op.IN);
         ToArchiveOrDeleteEventSearch.and("type", ToArchiveOrDeleteEventSearch.entity().getType(), Op.EQ);
-        ToArchiveOrDeleteEventSearch.and("accountIds", ToArchiveOrDeleteEventSearch.entity().getAccountId(), Op.IN);
+        ToArchiveOrDeleteEventSearch.and("accountId", ToArchiveOrDeleteEventSearch.entity().getAccountId(), Op.EQ);
+        ToArchiveOrDeleteEventSearch.and("domainIds", ToArchiveOrDeleteEventSearch.entity().getDomainId(), Op.IN);
         ToArchiveOrDeleteEventSearch.and("createdDateB", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.BETWEEN);
+        ToArchiveOrDeleteEventSearch.and("createdDateG", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.GTEQ);
         ToArchiveOrDeleteEventSearch.and("createdDateL", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.LTEQ);
+        ToArchiveOrDeleteEventSearch.and("createdDateLT", ToArchiveOrDeleteEventSearch.entity().getCreateDate(), Op.LT);
         ToArchiveOrDeleteEventSearch.and("archived", ToArchiveOrDeleteEventSearch.entity().getArchived(), Op.EQ);
         ToArchiveOrDeleteEventSearch.done();
+
+        LastStartEventSearch = createSearchBuilder();
+        LastStartEventSearch.and("type", LastStartEventSearch.entity().getType(), Op.EQ);
+        LastStartEventSearch.and("state", LastStartEventSearch.entity().getState(), Op.EQ);
+        LastStartEventSearch.and("resourceId", LastStartEventSearch.entity().getResourceId(), Op.EQ);
+        LastStartEventSearch.and("resourceType", LastStartEventSearch.entity().getResourceType(), Op.EQ);
+        LastStartEventSearch.and("archived", LastStartEventSearch.entity().getArchived(), Op.EQ);
+        LastStartEventSearch.done();
     }
 
     @Override
-    public List<EventVO> searchAllEvents(SearchCriteria<EventVO> sc, Filter filter) {
-        return listIncludingRemovedBy(sc, filter);
-    }
-
-    @Override
-    public List<EventVO> listOlderEvents(Date oldTime) {
-        if (oldTime == null)
-            return null;
-        SearchCriteria<EventVO> sc = createSearchCriteria();
-        sc.addAnd("createDate", SearchCriteria.Op.LT, oldTime);
-        sc.addAnd("archived", SearchCriteria.Op.EQ, false);
-        return listIncludingRemovedBy(sc, null);
-    }
-
-    @Override
-    public EventVO findCompletedEvent(long startId) {
-        SearchCriteria<EventVO> sc = CompletedEventSearch.create();
-        sc.setParameters("state", State.Completed);
-        sc.setParameters("startId", startId);
+    public EventVO findLastEvent(String type, State state, Long resourceId, String resourceType) {
+        SearchCriteria<EventVO> sc = LastStartEventSearch.create();
+        sc.setParameters("type", type);
+        sc.setParameters("state", state);
+        sc.setParameters("resourceId", resourceId);
+        sc.setParameters("resourceType", resourceType);
         sc.setParameters("archived", false);
-        return findOneIncludingRemovedBy(sc);
+        return findLastOneBy(sc);
     }
 
-    @Override
-    public List<EventVO> listToArchiveOrDeleteEvents(List<Long> ids, String type, Date startDate, Date endDate, List<Long> accountIds) {
+    private SearchCriteria<EventVO> createEventSearchCriteria(List<Long> ids, String type, Date startDate, Date endDate,
+                                                              Date limitDate, Long accountId, List<Long> domainIds) {
         SearchCriteria<EventVO> sc = ToArchiveOrDeleteEventSearch.create();
-        if (ids != null) {
-            sc.setParameters("id", ids.toArray(new Object[ids.size()]));
+
+        if (CollectionUtils.isNotEmpty(ids)) {
+            sc.setParameters("id", ids.toArray(new Object[0]));
         }
-        if (type != null) {
-            sc.setParameters("type", type);
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            sc.setParameters("domainIds", domainIds.toArray(new Object[0]));
         }
         if (startDate != null && endDate != null) {
             sc.setParameters("createdDateB", startDate, endDate);
         } else if (endDate != null) {
             sc.setParameters("createdDateL", endDate);
+        } else if (startDate != null) {
+            sc.setParameters("createdDateG", startDate);
         }
-        if (accountIds != null && !accountIds.isEmpty()) {
-            sc.setParameters("accountIds", accountIds.toArray(new Object[accountIds.size()]));
-        }
+        sc.setParametersIfNotNull("accountId", accountId);
+        sc.setParametersIfNotNull("createdDateLT", limitDate);
+        sc.setParametersIfNotNull("type", type);
         sc.setParameters("archived", false);
-        return search(sc, null);
+
+        return sc;
+    }
+
+    private boolean allIdsMatch(List<Long> ids, SearchCriteria<EventVO> sc) {
+        return CollectionUtils.isEmpty(ids) || getCountIncludingRemoved(sc) == ids.size();
     }
 
     @Override
-    public void archiveEvents(List<EventVO> events) {
-        if (events != null && !events.isEmpty()) {
-            TransactionLegacy txn = TransactionLegacy.currentTxn();
-            txn.start();
-            for (EventVO event : events) {
-                event = lockRow(event.getId(), true);
-                event.setArchived(true);
-                update(event.getId(), event);
-                txn.commit();
-            }
-            txn.close();
+    public long archiveEvents(List<Long> ids, String type, Date startDate, Date endDate, Long accountId, List<Long> domainIds,
+                              long limitPerQuery) {
+        SearchCriteria<EventVO> sc = createEventSearchCriteria(ids, type, startDate, endDate, null, accountId, domainIds);
+        if (!allIdsMatch(ids, sc)) {
+            return 0L;
         }
+
+        long totalArchived = 0L;
+        int archived;
+        do {
+            EventVO eventForUpdate = createForUpdate();
+            eventForUpdate.setArchived(true);
+            UpdateBuilder ub = getUpdateBuilder(eventForUpdate);
+            archived = update(ub, sc, limitPerQuery > 0 ? (int) Math.min(limitPerQuery, Integer.MAX_VALUE) : null);
+            totalArchived += archived;
+        } while (limitPerQuery > 0 && archived >= limitPerQuery);
+
+        return totalArchived;
+    }
+
+    @Override
+    public long deleteEvents(List<Long> ids, Date startDate, Date endDate, Date limitDate, String type, Long accountId,
+                             List<Long> domainIds, long limitPerQuery) {
+        SearchCriteria<EventVO> sc = createEventSearchCriteria(ids, type, startDate, endDate, limitDate, accountId, domainIds);
+        if (!allIdsMatch(ids, sc)) {
+            return 0L;
+        }
+        return batchExpunge(sc, limitPerQuery);
     }
 }

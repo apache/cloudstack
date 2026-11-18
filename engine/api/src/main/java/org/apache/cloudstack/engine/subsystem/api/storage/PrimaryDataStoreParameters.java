@@ -30,6 +30,7 @@ public class PrimaryDataStoreParameters {
     private String providerName;
     private Map<String, String> details;
     private String tags;
+    private String storageAccessGroups;
     private StoragePoolType type;
     private HypervisorType hypervisorType;
     private String host;
@@ -163,6 +164,21 @@ public class PrimaryDataStoreParameters {
      */
     public void setTags(String tags) {
         this.tags = tags;
+    }
+
+    /**
+     * @return the storageAccessGroups
+     */
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    /**
+     * @param storageAccessGroups
+     *            the storageAccessGroups to set
+     */
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
     }
 
     /**

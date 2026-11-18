@@ -41,6 +41,10 @@ public class DataStoreObjectResponse extends BaseResponse {
     @Param(description = "Template ID associated with the data store object.")
     private String templateId;
 
+    @SerializedName(ApiConstants.TEMPLATE_NAME)
+    @Param(description = "Template Name associated with the data store object.")
+    private String templateName;
+
     @SerializedName(ApiConstants.FORMAT)
     @Param(description = "Format of template associated with the data store object.")
     private String format;
@@ -49,9 +53,17 @@ public class DataStoreObjectResponse extends BaseResponse {
     @Param(description = "Snapshot ID associated with the data store object.")
     private String snapshotId;
 
+    @SerializedName("snapshotname")
+    @Param(description = "Snapshot Name associated with the data store object.")
+    private String snapshotName;
+
     @SerializedName(ApiConstants.VOLUME_ID)
     @Param(description = "Volume ID associated with the data store object.")
     private String volumeId;
+
+    @SerializedName(ApiConstants.VOLUME_NAME)
+    @Param(description = "Volume Name associated with the data store object.")
+    private String volumeName;
 
     @SerializedName(ApiConstants.LAST_UPDATED)
     @Param(description = "Last modified date of the file/directory.")
@@ -86,6 +98,18 @@ public class DataStoreObjectResponse extends BaseResponse {
         this.volumeId = volumeId;
     }
 
+    public void setTemplateName(String templateName) {
+        this.templateName = templateName;
+    }
+
+    public void setSnapshotName(String snapshotName) {
+        this.snapshotName = snapshotName;
+    }
+
+    public void setVolumeName(String volumeName) {
+        this.volumeName = volumeName;
+    }
+
     public String getName() {
         return name;
     }
@@ -116,5 +140,17 @@ public class DataStoreObjectResponse extends BaseResponse {
 
     public Date getLastUpdated() {
         return lastUpdated;
+    }
+
+    public String getTemplateName() {
+        return templateName;
+    }
+
+    public String getSnapshotName() {
+        return snapshotName;
+    }
+
+    public String getVolumeName() {
+        return volumeName;
     }
 }

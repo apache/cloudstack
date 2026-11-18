@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.admin.region;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -37,13 +36,12 @@ import com.cloud.user.Account;
 
 @APICommand(name = "createPortableIpRange",
             responseObject = PortableIpRangeResponse.class,
-            description = "adds a range of portable public IP's to a region",
+            description = "Adds a range of portable public IP's to a region",
             since = "4.2.0",
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
 
-    public static final Logger s_logger = Logger.getLogger(CreatePortableIpRangeCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -53,16 +51,16 @@ public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.REGION_ID, type = CommandType.INTEGER, entityType = RegionResponse.class, required = true, description = "Id of the Region")
     private Integer regionId;
 
-    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, required = true, description = "the beginning IP address in the portable IP range")
+    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, required = true, description = "The beginning IP address in the portable IP range")
     private String startIp;
 
-    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, required = true, description = "the ending IP address in the portable IP range")
+    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, required = true, description = "The ending IP address in the portable IP range")
     private String endIp;
 
-    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "the gateway for the portable IP range")
+    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "The gateway for the portable IP range")
     private String gateway;
 
-    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, required = true, description = "the netmask of the portable IP range")
+    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, required = true, description = "The netmask of the portable IP range")
     private String netmask;
 
     @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "VLAN id, if not specified defaulted to untagged")
@@ -126,7 +124,7 @@ public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create portable public IP range");
             }
         } catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }

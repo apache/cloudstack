@@ -35,10 +35,12 @@ import java.util.Properties;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.io.Files;
@@ -85,7 +87,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  **/
 public class HypervDirectConnectResourceTest {
 
-    private static final Logger s_logger = Logger.getLogger(HypervDirectConnectResourceTest.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     // TODO: make this a config parameter
     private static final String sampleLegitDiskImageURL = "http://s3-eu-west-1.amazonaws.com/cshv3eu/SmallDisk.vhdx";
@@ -188,30 +190,30 @@ public class HypervDirectConnectResourceTest {
                 continue;
             }
             Assert.assertTrue("Should have deleted file " + file.getPath(), file.delete());
-            s_logger.info("Cleaned up by delete file " + file.getPath());
+            logger.info("Cleaned up by delete file " + file.getPath());
         }
 
         s_testSampleVolumeTempURIJSON = createTestDiskImageFromExistingImage(testVolWorks, s_testLocalStorePath, s_testSampleVolumeTempUUID);
-        s_logger.info("Created " + s_testSampleVolumeTempURIJSON);
+        logger.info("Created " + s_testSampleVolumeTempURIJSON);
         s_testSampleVolumeCorruptURIJSON = createTestDiskImageFromExistingImage(testVolWorks, s_testLocalStorePath, s_testSampleVolumeCorruptUUID);
-        s_logger.info("Created " + s_testSampleVolumeCorruptURIJSON);
+        logger.info("Created " + s_testSampleVolumeCorruptURIJSON);
         createTestDiskImageFromExistingImage(testVolWorks, s_testLocalStorePath, s_testSampleTemplateUUID);
         s_testSampleTemplateURLJSON = s_testSampleTemplateUUID;
-        s_logger.info("Created " + s_testSampleTemplateURLJSON + " in local storage.");
+        logger.info("Created " + s_testSampleTemplateURLJSON + " in local storage.");
 
         // Create secondary storage template:
         createTestDiskImageFromExistingImage(testVolWorks, testSecondarStoreDir.getAbsolutePath(), "af39aa7f-2b12-37e1-86d3-e23f2f005101.vhdx");
-        s_logger.info("Created " + "af39aa7f-2b12-37e1-86d3-e23f2f005101.vhdx" + " in secondary (NFS) storage.");
+        logger.info("Created " + "af39aa7f-2b12-37e1-86d3-e23f2f005101.vhdx" + " in secondary (NFS) storage.");
 
         s_testLocalStorePathJSON = s_gson.toJson(s_testLocalStorePath);
 
         String agentIp = (String)params.get("ipaddress");
-        s_logger.info("Test using agent IP address " + agentIp);
+        logger.info("Test using agent IP address " + agentIp);
         params.put("agentIp", agentIp);
         setTestJsonResult(params);
         s_hypervresource.configure("hypervresource", params);
         // Verify sample template is in place storage pool
-        s_logger.info("setUp complete, sample StoragePool at " + s_testLocalStorePathJSON + " sample template at " + s_testSampleTemplateURLJSON);
+        logger.info("setUp complete, sample StoragePool at " + s_testLocalStorePathJSON + " sample template at " + s_testSampleTemplateURLJSON);
 
         s_agentExecutable = (String)params.get("agent.executable");
         s_testPrimaryDataStoreHost = (String)params.get("ipaddress");
@@ -247,6 +249,7 @@ public class HypervDirectConnectResourceTest {
         Assert.assertTrue(ans.getDetails(), ans.getResult());
     }
 
+    @Ignore
     public final void testStartupCommand() {
         StartupRoutingCommand defaultStartRoutCmd =
             new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.Hyperv, RouterPrivateIpStrategy.HostLocal);
@@ -269,14 +272,15 @@ public class HypervDirectConnectResourceTest {
 
         Command[] cmds = {scmd};
         String cmdsStr = s_gson.toJson(cmds);
-        s_logger.debug("Commands[] toJson is " + cmdsStr);
+        logger.debug("Commands[] toJson is " + cmdsStr);
 
         Command[] result = s_gson.fromJson(cmdsStr, Command[].class);
-        s_logger.debug("Commands[] fromJson is " + s_gson.toJson(result));
-        s_logger.debug("Commands[] first element has type" + result[0].toString());
+        logger.debug("Commands[] fromJson is " + s_gson.toJson(result));
+        logger.debug("Commands[] first element has type" + result[0].toString());
     }
 
     // @Test
+    @Ignore
     public final void testJson() {
         StartupStorageCommand sscmd = null;
         com.cloud.agent.api.StoragePoolInfo pi = new com.cloud.agent.api.StoragePoolInfo("test123", "192.168.0.1", "c:\\", "c:\\", StoragePoolType.Filesystem, 100L, 50L);
@@ -286,7 +290,7 @@ public class HypervDirectConnectResourceTest {
         sscmd.setGuid(pi.getUuid());
         sscmd.setDataCenter("foo");
         sscmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
-        s_logger.debug("StartupStorageCommand fromJson is " + s_gson.toJson(sscmd));
+        logger.debug("StartupStorageCommand fromJson is " + s_gson.toJson(sscmd));
     }
 
     @Test
@@ -305,7 +309,7 @@ public class HypervDirectConnectResourceTest {
         StoragePoolVO pool = createTestStoragePoolVO(folderName);
 
         CreateStoragePoolCommand cmd = new CreateStoragePoolCommand(true, pool);
-        s_logger.debug("TestCreateStoragePoolCommand sending " + s_gson.toJson(cmd));
+        logger.debug("TestCreateStoragePoolCommand sending " + s_gson.toJson(cmd));
 
         Answer ans = s_hypervresource.executeRequest(cmd);
         Assert.assertTrue(ans.getResult());
@@ -340,7 +344,7 @@ public class HypervDirectConnectResourceTest {
         }
 
         // Use same spec for pool
-        s_logger.info("Createing pool at : " + folderName);
+        logger.info("Createing pool at : " + folderName);
 
         StoragePoolVO pool = new StoragePoolVO(StoragePoolType.Filesystem, "127.0.0.1", -1, folderName);
         pool.setUuid(s_testLocalStoreUUID);
@@ -363,7 +367,7 @@ public class HypervDirectConnectResourceTest {
         }
 
         // Use same spec for pool
-        s_logger.info("Createing pool at : " + folderName);
+        logger.info("Createing pool at : " + folderName);
 
         StoragePoolVO pool = new StoragePoolVO(StoragePoolType.Filesystem, "127.0.0.1", -1, folderName);
         return pool;
@@ -377,8 +381,8 @@ public class HypervDirectConnectResourceTest {
         if (result == null) {
             result = "NULL";
         }
-        s_logger.debug("TestInitialize returned " + result);
-        s_logger.debug("TestInitialize expected " + _setTestJsonResultStr);
+        logger.debug("TestInitialize returned " + result);
+        logger.debug("TestInitialize expected " + _setTestJsonResultStr);
         Assert.assertTrue("StartupCommand[] not what we expected", _setTestJsonResultStr.equals(result));
         return;
     }
@@ -393,9 +397,9 @@ public class HypervDirectConnectResourceTest {
     private void corePrimaryStorageDownloadCommandTestCycle(final PrimaryStorageDownloadCommand cmd) {
         PrimaryStorageDownloadAnswer ans = (PrimaryStorageDownloadAnswer)s_hypervresource.executeRequest(cmd);
         if (!ans.getResult()) {
-            s_logger.error(ans.getDetails());
+            logger.error(ans.getDetails());
         } else {
-            s_logger.debug(ans.getDetails());
+            logger.debug(ans.getDetails());
         }
 
         Assert.assertTrue(ans.getDetails(), ans.getResult());
@@ -444,7 +448,7 @@ public class HypervDirectConnectResourceTest {
             testSampleTemplateURLFile.exists());
 
         int fileCount = destDir.listFiles().length;
-        s_logger.debug(" test local store has " + fileCount + "files");
+        logger.debug(" test local store has " + fileCount + "files");
         // Test requires there to be a template at the tempalteUrl, which is its
         // location in the local file system.
         CreateCommand cmd = s_gson.fromJson(sample, CreateCommand.class);
@@ -527,7 +531,7 @@ public class HypervDirectConnectResourceTest {
 
     private StartAnswer simpleVmStart(final String sample) {
         StartCommand cmd = s_gson.fromJson(sample, StartCommand.class);
-        s_logger.info("StartCommand sample " + s_gson.toJson(cmd));
+        logger.info("StartCommand sample " + s_gson.toJson(cmd));
         StartAnswer ans = (StartAnswer)s_hypervresource.executeRequest(cmd);
         return ans;
     }
@@ -553,7 +557,7 @@ public class HypervDirectConnectResourceTest {
         String sample =
             "{\"id\":\"" + s_testLocalStoreUUID + "\",\"localPath\":" + s_testLocalStorePathJSON + "," + "\"pooltype\":\"Filesystem\"," + "\"contextMap\":{},\"wait\":0}";
 
-        s_logger.info("Sample JSON: " + sample);
+        logger.info("Sample JSON: " + sample);
 
         GetStorageStatsCommand cmd = s_gson.fromJson(sample, GetStorageStatsCommand.class);
         s_hypervresource.executeRequest(cmd);
@@ -573,7 +577,7 @@ public class HypervDirectConnectResourceTest {
             writer.flush();
             writer.close();
         } catch (IOException ex) {
-            s_logger.debug("Error closing agent at " + s_agentExecutable + " message " + ex.getMessage());
+            logger.debug("Error closing agent at " + s_agentExecutable + " message " + ex.getMessage());
         }
     }
 
@@ -592,7 +596,7 @@ public class HypervDirectConnectResourceTest {
             s_agentProc = builder.start();
             Thread.sleep(4000);
         } catch (Exception ex) {
-            s_logger.debug("Error calling starting aget at " + s_agentExecutable + " message " + ex.getMessage());
+            logger.debug("Error calling starting aget at " + s_agentExecutable + " message " + ex.getMessage());
         }
     }
 
@@ -617,14 +621,14 @@ public class HypervDirectConnectResourceTest {
         Assert.assertTrue(ans.getDetails() == null);
     }
 
-    public static Properties loadProperties() throws ConfigurationException {
+    public Properties loadProperties() throws ConfigurationException {
         Properties properties = new Properties();
         final File file = PropertiesUtil.findConfigFile("agent.properties");
         if (file == null) {
             throw new ConfigurationException("Unable to find agent.properties.");
         }
 
-        s_logger.info("agent.properties found at " + file.getAbsolutePath());
+        logger.info("agent.properties found at " + file.getAbsolutePath());
 
         try {
             properties.load(new FileInputStream(file));

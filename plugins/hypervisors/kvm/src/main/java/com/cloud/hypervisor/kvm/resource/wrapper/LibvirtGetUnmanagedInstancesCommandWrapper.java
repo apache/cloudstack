@@ -19,6 +19,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import com.cloud.agent.api.GetUnmanagedInstancesAnswer;
 import com.cloud.agent.api.GetUnmanagedInstancesCommand;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
@@ -30,7 +31,6 @@ import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainBlockInfo;
@@ -42,13 +42,12 @@ import java.util.List;
 
 @ResourceWrapper(handles=GetUnmanagedInstancesCommand.class)
 public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWrapper<GetUnmanagedInstancesCommand, GetUnmanagedInstancesAnswer, LibvirtComputingResource> {
-    private static final Logger LOGGER = Logger.getLogger(LibvirtGetUnmanagedInstancesCommandWrapper.class);
 
     private static final int requiredVncPasswordLength = 22;
 
     @Override
     public GetUnmanagedInstancesAnswer execute(GetUnmanagedInstancesCommand command, LibvirtComputingResource libvirtComputingResource) {
-        LOGGER.info("Fetching unmanaged instances on host");
+        logger.info("Fetching unmanaged instance on host");
 
         HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>();
         try {
@@ -65,7 +64,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             }
         } catch (Exception e) {
             String err = String.format("Error listing unmanaged instances: %s", e.getMessage());
-            LOGGER.error(err, e);
+            logger.error(err, e);
             return new GetUnmanagedInstancesAnswer(command, err);
         }
 
@@ -81,7 +80,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             final Domain domain = libvirtComputingResource.getDomain(conn, vmNameCmd);
             if (domain == null) {
                 String msg = String.format("VM %s not found", vmNameCmd);
-                LOGGER.error(msg);
+                logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
 
@@ -104,14 +103,14 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
     private void checkIfVmExists(String vmNameCmd,final Domain domain) throws LibvirtException {
         if (StringUtils.isNotEmpty(vmNameCmd) &&
                 !vmNameCmd.equals(domain.getName())) {
-            LOGGER.error("GetUnmanagedInstancesCommand: exact vm name not found " + vmNameCmd);
+            logger.error("GetUnmanagedInstancesCommand: exact vm name not found " + vmNameCmd);
             throw new CloudRuntimeException("GetUnmanagedInstancesCommand: exact vm name not found " + vmNameCmd);
         }
     }
 
     private void checkIfVmIsManaged(GetUnmanagedInstancesCommand command,String vmNameCmd,final Domain domain) throws LibvirtException {
         if (command.hasManagedInstance(domain.getName())) {
-            LOGGER.error("GetUnmanagedInstancesCommand: vm already managed " + vmNameCmd);
+            logger.error("GetUnmanagedInstancesCommand: vm already managed " + vmNameCmd);
             throw new CloudRuntimeException("GetUnmanagedInstancesCommand:  vm already managed " + vmNameCmd);
         }
     }
@@ -132,15 +131,22 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             if (parser.getCpuModeDef() != null) {
                 instance.setCpuCoresPerSocket(parser.getCpuModeDef().getCoresPerSocket());
             }
+            instance.setHypervisorType(Hypervisor.HypervisorType.KVM.name());
             instance.setPowerState(getPowerState(libvirtComputingResource.getVmState(conn,domain.getName())));
             instance.setMemory((int) LibvirtComputingResource.getDomainMemory(domain) / 1024);
-            instance.setNics(getUnmanagedInstanceNics(parser.getInterfaces()));
+            instance.setNics(getUnmanagedInstanceNics(libvirtComputingResource, parser.getInterfaces()));
             instance.setDisks(getUnmanagedInstanceDisks(parser.getDisks(),libvirtComputingResource, conn, domain.getName()));
             instance.setVncPassword(getFormattedVncPassword(parser.getVncPasswd()));
+            if (parser.getBootType() != null) {
+                instance.setBootType(parser.getBootType().toString());
+            }
+            if (parser.getBootMode() != null) {
+                instance.setBootMode(parser.getBootMode().toString());
+            }
 
             return instance;
         } catch (Exception e) {
-            LOGGER.info("Unable to retrieve unmanaged instance info. " + e.getMessage(), e);
+            logger.info("Unable to retrieve unmanaged instance info. " + e.getMessage(), e);
             return null;
         }
     }
@@ -165,7 +171,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
         }
     }
 
-    private List<UnmanagedInstanceTO.Nic> getUnmanagedInstanceNics(List<LibvirtVMDef.InterfaceDef> interfaces) {
+    private List<UnmanagedInstanceTO.Nic> getUnmanagedInstanceNics(LibvirtComputingResource libvirtComputingResource, List<LibvirtVMDef.InterfaceDef> interfaces) {
         final ArrayList<UnmanagedInstanceTO.Nic> nics = new ArrayList<>(interfaces.size());
         int counter = 0;
         for (LibvirtVMDef.InterfaceDef interfaceDef : interfaces) {
@@ -176,6 +182,10 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             nic.setNetwork(interfaceDef.getDevName());
             nic.setPciSlot(interfaceDef.getSlot().toString());
             nic.setVlan(interfaceDef.getVlanTag());
+            if (nic.getVlan() == -1
+                && LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE.equals(interfaceDef.getNetType())) {
+                nic.setVlan(libvirtComputingResource.getVlanIdForBridge(interfaceDef.getBrName()));
+            }
             nics.add(nic);
         }
         return nics;

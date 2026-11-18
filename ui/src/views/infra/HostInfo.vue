@@ -48,7 +48,7 @@
           </div>
         </div>
       </a-list-item>
-      <a-list-item v-if="host.instanceconversionsupported">
+      <a-list-item v-if="host.instanceconversionsupported !== undefined && host.instanceconversionsupported !== null">
         <div>
           <strong>{{ $t('label.instance.conversion.support') }}</strong>
           <div>
@@ -56,11 +56,137 @@
           </div>
         </div>
       </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.virtv2v.version']">
+        <div>
+          <strong>{{ $t('label.host.virtv2v.version') }}</strong>
+          <div>
+            {{ host.details['host.virtv2v.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="hasHostDetail('host.virtv2v.inplace.support')">
+        <div>
+          <strong>{{ $t('label.host.virtv2v.inplace.support') }}</strong>
+          <div>
+            {{ host.details['host.virtv2v.inplace.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.virtv2v.inplace.version']">
+        <div>
+          <strong>{{ $t('label.host.virtv2v.inplace.version') }}</strong>
+          <div>
+            {{ host.details['host.virtv2v.inplace.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="hasHostDetail('host.vddk.support')">
+        <div>
+          <strong>{{ $t('label.host.vddk.support') }}</strong>
+          <div>
+            {{ host.details['host.vddk.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.vddk.version']">
+        <div>
+          <strong>{{ $t('label.host.vddk.version') }}</strong>
+          <div>
+            {{ host.details['host.vddk.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="hasHostDetail('host.vddk.blockcopy.support')">
+        <div>
+          <strong>{{ $t('label.host.vmware.cbt.data.copy.support') }}</strong>
+          <div>
+            {{ host.details['host.vddk.blockcopy.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="hasHostDetail('host.vddk.blockcopy.inplace.finalization.support')">
+        <div>
+          <strong>{{ $t('label.host.vddk.blockcopy.inplace.finalization.support') }}</strong>
+          <div>
+            {{ host.details['host.vddk.blockcopy.inplace.finalization.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="hasHostDetail('host.vddk.blockcopy.rbd.support')">
+        <div>
+          <strong>{{ $t('label.host.vddk.blockcopy.rbd.support') }}</strong>
+          <div>
+            {{ host.details['host.vddk.blockcopy.rbd.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="hasHostDetail('host.vddk.rbd.direct.import.support')">
+        <div>
+          <strong>{{ $t('label.host.vddk.rbd.direct.import.support') }}</strong>
+          <div>
+            {{ host.details['host.vddk.rbd.direct.import.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.qemu.img.version']">
+        <div>
+          <strong>{{ $t('label.host.qemu.img.version') }}</strong>
+          <div>
+            {{ host.details['host.qemu.img.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.qemu.io.version']">
+        <div>
+          <strong>{{ $t('label.host.qemu.io.version') }}</strong>
+          <div>
+            {{ host.details['host.qemu.io.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.qemu.nbd.version']">
+        <div>
+          <strong>{{ $t('label.host.qemu.nbd.version') }}</strong>
+          <div>
+            {{ host.details['host.qemu.nbd.version'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="hasHostDetail('host.qemu.rbd.support')">
+        <div>
+          <strong>{{ $t('label.host.qemu.rbd.support') }}</strong>
+          <div>
+            {{ host.details['host.qemu.rbd.support'] }}
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.details && host.details['host.ovftool.version']">
+        <div>
+          <strong>{{ $t('label.host.ovftool.version') }}</strong>
+          <div>
+            {{ host.details['host.ovftool.version'] }}
+          </div>
+        </div>
+      </a-list-item>
       <a-list-item v-if="host.hosttags">
         <div>
           <strong>{{ $t('label.hosttags') }}</strong>
+          <div v-for="hosttag in host.allhosttags" :key="hosttag.tag">
+            {{ hosttag.tag }}
+            <span v-if="hosttag.isexplicit">
+              <a-tag color="blue">{{ $t('label.hosttags.explicit.abbr') }}</a-tag>
+            </span>
+            <span v-if="hosttag.isimplicit">
+              <a-tag color="orange">{{ $t('label.hosttags.implicit.abbr') }}</a-tag>
+            </span>
+          </div>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="host.storageaccessgroups">
+        <div>
+          <strong>{{ $t('label.storageaccessgroups') }}</strong>
           <div>
-            {{ host.hosttags }}
+            {{ host.storageaccessgroups }}
           </div>
         </div>
       </a-list-item>
@@ -159,7 +285,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 export default {
   name: 'HostInfo',
@@ -196,10 +322,30 @@ export default {
     }
   },
   methods: {
+    hasHostDetail (key) {
+      return this.host.details && Object.prototype.hasOwnProperty.call(this.host.details, key) &&
+        this.host.details[key] !== null && this.host.details[key] !== ''
+    },
     fetchData () {
       this.fetchLoading = true
-      api('listHosts', { id: this.resource.id }).then(json => {
+      getAPI('listHosts', { id: this.resource.id }).then(json => {
         this.host = json.listhostsresponse.host[0]
+        const hosttags = this.host.hosttags?.split(',') || []
+        const explicithosttags = this.host.explicithosttags?.split(',') || []
+        const implicithosttags = this.host.implicithosttags?.split(',') || []
+        const allHostTags = []
+        for (const hosttag of hosttags) {
+          var isexplicit = false
+          var isimplicit = false
+          if (explicithosttags.includes(hosttag)) {
+            isexplicit = true
+          }
+          if (implicithosttags.includes(hosttag)) {
+            isimplicit = true
+          }
+          allHostTags.push({ tag: hosttag, isexplicit: isexplicit, isimplicit: isimplicit })
+        }
+        this.host.allhosttags = allHostTags
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {

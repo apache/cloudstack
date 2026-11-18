@@ -21,7 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
@@ -103,11 +104,13 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.NicIpAliasDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
 
 public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
-    public static final Logger s_logger = Logger.getLogger(NetworkMigrationManagerImpl.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private DataCenterDao _dcDao = null;
@@ -131,6 +134,8 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
     private NicDao _nicDao = null;
     @Inject
     private NicSecondaryIpDao _nicSecondaryIpDao = null;
+    @Inject
+    private NicNetworkMapDao _nicNetworkMapDao = null;
     @Inject
     private NicIpAliasDao _nicIpAliasDao = null;
     @Inject
@@ -181,8 +186,8 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
     private ResourceTagDao _resourceTagDao = null;
 
     @Override public long makeCopyOfNetwork(Network network, NetworkOffering networkOffering, Long vpcId) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Making a copy of network with uuid " + network.getUuid() + " and id " + network.getId() + " for migration.");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Making a copy of network {} for migration.", network);
         }
         long originalNetworkId = network.getId();
         NetworkDomainVO domainNetworkMapByNetworkId = _networkDomainDao.getDomainNetworkMapByNetworkId(originalNetworkId);
@@ -234,12 +239,12 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
         _networksDao.update(networkCopyId, copiedNetwork);
 
         copyNetworkDetails(originalNetworkId, networkCopyId);
-        copyFirewallRulesToNewNetwork(network, networkCopyId);
+        copyFirewallRulesToNewNetwork(network, copiedNetwork);
         assignUserNicsToNewNetwork(originalNetworkId, networkCopyId);
         assignRouterNicsToNewNetwork(network.getId(), networkCopyId);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Successfully created a copy of network  " + originalNetwork.getName() + "(" + originalNetwork.getUuid() + ") id is " + originalNetwork.getId() + " for migration. The network copy has uuid " + network.getUuid() + " and id " + network.getId());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Successfully created a copy of network  " + originalNetwork.getName() + "(" + originalNetwork.getUuid() + ") id is " + originalNetwork.getId() + " for migration. The network copy has uuid " + network.getUuid() + " and id " + network.getId());
         }
         return networkCopyId;
     }
@@ -285,8 +290,8 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
     @Override
     public Long makeCopyOfVpc(long vpcId, long vpcOfferingId) {
         VpcVO vpc = _vpcDao.findById(vpcId);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Making a copy of vpc with uuid " + vpc.getUuid() + " and id " + vpc.getId() + " for migration.");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Making a copy of vpc {} for migration.", vpc);
         }
         if (vpc == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Specified vpc id doesn't exist in the system");
@@ -300,7 +305,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
 
             copyOfVpc = _vpcService.createVpc(vpc.getZoneId(), vpcOfferingId, vpc.getAccountId(), vpc.getName(),
                     vpc.getDisplayText(), vpc.getCidr(), vpc.getNetworkDomain(), vpc.getIp4Dns1(), vpc.getIp4Dns2(),
-                    vpc.getIp6Dns1(), vpc.getIp6Dns2(), vpc.isDisplay(), vpc.getPublicMtu());
+                    vpc.getIp6Dns1(), vpc.getIp6Dns2(), vpc.isDisplay(), vpc.getPublicMtu(), null, null, null, vpc.useRouterIpAsResolver(), vpc.getKeepMacAddressOnPublicNic());
 
             copyOfVpcId = copyOfVpc.getId();
             //on resume of migration the uuid will be swapped already. So the copy will have the value of the original vpcid.
@@ -313,8 +318,8 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
             copyVpcDetails(vpcId, copyOfVpcId);
             reassignGatewayToNewVpc(vpcId, copyOfVpcId);
             copyVpcResourceTagsToNewVpc(vpcId, copyOfVpcId);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Successfully created a copy of network  " + vpc.getName() + "(" + vpc.getUuid() + ") id is " + vpc.getId() + " for migration. The network copy has uuid " + copyVpcVO.getUuid() + " and id " + copyOfVpc.getId());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Successfully created a copy of network  " + vpc.getName() + "(" + vpc.getUuid() + ") id is " + vpc.getId() + " for migration. The network copy has uuid " + copyVpcVO.getUuid() + " and id " + copyOfVpc.getId());
             }
         } catch (ResourceAllocationException e) {
             throw new CloudRuntimeException(e.getMessage());
@@ -329,7 +334,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
             try {
                 _vpcService.startVpc(vpc.getId(), true);
             } catch (ResourceUnavailableException | InsufficientCapacityException e) {
-                s_logger.error("Vpc can not be started. Aborting migration process");
+                logger.error("Vpc can not be started. Aborting migration process");
                 throw new CloudRuntimeException("Vpc can not be started.", e);
             }
         }
@@ -392,11 +397,11 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
         }
     }
 
-    private void copyFirewallRulesToNewNetwork(Network srcNetwork, long dstNetworkId) {
+    private void copyFirewallRulesToNewNetwork(Network srcNetwork, Network dstNetwork) {
         List<FirewallRuleVO> firewallRules = _firewallDao.listByNetworkPurposeTrafficType(srcNetwork.getId(), FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Egress);
         firewallRules.addAll(_firewallDao.listByNetworkPurposeTrafficType(srcNetwork.getId(), FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Ingress));
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Copying firewall rules from network with id " + srcNetwork.getId() + " to network with id " + dstNetworkId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Copying firewall rules from network {} to network {}", srcNetwork, dstNetwork);
         }
 
         //Loop over all the firewall rules in the original network and copy all values to a new firewall rule
@@ -407,7 +412,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
                                                        originalFirewallRule.getSourcePortStart(),
                                                        originalFirewallRule.getSourcePortEnd(),
                                                        originalFirewallRule.getProtocol(),
-                                                       dstNetworkId,
+                                                       dstNetwork.getId(),
                                                        srcNetwork.getAccountId(),
                                                        srcNetwork.getDomainId(),
                                                        originalFirewallRule.getPurpose(),
@@ -450,7 +455,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
 
     @Override
     public Network upgradeNetworkToNewNetworkOffering(long networkId, long newPhysicalNetworkId, long networkOfferingId, Long vpcId) {
-        s_logger.debug("upgrading network to network with new offering.");
+        logger.debug("upgrading network to network with new offering.");
         NetworkVO network = _networksDao.findById(networkId);
         NetworkOffering newOffering = _networkOfferingDao.findByIdIncludingRemoved(networkOfferingId);
         long gurusImplementing = 0;
@@ -459,7 +464,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
         DataCenterDeployment plan = new DataCenterDeployment(network.getDataCenterId(), null, null, null, null, newPhysicalNetworkId);
         for (final NetworkGuru guru : _networkMgr.getNetworkGurus()) {
 
-            final Network designedNetwork = guru.design(newOffering, plan, network, networkAccount);
+            final Network designedNetwork = guru.design(newOffering, plan, network, network.getName(), vpcId, networkAccount);
             if (designedNetwork == null) {
                 continue;
             }
@@ -492,7 +497,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
 
         NicVO userNic = _nicDao.findByNetworkIdAndType(networkCopyId, VirtualMachine.Type.User);
         if (userNic != null) {
-            s_logger.error("Something went wrong while migrating nics from the old network to the new network. Failed to delete copy of network. There are still user nics present in the network.");
+            logger.error("Something went wrong while migrating nics from the old network to the new network. Failed to delete copy of network. There are still user nics present in the network.");
             throw new CloudRuntimeException("Failed to delete copy of network. There are still user nics present in the network.");
         }
 
@@ -530,7 +535,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
     }
 
     private Boolean migrateNicsInDB(NicVO originalNic, Network networkInNewPhysicalNet, DataCenter dc, ReservationContext context) {
-        s_logger.debug("migrating nics in database.");
+        logger.debug("migrating nics in database.");
         UserVmVO vmVO = _vmDao.findById(originalNic.getInstanceId());
         VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vmVO, null, null, null, null);
         NicProfile nicProfile = new NicProfile(originalNic, networkInNewPhysicalNet, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(networkInNewPhysicalNet), null);
@@ -551,6 +556,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
         copyNicDetails(originalNic.getId(), newNic.getId());
         //Update nic uuid here
         moveServices(originalNic, newNic);
+        moveTrunkAssociations(originalNic, newNic);
 
         if (originalNic.getState() == Nic.State.Reserved) {
             final VirtualMachine vm = vmProfile.getVirtualMachine();
@@ -569,8 +575,8 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
         markAsNonDefault(originalNic);
         _networkMgr.removeNic(vmProfile, originalNic);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Nic is migrated successfully for vm " + vmVO + " to " + networkInNewPhysicalNet);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Nic is migrated successfully for vm " + vmVO + " to " + networkInNewPhysicalNet);
         }
         return true;
     }
@@ -592,6 +598,8 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
                                             (status) -> migrateNicsInDB(originalNic, networkInNewPhysicalNet, dc, context));
         }
 
+        _networkService.refreshTrunkNicsAssociatedToNetwork(networkInNewPhysicalNet);
+
         //Now that nics are migrated we can migrate the static nats on those nics
         reapplyPublicIps(srcNetwork, networkInNewPhysicalNet);
     }
@@ -612,11 +620,11 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
                 ipAddress.setAssociatedWithNetworkId(networkInNewPhysicalNet.getId());
                 _ipAddressDao.persist(ipAddress);
             } else {
-                _ipAddressManager.disassociatePublicIpAddress(ipAddress.getId(), callerUserId, caller);
+                _ipAddressManager.disassociatePublicIpAddress(ipAddress, callerUserId, caller);
             }
         }
 
-        _rulesMgr.applyStaticNatsForNetwork(networkInNewPhysicalNet.getId(), false, networkAccount);
+        _rulesMgr.applyStaticNatsForNetwork(networkInNewPhysicalNet, false, networkAccount);
     }
 
     private void copyNicDetails(long originalNicId, long dstNicId) {
@@ -631,6 +639,21 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
         _nicIpAliasDao.moveIpAliases(originalNic.getId(), newNic.getId());
         _nicSecondaryIpDao.moveSecondaryIps(originalNic.getId(), newNic.getId());
         swapUuids(originalNic, newNic);
+    }
+
+    // Without this, removeNic() on the old nic would delete the associations along with their IPs and DHCP entries.
+    private void moveTrunkAssociations(NicVO originalNic, NicVO newNic) {
+        if (!originalNic.getMultiNetwork()) {
+            return;
+        }
+        for (NicNetworkMapVO association : _nicNetworkMapDao.listByNicId(originalNic.getId())) {
+            association.setNicId(newNic.getId());
+            _nicNetworkMapDao.update(association.getId(), association);
+        }
+        newNic.setMultiNetwork(true);
+        _nicDao.persist(newNic);
+        originalNic.setMultiNetwork(false);
+        _nicDao.persist(originalNic);
     }
 
     private void markAsNonDefault(NicVO nic) {

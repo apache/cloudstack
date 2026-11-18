@@ -18,18 +18,28 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 
 import com.cloud.host.Host;
+import com.cloud.offering.DiskOffering;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.Pair;
 
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
+    /** Validate backend ownership before adopting an existing volume, without modifying it. */
+    default void validateVolumeForImport(StoragePool pool, String path) {
+        if (pool.getPoolType() == StoragePoolType.Linstor) {
+            throw new UnsupportedOperationException("The storage driver cannot validate LINSTOR volume imports");
+        }
+    }
+
     enum QualityOfServiceState { MIGRATION, NO_MIGRATION }
 
     String BASIC_CREATE = "basicCreate";
@@ -111,6 +121,14 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     Pair<Long, Long> getStorageStats(StoragePool storagePool);
 
     /**
+     * Intended for managed storage
+     * returns the capacity and used IOPS or null if not supported
+     */
+    default Pair<Long, Long> getStorageIopsStats(StoragePool storagePool) {
+        return null;
+    }
+
+    /**
      * intended for managed storage
      * returns true if the storage can provide the volume stats (physical and virtual size)
      */
@@ -134,6 +152,14 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
      */
     default boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool) {
         return false;
+    }
+
+    /**
+     * intended for managed storage
+     * returns true if the host can be disconnected from storage pool
+     */
+    default boolean canDisconnectHostFromStoragePool(Host host, StoragePool pool) {
+        return true;
     }
 
     /**
@@ -182,5 +208,45 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
      */
     default boolean zoneWideVolumesAvailableWithoutClusterMotion() {
         return false;
+    }
+
+    /**
+     * This method returns the actual size required on the pool for a volume.
+     *
+     * @param volumeSize
+     *         Size of volume to be created on the store
+     * @param templateSize
+     *         Size of template, if any, which will be used to create the volume
+     * @param isEncryptionRequired
+     *         true if volume is encrypted
+     *
+     * @return the size required on the pool for the volume
+     */
+    default long getVolumeSizeRequiredOnPool(long volumeSize, Long templateSize, boolean isEncryptionRequired) {
+        return volumeSize;
+    }
+    default boolean informStorageForDiskOfferingChange() {
+        return false;
+    }
+
+    default void updateStorageWithTheNewDiskOffering(Volume volume, DiskOffering newDiskOffering) {}
+
+    /**
+     * intended for storage that can enumerate its own volumes available for import without hypervisor involvement
+     * @param volumePath when not blank, restricts the result to the volume with this path, if found
+     * @param keyword when not blank, restricts the result to volumes whose name contains this keyword
+     * @param forUnmanage when volume will be unmanaged from CloudStack
+     * @return null if the storage driver does not support listing volumes for import on its own,
+     * in which case the caller falls back to querying a host via GetVolumesOnStorageCommand
+    */
+    default List<VolumeOnStorageTO> listVolumesForImport(StoragePool pool, String volumePath, String keyword, boolean forUnmanage) {
+        return null;
+    }
+
+    /**
+     * Called after a volume is imported into or unmanaged from CloudStack, so the driver can
+     * mark/unmark it accordingly (e.g. tag it) for future {@link #listVolumesForImport} calls.
+     */
+    default void volumeManagementChanged(StoragePool pool, Volume volume, boolean imported) {
     }
 }

@@ -32,7 +32,6 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -47,7 +46,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class HostAffinityProcessor extends AffinityProcessorBase implements AffinityGroupProcessor {
 
-    private static final Logger s_logger = Logger.getLogger(HostAffinityProcessor.class);
 
     @Inject
     protected VMInstanceDao _vmInstanceDao;
@@ -65,7 +63,9 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
-                    _affinityGroupDao.listByIds(affinityGroupIdList, true);
+                    if (!affinityGroupIdList.isEmpty()) {
+                        _affinityGroupDao.listByIds(affinityGroupIdList, true);
+                    }
                     for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
                         processAffinityGroup(vmGroupMapping, plan, vm, vmList);
                     }
@@ -80,7 +80,7 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
      */
     protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, DeploymentPlan plan, VirtualMachine vm, List<VirtualMachine> vmList) {
         AffinityGroupVO group = _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
-        s_logger.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
+        logger.debug("Processing affinity group {} for VM {}", group, vm);
 
         List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
         groupVMIds.remove(vm.getId());
@@ -151,7 +151,9 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
-                _affinityGroupDao.listByIds(affinityGroupIds, true);
+                if (!affinityGroupIds.isEmpty()) {
+                    _affinityGroupDao.listByIds(affinityGroupIds, true);
+                }
                 for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
                     if (!checkAffinityGroup(vmGroupMapping, vm, plannedHostId)) {
                         return false;

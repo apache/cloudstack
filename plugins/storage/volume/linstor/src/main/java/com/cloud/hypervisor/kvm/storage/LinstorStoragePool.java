@@ -24,9 +24,14 @@ import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+
+import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
@@ -34,27 +39,30 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import org.apache.cloudstack.utils.qemu.QemuImg;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.Duration;
 
 public class LinstorStoragePool implements KVMStoragePool {
-    private static final Logger s_logger = Logger.getLogger(LinstorStoragePool.class);
+    private static final Logger LOGGER = LogManager.getLogger(LinstorStoragePool.class);
     private final String _uuid;
     private final String _sourceHost;
     private final int _sourcePort;
     private final Storage.StoragePoolType _storagePoolType;
     private final StorageAdaptor _storageAdaptor;
     private final String _resourceGroup;
+    private final boolean _insecureSsl;
     private final String localNodeName;
 
     public LinstorStoragePool(String uuid, String host, int port, String resourceGroup,
-                              Storage.StoragePoolType storagePoolType, StorageAdaptor storageAdaptor) {
+                              Storage.StoragePoolType storagePoolType, StorageAdaptor storageAdaptor, boolean insecureSsl) {
         _uuid = uuid;
         _sourceHost = host;
         _sourcePort = port;
         _storagePoolType = storagePoolType;
         _storageAdaptor = storageAdaptor;
         _resourceGroup = resourceGroup;
+        _insecureSsl = insecureSsl;
         localNodeName = getHostname();
     }
 
@@ -99,6 +107,11 @@ public class LinstorStoragePool implements KVMStoragePool {
     public List<KVMPhysicalDisk> listPhysicalDisks()
     {
         return _storageAdaptor.listPhysicalDisks(_uuid, this);
+    }
+
+    @Override
+    public List<VolumeOnStorageTO> getVolumesForImport(String path) {
+        return ((LinstorStorageAdaptor) _storageAdaptor).getVolumesForImport(this, path);
     }
 
     @Override
@@ -212,6 +225,31 @@ public class LinstorStoragePool implements KVMStoragePool {
         return _resourceGroup;
     }
 
+    /**
+     * A freshly spawned Linstor resource reads back as zeros only on providers that
+     * zero-initialize new volumes (LVM-thin, ZFS, and diskless). Thick providers
+     * (e.g. plain LVM) may expose stale data from previously deleted volumes, so the
+     * caller must write the zeros rather than skip them.
+     */
+    @Override
+    public boolean isVolumeZeroInitialized(String volumeName) {
+        return LinstorUtil.resourceSupportZeroBlocks(this, LinstorUtil.RSC_PREFIX + volumeName);
+    }
+
+    /**
+     * A DRBD resource can be in use (Primary/open) on any node in the cluster, which a
+     * host-local qemu-img lock cannot see. Report the node it is in use on so adoption
+     * refuses a volume still attached to a running VM elsewhere.
+     */
+    @Override
+    public String getVolumeInUseNode(String volumeName) {
+        return LinstorUtil.isResourceInUse(this, LinstorUtil.RSC_PREFIX + volumeName);
+    }
+
+    public boolean isInsecureSsl() {
+        return _insecureSsl;
+    }
+
     @Override
     public boolean isPoolSupportHA() {
         return true;
@@ -226,12 +264,12 @@ public class LinstorStoragePool implements KVMStoragePool {
     @Override
     public String createHeartBeatCommand(HAStoragePool pool, String hostPrivateIp,
             boolean hostValidation) {
-        s_logger.trace(String.format("Linstor.createHeartBeatCommand: %s, %s, %b", pool.getPoolIp(), hostPrivateIp, hostValidation));
-        boolean isStorageNodeUp = checkingHeartBeat(pool, null);
+        LOGGER.trace(String.format("Linstor.createHeartBeatCommand: %s, %s, %b", pool.getPoolIp(), hostPrivateIp, hostValidation));
+        boolean isStorageNodeUp = hasHeartBeat(pool, null);
         if (!isStorageNodeUp && !hostValidation) {
             //restart the host
-            s_logger.debug(String.format("The host [%s] will be restarted because the health check failed for the storage pool [%s]", hostPrivateIp, pool.getPool().getType()));
-            Script cmd = new Script(pool.getPool().getHearthBeatPath(), Duration.millis(HeartBeatUpdateTimeout), s_logger);
+            LOGGER.debug(String.format("The host [%s] will be restarted because the health check failed for the storage pool [%s]", hostPrivateIp, pool.getPool().getType()));
+            Script cmd = new Script(pool.getPool().getHearthBeatPath(), Duration.millis(HeartBeatUpdateTimeoutInMs), LOGGER);
             cmd.add("-c");
             cmd.execute();
             return "Down";
@@ -247,7 +285,7 @@ public class LinstorStoragePool implements KVMStoragePool {
 
     static String getHostname() {
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-        Script sc = new Script("hostname", Duration.millis(10000L), s_logger);
+        Script sc = new Script("hostname", Duration.millis(10000L), LOGGER);
         String res = sc.execute(parser);
         if (res != null) {
             throw new CloudRuntimeException(String.format("Unable to run 'hostname' command: %s", res));
@@ -257,14 +295,14 @@ public class LinstorStoragePool implements KVMStoragePool {
     }
 
     @Override
-    public Boolean checkingHeartBeat(HAStoragePool pool, HostTO host) {
+    public Boolean hasHeartBeat(HAStoragePool pool, HostTO host) {
         String hostName;
         if (host == null) {
             hostName = localNodeName;
         } else {
             hostName = host.getParent();
             if (hostName == null) {
-                s_logger.error("No hostname set in host.getParent()");
+                LOGGER.error("No hostname set in host.getParent()");
                 return false;
             }
         }
@@ -273,7 +311,7 @@ public class LinstorStoragePool implements KVMStoragePool {
     }
 
     private String executeDrbdSetupStatus(OutputInterpreter.AllLinesParser parser) {
-        Script sc = new Script("drbdsetup", Duration.millis(HeartBeatUpdateTimeout), s_logger);
+        Script sc = new Script("drbdsetup", Duration.millis(HeartBeatUpdateTimeoutInMs), LOGGER);
         sc.add("status");
         sc.add("--json");
         return sc.execute(parser);
@@ -313,14 +351,14 @@ public class LinstorStoragePool implements KVMStoragePool {
         }
         boolean otherNodeOnline = false;
         if (connectionFound) {
-            s_logger.warn(String.format(
+            LOGGER.warn(String.format(
                     "checkingHeartBeat: connection found, but not in state 'Connected' to %s", otherNodeName));
         } else {
-            s_logger.warn(String.format(
+            LOGGER.warn(String.format(
                     "checkingHeartBeat: no resource connected to %s, checking LINSTOR", otherNodeName));
             otherNodeOnline = checkLinstorNodeOnline(otherNodeName);
         }
-        s_logger.info(String.format(
+        LOGGER.info(String.format(
                 "checkingHeartBeat: other node %s is %s.",
                 otherNodeName,
                 otherNodeOnline ? "online on controller" : "down"));
@@ -328,7 +366,7 @@ public class LinstorStoragePool implements KVMStoragePool {
     }
 
     private String executeDrbdEventsNow(OutputInterpreter.AllLinesParser parser) {
-        Script sc = new Script("drbdsetup", Duration.millis(HeartBeatUpdateTimeout), s_logger);
+        Script sc = new Script("drbdsetup", Duration.millis(HeartBeatUpdateTimeoutInMs), LOGGER);
         sc.add("events2");
         sc.add("--now");
         return sc.execute(parser);
@@ -337,13 +375,13 @@ public class LinstorStoragePool implements KVMStoragePool {
     private boolean checkDrbdEventsNowOutput(String output) {
         boolean healthy = output.lines().noneMatch(line -> line.matches(".*role:Primary .* promotion_score:0.*"));
         if (!healthy) {
-            s_logger.warn("checkDrbdEventsNowOutput: primary resource with promotion score==0; HA false");
+            LOGGER.warn("checkDrbdEventsNowOutput: primary resource with promotion score==0; HA false");
         }
         return healthy;
     }
 
     private boolean checkHostUpToDateAndConnected(String hostName) {
-        s_logger.trace(String.format("checkHostUpToDateAndConnected: %s/%s", localNodeName, hostName));
+        LOGGER.trace(String.format("checkHostUpToDateAndConnected: %s/%s", localNodeName, hostName));
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
 
         if (localNodeName.equalsIgnoreCase(hostName)) {
@@ -361,15 +399,34 @@ public class LinstorStoragePool implements KVMStoragePool {
             try {
                 return checkDrbdSetupStatusOutput(parser.getLines(), hostName);
             } catch (JsonIOException | JsonSyntaxException e) {
-                s_logger.error("Error parsing drbdsetup status --json", e);
+                LOGGER.error("Error parsing drbdsetup status --json", e);
             }
         }
         return false;
     }
 
+    /**
+     * Thin LVM and ZFS backed resources start out unallocated and read as zeroes, thick LVM hands out
+     * whatever was on the disk before.
+     */
     @Override
-    public Boolean vmActivityCheck(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration) {
-        s_logger.trace(String.format("Linstor.vmActivityCheck: %s, %s", pool.getPoolIp(), host.getPrivateNetwork().getIp()));
-        return checkingHeartBeat(pool, host);
+    public boolean newVolumeReadsAsZero(String volumeUuid) {
+        return LinstorUtil.resourceSupportZeroBlocks(this, LinstorUtil.RSC_PREFIX + volumeUuid);
+    }
+
+    @Override
+    public Pair<String, List<String>> createBackupScratch(String vmName, List<Long> sizes) {
+        return ((LinstorStorageAdaptor) _storageAdaptor).createBackupScratch(this, vmName, sizes);
+    }
+
+    @Override
+    public void deleteBackupScratch(String name) {
+        ((LinstorStorageAdaptor) _storageAdaptor).deleteBackupScratch(this, name);
+    }
+
+    @Override
+    public Boolean hasVmActivity(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration) {
+        LOGGER.trace(String.format("Linstor.vmActivityCheck: %s, %s", pool.getPoolIp(), host.getPrivateNetwork().getIp()));
+        return hasHeartBeat(pool, host);
     }
 }

@@ -79,7 +79,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
@@ -167,7 +167,7 @@ export default {
       this.dataSource = []
       this.fetchLoading = true
 
-      api('listTungstenFabricLogicalRouter', params).then(json => {
+      getAPI('listTungstenFabricLogicalRouter', params).then(json => {
         this.itemCount = json?.listtungstenfabriclogicalrouterresponse?.count || 0
         this.dataSource = json?.listtungstenfabriclogicalrouterresponse?.logicalrouter || []
       }).catch(error => {
@@ -178,7 +178,7 @@ export default {
       this.showAction = true
       this.logicalRouters.loading = true
       this.logicalRouters.opts = []
-      api('listTungstenFabricLogicalRouter', { zoneid: this.resource.zoneid }).then(json => {
+      getAPI('listTungstenFabricLogicalRouter', { zoneid: this.resource.zoneid }).then(json => {
         this.logicalRouters.opts = json?.listtungstenfabriclogicalrouterresponse?.logicalrouter || []
         this.form.logicalrouteruuid = this.logicalRouters.opts[0]?.uuid || null
       }).finally(() => {
@@ -207,7 +207,7 @@ export default {
         params.networkuuid = this.resource.id
         params.logicalrouteruuid = values.logicalrouteruuid
 
-        api('addTungstenFabricNetworkGatewayToLogicalRouter', params).then(json => {
+        postAPI('addTungstenFabricNetworkGatewayToLogicalRouter', params).then(json => {
           const jobId = json?.addtungstenfabricnetworkgatewaytologicalrouterresponse?.jobid
           this.$pollJob({
             jobId,

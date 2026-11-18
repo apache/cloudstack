@@ -18,8 +18,11 @@ package com.cloud.configuration.dao;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Resource;
@@ -33,19 +36,50 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> implements ResourceLimitDao {
-    private SearchBuilder<ResourceLimitVO> IdTypeSearch;
+    private SearchBuilder<ResourceLimitVO> IdTypeTagSearch;
+    private SearchBuilder<ResourceLimitVO> IdTypeNullTagSearch;
+    private SearchBuilder<ResourceLimitVO> NonMatchingTagsSearch;
+    private SearchBuilder<ResourceLimitVO> DomainsLimitTagSearch;
+    private SearchBuilder<ResourceLimitVO> DomainsLimitNullTagSearch;
 
     public ResourceLimitDaoImpl() {
-        IdTypeSearch = createSearchBuilder();
-        IdTypeSearch.and("type", IdTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
-        IdTypeSearch.and("domainId", IdTypeSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        IdTypeSearch.and("accountId", IdTypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        IdTypeSearch.done();
+        IdTypeTagSearch = createSearchBuilder();
+        IdTypeTagSearch.and("type", IdTypeTagSearch.entity().getType(), SearchCriteria.Op.EQ);
+        IdTypeTagSearch.and("domainId", IdTypeTagSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        IdTypeTagSearch.and("accountId", IdTypeTagSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        IdTypeTagSearch.and("tag", IdTypeTagSearch.entity().getTag(), SearchCriteria.Op.EQ);
+
+        IdTypeNullTagSearch = createSearchBuilder();
+        IdTypeNullTagSearch.and("type", IdTypeNullTagSearch.entity().getType(), SearchCriteria.Op.EQ);
+        IdTypeNullTagSearch.and("domainId", IdTypeNullTagSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        IdTypeNullTagSearch.and("accountId", IdTypeNullTagSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        IdTypeNullTagSearch.and("tag", IdTypeNullTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
+        IdTypeNullTagSearch.done();
+
+        NonMatchingTagsSearch = createSearchBuilder();
+        NonMatchingTagsSearch.and("accountId", NonMatchingTagsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        NonMatchingTagsSearch.and("domainId", NonMatchingTagsSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        NonMatchingTagsSearch.and("types", NonMatchingTagsSearch.entity().getType(), SearchCriteria.Op.IN);
+        NonMatchingTagsSearch.and("tagNotNull", NonMatchingTagsSearch.entity().getTag(), SearchCriteria.Op.NNULL);
+        NonMatchingTagsSearch.and("tags", NonMatchingTagsSearch.entity().getTag(), SearchCriteria.Op.NIN);
+        NonMatchingTagsSearch.done();
+
+        DomainsLimitTagSearch = createSearchBuilder();
+        DomainsLimitTagSearch.and("type", DomainsLimitTagSearch.entity().getType(), SearchCriteria.Op.EQ);
+        DomainsLimitTagSearch.and("domainIds", DomainsLimitTagSearch.entity().getDomainId(), SearchCriteria.Op.IN);
+        DomainsLimitTagSearch.and("tag", DomainsLimitTagSearch.entity().getTag(), SearchCriteria.Op.EQ);
+        DomainsLimitTagSearch.done();
+
+        DomainsLimitNullTagSearch = createSearchBuilder();
+        DomainsLimitNullTagSearch.and("type", DomainsLimitNullTagSearch.entity().getType(), SearchCriteria.Op.EQ);
+        DomainsLimitNullTagSearch.and("domainIds", DomainsLimitNullTagSearch.entity().getDomainId(), SearchCriteria.Op.IN);
+        DomainsLimitNullTagSearch.and("tag", DomainsLimitNullTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
+        DomainsLimitNullTagSearch.done();
     }
 
     @Override
     public List<ResourceLimitVO> listByOwner(Long ownerId, ResourceOwnerType ownerType) {
-        SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
+        SearchCriteria<ResourceLimitVO> sc = IdTypeTagSearch.create();
 
         if (ownerType == ResourceOwnerType.Account) {
             sc.setParameters("accountId", ownerId);
@@ -81,9 +115,12 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
     }
 
     @Override
-    public ResourceLimitVO findByOwnerIdAndType(long ownerId, ResourceOwnerType ownerType, ResourceCount.ResourceType type) {
-        SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
+    public ResourceLimitVO findByOwnerIdAndTypeAndTag(long ownerId, ResourceOwnerType ownerType, ResourceCount.ResourceType type, String tag) {
+        SearchCriteria<ResourceLimitVO> sc = tag != null ? IdTypeTagSearch.create() : IdTypeNullTagSearch.create();
         sc.setParameters("type", type);
+        if (tag != null) {
+            sc.setParameters("tag", tag);
+        }
 
         if (ownerType == ResourceOwnerType.Account) {
             sc.setParameters("accountId", ownerId);
@@ -98,7 +135,7 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
 
     @Override
     public long removeEntriesByOwner(Long ownerId, ResourceOwnerType ownerType) {
-        SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
+        SearchCriteria<ResourceLimitVO> sc = IdTypeTagSearch.create();
 
         if (ownerType == ResourceOwnerType.Account) {
             sc.setParameters("accountId", ownerId);
@@ -108,5 +145,40 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
             return remove(sc);
         }
         return 0;
+    }
+
+    @Override
+    public void removeResourceLimitsForNonMatchingTags(Long ownerId, ResourceOwnerType ownerType, List<ResourceType> types, List<String> tags) {
+        SearchCriteria<ResourceLimitVO> sc = NonMatchingTagsSearch.create();
+        if (ObjectUtils.allNotNull(ownerId, ownerType)) {
+            if (ResourceOwnerType.Account.equals(ownerType)) {
+                sc.setParameters("accountId", ownerId);
+            } else {
+                sc.setParameters("domainId", ownerId);
+            }
+        }
+        if (CollectionUtils.isNotEmpty(types)) {
+            sc.setParameters("types", types.stream().map(ResourceType::getName).toArray());
+        }
+        if (CollectionUtils.isNotEmpty(tags)) {
+            sc.setParameters("tags", tags.toArray());
+        }
+        remove(sc);
+    }
+
+    @Override
+    public List<ResourceLimitVO> listByDomainIdsAndTypeAndTag(Set<Long> domainIds, ResourceType type, String tag) {
+        if (CollectionUtils.isEmpty(domainIds)) {
+            return new ArrayList<>();
+        }
+        SearchCriteria<ResourceLimitVO> sc = (tag != null)
+                ? DomainsLimitTagSearch.create()
+                : DomainsLimitNullTagSearch.create();
+        sc.setParameters("type", type);
+        sc.setParameters("domainIds", domainIds.toArray());
+        if (tag != null) {
+            sc.setParameters("tag", tag);
+        }
+        return listBy(sc);
     }
 }

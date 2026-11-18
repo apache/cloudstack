@@ -24,9 +24,13 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.secret.PassphraseVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -44,6 +48,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.kms.KMSManager;
+import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
@@ -51,7 +57,8 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -60,6 +67,7 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering.DiskCacheMode;
+import com.cloud.offering.DiskOffering.DiskErrorPolicy;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
@@ -81,11 +89,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class VolumeObject implements VolumeInfo {
-    private static final Logger s_logger = Logger.getLogger(VolumeObject.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     protected VolumeVO volumeVO;
     private StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected DataStore dataStore;
@@ -93,6 +102,10 @@ public class VolumeObject implements VolumeInfo {
     VolumeDao volumeDao;
     @Inject
     VolumeDataStoreDao volumeStoreDao;
+    @Inject
+    KMSManager kmsManager;
+    @Inject
+    KMSWrappedKeyDao kmsWrappedKeyDao;
     @Inject
     ObjectInDataStoreManager objectInStoreMgr;
     @Inject
@@ -113,12 +126,19 @@ public class VolumeObject implements VolumeInfo {
     VsphereStoragePolicyDao vsphereStoragePolicyDao;
     @Inject
     PassphraseDao passphraseDao;
+    @Inject
+    VolumeOrchestrationService
+    orchestrationService;
 
     private Object payload;
     private MigrationOptions migrationOptions;
     private boolean directDownload;
     private String vSphereStoragePolicyId;
     private boolean followRedirects;
+    private Long destinationHostId;  // For CLVM: hints where volume should be created
+
+    private List<String> checkpointPaths;
+    private Set<String> checkpointImageStoreUrls;
 
     private final List<Volume.State> volumeStatesThatShouldNotTransitWhenDataStoreRoleIsImage = Arrays.asList(Volume.State.Migrating, Volume.State.Uploaded, Volume.State.Copying,
       Volume.State.Expunged);
@@ -135,6 +155,9 @@ public class VolumeObject implements VolumeInfo {
     protected void configure(DataStore dataStore, VolumeVO volumeVO) {
         this.volumeVO = volumeVO;
         this.dataStore = dataStore;
+        Pair<List<String>, Set<String>> volumeCheckPointPathsAndImageStoreUrls = orchestrationService.getVolumeCheckpointPathsAndImageStoreUrls(volumeVO.getId(), getHypervisorType());
+        this.checkpointPaths = volumeCheckPointPathsAndImageStoreUrls.first();
+        this.checkpointImageStoreUrls = volumeCheckPointPathsAndImageStoreUrls.second();
     }
 
     public static VolumeObject getVolumeObject(DataStore dataStore, VolumeVO volumeVO) {
@@ -234,7 +257,7 @@ public class VolumeObject implements VolumeInfo {
             }
         } catch (NoTransitionException e) {
             String errorMessage = String.format("Failed to transit volume %s to [%s] due to [%s].", volumeVO.getVolumeDescription(), event, e.getMessage());
-            s_logger.warn(errorMessage, e);
+            logger.warn(errorMessage, e);
             throw new CloudRuntimeException(errorMessage, e);
         }
         return result;
@@ -329,6 +352,12 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
+    public DiskErrorPolicy getErrorPolicy() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        return diskOfferingVO == null ? null : diskOfferingVO.getErrorPolicy();
+    }
+
+    @Override
     public MigrationOptions getMigrationOptions() {
         return migrationOptions;
     }
@@ -346,6 +375,30 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public void setDirectDownload(boolean directDownload) {
         this.directDownload = directDownload;
+    }
+
+    @Override
+    public Long getDestinationHostId() {
+        // If not in memory, try to load from the database (volume_details table)
+        // For CLVM volumes, this uses the CLVM_LOCK_HOST_ID, which serves a dual purpose:
+        // 1. During creation: hints where to create the volume
+        // 2. After creation: tracks which host holds the exclusive lock
+        if (destinationHostId == null && volumeVO != null) {
+            VolumeDetailVO detail = volumeDetailsDao.findDetail(volumeVO.getId(), ClvmPoolManager.CLVM_LOCK_HOST_ID);
+            if (detail != null && detail.getValue() != null && !detail.getValue().isEmpty()) {
+                try {
+                    destinationHostId = Long.parseLong(detail.getValue());
+                } catch (NumberFormatException e) {
+                    logger.warn("Invalid CLVM lock host ID value in volume_details for volume {}: {}", volumeVO.getUuid(), detail.getValue());
+                }
+            }
+        }
+        return destinationHostId;
+    }
+
+    @Override
+    public void setDestinationHostId(Long hostId) {
+        this.destinationHostId = hostId;
     }
 
     public void update() {
@@ -414,7 +467,7 @@ public class VolumeObject implements VolumeInfo {
         }
         mapOfEvents.put(ObjectInDataStoreStateMachine.Event.DestroyRequested, Volume.Event.DestroyRequested);
         mapOfEvents.put(ObjectInDataStoreStateMachine.Event.ExpungeRequested, Volume.Event.ExpungingRequested);
-        mapOfEvents.put(ObjectInDataStoreStateMachine.Event.OperationSuccessed, Volume.Event.OperationSucceeded);
+        mapOfEvents.put(ObjectInDataStoreStateMachine.Event.OperationSucceeded, Volume.Event.OperationSucceeded);
         mapOfEvents.put(ObjectInDataStoreStateMachine.Event.MigrationCopySucceeded, Volume.Event.MigrationCopySucceeded);
         mapOfEvents.put(ObjectInDataStoreStateMachine.Event.OperationFailed, Volume.Event.OperationFailed);
         mapOfEvents.put(ObjectInDataStoreStateMachine.Event.MigrationCopyFailed, Volume.Event.MigrationCopyFailed);
@@ -445,7 +498,7 @@ public class VolumeObject implements VolumeInfo {
         } catch (ConcurrentOperationException | NoTransitionException e) {
             String message = String.format("Failed to update %sto state [%s] due to [%s].", volumeVO == null ? "" : String.format("volume %s ", volumeVO.getVolumeDescription()),
               getMapOfEvents().get(event), e.getMessage());
-            s_logger.warn(message, e);
+            logger.warn(message, e);
             throw new CloudRuntimeException(message, e);
         } finally {
             expungeEntryOnOperationFailed(event, callExpungeEntry);
@@ -691,7 +744,7 @@ public class VolumeObject implements VolumeInfo {
         volumeDao.update(volumeVo.getId(), volumeVo);
 
         String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeVo, "path", "size", "format", "encryptFormat", "poolId");
-        s_logger.debug(String.format("Updated %s from %s to %s ", volumeVo.getVolumeDescription(), previousValues, newValues));
+        logger.debug(String.format("Updated %s from %s to %s ", volumeVo.getVolumeDescription(), previousValues, newValues));
     }
 
     protected void updateResourceCount(VolumeObjectTO newVolume, VolumeVO oldVolume) {
@@ -725,7 +778,7 @@ public class VolumeObject implements VolumeInfo {
         volumeStoreDao.update(volStore.getId(), volStore);
 
         String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volStore, "installPath", "size");
-        s_logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volStore, "id", "volumeId"),
+        logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volStore, "id", "volumeId"),
           previousValues, newValues));
     }
 
@@ -757,7 +810,7 @@ public class VolumeObject implements VolumeInfo {
         volumeStoreDao.update(volumeDataStoreVo.getId(), volumeDataStoreVo);
 
         String newValues = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeDataStoreVo, "installPath", "checksum");
-        s_logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.
+        logger.debug(String.format("Updated volume_store_ref %s from %s to %s.", ReflectionToStringBuilderUtils.
           reflectOnlySelectedFields(volumeDataStoreVo, "id", "volumeId"), previousValues, newValues));
     }
     @Override
@@ -887,6 +940,26 @@ public class VolumeObject implements VolumeInfo {
         volumeVO.setPassphraseId(id);
     }
 
+    @Override
+    public Long getKmsKeyId() {
+        return volumeVO.getKmsKeyId();
+    }
+
+    @Override
+    public void setKmsKeyId(Long id) {
+        volumeVO.setKmsKeyId(id);
+    }
+
+    @Override
+    public Long getKmsWrappedKeyId() {
+        return volumeVO.getKmsWrappedKeyId();
+    }
+
+    @Override
+    public void setKmsWrappedKeyId(Long id) {
+        volumeVO.setKmsWrappedKeyId(id);
+    }
+
     /**
      * Removes passphrase reference from underlying volume. Also removes the associated passphrase entry if it is the last user.
      */
@@ -899,15 +972,15 @@ public class VolumeObject implements VolumeInfo {
                     volumeVO.setPassphraseId(null);
                     volumeDao.persist(volumeVO);
 
-                    s_logger.debug(String.format("Checking to see if we can delete passphrase id %s", passphraseId));
+                    logger.debug("Checking to see if we can delete passphrase id {} for volume {}", passphraseId, volumeVO);
                     List<VolumeVO> volumes = volumeDao.listVolumesByPassphraseId(passphraseId);
 
                     if (volumes != null && !volumes.isEmpty()) {
-                        s_logger.debug("Other volumes use this passphrase, skipping deletion");
+                        logger.debug("Other volumes use this passphrase, skipping deletion");
                         return;
                     }
 
-                    s_logger.debug(String.format("Deleting passphrase %s", passphraseId));
+                    logger.debug(String.format("Deleting passphrase %s", passphraseId));
                     passphraseDao.remove(passphraseId);
                 }
             }
@@ -916,9 +989,29 @@ public class VolumeObject implements VolumeInfo {
 
     /**
      * Looks up passphrase from underlying volume.
-     * @return passphrase as bytes
+     * Supports both legacy passphrase-based encryption and KMS-based encryption.
+     * @return passphrase/DEK as base64-encoded bytes (UTF-8 bytes of base64 string)
      */
     public byte[] getPassphrase() {
+        // First check for KMS-encrypted volume
+        if (volumeVO.getKmsWrappedKeyId() != null) {
+            try {
+                // Unwrap the DEK from KMS (returns raw binary bytes)
+                byte[] dekBytes = kmsManager.unwrapKey(volumeVO.getKmsWrappedKeyId());
+                // Base64-encode the DEK for consistency with legacy passphrases
+                // and for use with qemu-img which expects base64 format
+                String base64Dek = java.util.Base64.getEncoder().encodeToString(dekBytes);
+                // Zeroize the raw DEK bytes
+                java.util.Arrays.fill(dekBytes, (byte) 0);
+                // Return UTF-8 bytes of the base64 string
+                return base64Dek.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            } catch (KMSException e) {
+                logger.error("Failed to unwrap KMS key for volume {}: {}", volumeVO, e.getMessage(), e);
+                throw e;
+            }
+        }
+
+        // Fallback to legacy passphrase-based encryption
         PassphraseVO passphrase = passphraseDao.findById(volumeVO.getPassphraseId());
         if (passphrase != null) {
             return passphrase.getPassphrase();
@@ -935,7 +1028,29 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
+    public boolean isDeleteProtection() {
+        return volumeVO.isDeleteProtection();
+    }
+
+    @Override
     public boolean isFollowRedirects() {
         return followRedirects;
+    }
+
+    @Override
+    public List<String> getCheckpointPaths() {
+        return checkpointPaths;
+    }
+
+    @Override
+    public Set<String> getCheckpointImageStoreUrls() {
+        return checkpointImageStoreUrls;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("VolumeObject %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "volumeVO", "dataStore"));
     }
 }

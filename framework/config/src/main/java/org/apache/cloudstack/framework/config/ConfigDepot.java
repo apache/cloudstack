@@ -18,6 +18,8 @@ package org.apache.cloudstack.framework.config;
 
 import java.util.Set;
 
+import com.cloud.utils.Pair;
+
 /**
  * ConfigDepot is a repository of configurations.
  *
@@ -32,4 +34,7 @@ public interface ConfigDepot {
 
     <T> void createOrUpdateConfigObject(String componentName, ConfigKey<T> key, String value);
     boolean isNewConfig(ConfigKey<?> configKey);
+    String getConfigStringValue(String key, ConfigKey.Scope scope, Long scopeId);
+    void invalidateConfigCache(String key, ConfigKey.Scope scope, Long scopeId);
+    Pair<ConfigKey.Scope, Long> getParentScope(ConfigKey.Scope scope, Long id);
 }

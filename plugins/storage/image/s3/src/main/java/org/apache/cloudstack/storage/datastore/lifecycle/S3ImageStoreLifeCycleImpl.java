@@ -22,7 +22,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
@@ -44,7 +45,7 @@ import com.cloud.storage.ScopeType;
 
 public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
-    private static final Logger s_logger = Logger.getLogger(S3ImageStoreLifeCycleImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     protected ResourceManager _resourceMgr;
     @Inject
@@ -78,7 +79,7 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         DataStoreRole role = (DataStoreRole)dsInfos.get("role");
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
-        s_logger.info("Trying to add a S3 store with endpoint: " + details.get(ApiConstants.S3_END_POINT));
+        logger.info("Trying to add a S3 store with endpoint: " + details.get(ApiConstants.S3_END_POINT));
 
         Map<String, Object> imageStoreParameters = new HashMap();
         imageStoreParameters.put("name", name);

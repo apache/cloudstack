@@ -22,7 +22,8 @@ package org.apache.cloudstack.api.command.admin.user;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,7 +39,7 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 
 public class CreateUserCmdTest {
-    public static final Logger s_logger = Logger.getLogger(CreateUserCmdTest.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Mock
     private AccountService accountService;
@@ -68,7 +69,7 @@ public class CreateUserCmdTest {
         } catch (ServerApiException e) {
             Assert.assertTrue("Received exception as the mock accountService createUser returns null user", true);
         }
-        Mockito.verify(accountService, Mockito.times(1)).createUser(null, "Test", null, null, null, null, null, null, null);
+        Mockito.verify(accountService, Mockito.times(1)).createUser(null, "Test", null, null, null, null, null, null, null, false);
     }
 
     @Test
@@ -81,7 +82,7 @@ public class CreateUserCmdTest {
             Assert.assertEquals(ApiErrorCode.PARAM_ERROR,e.getErrorCode());
             Assert.assertEquals("Empty passwords are not allowed", e.getMessage());
         }
-        Mockito.verify(accountService, Mockito.never()).createUser(null, null, null, null, null, null, null, null, null);
+        Mockito.verify(accountService, Mockito.never()).createUser(null, null, null, null, null, null, null, null, null, false);
     }
 
     @Test
@@ -94,6 +95,6 @@ public class CreateUserCmdTest {
             Assert.assertEquals(ApiErrorCode.PARAM_ERROR,e.getErrorCode());
             Assert.assertEquals("Empty passwords are not allowed", e.getMessage());
         }
-        Mockito.verify(accountService, Mockito.never()).createUser(null, null, null, null, null, null, null, null, null);
+        Mockito.verify(accountService, Mockito.never()).createUser(null, null, null, null, null, null, null, null, null, true);
     }
 }

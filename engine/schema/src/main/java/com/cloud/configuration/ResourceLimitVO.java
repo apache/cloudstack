@@ -47,10 +47,13 @@ public class ResourceLimitVO implements ResourceLimit {
     @Column(name = "max")
     private Long max;
 
+    @Column(name = "tag")
+    private String tag;
+
     public ResourceLimitVO() {
     }
 
-    public ResourceLimitVO(ResourceCount.ResourceType type, Long max, long ownerId, ResourceOwnerType ownerType) {
+    public ResourceLimitVO(ResourceCount.ResourceType type, Long max, long ownerId, ResourceOwnerType ownerType, String tag) {
         this.type = type;
         this.max = max;
 
@@ -59,6 +62,11 @@ public class ResourceLimitVO implements ResourceLimit {
         } else if (ownerType == ResourceOwnerType.Domain) {
             this.domainId = ownerId;
         }
+        this.tag = tag;
+    }
+
+    public ResourceLimitVO(ResourceCount.ResourceType type, Long max, long ownerId, ResourceOwnerType ownerType) {
+        this(type, max, ownerId, ownerType, null);
     }
 
     @Override
@@ -123,4 +131,12 @@ public class ResourceLimitVO implements ResourceLimit {
         this.accountId = accountId;
     }
 
+    @Override
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
+    }
 }

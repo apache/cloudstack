@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.account;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,13 +28,12 @@ import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "lockAccount",
-            description = "This deprecated function used to locks an account. Look for the API DisableAccount instead",
+            description = "This deprecated function used to lock an Account. Look for the API DisableAccount instead",
             responseObject = AccountResponse.class,
             entityType = {Account.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class LockAccountCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(LockAccountCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -49,7 +47,7 @@ public class LockAccountCmd extends BaseCmd {
                type = CommandType.UUID,
                entityType = DomainResponse.class,
                required = true,
-               description = "Locks the specified account on this domain.")
+               description = "Locks the specified Account on this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////
@@ -80,6 +78,6 @@ public class LockAccountCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        throw new CloudRuntimeException("LockAccount does not lock accounts. Its implementation is disabled. Use DisableAccount instead");
+        throw new CloudRuntimeException("LockAccount does not lock Accounts. Its implementation is disabled. Use DisableAccount instead.");
     }
 }

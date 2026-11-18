@@ -19,8 +19,7 @@ package com.cloud.storage;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
 import org.apache.cloudstack.storage.object.Bucket;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -97,17 +96,23 @@ public class BucketVO implements Bucket {
     String uuid;
 
     public BucketVO() {
+        this.uuid = UUID.randomUUID().toString();
+    }
+
+    public BucketVO(String name) {
+        this.uuid = UUID.randomUUID().toString();
+        this.name = name;
+        this.state = State.Allocated;
     }
 
     public BucketVO(long accountId, long domainId, long objectStoreId, String name, Integer quota, boolean versioning,
-                    boolean encryption, boolean objectLock, String policy)
-    {
+                    boolean encryption, boolean objectLock, String policy) {
         this.accountId = accountId;
         this.domainId = domainId;
         this.objectStoreId = objectStoreId;
         this.name = name;
-        state = State.Allocated;
-        uuid = UUID.randomUUID().toString();
+        this.state = State.Allocated;
+        this.uuid = UUID.randomUUID().toString();
         this.quota = quota;
         this.versioning = versioning;
         this.encryption = encryption;
@@ -251,7 +256,8 @@ public class BucketVO implements Bucket {
 
     @Override
     public String toString() {
-        return String.format("Bucket %s", new ToStringBuilder(this, ToStringStyle.JSON_STYLE).append("uuid", getUuid()).append("name", getName())
-                .append("ObjectStoreId", getObjectStoreId()).toString());
+        return String.format("Bucket %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "objectStoreId"));
     }
 }

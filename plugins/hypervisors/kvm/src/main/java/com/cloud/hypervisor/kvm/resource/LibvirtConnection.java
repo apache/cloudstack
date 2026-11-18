@@ -21,7 +21,8 @@ import java.util.Map;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.libvirt.Connect;
 import org.libvirt.Library;
 import org.libvirt.LibvirtException;
@@ -30,7 +31,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 public class LibvirtConnection {
-    private static final Logger s_logger = Logger.getLogger(LibvirtConnection.class);
+    protected static Logger LOGGER = LogManager.getLogger(LibvirtConnection.class);
     static private Map<String, Connect> s_connections = new HashMap<String, Connect>();
 
     static private Connect s_connection;
@@ -42,29 +43,29 @@ public class LibvirtConnection {
     }
 
     static synchronized public Connect getConnection(String hypervisorURI) throws LibvirtException {
-        s_logger.debug("Looking for libvirtd connection at: " + hypervisorURI);
+        LOGGER.debug("Looking for libvirtd connection at: " + hypervisorURI);
         Connect conn = s_connections.get(hypervisorURI);
 
         if (conn == null) {
-            s_logger.info("No existing libvirtd connection found. Opening a new one");
+            LOGGER.info("No existing libvirtd connection found. Opening a new one");
 
             setupEventListener();
             conn = new Connect(hypervisorURI, false);
-            s_logger.debug("Successfully connected to libvirt at: " + hypervisorURI);
+            LOGGER.debug("Successfully connected to libvirt at: " + hypervisorURI);
             s_connections.put(hypervisorURI, conn);
         } else {
             try {
                 conn.getVersion();
             } catch (LibvirtException e) {
-                s_logger.error("Connection with libvirtd is broken: " + e.getMessage());
+                LOGGER.error("Connection with libvirtd is broken: " + e.getMessage());
 
                 try {
                     conn.close();
                 } catch (LibvirtException closeEx) {
-                    s_logger.debug("Ignoring error while trying to close broken connection:" + closeEx.getMessage());
+                    LOGGER.debug("Ignoring error while trying to close broken connection:" + closeEx.getMessage());
                 }
 
-                s_logger.debug("Opening a new libvirtd connection to: " + hypervisorURI);
+                LOGGER.debug("Opening a new libvirtd connection to: " + hypervisorURI);
                 setupEventListener();
                 conn = new Connect(hypervisorURI, false);
                 s_connections.put(hypervisorURI, conn);
@@ -84,11 +85,11 @@ public class LibvirtConnection {
                     return conn;
                 }
             } catch (Exception e) {
-                s_logger.debug("Can not find " + hypervisor.toString() + " connection for Instance: " + vmName + ", continuing.");
+                LOGGER.debug("Can not find " + hypervisor.toString() + " connection for Instance: " + vmName + ", continuing.");
             }
         }
 
-        s_logger.warn("Can not find a connection for Instance " + vmName + ". Assuming the default connection.");
+        LOGGER.warn("Can not find a connection for Instance " + vmName + ". Assuming the default connection.");
         // return the default connection
         return getConnection();
     }
@@ -122,7 +123,7 @@ public class LibvirtConnection {
      */
     private static synchronized void setupEventListener() throws LibvirtException {
         if (!AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED)) {
-            s_logger.debug("Libvirt event listening is disabled, not setting up event loop");
+            LOGGER.debug("Libvirt event listening is disabled, not setting up event loop");
             return;
         }
 
@@ -135,9 +136,9 @@ public class LibvirtConnection {
                         // This blocking call contains a loop of its own that will process events until the event loop is stopped or exception is thrown.
                         Library.runEventLoop();
                     } catch (LibvirtException e) {
-                        s_logger.error("LibvirtException was thrown in event loop: ", e);
+                        LOGGER.error("LibvirtException was thrown in event loop: ", e);
                     } catch (InterruptedException e) {
-                        s_logger.error("Libvirt event loop was interrupted: ", e);
+                        LOGGER.error("Libvirt event loop was interrupted: ", e);
                     }
                 }
             });

@@ -41,5 +41,6 @@ public interface ItWorkDao extends GenericDao<ItWorkVO, String> {
     boolean updateStep(ItWorkVO work, Step step);
 
     List<ItWorkVO> listWorkInProgressFor(long nodeId);
+    int expungeByVmList(List<Long> vmIds, Long batchSize);
 
 }

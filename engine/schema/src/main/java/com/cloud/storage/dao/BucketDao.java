@@ -27,4 +27,8 @@ public interface BucketDao extends GenericDao<BucketVO, Long> {
     List<BucketVO> listByObjectStoreIdAndAccountId(long objectStoreId, long accountId);
 
     List<BucketVO> searchByIds(Long[] ids);
+
+    Long countBucketsForAccount(long accountId);
+
+    Long calculateObjectStorageAllocationForAccount(long accountId);
 }

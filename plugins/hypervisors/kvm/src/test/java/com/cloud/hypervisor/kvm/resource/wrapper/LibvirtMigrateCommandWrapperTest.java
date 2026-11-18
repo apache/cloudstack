@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -63,12 +64,18 @@ import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.DiskType;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.DriverType;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.Source;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.DpdkTO;
+import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.agent.api.to.NetworkTO;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.network.Networks;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.gpu.GpuDevice;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LibvirtMigrateCommandWrapperTest {
@@ -578,6 +585,72 @@ public class LibvirtMigrateCommandWrapperTest {
             "  </devices>\n" +
             "</domain>\n";
 
+    private String xmlWithGpuDevices =
+            "<domain type='kvm' id='3'>\n" +
+            "  <name>i-2-3-VM</name>\n" +
+            "  <uuid>91860126-7dda-4876-ac1e-48d06cd4b2eb</uuid>\n" +
+            "  <memory unit='KiB'>524288</memory>\n" +
+            "  <currentMemory unit='KiB'>524288</currentMemory>\n" +
+            "  <vcpu placement='static'>1</vcpu>\n" +
+            "  <devices>\n" +
+            "    <emulator>/usr/libexec/qemu-kvm</emulator>\n" +
+            "    <disk type='file' device='disk'>\n" +
+            "      <driver name='qemu' type='qcow2' cache='none'/>\n" +
+            "      <source file='/mnt/storage/disk.qcow2'/>\n" +
+            "      <target dev='vda' bus='virtio'/>\n" +
+            "    </disk>\n" +
+            "    <hostdev mode='subsystem' type='pci' managed='yes' display='off'>\n" +
+            "      <driver name='vfio'/>\n" +
+            "      <source>\n" +
+            "        <address domain='0x0000' bus='0x01' slot='0x00' function='0x0'/>\n" +
+            "      </source>\n" +
+            "    </hostdev>\n" +
+            "    <hostdev mode='subsystem' type='mdev' managed='no' display='on'>\n" +
+            "      <source>\n" +
+            "        <address uuid='4b20d080-1b54-4048-85b3-a6a62d165c01'/>\n" +
+            "      </source>\n" +
+            "    </hostdev>\n" +
+            "    <interface type='bridge'>\n" +
+            "      <mac address='02:00:4c:5f:00:01'/>\n" +
+            "      <source bridge='breth1-511'/>\n" +
+            "      <target dev='vnet6'/>\n" +
+            "      <model type='e1000'/>\n" +
+            "    </interface>\n" +
+            "  </devices>\n" +
+            "</domain>";
+
+    private String xmlWithoutGpuDevices =
+            "<domain type='kvm' id='3'>\n" +
+            "  <name>i-2-3-VM</name>\n" +
+            "  <uuid>91860126-7dda-4876-ac1e-48d06cd4b2eb</uuid>\n" +
+            "  <memory unit='KiB'>524288</memory>\n" +
+            "  <currentMemory unit='KiB'>524288</currentMemory>\n" +
+            "  <vcpu placement='static'>1</vcpu>\n" +
+            "  <devices>\n" +
+            "    <emulator>/usr/libexec/qemu-kvm</emulator>\n" +
+            "    <disk type='file' device='disk'>\n" +
+            "      <driver name='qemu' type='qcow2' cache='none'/>\n" +
+            "      <source file='/mnt/storage/disk.qcow2'/>\n" +
+            "      <target dev='vda' bus='virtio'/>\n" +
+            "    </disk>\n" +
+            "    <interface type='bridge'>\n" +
+            "      <mac address='02:00:4c:5f:00:01'/>\n" +
+            "      <source bridge='breth1-511'/>\n" +
+            "      <target dev='vnet6'/>\n" +
+            "      <model type='e1000'/>\n" +
+            "    </interface>\n" +
+            "  </devices>\n" +
+            "</domain>";
+
+    private String xmlNoDevicesSection =
+            "<domain type='kvm' id='3'>\n" +
+            "  <name>i-2-3-VM</name>\n" +
+            "  <uuid>91860126-7dda-4876-ac1e-48d06cd4b2eb</uuid>\n" +
+            "  <memory unit='KiB'>524288</memory>\n" +
+            "  <currentMemory unit='KiB'>524288</currentMemory>\n" +
+            "  <vcpu placement='static'>1</vcpu>\n" +
+            "</domain>";
+
     private Map<String, MigrateDiskInfo> createMapMigrateStorage(String sourceText, String path) {
         Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<String, MigrateDiskInfo>();
 
@@ -589,7 +662,7 @@ public class LibvirtMigrateCommandWrapperTest {
     @Test
     public void testReplaceIpForVNCInDescFile() {
         final String targetIp = "192.168.22.21";
-        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(fullfile, targetIp, null, "");
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(fullfile, targetIp, "vncSecretPwd", "");
         assertEquals("transformation does not live up to expectation:\n" + result, targetfile, result);
     }
 
@@ -704,7 +777,7 @@ public class LibvirtMigrateCommandWrapperTest {
 
     @Test
     public void deleteOrDisconnectDisksOnSourcePoolTest() {
-        LibvirtMigrateCommandWrapper spyLibvirtMigrateCmdWrapper = Mockito.spy(libvirtMigrateCmdWrapper);
+        LibvirtMigrateCommandWrapper spyLibvirtMigrateCmdWrapper = libvirtMigrateCmdWrapper;
         Mockito.doNothing().when(spyLibvirtMigrateCmdWrapper).deleteLocalVolume("volPath");
 
         List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<>();
@@ -887,6 +960,160 @@ public class LibvirtMigrateCommandWrapperTest {
         Assert.assertFalse(replaced.contains("csdpdk-1"));
     }
 
+    private static final String vlanNicMac = "02:00:00:00:00:01";
+    private static final String vlanNicDomainXml =
+            "<domain type='kvm' id='7'>\n" +
+            "  <name>i-2-4-VM</name>\n" +
+            "  <devices>\n" +
+            "    <interface type='bridge'>\n" +
+            "      <mac address='" + vlanNicMac + "'/>\n" +
+            "      <source bridge='cloudbr0'/>\n" +
+            "      <target dev='vnet0'/>\n" +
+            "    </interface>\n" +
+            "  </devices>\n" +
+            "</domain>";
+
+    private NicTO buildVlanNicTO(boolean trunk, int primaryVlan, List<Integer> associatedVlans) {
+        NicTO nic = new NicTO();
+        nic.setBroadcastType(Networks.BroadcastDomainType.Vlan);
+        nic.setBroadcastUri(Networks.BroadcastDomainType.Vlan.toUri(primaryVlan));
+        nic.setMac(vlanNicMac);
+        nic.setTrunkVlan(trunk);
+        if (associatedVlans != null) {
+            List<NetworkTO> associated = new ArrayList<>();
+            for (Integer vlan : associatedVlans) {
+                NetworkTO associatedTo = new NetworkTO();
+                associatedTo.setBroadcastType(Networks.BroadcastDomainType.Vlan);
+                associatedTo.setBroadcastUri(Networks.BroadcastDomainType.Vlan.toUri(vlan));
+                associated.add(associatedTo);
+            }
+            nic.setAssociatedNetworks(associated);
+        }
+        return nic;
+    }
+
+    @Test
+    public void replaceVlanTrunkInterfacesLeavesOrdinaryVlanNicUntouchedOnNonFilteringSource()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(false, 100, null);
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(false).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+
+        String result = libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+
+        assertEquals(vlanNicDomainXml, result);
+    }
+
+    @Test
+    public void replaceVlanTrunkInterfacesRewritesOrdinaryNicBridgeWhenOnlyDestIsFilteringEnabled()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        // legacy (non-filtering) source -> shared-bridge destination: the source's own per-VLAN bridge name
+        // doesn't exist on the destination, so the rewrite must fire even though the source isn't shared-bridge
+        NicTO nic = buildVlanNicTO(false, 100, null);
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(false).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+        Mockito.doReturn(true).when(migrateCommandMock).getDestVlanFilteringEnabled();
+        Mockito.doReturn(false).when(migrateCommandMock).getDestVlanTrunkXmlSupported();
+        Mockito.doReturn(Map.of(vlanNicMac, "destcloudbr0")).when(migrateCommandMock).getNicBridgeMapping();
+
+        String result = libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+
+        assertTrue(result.contains("bridge=\"destcloudbr0\""));
+    }
+
+    @Test
+    public void replaceVlanTrunkInterfacesInsertsTrunkVlanBlockWhenDestSupportsTrunkXml()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(true, 100, Collections.singletonList(200));
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+        Mockito.doReturn(true).when(migrateCommandMock).getDestVlanFilteringEnabled();
+        Mockito.doReturn(true).when(migrateCommandMock).getDestVlanTrunkXmlSupported();
+        Mockito.doReturn(Map.of(vlanNicMac, "destcloudbr0")).when(migrateCommandMock).getNicBridgeMapping();
+
+        String result = libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+
+        assertTrue(result.contains("bridge=\"destcloudbr0\""));
+        assertTrue(result.contains("trunk=\"yes\""));
+        assertTrue(result.contains("id=\"100\""));
+        assertTrue(result.contains("nativeMode=\"untagged\""));
+        assertTrue(result.contains("id=\"200\""));
+    }
+
+    @Test
+    public void replaceVlanTrunkInterfacesSkipsTrunkVlanBlockForUntaggedOrdinaryNicWhenDestSupportsTrunkXml()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(false, 100, null);
+        nic.setBroadcastUri(java.net.URI.create("vlan://untagged"));
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+        Mockito.doReturn(true).when(migrateCommandMock).getDestVlanFilteringEnabled();
+        Mockito.doReturn(true).when(migrateCommandMock).getDestVlanTrunkXmlSupported();
+        Mockito.doReturn(Map.of(vlanNicMac, "destcloudbr0")).when(migrateCommandMock).getNicBridgeMapping();
+
+        String result = libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+
+        assertTrue(result.contains("bridge=\"destcloudbr0\""));
+        assertFalse(result.contains("trunk=\"yes\""));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void replaceVlanTrunkInterfacesRefusesVlanNicWithoutBroadcastUriOnFilteringHost()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(false, 100, null);
+        nic.setBroadcastUri(null);
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+
+        libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void replaceVlanTrunkInterfacesRefusesNicWithAssociatedNetworkWithoutBroadcastUri()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(true, 100, Collections.singletonList(200));
+        nic.getAssociatedNetworks().get(0).setBroadcastUri(null);
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+
+        libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+    }
+
+    @Test
+    public void replaceVlanTrunkInterfacesStripsVlanBlockWhenDestDoesNotSupportTrunkXml()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(true, 100, Collections.singletonList(200));
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+        Mockito.doReturn(true).when(migrateCommandMock).getDestVlanFilteringEnabled();
+        Mockito.doReturn(false).when(migrateCommandMock).getDestVlanTrunkXmlSupported();
+        Mockito.doReturn(Map.of(vlanNicMac, "destcloudbr0")).when(migrateCommandMock).getNicBridgeMapping();
+
+        String result = libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+
+        assertTrue(result.contains("bridge=\"destcloudbr0\""));
+        assertFalse(result.contains("<vlan"));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void replaceVlanTrunkInterfacesFailsClosedWhenDestCapabilityUnknown()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(true, 100, null);
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+        Mockito.doReturn(Map.of()).when(migrateCommandMock).getNicBridgeMapping();
+
+        libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+    }
+
     @Test
     public void updateVmSharesIfNeededTestNewCpuSharesEqualCurrentSharesShouldNotUpdateVmShares() throws ParserConfigurationException, IOException, TransformerException,
             SAXException {
@@ -1018,5 +1245,179 @@ public class LibvirtMigrateCommandWrapperTest {
         String finalXml = libvirtMigrateCmdWrapper.replaceCdromIsoPath(fullfile, null, oldIsoVolumePath, newIsoVolumePath);
 
         Assert.assertTrue(finalXml.contains(newIsoVolumePath));
+    }
+
+    @Test
+    public void testMaskVncPwdDomain() {
+        // Test case 1: Single quotes
+        String xml1 = "<graphics type='vnc' port='5900' passwd='secret123'/>";
+        String expected1 = "<graphics type='vnc' port='5900' passwd='*****'/>";
+        assertEquals(expected1, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml1));
+
+        // Test case 2: Double quotes
+        String xml2 = "<graphics type=\"vnc\" port=\"5901\" passwd=\"mypassword\"/>";
+        String expected2 = "<graphics type=\"vnc\" port=\"5901\" passwd=\"*****\"/>";
+        assertEquals(expected2, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml2));
+
+        // Test case 3: Non-VNC graphics (should remain unchanged)
+        String xml3 = "<graphics type='spice' port='5902' passwd='notvnc'/>";
+        assertEquals(xml3, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml3));
+
+        // Test case 4: Multiple VNC entries in one string
+        String xml4 = "<graphics type='vnc' port='5900' passwd='a'/>\n" +
+                "<graphics type='vnc' port='5901' passwd='b'/>";
+        String expected4 = "<graphics type='vnc' port='5900' passwd='*****'/>\n" +
+                "<graphics type='vnc' port='5901' passwd='*****'/>";
+        assertEquals(expected4, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml4));
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestNoGpuDevice() throws Exception {
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(null).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlWithoutGpuDevices, libvirtComputingResourceMock);
+
+        Assert.assertEquals("XML should remain unchanged when no GPU device is present", xmlWithoutGpuDevices, result);
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestNoDevicesSection() throws Exception {
+        List<VgpuTypesInfo> gpuDevices = createTestMixedGpuDevices();
+        GPUDeviceTO gpuDeviceTO = Mockito.mock(GPUDeviceTO.class);
+        Mockito.doReturn(gpuDevices).when(gpuDeviceTO).getGpuDevices();
+
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(gpuDeviceTO).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlNoDevicesSection, libvirtComputingResourceMock);
+
+        Assert.assertEquals("XML should remain unchanged when no devices section is found", xmlNoDevicesSection, result);
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestWithPciDevice() throws Exception {
+        List<VgpuTypesInfo> gpuDevices = createTestPciGpuDevice();
+        GPUDeviceTO gpuDeviceTO = Mockito.mock(GPUDeviceTO.class);
+        Mockito.doReturn(gpuDevices).when(gpuDeviceTO).getGpuDevices();
+
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(gpuDeviceTO).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlWithGpuDevices, libvirtComputingResourceMock);
+
+        // Verify that old GPU devices are removed and new ones are added
+        Assert.assertFalse("Old PCI device should be removed", result.contains("bus='0x01' slot='0x00'"));
+        Assert.assertFalse("Old MDEV device should be removed", result.contains("4b20d080-1b54-4048-85b3-a6a62d165c01"));
+        Assert.assertTrue("New PCI device should be added", result.contains("bus=\"0x02\""));
+        Assert.assertTrue("New PCI device should be added", result.contains("slot=\"0x00\""));
+        Assert.assertTrue("PCI device should have vfio driver", result.contains("name=\"vfio\""));
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestWithMdevDevice() throws Exception {
+        List<VgpuTypesInfo> gpuDevices = createTestMdevGpuDevice();
+        GPUDeviceTO gpuDeviceTO = Mockito.mock(GPUDeviceTO.class);
+        Mockito.doReturn(gpuDevices).when(gpuDeviceTO).getGpuDevices();
+
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(gpuDeviceTO).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlWithGpuDevices, libvirtComputingResourceMock);
+
+        // Verify that old GPU devices are removed and new ones are added
+        Assert.assertFalse("Old PCI device should be removed", result.contains("bus='0x01' slot='0x00'"));
+        Assert.assertFalse("Old MDEV device should be removed", result.contains("4b20d080-1b54-4048-85b3-a6a62d165c01"));
+        Assert.assertTrue("New MDEV device should be added", result.contains("6f20d080-1b54-4048-85b3-a6a62d165c01"));
+        Assert.assertTrue("MDEV device should have display=off", result.contains("display=\"off\""));
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestWithMixedDevices() throws Exception {
+        List<VgpuTypesInfo> gpuDevices = createTestMixedGpuDevices();
+        GPUDeviceTO gpuDeviceTO = Mockito.mock(GPUDeviceTO.class);
+        Mockito.doReturn(gpuDevices).when(gpuDeviceTO).getGpuDevices();
+
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(gpuDeviceTO).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlWithGpuDevices, libvirtComputingResourceMock);
+
+        // Verify both PCI and MDEV devices are added
+        Assert.assertTrue("PCI device should be added", result.contains("bus=\"0x02\""));
+        Assert.assertTrue("PCI device should be added", result.contains("slot=\"0x00\""));
+        Assert.assertTrue("MDEV device should be added", result.contains("6f20d080-1b54-4048-85b3-a6a62d165c01"));
+
+        // Count hostdev elements to ensure we have both
+        long hostdevCount = result.lines().filter(line -> line.contains("<hostdev")).count();
+        Assert.assertEquals("Should have 2 hostdev elements", 2, hostdevCount);
+    }
+
+    @Test
+    public void updateGpuDevicesIfNeededTestRemoveAllGpuDevices() throws Exception {
+        List<VgpuTypesInfo> gpuDevices = new ArrayList<>(); // Empty list
+        GPUDeviceTO gpuDeviceTO = Mockito.mock(GPUDeviceTO.class);
+        Mockito.doReturn(gpuDevices).when(gpuDeviceTO).getGpuDevices();
+
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(gpuDeviceTO).when(virtualMachineTOMock).getGpuDevice();
+
+        String result = libvirtMigrateCmdWrapper.updateGpuDevicesIfNeeded(migrateCommandMock, xmlWithoutGpuDevices, libvirtComputingResourceMock);
+
+        // Verify all GPU devices are removed
+        Assert.assertFalse("Old PCI device should be removed", result.contains("bus=\"0x01\""));
+        Assert.assertFalse("Old PCI device should be removed", result.contains("slot=\"0x00\""));
+        Assert.assertFalse("Old MDEV device should be removed", result.contains("4b20d080-1b54-4048-85b3-a6a62d165c01"));
+
+        // Verify no hostdev elements remain
+        long hostdevCount = result.lines().filter(line -> line.contains("<hostdev")).count();
+        Assert.assertEquals("Should have no hostdev elements", 0, hostdevCount);
+    }
+
+    // Helper methods for creating test GPU devices
+    private List<VgpuTypesInfo> createTestPciGpuDevice() {
+        List<VgpuTypesInfo> devices = new ArrayList<>();
+        VgpuTypesInfo pciDevice = new VgpuTypesInfo(
+                GpuDevice.DeviceType.PCI,
+                "NVIDIA Corporation Tesla T4",
+                "passthrough",
+                "02:00.0", // New bus address for destination host
+                "10de",
+                "NVIDIA Corporation",
+                "1eb8",
+                "Tesla T4"
+        );
+        pciDevice.setDisplay(false);
+        devices.add(pciDevice);
+        return devices;
+    }
+
+    private List<VgpuTypesInfo> createTestMdevGpuDevice() {
+        List<VgpuTypesInfo> devices = new ArrayList<>();
+        VgpuTypesInfo mdevDevice = new VgpuTypesInfo(
+                GpuDevice.DeviceType.MDEV,
+                "nvidia-63",
+                "GRID T4-2Q",
+                "6f20d080-1b54-4048-85b3-a6a62d165c01", // New UUID for destination host
+                "10de",
+                "NVIDIA Corporation",
+                "1eb8",
+                "Tesla T4"
+        );
+        mdevDevice.setDisplay(false);
+        devices.add(mdevDevice);
+        return devices;
+    }
+
+    private List<VgpuTypesInfo> createTestMixedGpuDevices() {
+        List<VgpuTypesInfo> devices = new ArrayList<>();
+
+        // Add PCI device
+        devices.addAll(createTestPciGpuDevice());
+
+        // Add MDEV device
+        devices.addAll(createTestMdevGpuDevice());
+
+        return devices;
     }
 }

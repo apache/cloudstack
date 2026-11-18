@@ -35,7 +35,8 @@ from marvin.lib.common import (list_service_offering,
                                get_domain,
                                get_zone,
                                get_test_template,
-                               list_hosts)
+                               list_hosts,
+                               is_config_suitable)
 from nose.plugins.attrib import attr
 
 import time
@@ -355,6 +356,267 @@ class TestCreateServiceOffering(cloudstackTestCase):
             "Check encrypt root is true"
         )
         return
+
+    @attr(
+        tags=[
+            "advanced",
+            "smoke",
+            "basic"],
+        required_hardware="false")
+    def test_06_create_service_offering_lease_enabled(self):
+        """
+        1. Enable lease feature
+        2. Create a service_offering
+        3. Verify service offering lease properties
+        """
+        self.update_lease_feature("true")
+
+        service_offering = ServiceOffering.create(
+            self.apiclient,
+            self.services["service_offerings"]["tiny"],
+            name="tiny-lease-svc-offering",
+            leaseduration=10,
+            leaseexpiryaction="STOP"
+        )
+        self.cleanup.append(service_offering)
+
+        self.debug(
+            "Created service offering with ID: %s" %
+            service_offering.id)
+
+        list_service_response = list_service_offering(
+            self.apiclient,
+            id=service_offering.id
+        )
+
+        self.assertNotEqual(
+            len(list_service_response),
+            0,
+            "Check Service offering is created"
+        )
+
+        self.assertEqual(
+            list_service_response[0].leaseduration,
+            10,
+            "Confirm leaseduration"
+        )
+
+        self.assertEqual(
+            list_service_response[0].leaseexpiryaction,
+            "STOP",
+            "Confirm leaseexpiryaction"
+        )
+        return
+
+    @attr(
+        tags=[
+            "advanced",
+            "smoke",
+            "basic"],
+        required_hardware="false")
+    def test_07_create_service_offering_without_lease_disabled_feature(self):
+        """
+        1. Disable lease feature
+        2. Create a service_offering with lease option
+        3. Verify service offering for NO lease properties
+        """
+        self.update_lease_feature("true")
+        service_offering = ServiceOffering.create(
+            self.apiclient,
+            self.services["service_offerings"]["tiny"],
+            name="tiny-svc-offering-novalue-lease"
+        )
+        self.cleanup.append(service_offering)
+
+        self.debug(
+            "Created service offering with ID: %s" %
+            service_offering.id)
+
+        list_service_response = list_service_offering(
+            self.apiclient,
+            id=service_offering.id
+        )
+
+        self.assertNotEqual(
+            len(list_service_response),
+            0,
+            "Check Service offering is created"
+        )
+
+        self.assertIsNone(
+            list_service_response[0].leaseduration,
+            "Confirm No leaseduration"
+        )
+        self.assertIsNone(
+            list_service_response[0].leaseexiryaction,
+            "Confirm leaseexpiryaction is not set"
+        )
+        return
+
+    @attr(
+        tags=[
+            "advanced",
+            "smoke",
+            "basic"],
+        required_hardware="false")
+    def test_08_create_service_offering_lease_disabled(self):
+        """
+        1. Disable lease feature
+        2. Create a service_offering with lease option
+        3. Verify service offering for NO lease properties
+        """
+        self.update_lease_feature("false")
+        service_offering = ServiceOffering.create(
+            self.apiclient,
+            self.services["service_offerings"]["tiny"],
+            name="tiny-lease-svc-offering-disabled",
+            leaseduration=10,
+            leaseexpiryaction="STOP"
+        )
+        self.cleanup.append(service_offering)
+
+        self.debug(
+            "Created service offering with ID: %s" %
+            service_offering.id)
+
+        list_service_response = list_service_offering(
+            self.apiclient,
+            id=service_offering.id
+        )
+
+        self.assertNotEqual(
+            len(list_service_response),
+            0,
+            "Check Service offering is created"
+        )
+
+        self.assertIsNone(
+            list_service_response[0].leaseduration,
+            "Confirm No leaseduration"
+        )
+        self.assertIsNone(
+            list_service_response[0].leaseexiryaction,
+            "Confirm leaseexpiryaction is not set"
+        )
+        return
+
+    def update_lease_feature(self, value=None):
+        # Update global setting for "instance.lease.enabled"
+        Configurations.update(self.apiclient,
+                              name="instance.lease.enabled",
+                              value=value
+                              )
+
+        # Verify that the above mentioned settings are set to true
+        if not is_config_suitable(
+                apiclient=self.apiclient,
+                name='instance.lease.enabled',
+                value=value):
+            self.fail(f'instance.lease.enabled should be: {value}')
+
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "eip",
+            "sg"],
+        required_hardware="false")
+    def test_09_create_service_offering_with_error_policy_type(self):
+        """Test to create service offering with each one of the valid error policy types : report, stop, ignore and enospace"""
+
+        # Validate the following:
+        # 1. createServiceOfferings should return a valid information
+        #    for newly created offering
+        # 2. The Cloud Database contains the valid information
+
+        error_policy_types=["report", "stop", "ignore", "enospace"]
+        for i in range(4):
+            service_offering = ServiceOffering.create(
+                self.apiclient,
+                self.services["service_offerings"]["tiny"],
+                errorPolicy=error_policy_types[i]
+            )
+            self.cleanup.append(service_offering)
+
+            self.debug(
+                "Created service offering with ID: %s" %
+                service_offering.id)
+
+            list_service_response = list_service_offering(
+                self.apiclient,
+                id=service_offering.id
+            )
+            self.assertEqual(
+                isinstance(list_service_response, list),
+                True,
+                "Check list response returns a valid list"
+            )
+
+            self.assertNotEqual(
+                len(list_service_response),
+                0,
+                "Check Service offering is created"
+            )
+
+            self.assertEqual(
+                list_service_response[0].cpunumber,
+                self.services["service_offerings"]["tiny"]["cpunumber"],
+                "Check server id in createServiceOffering"
+            )
+            self.assertEqual(
+                list_service_response[0].cpuspeed,
+                self.services["service_offerings"]["tiny"]["cpuspeed"],
+                "Check cpuspeed in createServiceOffering"
+            )
+            self.assertEqual(
+                list_service_response[0].displaytext,
+                self.services["service_offerings"]["tiny"]["displaytext"],
+                "Check server displaytext in createServiceOfferings"
+            )
+            self.assertEqual(
+                list_service_response[0].memory,
+                self.services["service_offerings"]["tiny"]["memory"],
+                "Check memory in createServiceOffering"
+            )
+            self.assertEqual(
+                list_service_response[0].name,
+                self.services["service_offerings"]["tiny"]["name"],
+                "Check name in createServiceOffering"
+            )
+            self.assertEqual(
+                list_service_response[0].errorpolicy,
+                error_policy_types[i],
+                "Check errorPolicy in createServiceOffering"
+            )
+        return
+
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "eip",
+            "sg"],
+        required_hardware="false")
+    def test_10_create_service_offering_with_invalid_error_policy_type(self):
+        """Test to create service offering with invalid error policy type"""
+
+        # Validate the following:
+        # 1. createServiceOfferings should return a valid information
+        #    for newly created offering
+        # 2. The Cloud Database contains the valid information
+
+        with self.assertRaises(Exception):
+            service_offering = ServiceOffering.create(
+                self.apiclient,
+                self.services["service_offerings"]["tiny"],
+                errorPolicy="invalid_error_policy_type"
+            )
+        return
+
 
 
 class TestServiceOfferings(cloudstackTestCase):

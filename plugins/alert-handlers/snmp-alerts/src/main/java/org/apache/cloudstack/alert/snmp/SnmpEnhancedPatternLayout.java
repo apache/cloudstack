@@ -17,42 +17,27 @@
 
 package org.apache.cloudstack.alert.snmp;
 
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.message.Message;
+
 import java.util.Date;
 import java.util.StringTokenizer;
 
-import org.apache.log4j.EnhancedPatternLayout;
-import org.apache.log4j.spi.LoggingEvent;
-
-public class SnmpEnhancedPatternLayout extends EnhancedPatternLayout {
+public class SnmpEnhancedPatternLayout {
     private String _pairDelimiter = "//";
     private String _keyValueDelimiter = "::";
 
     private static final int LENGTH_OF_STRING_MESSAGE_AND_KEY_VALUE_DELIMITER = 9;
     private static final int LENGTH_OF_STRING_MESSAGE = 8;
 
-    public String getKeyValueDelimeter() {
-        return _keyValueDelimiter;
-    }
-
-    public void setKeyValueDelimiter(String keyValueDelimiter) {
-        this._keyValueDelimiter = keyValueDelimiter;
-    }
-
-    public String getPairDelimiter() {
-        return _pairDelimiter;
-    }
-
-    public void setPairDelimiter(String pairDelimiter) {
-        this._pairDelimiter = pairDelimiter;
-    }
-
-    public SnmpTrapInfo parseEvent(LoggingEvent event) {
+    public SnmpTrapInfo parseEvent(LogEvent event) {
         SnmpTrapInfo snmpTrapInfo = null;
 
-        final String message = event.getRenderedMessage();
-        if (message.contains("alertType") && message.contains("message")) {
+        Message message = event.getMessage();
+        final String formattedMessage = message.getFormattedMessage();
+        if (formattedMessage.contains("alertType") && formattedMessage.contains("message")) {
             snmpTrapInfo = new SnmpTrapInfo();
-            final StringTokenizer messageSplitter = new StringTokenizer(message, _pairDelimiter);
+            final StringTokenizer messageSplitter = new StringTokenizer(formattedMessage, _pairDelimiter);
             while (messageSplitter.hasMoreTokens()) {
                 final String pairToken = messageSplitter.nextToken();
                 final StringTokenizer pairSplitter = new StringTokenizer(pairToken, _keyValueDelimiter);
@@ -80,11 +65,11 @@ public class SnmpEnhancedPatternLayout extends EnhancedPatternLayout {
                 } else if (keyToken.equalsIgnoreCase("clusterId") && !valueToken.equalsIgnoreCase("null")) {
                     snmpTrapInfo.setClusterId(Long.parseLong(valueToken));
                 } else if (keyToken.equalsIgnoreCase("message") && !valueToken.equalsIgnoreCase("null")) {
-                    snmpTrapInfo.setMessage(getSnmpMessage(message));
+                    snmpTrapInfo.setMessage(getSnmpMessage(formattedMessage));
                 }
             }
 
-            snmpTrapInfo.setGenerationTime(new Date(event.getTimeStamp()));
+            snmpTrapInfo.setGenerationTime(new Date(event.getTimeMillis()));
         }
         return snmpTrapInfo;
     }

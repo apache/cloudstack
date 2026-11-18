@@ -20,10 +20,11 @@
 package org.apache.cloudstack.storage.resource;
 
 import com.cloud.utils.script.Script;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class IpTablesHelper {
-    public static final Logger LOGGER = Logger.getLogger(IpTablesHelper.class);
+    public static final Logger LOGGER = LogManager.getLogger(IpTablesHelper.class);
 
     public static final String OUTPUT_CHAIN = "OUTPUT";
     public static final String INPUT_CHAIN = "INPUT";

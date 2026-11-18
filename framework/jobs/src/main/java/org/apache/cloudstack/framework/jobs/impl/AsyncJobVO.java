@@ -36,7 +36,9 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobDataHelper;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.GenericDao;
@@ -140,7 +142,7 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
         this.userId = userId;
         this.accountId = accountId;
         this.cmd = cmd;
-        this.cmdInfo = cmdInfo;
+        this.cmdInfo = AsyncJobDataHelper.encryptInfoIfNeeded(cmd, cmdInfo);
         uuid = ( injectedUuid == null ? UUID.randomUUID().toString() : injectedUuid );
         this.related = related;
         this.instanceId = instanceId;
@@ -236,7 +238,7 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
 
     @Override
     public String getCmdInfo() {
-        return cmdInfo;
+        return AsyncJobDataHelper.decryptIfNeeded(cmd, cmdInfo);
     }
 
     public void setCmdInfo(String cmdInfo) {
@@ -272,7 +274,7 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
 
     @Override
     public String getResult() {
-        return result;
+        return AsyncJobDataHelper.decryptResultIfNeeded(cmd, result);
     }
 
     public void setResult(String result) {
@@ -384,26 +386,23 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer();
-        sb.append("AsyncJobVO: {id:").append(getId());
-        sb.append(", userId: ").append(getUserId());
-        sb.append(", accountId: ").append(getAccountId());
-        sb.append(", instanceType: ").append(getInstanceType());
-        sb.append(", instanceId: ").append(getInstanceId());
-        sb.append(", cmd: ").append(getCmd());
-        sb.append(", cmdInfo: ").append(getCmdInfo());
-        sb.append(", cmdVersion: ").append(getCmdVersion());
-        sb.append(", status: ").append(getStatus());
-        sb.append(", processStatus: ").append(getProcessStatus());
-        sb.append(", resultCode: ").append(getResultCode());
-        sb.append(", result: ").append(getResult());
-        sb.append(", initMsid: ").append(getInitMsid());
-        sb.append(", completeMsid: ").append(getCompleteMsid());
-        sb.append(", lastUpdated: ").append(getLastUpdated());
-        sb.append(", lastPolled: ").append(getLastPolled());
-        sb.append(", created: ").append(getCreated());
-        sb.append(", removed: ").append(getRemoved());
-        sb.append("}");
-        return sb.toString();
+        return String.format("AsyncJob %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid",
+                        "userId", "accountId", "instanceType", "instanceId", "cmd", "cmdInfo",
+                        "cmdVersion", "status", "processStatus", "resultCode", "result", "initMsid",
+                        "completeMsid", "lastUpdated", "lastPolled", "created", "removed"));
+    }
+
+    /*
+     Workaround to set encrypted values, else UpdateBuilder will always have unencrypted value
+     due to its invoke behaviour.
+     */
+
+    public void updateCmdInfoWithEncryptionIfNeeded(String cmdInfo) {
+        this.setCmdInfo(AsyncJobDataHelper.encryptInfoIfNeeded(cmd, cmdInfo));
+    }
+
+    public void updateResultWithEncryptionIfNeeded(final String result) {
+        this.setResult(AsyncJobDataHelper.encryptResultIfNeeded(cmd, result));
     }
 }

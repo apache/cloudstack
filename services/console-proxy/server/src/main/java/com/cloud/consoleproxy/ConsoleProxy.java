@@ -26,7 +26,6 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
@@ -36,10 +35,11 @@ import java.util.concurrent.Executor;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.xml.DOMConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.eclipse.jetty.websocket.api.Session;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.utils.PropertiesUtil;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
@@ -49,7 +49,7 @@ import com.sun.net.httpserver.HttpServer;
  * ConsoleProxy, singleton class that manages overall activities in console proxy process. To make legacy code work, we still
  */
 public class ConsoleProxy {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxy.class);
+    protected static Logger LOGGER = LogManager.getLogger(ConsoleProxy.class);
 
     public static final int KEYBOARD_RAW = 0;
     public static final int KEYBOARD_COOKED = 1;
@@ -74,27 +74,96 @@ public class ConsoleProxy {
     static int httpCmdListenPort = 8001;
     static int reconnectMaxRetry = 5;
     static int readTimeoutSeconds = 90;
+    public static int defaultBufferSize = 64 * 1024;
     static int keyboardType = KEYBOARD_RAW;
     static String factoryClzName;
     static boolean standaloneStart = false;
 
+    /**
+     * Session timeout in milliseconds, default 300000 (5 minutes).
+     */
+    public static int sessionTimeoutMillis = 300000;
+
     static String encryptorPassword = "Dummy";
     static final String[] skipProperties = new String[]{"certificate", "cacertificate", "keystore_password", "privatekey"};
 
-    static Set<String> allowedSessions = new HashSet<>();
+    static Set<String> allowedSessions = ConcurrentHashMap.newKeySet();
+    private static final Object allowedSessionsLock = new Object();
 
+    private static final Map<String, ReconnectGrant> sessionReconnectGrants = new ConcurrentHashMap<>();
+    private static long sessionReconnectionWindowMs = 0L;
+
+    // Invoked through reflection
     public static void addAllowedSession(String sessionUuid) {
         allowedSessions.add(sessionUuid);
+    }
+
+    /**
+     * Grant the client IP a reconnection window of #{@link #sessionReconnectionWindowMs} ms to the same session UUID in case of a disconnection.
+     * The grant is bound to the client IP that was using the session so it cannot be redeemed by another client.
+     * @param sessionUuid session UUID to grant a reconnect window for
+     * @param clientIp source IP of the client the session was granted to
+     */
+    public static void grantReconnectWindowForSessionAndClientIp(String sessionUuid, String clientIp) {
+        if (sessionReconnectionWindowMs > 0) {
+            ReconnectGrant grant = new ReconnectGrant(System.currentTimeMillis() + sessionReconnectionWindowMs, clientIp);
+            sessionReconnectGrants.put(sessionUuid, grant);
+        }
+    }
+
+    /**
+     * True if the session UUID has been granted reconnection, within the reconnection window #{@link #sessionReconnectionWindowMs}.
+     */
+    private static boolean isSessionReconnectionGrantedForClientIp(String sessionUuid, String clientIp) {
+        ReconnectGrant grant = sessionReconnectGrants.remove(sessionUuid);
+        if (grant == null) {
+            return false;
+        }
+        if (grant.isExpired(System.currentTimeMillis())) {
+            LOGGER.warn("Rejecting reconnection for session {} as the reconnect window: {}ms is already expired",
+                    sessionUuid, sessionReconnectionWindowMs);
+            return false;
+        }
+        if (grant.clientIp != null && !grant.clientIp.equals(clientIp)) {
+            LOGGER.warn("Rejecting reconnection for session {} as it was requested from IP {} " +
+                    "but the session was granted to IP {}", sessionUuid, clientIp, grant.clientIp);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Drops expired, unclaimed reconnect grants so sessionReconnectGrants doesn't grow unbounded
+     * when a client never reconnects after a disconnection. Invoked periodically by {@link ConsoleProxyGCThread}.
+     */
+    static void cleanupExpiredReconnectGrants() {
+        sessionReconnectGrants.entrySet().removeIf(entry -> entry.getValue().isExpired(System.currentTimeMillis()));
+    }
+
+    private static final class ReconnectGrant {
+        final long expiryMillis;
+        final String clientIp;
+
+        ReconnectGrant(long expiryMillis, String clientIp) {
+            this.expiryMillis = expiryMillis;
+            this.clientIp = clientIp;
+        }
+
+        boolean isExpired(long now) {
+            return now >= expiryMillis;
+        }
     }
 
     private static void configLog4j() {
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
         URL configUrl = loader.getResource("/conf/log4j-cloud.xml");
-        if (configUrl == null)
+        if (configUrl == null) {
             configUrl = ClassLoader.getSystemResource("log4j-cloud.xml");
+        }
 
-        if (configUrl == null)
+        if (configUrl == null) {
             configUrl = ClassLoader.getSystemResource("conf/log4j-cloud.xml");
+        }
 
         if (configUrl != null) {
             try {
@@ -107,34 +176,32 @@ public class ConsoleProxy {
                 File file = new File(configUrl.toURI());
 
                 System.out.println("Log4j configuration from : " + file.getAbsolutePath());
-                DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
+                Configurator.initialize(null, file.getAbsolutePath());
             } catch (URISyntaxException e) {
                 System.out.println("Unable to convert log4j configuration Url to URI");
             }
-            // DOMConfigurator.configure(configUrl);
         } else {
             System.out.println("Configure log4j with default properties");
         }
     }
 
     private static void configProxy(Properties conf) {
-        s_logger.info("Configure console proxy...");
+        LOGGER.info("Configure console proxy...");
         for (Object key : conf.keySet()) {
-            s_logger.info("Property " + (String)key + ": " + conf.getProperty((String)key));
             if (!ArrayUtils.contains(skipProperties, key)) {
-                s_logger.info("Property " + (String)key + ": " + conf.getProperty((String)key));
+                LOGGER.info("Property " + (String) key + ": " + conf.getProperty((String) key));
             }
         }
 
         String s = conf.getProperty("consoleproxy.httpListenPort");
         if (s != null) {
             httpListenPort = Integer.parseInt(s);
-            s_logger.info("Setting httpListenPort=" + s);
+            LOGGER.info("Setting httpListenPort=" + s);
         }
 
         s = conf.getProperty("premium");
         if (s != null && s.equalsIgnoreCase("true")) {
-            s_logger.info("Premium setting will override settings from consoleproxy.properties, listen at port 443");
+            LOGGER.info("Premium setting will override settings from consoleproxy.properties, listen at port 443");
             httpListenPort = 443;
             factoryClzName = "com.cloud.consoleproxy.ConsoleProxySecureServerFactoryImpl";
         } else {
@@ -144,19 +211,49 @@ public class ConsoleProxy {
         s = conf.getProperty("consoleproxy.httpCmdListenPort");
         if (s != null) {
             httpCmdListenPort = Integer.parseInt(s);
-            s_logger.info("Setting httpCmdListenPort=" + s);
+            LOGGER.info("Setting httpCmdListenPort=" + s);
         }
 
         s = conf.getProperty("consoleproxy.reconnectMaxRetry");
         if (s != null) {
             reconnectMaxRetry = Integer.parseInt(s);
-            s_logger.info("Setting reconnectMaxRetry=" + reconnectMaxRetry);
+            LOGGER.info("Setting reconnectMaxRetry=" + reconnectMaxRetry);
         }
 
         s = conf.getProperty("consoleproxy.readTimeoutSeconds");
         if (s != null) {
             readTimeoutSeconds = Integer.parseInt(s);
-            s_logger.info("Setting readTimeoutSeconds=" + readTimeoutSeconds);
+            LOGGER.info("Setting readTimeoutSeconds=" + readTimeoutSeconds);
+        }
+
+        s = conf.getProperty("consoleproxy.defaultBufferSize");
+        if (s != null) {
+            defaultBufferSize = Integer.parseInt(s);
+            LOGGER.info("Setting defaultBufferSize=" + defaultBufferSize);
+        }
+
+        s = conf.getProperty("session_reconnection_window");
+        if (s != null) {
+            sessionReconnectionWindowMs = Long.parseLong(s);
+            LOGGER.info("Setting sessionReconnectionWindowMs=" + sessionReconnectionWindowMs);
+        }
+
+        // Read consoleproxy.session.timeout in milliseconds.
+        s = conf.getProperty("consoleproxy.session.timeout");
+        if (s != null) {
+            try {
+                int parsedTimeout = Integer.parseInt(s);
+                if (parsedTimeout < 1000) {
+                    LOGGER.warn("Invalid value for consoleproxy.session.timeout: " + s
+                            + " ms, must be >= 1000 ms, keeping default " + sessionTimeoutMillis + " ms");
+                } else {
+                    sessionTimeoutMillis = parsedTimeout;
+                    LOGGER.info("Setting consoleproxy.session.timeout=" + sessionTimeoutMillis + " ms");
+                }
+            } catch (NumberFormatException e) {
+                LOGGER.warn("Invalid value for consoleproxy.session.timeout: " + s
+                        + ", keeping default " + sessionTimeoutMillis + " ms", e);
+            }
         }
     }
 
@@ -164,24 +261,23 @@ public class ConsoleProxy {
         try {
             Class<?> clz = Class.forName(factoryClzName);
             try {
-                ConsoleProxyServerFactory factory = (ConsoleProxyServerFactory)clz.newInstance();
+                ConsoleProxyServerFactory factory = (ConsoleProxyServerFactory) clz.newInstance();
                 factory.init(ConsoleProxy.ksBits, ConsoleProxy.ksPassword);
                 return factory;
             } catch (InstantiationException e) {
-                s_logger.error(e.getMessage(), e);
+                LOGGER.error(e.getMessage(), e);
                 return null;
             } catch (IllegalAccessException e) {
-                s_logger.error(e.getMessage(), e);
+                LOGGER.error(e.getMessage(), e);
                 return null;
             }
         } catch (ClassNotFoundException e) {
-            s_logger.warn("Unable to find http server factory class: " + factoryClzName);
+            LOGGER.warn("Unable to find http server factory class: " + factoryClzName);
             return new ConsoleProxyBaseServerFactoryImpl();
         }
     }
 
     public static ConsoleProxyAuthenticationResult authenticateConsoleAccess(ConsoleProxyClientParam param, boolean reauthentication) {
-
         ConsoleProxyAuthenticationResult authResult = new ConsoleProxyAuthenticationResult();
         authResult.setSuccess(true);
         authResult.setReauthentication(reauthentication);
@@ -191,24 +287,28 @@ public class ConsoleProxy {
         if (org.apache.commons.lang3.StringUtils.isNotBlank(param.getExtraSecurityToken())) {
             String extraToken = param.getExtraSecurityToken();
             String clientProvidedToken = param.getClientProvidedExtraSecurityToken();
-            s_logger.debug(String.format("Extra security validation for the console access, provided %s " +
+            LOGGER.debug(String.format("Extra security validation for the console access, provided %s " +
                     "to validate against %s", clientProvidedToken, extraToken));
 
             if (!extraToken.equals(clientProvidedToken)) {
-                s_logger.error("The provided extra token does not match the expected value for this console endpoint");
+                LOGGER.error("The provided extra token does not match the expected value for this console endpoint");
                 authResult.setSuccess(false);
                 return authResult;
             }
         }
 
         String sessionUuid = param.getSessionUuid();
-        if (allowedSessions.contains(sessionUuid)) {
-            s_logger.debug("Acquiring the session " + sessionUuid + " not available for future use");
-            allowedSessions.remove(sessionUuid);
-        } else {
-            s_logger.info("Session " + sessionUuid + " has already been used, cannot connect");
-            authResult.setSuccess(false);
-            return authResult;
+        synchronized (allowedSessionsLock) {
+            if (allowedSessions.remove(sessionUuid)) {
+                LOGGER.debug("Acquiring the session {} from client IP {}", sessionUuid, param.getClientIp());
+            } else if (isSessionReconnectionGrantedForClientIp(sessionUuid, param.getClientIp())) {
+                LOGGER.info("Reconnecting the session {} after a dropped connection", sessionUuid);
+                return authResult;
+            } else {
+                LOGGER.info("Invalid or already used session {}, cannot connect", sessionUuid);
+                authResult.setSuccess(false);
+                return authResult;
+            }
         }
 
         String websocketUrl = param.getWebsocketUrl();
@@ -225,25 +325,25 @@ public class ConsoleProxy {
             try {
                 result =
                         authMethod.invoke(ConsoleProxy.context, param.getClientHostAddress(), String.valueOf(param.getClientHostPort()), param.getClientTag(),
-                                param.getClientHostPassword(), param.getTicket(), reauthentication, param.getSessionUuid());
+                                param.getClientHostPassword(), param.getTicket(), reauthentication, param.getSessionUuid(), param.getClientIp());
             } catch (IllegalAccessException e) {
-                s_logger.error("Unable to invoke authenticateConsoleAccess due to IllegalAccessException" + " for vm: " + param.getClientTag(), e);
+                LOGGER.error("Unable to invoke authenticateConsoleAccess due to IllegalAccessException" + " for vm: " + param.getClientTag(), e);
                 authResult.setSuccess(false);
                 return authResult;
             } catch (InvocationTargetException e) {
-                s_logger.error("Unable to invoke authenticateConsoleAccess due to InvocationTargetException " + " for vm: " + param.getClientTag(), e);
+                LOGGER.error("Unable to invoke authenticateConsoleAccess due to InvocationTargetException " + " for vm: " + param.getClientTag(), e);
                 authResult.setSuccess(false);
                 return authResult;
             }
 
             if (result != null && result instanceof String) {
-                authResult = new Gson().fromJson((String)result, ConsoleProxyAuthenticationResult.class);
+                authResult = new Gson().fromJson((String) result, ConsoleProxyAuthenticationResult.class);
             } else {
-                s_logger.error("Invalid authentication return object " + result + " for vm: " + param.getClientTag() + ", decline the access");
+                LOGGER.error("Invalid authentication return object " + result + " for vm: " + param.getClientTag() + ", decline the access");
                 authResult.setSuccess(false);
             }
         } else {
-            s_logger.warn("Private channel towards management server is not setup. Switch to offline mode and allow access to vm: " + param.getClientTag());
+            LOGGER.warn("Private channel towards management server is not setup. Switch to offline mode and allow access to vm: " + param.getClientTag());
         }
 
         return authResult;
@@ -254,12 +354,12 @@ public class ConsoleProxy {
             try {
                 reportMethod.invoke(ConsoleProxy.context, gsonLoadInfo);
             } catch (IllegalAccessException e) {
-                s_logger.error("Unable to invoke reportLoadInfo due to " + e.getMessage());
+                LOGGER.error("Unable to invoke reportLoadInfo due to " + e.getMessage());
             } catch (InvocationTargetException e) {
-                s_logger.error("Unable to invoke reportLoadInfo due to " + e.getMessage());
+                LOGGER.error("Unable to invoke reportLoadInfo due to " + e.getMessage());
             }
         } else {
-            s_logger.warn("Private channel towards management server is not setup. Switch to offline mode and ignore load report");
+            LOGGER.warn("Private channel towards management server is not setup. Switch to offline mode and ignore load report");
         }
     }
 
@@ -268,25 +368,24 @@ public class ConsoleProxy {
             try {
                 ensureRouteMethod.invoke(ConsoleProxy.context, address);
             } catch (IllegalAccessException e) {
-                s_logger.error("Unable to invoke ensureRoute due to " + e.getMessage());
+                LOGGER.error("Unable to invoke ensureRoute due to " + e.getMessage());
             } catch (InvocationTargetException e) {
-                s_logger.error("Unable to invoke ensureRoute due to " + e.getMessage());
+                LOGGER.error("Unable to invoke ensureRoute due to " + e.getMessage());
             }
         } else {
-            s_logger.warn("Unable to find ensureRoute method, console proxy agent is not up to date");
+            LOGGER.warn("Unable to find ensureRoute method, console proxy agent is not up to date");
         }
     }
 
     public static void startWithContext(Properties conf, Object context, byte[] ksBits, String ksPassword, String password, Boolean isSourceIpCheckEnabled) {
         setEncryptorPassword(password);
         configLog4j();
-        Logger.setFactory(new ConsoleProxyLoggerFactory());
-        s_logger.info("Start console proxy with context");
+        LOGGER.info("Start console proxy with context");
 
         if (conf != null) {
             for (Object key : conf.keySet()) {
                 if (!ArrayUtils.contains(skipProperties, key)) {
-                    s_logger.info("Context property " + (String) key + ": " + conf.getProperty((String) key));
+                    LOGGER.info("Context property " + (String) key + ": " + conf.getProperty((String) key));
                 }
             }
         }
@@ -300,17 +399,22 @@ public class ConsoleProxy {
             final ClassLoader loader = Thread.currentThread().getContextClassLoader();
             Class<?> contextClazz = loader.loadClass("com.cloud.agent.resource.consoleproxy.ConsoleProxyResource");
             authMethod = contextClazz.getDeclaredMethod("authenticateConsoleAccess", String.class, String.class,
-                    String.class, String.class, String.class, Boolean.class, String.class);
+                    String.class, String.class, String.class, Boolean.class, String.class, String.class);
             reportMethod = contextClazz.getDeclaredMethod("reportLoadInfo", String.class);
             ensureRouteMethod = contextClazz.getDeclaredMethod("ensureRoute", String.class);
         } catch (SecurityException e) {
-            s_logger.error("Unable to setup private channel due to SecurityException", e);
+            LOGGER.error("Unable to setup private channel due to SecurityException", e);
         } catch (NoSuchMethodException e) {
-            s_logger.error("Unable to setup private channel due to NoSuchMethodException", e);
+            LOGGER.error("Unable to setup private channel due to NoSuchMethodException", e);
         } catch (IllegalArgumentException e) {
-            s_logger.error("Unable to setup private channel due to IllegalArgumentException", e);
+            LOGGER.error("Unable to setup private channel due to IllegalArgumentException", e);
         } catch (ClassNotFoundException e) {
-            s_logger.error("Unable to setup private channel due to ClassNotFoundException", e);
+            LOGGER.error("Unable to setup private channel due to ClassNotFoundException", e);
+        }
+
+        // ensure we have a Properties object before merging defaults
+        if (conf == null) {
+            conf = new Properties();
         }
 
         // merge properties from conf file
@@ -318,14 +422,15 @@ public class ConsoleProxy {
         Properties props = new Properties();
         if (confs == null) {
             final File file = PropertiesUtil.findConfigFile("consoleproxy.properties");
-            if (file == null)
-                s_logger.info("Can't load consoleproxy.properties from classpath, will use default configuration");
-            else
+            if (file == null) {
+                LOGGER.info("Can't load consoleproxy.properties from classpath, will use default configuration");
+            } else {
                 try {
                     confs = new FileInputStream(file);
                 } catch (FileNotFoundException e) {
-                    s_logger.info("Ignoring file not found exception and using defaults");
+                    LOGGER.info("Ignoring file not found exception and using defaults");
                 }
+            }
         }
         if (confs != null) {
             try {
@@ -334,17 +439,20 @@ public class ConsoleProxy {
                 for (Object key : props.keySet()) {
                     // give properties passed via context high priority, treat properties from consoleproxy.properties
                     // as default values
-                    if (conf.get(key) == null)
+                    if (conf.get(key) == null) {
                         conf.put(key, props.get(key));
+                    }
                 }
             } catch (Exception e) {
-                s_logger.error(e.toString(), e);
+                LOGGER.error(e.toString(), e);
             }
         }
         try {
-            confs.close();
+            if (confs != null) {
+                confs.close();
+            }
         } catch (IOException e) {
-            s_logger.error("Failed to close consolepropxy.properties : " + e.toString(), e);
+            LOGGER.error("Failed to close consolepropxy.properties : " + e.toString(), e);
         }
 
         start(conf);
@@ -357,21 +465,21 @@ public class ConsoleProxy {
 
         ConsoleProxyServerFactory factory = getHttpServerFactory();
         if (factory == null) {
-            s_logger.error("Unable to load console proxy server factory");
+            LOGGER.error("Unable to load console proxy server factory");
             System.exit(1);
         }
 
         if (httpListenPort != 0) {
             startupHttpMain();
         } else {
-            s_logger.error("A valid HTTP server port is required to be specified, please check your consoleproxy.httpListenPort settings");
+            LOGGER.error("A valid HTTP server port is required to be specified, please check your consoleproxy.httpListenPort settings");
             System.exit(1);
         }
 
         if (httpCmdListenPort > 0) {
             startupHttpCmdPort();
         } else {
-            s_logger.info("HTTP command port is disabled");
+            LOGGER.info("HTTP command port is disabled");
         }
 
         ConsoleProxyGCThread cthread = new ConsoleProxyGCThread(connectionMap, removedSessionsSet);
@@ -383,7 +491,7 @@ public class ConsoleProxy {
         try {
             ConsoleProxyServerFactory factory = getHttpServerFactory();
             if (factory == null) {
-                s_logger.error("Unable to load HTTP server factory");
+                LOGGER.error("Unable to load HTTP server factory");
                 System.exit(1);
             }
 
@@ -399,7 +507,7 @@ public class ConsoleProxy {
             noVNCServer.start();
 
         } catch (Exception e) {
-            s_logger.error(e.getMessage(), e);
+            LOGGER.error(e.getMessage(), e);
             System.exit(1);
         }
     }
@@ -413,13 +521,13 @@ public class ConsoleProxy {
 
     private static void startupHttpCmdPort() {
         try {
-            s_logger.info("Listening for HTTP CMDs on port " + httpCmdListenPort);
+            LOGGER.info("Listening for HTTP CMDs on port " + httpCmdListenPort);
             HttpServer cmdServer = HttpServer.create(new InetSocketAddress(httpCmdListenPort), 2);
             cmdServer.createContext("/cmd", new ConsoleProxyCmdHandler());
             cmdServer.setExecutor(new ThreadExecutor()); // creates a default executor
             cmdServer.start();
         } catch (Exception e) {
-            s_logger.error(e.getMessage(), e);
+            LOGGER.error(e.getMessage(), e);
             System.exit(1);
         }
     }
@@ -427,22 +535,21 @@ public class ConsoleProxy {
     public static void main(String[] argv) {
         standaloneStart = true;
         configLog4j();
-        Logger.setFactory(new ConsoleProxyLoggerFactory());
 
         InputStream confs = ConsoleProxy.class.getResourceAsStream("/conf/consoleproxy.properties");
         Properties conf = new Properties();
         if (confs == null) {
-            s_logger.info("Can't load consoleproxy.properties from classpath, will use default configuration");
+            LOGGER.info("Can't load consoleproxy.properties from classpath, will use default configuration");
         } else {
             try {
                 conf.load(confs);
             } catch (Exception e) {
-                s_logger.error(e.toString(), e);
+                LOGGER.error(e.toString(), e);
             } finally {
                 try {
                     confs.close();
                 } catch (IOException ioex) {
-                    s_logger.error(ioex.toString(), ioex);
+                    LOGGER.error(ioex.toString(), ioex);
                 }
             }
         }
@@ -460,14 +567,14 @@ public class ConsoleProxy {
                 viewer = getClient(param);
                 viewer.initClient(param);
                 connectionMap.put(clientKey, viewer);
-                s_logger.info("Added viewer object " + viewer);
+                LOGGER.info("Added viewer object " + viewer);
 
                 reportLoadChange = true;
             } else if (!viewer.isFrontEndAlive()) {
-                s_logger.info("The rfb thread died, reinitializing the viewer " + viewer);
+                LOGGER.info("The rfb thread died, reinitializing the viewer " + viewer);
                 viewer.initClient(param);
             } else if (!param.getClientHostPassword().equals(viewer.getClientHostPassword())) {
-                s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " + viewer.getClientHostPassword() + ", sid in request: " +
+                LOGGER.warn("Bad sid detected(VNC port may be reused). sid in session: " + viewer.getClientHostPassword() + ", sid in request: " +
                         param.getClientHostPassword());
                 viewer.initClient(param);
             }
@@ -477,8 +584,9 @@ public class ConsoleProxy {
             ConsoleProxyClientStatsCollector statsCollector = getStatsCollector();
             String loadInfo = statsCollector.getStatsReport();
             reportLoadInfo(loadInfo);
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Report load change : " + loadInfo);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Report load change : " + loadInfo);
+            }
         }
 
         return viewer;
@@ -496,19 +604,21 @@ public class ConsoleProxy {
                 viewer.initClient(param);
 
                 connectionMap.put(clientKey, viewer);
-                s_logger.info("Added viewer object " + viewer);
+                LOGGER.info("Added viewer object " + viewer);
                 reportLoadChange = true;
             } else {
                 // protected against malicious attack by modifying URL content
                 if (ajaxSession != null) {
                     long ajaxSessionIdFromUrl = Long.parseLong(ajaxSession);
-                    if (ajaxSessionIdFromUrl != viewer.getAjaxSessionId())
+                    if (ajaxSessionIdFromUrl != viewer.getAjaxSessionId()) {
                         throw new AuthenticationException("Cannot use the existing viewer " + viewer + ": modified AJAX session id");
+                    }
                 }
 
                 if (param.getClientHostPassword() == null || param.getClientHostPassword().isEmpty() ||
-                        !param.getClientHostPassword().equals(viewer.getClientHostPassword()))
+                        !param.getClientHostPassword().equals(viewer.getClientHostPassword())) {
                     throw new AuthenticationException("Cannot use the existing viewer " + viewer + ": bad sid");
+                }
 
                 if (!viewer.isFrontEndAlive()) {
 
@@ -522,8 +632,9 @@ public class ConsoleProxy {
                 ConsoleProxyClientStatsCollector statsCollector = getStatsCollector();
                 String loadInfo = statsCollector.getStatsReport();
                 reportLoadInfo(loadInfo);
-                if (s_logger.isDebugEnabled())
-                    s_logger.debug("Report load change : " + loadInfo);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Report load change : " + loadInfo);
+                }
             }
             return viewer;
         }
@@ -559,7 +670,7 @@ public class ConsoleProxy {
         ConsoleProxyAuthenticationResult authResult = authenticateConsoleAccess(param, false);
 
         if (authResult == null || !authResult.isSuccess()) {
-            s_logger.warn("External authenticator failed authentication request for vm " + param.getClientTag() + " with sid " + param.getClientHostPassword());
+            LOGGER.warn("External authenticator failed authentication request for vm " + param.getClientTag() + " with sid " + param.getClientHostPassword());
 
             throw new AuthenticationException("External authenticator failed request for vm " + param.getClientTag() + " with sid " + param.getClientHostPassword());
         }
@@ -589,9 +700,11 @@ public class ConsoleProxy {
     }
 
     public static ConsoleProxyNoVncClient getNoVncViewer(ConsoleProxyClientParam param, String ajaxSession,
-            Session session) throws AuthenticationException {
+                                                         Session session) throws AuthenticationException {
         boolean reportLoadChange = false;
         String clientKey = param.getClientMapKey();
+        LOGGER.debug("Getting NoVNC viewer for {}. Session requires new viewer: {}, client tag: {}. session UUID: {}",
+                clientKey, param.isSessionRequiresNewViewer(), param.getClientTag(), param.getSessionUuid());
         synchronized (connectionMap) {
             ConsoleProxyClient viewer = connectionMap.get(clientKey);
             if (viewer == null || viewer.getClass() != ConsoleProxyNoVncClient.class) {
@@ -603,22 +716,23 @@ public class ConsoleProxy {
                 reportLoadChange = true;
             } else {
                 if (param.getClientHostPassword() == null || param.getClientHostPassword().isEmpty() ||
-                        !param.getClientHostPassword().equals(viewer.getClientHostPassword()))
+                        !param.getClientHostPassword().equals(viewer.getClientHostPassword())) {
                     throw new AuthenticationException("Cannot use the existing viewer " + viewer + ": bad sid");
+                }
 
                 try {
                     authenticationExternally(param);
                 } catch (Exception e) {
-                    s_logger.error("Authentication failed for param: " + param);
+                    LOGGER.error("Authentication failed for param: " + param);
                     return null;
                 }
-                s_logger.info("Initializing new novnc client and disconnecting existing session");
+                LOGGER.info("Initializing new novnc client and disconnecting existing session");
                 try {
-                    ((ConsoleProxyNoVncClient)viewer).getSession().disconnect();
+                    ((ConsoleProxyNoVncClient) viewer).getSession().disconnect();
                 } catch (IOException e) {
-                    s_logger.error("Exception while disconnect session of novnc viewer object: " + viewer, e);
+                    LOGGER.error("Exception while disconnect session of novnc viewer object: " + viewer, e);
                 }
-                removeViewer(viewer);
+                viewer.closeClient();
                 viewer = new ConsoleProxyNoVncClient(session);
                 viewer.initClient(param);
                 connectionMap.put(clientKey, viewer);
@@ -629,10 +743,11 @@ public class ConsoleProxy {
                 ConsoleProxyClientStatsCollector statsCollector = getStatsCollector();
                 String loadInfo = statsCollector.getStatsReport();
                 reportLoadInfo(loadInfo);
-                if (s_logger.isDebugEnabled())
-                    s_logger.debug("Report load change : " + loadInfo);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Report load change : " + loadInfo);
+                }
             }
-            return (ConsoleProxyNoVncClient)viewer;
+            return (ConsoleProxyNoVncClient) viewer;
         }
     }
 }

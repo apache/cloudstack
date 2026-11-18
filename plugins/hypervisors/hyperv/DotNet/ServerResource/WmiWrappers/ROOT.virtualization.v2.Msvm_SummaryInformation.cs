@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -23,102 +23,102 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
     using System.Globalization;
     using System.ComponentModel.Design.Serialization;
     using System.Reflection;
-    
-    
+
+
     // Functions ShouldSerialize<PropertyName> are functions used by VS property browser to check if a particular property has to be serialized. These functions are added for all ValueType properties ( properties of type Int32, BOOL etc.. which cannot be set to null). These functions use Is<PropertyName>Null function. These functions are also used in the TypeConverter implementation for the properties to check for NULL value of property so that an empty value can be shown in Property browser in case of Drag and Drop in Visual studio.
     // Functions Is<PropertyName>Null() are used to check if a property is NULL.
     // Functions Reset<PropertyName> are added for Nullable Read/Write properties. These functions are used by VS designer in property browser to set a property to NULL.
     // Every property added to the class for WMI property has attributes set to define its behavior in Visual Studio designer and also to define a TypeConverter to be used.
     // Datetime conversion functions ToDateTime and ToDmtfDateTime are added to the class to convert DMTF datetime to System.DateTime and vice-versa.
-    // 
-    // 
-    // 
-    // 
+    //
+    //
+    //
+    //
     // If the embedded property is strongly typed then, to strongly type the property to the type of
     // the embedded object, you have to do the following things.
     // 	1. Generate Managed class for the WMI class of the embedded property. This can be done with MgmtClassGen.exe tool or from Server Explorer.
     // 	2. Include the namespace of the generated class.
     // 	3. Change the property get/set functions so as return the instance of the Managed class.
     // Below is a sample code.
-    // 
+    //
     // VB Code
-    // 
-    // 
-    // 
+    //
+    //
+    //
     // Property name
     // Managed class name of Embedded Property
-    // 
-    // 
-    // 
-    // 
-    // 
-    // 
+    //
+    //
+    //
+    //
+    //
+    //
     // C# Code
-    // 
-    // 
-    // 
+    //
+    //
+    //
     // Managed class name of Embedded property
     // Property name
-    // 
-    // 
-    // 
-    // 
-    // 
-    // 
-    // 
-    // 
-    // 
-    // 
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
     // An Early Bound class generated for the WMI class.Msvm_SummaryInformation
     public class SummaryInformation : System.ComponentModel.Component {
-        
+
         // Private property to hold the WMI namespace in which the class resides.
         private static string CreatedWmiNamespace = "ROOT\\virtualization\\v2";
-        
+
         // Private property to hold the name of WMI class which created this class.
         private static string CreatedClassName = "Msvm_SummaryInformation";
-        
+
         // Private member variable to hold the ManagementScope which is used by the various methods.
         private static System.Management.ManagementScope statMgmtScope = null;
-        
+
         private ManagementSystemProperties PrivateSystemProperties;
-        
+
         // Underlying lateBound WMI object.
         private System.Management.ManagementObject PrivateLateBoundObject;
-        
+
         // Member variable to store the 'automatic commit' behavior for the class.
         private bool AutoCommitProp;
-        
+
         // Private variable to hold the embedded property representing the instance.
         private System.Management.ManagementBaseObject embeddedObj;
-        
+
         // The current WMI object used
         private System.Management.ManagementBaseObject curObj;
-        
+
         // Flag to indicate if the instance is an embedded object.
         private bool isEmbedded;
-        
+
         // Below are different overloads of constructors to initialize an instance of the class with a WMI object.
         public SummaryInformation() {
             this.InitializeObject(null, null, null);
         }
-        
+
         public SummaryInformation(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(null, path, getOptions);
         }
-        
+
         public SummaryInformation(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
             this.InitializeObject(mgmtScope, path, null);
         }
-        
+
         public SummaryInformation(System.Management.ManagementPath path) {
             this.InitializeObject(null, path, null);
         }
-        
+
         public SummaryInformation(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(mgmtScope, path, getOptions);
         }
-        
+
         public SummaryInformation(System.Management.ManagementObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
@@ -130,7 +130,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 throw new System.ArgumentException("Class name does not match.");
             }
         }
-        
+
         public SummaryInformation(System.Management.ManagementBaseObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
@@ -143,7 +143,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 throw new System.ArgumentException("Class name does not match.");
             }
         }
-        
+
         // Property returns the namespace of the WMI class.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -152,7 +152,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return "ROOT\\virtualization\\v2";
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string ManagementClassName {
@@ -161,7 +161,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 if ((curObj != null)) {
                     if ((curObj.ClassPath != null)) {
                         strRet = ((string)(curObj["__CLASS"]));
-                        if (((strRet == null) 
+                        if (((strRet == null)
                                     || (strRet == string.Empty))) {
                             strRet = CreatedClassName;
                         }
@@ -170,7 +170,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return strRet;
             }
         }
-        
+
         // Property pointing to an embedded object to get System properties of the WMI object.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -179,7 +179,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return PrivateSystemProperties;
             }
         }
-        
+
         // Property returning the underlying lateBound object.
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -188,7 +188,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return curObj;
             }
         }
-        
+
         // ManagementScope of the object.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -207,7 +207,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         // Property to show the commit behavior for the WMI object. If true, WMI object will be automatically saved after each property modification.(ie. Put() is called after modification of a property).
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -219,7 +219,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 AutoCommitProp = value;
             }
         }
-        
+
         // The ManagementPath of the underlying WMI object.
         [Browsable(true)]
         public System.Management.ManagementPath Path {
@@ -240,7 +240,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         // Public static scope property which is used by the various methods.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -252,7 +252,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 statMgmtScope = value;
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The identifier of the physical graphics processing unit (GPU) allocated to this v" +
@@ -262,7 +262,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["AllocatedGPU"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsApplicationHealthNull {
@@ -275,7 +275,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description(@"The current application health status for the virtual system. This property may be one of the following values: ""OK""; ""Application Critical""; ""Disabled"".For more information, see the documentation for the StatusDescriptions property of the Msvm_HeartbeatComponent class. This property is not valid for instances of Msvm_SummaryInformation representing a virtual system snapshot.")]
@@ -288,7 +288,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ApplicationHealthValues)(System.Convert.ToInt32(curObj["ApplicationHealth"])));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("An array of Msvm_ConcreteJob instances representing any asynchronous operations r" +
@@ -300,7 +300,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((System.Management.ManagementBaseObject[])(curObj["AsynchronousTasks"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsAvailableMemoryBufferNull {
@@ -313,7 +313,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The available memory buffer percentage in the virtual system.")]
@@ -326,7 +326,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((int)(curObj["AvailableMemoryBuffer"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsCreationTimeNull {
@@ -339,7 +339,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The time at which the virtual system or snapshot was created.")]
@@ -354,7 +354,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The friendly name for the virtual system or snapshot.")]
@@ -363,7 +363,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["ElementName"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsEnabledStateNull {
@@ -376,7 +376,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The current state of the virtual system or snapshot.")]
@@ -389,7 +389,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["EnabledState"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The name of the guest operating system, if available. If this information is not " +
@@ -400,7 +400,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["GuestOperatingSystem"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsHealthStateNull {
@@ -413,7 +413,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The current health state for the virtual system. This property is not valid for i" +
@@ -427,7 +427,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["HealthState"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsHeartbeatNull {
@@ -440,7 +440,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description(@"The current heartbeat status for the virtual system. This property may be one of the following values: ""OK""; ""Error""; ""No Contact""; or ""Lost Communication"". For more information, see the documentation for the StatusDescriptions property of the Msvm_HeartbeatComponent class. This property is not valid for instances of Msvm_SummaryInformation representing a virtual system snapshot.")]
@@ -453,7 +453,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["Heartbeat"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsIntegrationServicesVersionStateNull {
@@ -466,7 +466,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Whether or not the integration services installed in the virtual machine are up t" +
@@ -480,7 +480,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((IntegrationServicesVersionStateValues)(System.Convert.ToInt32(curObj["IntegrationServicesVersionState"])));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsMemoryAvailableNull {
@@ -493,7 +493,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The memory available percentage in the virtual system.")]
@@ -506,7 +506,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((int)(curObj["MemoryAvailable"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsMemorySpansPhysicalNumaNodesNull {
@@ -519,7 +519,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Indicates whether or not the memory of the one or more of the virtual non-uniform" +
@@ -534,7 +534,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((bool)(curObj["MemorySpansPhysicalNumaNodes"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsMemoryUsageNull {
@@ -547,7 +547,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The current memory usage of the virtual system. This property is not valid for in" +
@@ -561,7 +561,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ulong)(curObj["MemoryUsage"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The unique name for the virtual system or snapshot.")]
@@ -570,7 +570,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["Name"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The notes associated with the virtual system or snapshot.")]
@@ -579,7 +579,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["Notes"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsNumberOfProcessorsNull {
@@ -592,7 +592,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The total number of virtual processors allocated to the virtual system or snapsho" +
@@ -606,7 +606,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["NumberOfProcessors"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The current status of the element.")]
@@ -615,7 +615,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort[])(curObj["OperationalStatus"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("A string that describes the enabled or disabled state of the element when the Ena" +
@@ -626,7 +626,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["OtherEnabledState"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsProcessorLoadNull {
@@ -639,7 +639,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The current processor usage of the virtual system. This property is not valid for" +
@@ -653,7 +653,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["ProcessorLoad"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("An array of the previous 100 samples of the processor usage for the virtual syste" +
@@ -664,7 +664,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort[])(curObj["ProcessorLoadHistory"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsReplicationHealthNull {
@@ -677,7 +677,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Replication health for the virtual machine.")]
@@ -690,7 +690,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ReplicationHealthValues)(System.Convert.ToInt32(curObj["ReplicationHealth"])));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsReplicationModeNull {
@@ -703,7 +703,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Identifies replication type for the virtual machine.")]
@@ -716,7 +716,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ReplicationModeValues)(System.Convert.ToInt32(curObj["ReplicationMode"])));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsReplicationStateNull {
@@ -729,7 +729,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Replication state for the virtual machine.")]
@@ -742,7 +742,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ReplicationStateValues)(System.Convert.ToInt32(curObj["ReplicationState"])));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("An array of Msvm_VirtualSystemSettingData instances representing the snapshots fo" +
@@ -753,7 +753,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((System.Management.ManagementBaseObject[])(curObj["Snapshots"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Strings that describe the various OperationalStatus array values.")]
@@ -762,7 +762,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string[])(curObj["StatusDescriptions"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsSwapFilesInUseNull {
@@ -775,7 +775,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Indecates if smart paging is active.")]
@@ -788,7 +788,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((bool)(curObj["SwapFilesInUse"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Reference to the CIM_ComputerSystem instance representing the test replica virtua" +
@@ -802,7 +802,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return null;
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("An array containing a small, thumbnail-sized image of the desktop for the virtual" +
@@ -812,7 +812,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((byte[])(curObj["ThumbnailImage"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsUpTimeNull {
@@ -825,7 +825,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The amount of time since the virtual system was last booted. This property is not" +
@@ -840,9 +840,9 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ulong)(curObj["UpTime"]));
             }
         }
-        
+
         private bool CheckIfProperClass(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions OptionsParam) {
-            if (((path != null) 
+            if (((path != null)
                         && (string.Compare(path.ClassName, this.ManagementClassName, true, System.Globalization.CultureInfo.InvariantCulture) == 0))) {
                 return true;
             }
@@ -850,9 +850,9 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return CheckIfProperClass(new System.Management.ManagementObject(mgmtScope, path, OptionsParam));
             }
         }
-        
+
         private bool CheckIfProperClass(System.Management.ManagementBaseObject theObj) {
-            if (((theObj != null) 
+            if (((theObj != null)
                         && (string.Compare(((string)(theObj["__CLASS"])), this.ManagementClassName, true, System.Globalization.CultureInfo.InvariantCulture) == 0))) {
                 return true;
             }
@@ -869,21 +869,21 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             }
             return false;
         }
-        
+
         private bool ShouldSerializeApplicationHealth() {
             if ((this.IsApplicationHealthNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeAvailableMemoryBuffer() {
             if ((this.IsAvailableMemoryBufferNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         // Converts a given datetime in DMTF format to System.DateTime object.
         static System.DateTime ToDateTime(string dmtfDate) {
             System.DateTime initializer = System.DateTime.MinValue;
@@ -935,13 +935,13 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 if (("******" != tempString)) {
                     ticks = (long.Parse(tempString) * ((long)((System.TimeSpan.TicksPerMillisecond / 1000))));
                 }
-                if (((((((((year < 0) 
-                            || (month < 0)) 
-                            || (day < 0)) 
-                            || (hour < 0)) 
-                            || (minute < 0)) 
-                            || (minute < 0)) 
-                            || (second < 0)) 
+                if (((((((((year < 0)
+                            || (month < 0))
+                            || (day < 0))
+                            || (hour < 0))
+                            || (minute < 0))
+                            || (minute < 0))
+                            || (second < 0))
                             || (ticks < 0))) {
                     throw new System.ArgumentOutOfRangeException();
                 }
@@ -969,7 +969,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             }
             return datetime;
         }
-        
+
         // Converts a given System.DateTime object to DMTF datetime format.
         static string ToDmtfDateTime(System.DateTime date) {
             string utcString = string.Empty;
@@ -996,8 +996,8 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             dmtfDateTime = string.Concat(dmtfDateTime, ((int)(date.Second)).ToString().PadLeft(2, '0'));
             dmtfDateTime = string.Concat(dmtfDateTime, ".");
             System.DateTime dtTemp = new System.DateTime(date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second, 0);
-            long microsec = ((long)((((date.Ticks - dtTemp.Ticks) 
-                        * 1000) 
+            long microsec = ((long)((((date.Ticks - dtTemp.Ticks)
+                        * 1000)
                         / System.TimeSpan.TicksPerMillisecond)));
             string strMicrosec = ((long)(microsec)).ToString();
             if ((strMicrosec.Length > 6)) {
@@ -1007,136 +1007,136 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             dmtfDateTime = string.Concat(dmtfDateTime, utcString);
             return dmtfDateTime;
         }
-        
+
         private bool ShouldSerializeCreationTime() {
             if ((this.IsCreationTimeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeEnabledState() {
             if ((this.IsEnabledStateNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeHealthState() {
             if ((this.IsHealthStateNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeHeartbeat() {
             if ((this.IsHeartbeatNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeIntegrationServicesVersionState() {
             if ((this.IsIntegrationServicesVersionStateNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeMemoryAvailable() {
             if ((this.IsMemoryAvailableNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeMemorySpansPhysicalNumaNodes() {
             if ((this.IsMemorySpansPhysicalNumaNodesNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeMemoryUsage() {
             if ((this.IsMemoryUsageNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeNumberOfProcessors() {
             if ((this.IsNumberOfProcessorsNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeProcessorLoad() {
             if ((this.IsProcessorLoadNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeReplicationHealth() {
             if ((this.IsReplicationHealthNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeReplicationMode() {
             if ((this.IsReplicationModeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeReplicationState() {
             if ((this.IsReplicationStateNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeSwapFilesInUse() {
             if ((this.IsSwapFilesInUseNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeUpTime() {
             if ((this.IsUpTimeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         [Browsable(true)]
         public void CommitObject() {
             if ((isEmbedded == false)) {
                 PrivateLateBoundObject.Put();
             }
         }
-        
+
         [Browsable(true)]
         public void CommitObject(System.Management.PutOptions putOptions) {
             if ((isEmbedded == false)) {
                 PrivateLateBoundObject.Put(putOptions);
             }
         }
-        
+
         private void Initialize() {
             AutoCommitProp = true;
             isEmbedded = false;
         }
-        
+
         private static string ConstructPath() {
             string strPath = "ROOT\\virtualization\\v2:Msvm_SummaryInformation";
             return strPath;
         }
-        
+
         private void InitializeObject(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             Initialize();
             if ((path != null)) {
@@ -1148,24 +1148,24 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             PrivateSystemProperties = new ManagementSystemProperties(PrivateLateBoundObject);
             curObj = PrivateLateBoundObject;
         }
-        
+
         // Different overloads of GetInstances() help in enumerating instances of the WMI class.
         public static SummaryInformationCollection GetInstances() {
             return GetInstances(null, null, null);
         }
-        
+
         public static SummaryInformationCollection GetInstances(string condition) {
             return GetInstances(null, condition, null);
         }
-        
+
         public static SummaryInformationCollection GetInstances(string[] selectedProperties) {
             return GetInstances(null, null, selectedProperties);
         }
-        
+
         public static SummaryInformationCollection GetInstances(string condition, string[] selectedProperties) {
             return GetInstances(null, condition, selectedProperties);
         }
-        
+
         public static SummaryInformationCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
@@ -1186,15 +1186,15 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             }
             return new SummaryInformationCollection(clsObject.GetInstances(enumOptions));
         }
-        
+
         public static SummaryInformationCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
             return GetInstances(mgmtScope, condition, null);
         }
-        
+
         public static SummaryInformationCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
             return GetInstances(mgmtScope, null, selectedProperties);
         }
-        
+
         public static SummaryInformationCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
@@ -1211,7 +1211,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             ObjectSearcher.Options = enumOptions;
             return new SummaryInformationCollection(ObjectSearcher.Get());
         }
-        
+
         [Browsable(true)]
         public static SummaryInformation CreateInstance() {
             System.Management.ManagementScope mgmtScope = null;
@@ -1226,116 +1226,116 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             System.Management.ManagementClass tmpMgmtClass = new System.Management.ManagementClass(mgmtScope, mgmtPath, null);
             return new SummaryInformation(tmpMgmtClass.CreateInstance());
         }
-        
+
         [Browsable(true)]
         public void Delete() {
             PrivateLateBoundObject.Delete();
         }
-        
+
         public enum ApplicationHealthValues {
-            
+
             OK = 2,
-            
+
             Application_Critical = 32782,
-            
+
             Disabled = 32896,
-            
+
             NULL_ENUM_VALUE = 0,
         }
-        
+
         public enum IntegrationServicesVersionStateValues {
-            
+
             Unknown0 = 0,
-            
+
             UpToDate = 1,
-            
+
             Mismatch = 2,
-            
+
             NULL_ENUM_VALUE = 3,
         }
-        
+
         public enum ReplicationHealthValues {
-            
+
             Not_applicable = 0,
-            
+
             Ok = 1,
-            
+
             Warning = 2,
-            
+
             Critical = 3,
-            
+
             NULL_ENUM_VALUE = 4,
         }
-        
+
         public enum ReplicationModeValues {
-            
+
             None = 0,
-            
+
             Primary = 1,
-            
+
             Recovery = 2,
-            
+
             Test_Replica = 3,
-            
+
             NULL_ENUM_VALUE = 4,
         }
-        
+
         public enum ReplicationStateValues {
-            
+
             Disabled = 0,
-            
+
             Ready_for_replication = 1,
-            
+
             Waiting_to_complete_initial_replication = 2,
-            
+
             Replicating = 3,
-            
+
             Synced_replication_complete = 4,
-            
+
             Recovered = 5,
-            
+
             Committed = 6,
-            
+
             Suspended = 7,
-            
+
             Critical = 8,
-            
+
             Waiting_to_start_resynchronization = 9,
-            
+
             Resynchronizing = 10,
-            
+
             Resynchronization_suspended = 11,
-            
+
             NULL_ENUM_VALUE = 12,
         }
-        
+
         // Enumerator implementation for enumerating instances of the class.
         public class SummaryInformationCollection : object, ICollection {
-            
+
             private ManagementObjectCollection privColObj;
-            
+
             public SummaryInformationCollection(ManagementObjectCollection objCollection) {
                 privColObj = objCollection;
             }
-            
+
             public virtual int Count {
                 get {
                     return privColObj.Count;
                 }
             }
-            
+
             public virtual bool IsSynchronized {
                 get {
                     return privColObj.IsSynchronized;
                 }
             }
-            
+
             public virtual object SyncRoot {
                 get {
                     return this;
                 }
             }
-            
+
             public virtual void CopyTo(System.Array array, int index) {
                 privColObj.CopyTo(array, index);
                 int nCtr;
@@ -1343,189 +1343,189 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                     array.SetValue(new SummaryInformation(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
                 }
             }
-            
+
             public virtual System.Collections.IEnumerator GetEnumerator() {
                 return new SummaryInformationEnumerator(privColObj.GetEnumerator());
             }
-            
+
             public class SummaryInformationEnumerator : object, System.Collections.IEnumerator {
-                
+
                 private ManagementObjectCollection.ManagementObjectEnumerator privObjEnum;
-                
+
                 public SummaryInformationEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
                     privObjEnum = objEnum;
                 }
-                
+
                 public virtual object Current {
                     get {
                         return new SummaryInformation(((System.Management.ManagementObject)(privObjEnum.Current)));
                     }
                 }
-                
+
                 public virtual bool MoveNext() {
                     return privObjEnum.MoveNext();
                 }
-                
+
                 public virtual void Reset() {
                     privObjEnum.Reset();
                 }
             }
         }
-        
+
         // TypeConverter to handle null values for ValueType properties
         public class WMIValueTypeConverter : TypeConverter {
-            
+
             private TypeConverter baseConverter;
-            
+
             private System.Type baseType;
-            
+
             public WMIValueTypeConverter(System.Type inBaseType) {
                 baseConverter = TypeDescriptor.GetConverter(inBaseType);
                 baseType = inBaseType;
             }
-            
+
             public override bool CanConvertFrom(System.ComponentModel.ITypeDescriptorContext context, System.Type srcType) {
                 return baseConverter.CanConvertFrom(context, srcType);
             }
-            
+
             public override bool CanConvertTo(System.ComponentModel.ITypeDescriptorContext context, System.Type destinationType) {
                 return baseConverter.CanConvertTo(context, destinationType);
             }
-            
+
             public override object ConvertFrom(System.ComponentModel.ITypeDescriptorContext context, System.Globalization.CultureInfo culture, object value) {
                 return baseConverter.ConvertFrom(context, culture, value);
             }
-            
+
             public override object CreateInstance(System.ComponentModel.ITypeDescriptorContext context, System.Collections.IDictionary dictionary) {
                 return baseConverter.CreateInstance(context, dictionary);
             }
-            
+
             public override bool GetCreateInstanceSupported(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetCreateInstanceSupported(context);
             }
-            
+
             public override PropertyDescriptorCollection GetProperties(System.ComponentModel.ITypeDescriptorContext context, object value, System.Attribute[] attributeVar) {
                 return baseConverter.GetProperties(context, value, attributeVar);
             }
-            
+
             public override bool GetPropertiesSupported(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetPropertiesSupported(context);
             }
-            
+
             public override System.ComponentModel.TypeConverter.StandardValuesCollection GetStandardValues(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetStandardValues(context);
             }
-            
+
             public override bool GetStandardValuesExclusive(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetStandardValuesExclusive(context);
             }
-            
+
             public override bool GetStandardValuesSupported(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetStandardValuesSupported(context);
             }
-            
+
             public override object ConvertTo(System.ComponentModel.ITypeDescriptorContext context, System.Globalization.CultureInfo culture, object value, System.Type destinationType) {
                 if ((baseType.BaseType == typeof(System.Enum))) {
                     if ((value.GetType() == destinationType)) {
                         return value;
                     }
-                    if ((((value == null) 
-                                && (context != null)) 
+                    if ((((value == null)
+                                && (context != null))
                                 && (context.PropertyDescriptor.ShouldSerializeValue(context.Instance) == false))) {
                         return  "NULL_ENUM_VALUE" ;
                     }
                     return baseConverter.ConvertTo(context, culture, value, destinationType);
                 }
-                if (((baseType == typeof(bool)) 
+                if (((baseType == typeof(bool))
                             && (baseType.BaseType == typeof(System.ValueType)))) {
-                    if ((((value == null) 
-                                && (context != null)) 
+                    if ((((value == null)
+                                && (context != null))
                                 && (context.PropertyDescriptor.ShouldSerializeValue(context.Instance) == false))) {
                         return "";
                     }
                     return baseConverter.ConvertTo(context, culture, value, destinationType);
                 }
-                if (((context != null) 
+                if (((context != null)
                             && (context.PropertyDescriptor.ShouldSerializeValue(context.Instance) == false))) {
                     return "";
                 }
                 return baseConverter.ConvertTo(context, culture, value, destinationType);
             }
         }
-        
+
         // Embedded class to represent WMI system Properties.
         [TypeConverter(typeof(System.ComponentModel.ExpandableObjectConverter))]
         public class ManagementSystemProperties {
-            
+
             private System.Management.ManagementBaseObject PrivateLateBoundObject;
-            
+
             public ManagementSystemProperties(System.Management.ManagementBaseObject ManagedObject) {
                 PrivateLateBoundObject = ManagedObject;
             }
-            
+
             [Browsable(true)]
             public int GENUS {
                 get {
                     return ((int)(PrivateLateBoundObject["__GENUS"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string CLASS {
                 get {
                     return ((string)(PrivateLateBoundObject["__CLASS"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string SUPERCLASS {
                 get {
                     return ((string)(PrivateLateBoundObject["__SUPERCLASS"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string DYNASTY {
                 get {
                     return ((string)(PrivateLateBoundObject["__DYNASTY"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string RELPATH {
                 get {
                     return ((string)(PrivateLateBoundObject["__RELPATH"]));
                 }
             }
-            
+
             [Browsable(true)]
             public int PROPERTY_COUNT {
                 get {
                     return ((int)(PrivateLateBoundObject["__PROPERTY_COUNT"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string[] DERIVATION {
                 get {
                     return ((string[])(PrivateLateBoundObject["__DERIVATION"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string SERVER {
                 get {
                     return ((string)(PrivateLateBoundObject["__SERVER"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string NAMESPACE {
                 get {
                     return ((string)(PrivateLateBoundObject["__NAMESPACE"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string PATH {
                 get {

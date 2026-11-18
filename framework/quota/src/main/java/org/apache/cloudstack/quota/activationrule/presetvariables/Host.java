@@ -20,8 +20,10 @@ package org.apache.cloudstack.quota.activationrule.presetvariables;
 import java.util.List;
 
 public class Host extends GenericPresetVariable {
+    @PresetVariableDefinition(description = "List of tags of the host where the VM is running (i.e.: [\"a\", \"b\"]).")
     private List<String> tags;
 
+    @PresetVariableDefinition(description = "Whether the tag is a rule interpreted in JavaScript.")
     private Boolean isTagARule;
 
     public List<String> getTags() {
@@ -30,7 +32,6 @@ public class Host extends GenericPresetVariable {
 
     public void setTags(List<String> tags) {
         this.tags = tags;
-        fieldNamesToIncludeInToString.add("tags");
     }
 
     public Boolean getIsTagARule() {
@@ -39,6 +40,5 @@ public class Host extends GenericPresetVariable {
 
     public void setIsTagARule(Boolean isTagARule) {
         this.isTagARule = isTagARule;
-        fieldNamesToIncludeInToString.add("isTagARule");
     }
 }

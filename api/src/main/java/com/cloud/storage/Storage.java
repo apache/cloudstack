@@ -30,11 +30,13 @@ public class Storage {
         OVA(true, true, true, "ova"),
         VHDX(true, true, true, "vhdx"),
         BAREMETAL(false, false, false, "BAREMETAL"),
+        EXTERNAL(false, false, false, "EXTERNAL"),
         VMDK(true, true, false, "vmdk"),
         VDI(true, true, false, "vdi"),
         TAR(false, false, false, "tar"),
         ZIP(false, false, false, "zip"),
-        DIR(false, false, false, "dir");
+        DIR(false, false, false, "dir"),
+        PNG(false, false, false, "png");
 
         private final boolean supportThinProvisioning;
         private final boolean supportSparse;
@@ -127,7 +129,7 @@ public class Storage {
     public static enum TemplateType {
         ROUTING, // Router template
         SYSTEM, /* routing, system vm template */
-        BUILTIN, /* buildin template */
+        BUILTIN, /* builtin template */
         PERHOST, /* every host has this template, don't need to install it in secondary storage */
         USER, /* User supplied template/iso */
         VNF,    /* VNFs (virtual network functions) template */
@@ -150,6 +152,17 @@ public class Storage {
         Storage
     }
 
+    /**
+     * StoragePoolTypes carry some details about the format and capabilities of a storage pool. While not necessarily a
+     * 1:1 with PrimaryDataStoreDriver (and for KVM agent, KVMStoragePool and StorageAdaptor) implementations, it is
+     * often used to decide which storage plugin or storage command to call, so it may be necessary for new storage
+     * plugins to add a StoragePoolType.  This can be done by adding it below, or by creating a new public static final
+     * instance of StoragePoolType in the plugin itself, which registers it with the map.
+     *
+     * Note that if the StoragePoolType is for KVM and defined in plugin code rather than below, care must be taken to
+     * ensure this is available on the agent side as well. This is best done by defining the StoragePoolType in a common
+     * package available on both management server and agent plugin jars.
+     */
     public static enum StoragePoolType {
         Filesystem(false, true, EncryptionSupport.Hypervisor), // local directory
         NetworkFilesystem(true, true, EncryptionSupport.Hypervisor), // NFS
@@ -158,7 +171,8 @@ public class Storage {
         ISO(false, false, EncryptionSupport.Unsupported), // for iso image
         LVM(false, false, EncryptionSupport.Unsupported), // XenServer local LVM SR
         CLVM(true, false, EncryptionSupport.Unsupported),
-        RBD(true, true, EncryptionSupport.Unsupported), // http://libvirt.org/storage.html#StorageBackendRBD
+        CLVM_NG(true, false, EncryptionSupport.Hypervisor),
+        RBD(true, true, EncryptionSupport.Hypervisor), // http://libvirt.org/storage.html#StorageBackendRBD ; encrypted natively by librbd (LUKS2, engine='librbd')
         SharedMountPoint(true, true, EncryptionSupport.Hypervisor),
         VMFS(true, true, EncryptionSupport.Unsupported), // VMware VMFS storage
         PreSetup(true, true, EncryptionSupport.Unsupported), // for XenServer, Storage Pool is set up by customers.
@@ -171,7 +185,8 @@ public class Storage {
         Linstor(true, true, EncryptionSupport.Storage),
         DatastoreCluster(true, true, EncryptionSupport.Unsupported), // for VMware, to abstract pool of clusters
         StorPool(true, true, EncryptionSupport.Hypervisor),
-        FiberChannel(true, true, EncryptionSupport.Unsupported); // Fiber Channel Pool for KVM hypervisors is used to find the volume by WWN value (/dev/disk/by-id/wwn-<wwnvalue>)
+        FiberChannel(true, true, EncryptionSupport.Unsupported), // Fiber Channel Pool for KVM hypervisors is used to find the volume by WWN value (/dev/disk/by-id/wwn-<wwnvalue>)
+        NVMeTCP(true, true, EncryptionSupport.Unsupported); // NVMe over TCP (NVMe-oF/TCP) Pool for KVM hypervisors; volumes are identified by EUI-128 NGUID (/dev/disk/by-id/nvme-eui.<eui>)
 
         private final boolean shared;
         private final boolean overProvisioning;

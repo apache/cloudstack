@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.joda.time.Duration;
 
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
@@ -39,11 +38,14 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.joda.time.Duration;
 
 public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
-    static final Logger LOGGER = Logger.getLogger(MultipathSCSIAdapterBase.class);
+    protected static Logger LOGGER = LogManager.getLogger(MultipathSCSIAdapterBase.class);
     static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new HashMap<>();
 
     /**
@@ -56,7 +58,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
      */
     static String[] SUPPORTED_OUI_LIST = {
         "0002ac", // HPE Primera 3PAR
-        "24a937"  // Pure Flasharray
+        "24a937"  // Pure Storage FlashArray
     };
 
     /**
@@ -226,21 +228,21 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(String volumePath, KVMStoragePool pool) {
-        if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) called with args (%s, %s) START", volumePath, pool.getUuid()));
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("disconnectPhysicalDisk(volumePath,pool) called with args ({}, {}) START", volumePath, pool.getUuid());
         AddressInfo address = this.parseAndValidatePath(volumePath);
         if (address.getAddress() == null) {
-            if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) returning FALSE, volume path has no address field", volumePath, pool.getUuid()));
+            if (LOGGER.isDebugEnabled()) LOGGER.debug("disconnectPhysicalDisk(volumePath,pool) called with args ({}, {}) returning FALSE, volume path has no address field", volumePath, pool.getUuid());
             return false;
         }
         ScriptResult result = runScript(disconnectScript, 60000L, address.getAddress().toLowerCase());
 
         if (result.getExitCode() != 0) {
-            LOGGER.warn(String.format("Disconnect failed for path [%s] with return code [%s]", address.getAddress().toLowerCase(), result.getExitCode()));
+            LOGGER.warn("Disconnect failed for path {} with return code {}", address.getAddress().toLowerCase(), result.getExitCode());
         }
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("multipath flush output: " + result.getResult());
-            LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) called with args (%s, %s) COMPLETE [rc=%s]", volumePath, pool.getUuid(), result.getResult()));
+            LOGGER.debug("multipath flush output: {}", result.getResult());
+            LOGGER.debug("disconnectPhysicalDisk(volumePath,pool) called with args ({}, {}) COMPLETE [rc={}]", volumePath, pool.getUuid(), result.getResult());
         }
 
         return (result.getExitCode() == 0);
@@ -248,7 +250,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
-        LOGGER.debug(String.format("disconnectPhysicalDisk(volumeToDisconnect) called with arg bag [not implemented]:") + " " + volumeToDisconnect);
+        LOGGER.debug("disconnectPhysicalDisk(volumeToDisconnect) called with arg bag [not implemented]: {}", volumeToDisconnect);
         return false;
     }
 
@@ -421,24 +423,6 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         throw new UnsupportedOperationException("Unimplemented method 'createPhysicalDisk'");
     }
 
-    boolean isTemplateExtractable(String templatePath) {
-        ScriptResult result = runScript("file", 5000L, templatePath, "| awk -F' ' '{print $2}'");
-        String type = result.getResult();
-        return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
-    }
-
-    String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateFile) {
-        if (downloadedTemplateFile.endsWith(".zip")) {
-            return "unzip -p " + downloadedTemplateFile + " | cat > " + templateFile;
-        } else if (downloadedTemplateFile.endsWith(".bz2")) {
-            return "bunzip2 -c " + downloadedTemplateFile + " > " + templateFile;
-        } else if (downloadedTemplateFile.endsWith(".gz")) {
-            return "gunzip -c " + downloadedTemplateFile + " > " + templateFile;
-        } else {
-            throw new CloudRuntimeException("Unable to extract template " + downloadedTemplateFile);
-        }
-    }
-
     boolean waitForDiskToBecomeAvailable(AddressInfo address, KVMStoragePool pool, long waitTimeInSec) {
         LOGGER.debug("Waiting for the volume with id: " + address.getPath() + " of the storage pool: " + pool.getUuid() + " to become available for " + waitTimeInSec + " secs");
 
@@ -592,7 +576,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         synchronized(CLEANUP_LOCK) {
             long start = System.currentTimeMillis();
             ScriptResult result = runScript(cleanupScript, cleanupTimeoutSecs * 1000);
-            LOGGER.debug("Multipath Cleanup Job elapsed time (ms): "+ (System.currentTimeMillis() - start) + "; result: " + result.getExitCode(), null);
+            LOGGER.debug("Multipath Cleanup Job elapsed time (ms): "+ (System.currentTimeMillis() - start) + "; result: " + result.getExitCode());
         }
     }
 
@@ -626,7 +610,9 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         }
 
         public String toString() {
-            return String.format("type=%s; address=%s; connid=%s", getType(), getAddress(), getConnectionId());
+            return String.format("AddressInfo %s",
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                            this, "type", "address", "connectionId"));
         }
     }
 

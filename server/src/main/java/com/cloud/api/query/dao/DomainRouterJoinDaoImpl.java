@@ -25,7 +25,6 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -51,7 +50,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, Long> implements DomainRouterJoinDao {
-    public static final Logger s_logger = Logger.getLogger(DomainRouterJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao _configDao;
@@ -90,6 +88,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setZoneId(router.getDataCenterUuid());
         routerResponse.setName(router.getName());
         routerResponse.setTemplateId(router.getTemplateUuid());
+        routerResponse.setArch(router.getArch().getType());
         VMTemplateVO template = ApiDBUtils.findTemplateById(router.getTemplateId());
         if (template != null) {
             routerResponse.setTemplateName(template.getName());
@@ -197,6 +196,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
                     nicResponse.setMtu(router.getMtu());
                 }
                 nicResponse.setIsDefault(router.isDefaultNic());
+                nicResponse.setEnabled(router.isNicEnabled());
                 nicResponse.setObjectName("nic");
                 routerResponse.addNic(nicResponse);
             }
@@ -207,10 +207,6 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
 
         // populate owner.
         ApiResponseHelper.populateOwner(routerResponse, router);
-
-        routerResponse.setDomainId(router.getDomainUuid());
-        routerResponse.setDomainName(router.getDomainName());
-        routerResponse.setDomainPath(router.getDomainPath());
 
         routerResponse.setZoneName(router.getDataCenterName());
         routerResponse.setDns1(router.getDns1());
@@ -294,6 +290,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
                 nicResponse.setMtu(vr.getMtu());
             }
             nicResponse.setIsDefault(vr.isDefaultNic());
+            nicResponse.setEnabled(vr.isNicEnabled());
             nicResponse.setObjectName("nic");
             vrData.addNic(nicResponse);
         }

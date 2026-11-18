@@ -29,6 +29,10 @@ public class VmDhcpConfig extends ConfigBase {
     private String defaultGateway;
     private String staticRoutes;
     private boolean defaultEntry;
+    // True only for a nic's associated-network entry (multi-VLAN trunk nics) - lets the VR-side merge
+    // keep this entry from overwriting, or being overwritten by, another entry sharing the same MAC.
+    private boolean associatedNetwork;
+    private Long leaseTime;
 
     // Indicate if the entry should be removed when set to true
     private boolean remove;
@@ -39,6 +43,11 @@ public class VmDhcpConfig extends ConfigBase {
 
     public VmDhcpConfig(String hostName, String macAddress, String ipv4Address, String ipv6Address, String ipv6Duid, String dnsAddresses, String defaultGateway,
             String staticRoutes, boolean defaultEntry, boolean remove) {
+        this(hostName, macAddress, ipv4Address, ipv6Address, ipv6Duid, dnsAddresses, defaultGateway, staticRoutes, defaultEntry, remove, null, false);
+    }
+
+    public VmDhcpConfig(String hostName, String macAddress, String ipv4Address, String ipv6Address, String ipv6Duid, String dnsAddresses, String defaultGateway,
+            String staticRoutes, boolean defaultEntry, boolean remove, Long leaseTime, boolean associatedNetwork) {
         super(VM_DHCP);
         this.hostName = hostName;
         this.macAddress = macAddress;
@@ -50,6 +59,8 @@ public class VmDhcpConfig extends ConfigBase {
         this.staticRoutes = staticRoutes;
         this.defaultEntry = defaultEntry;
         this.remove = remove;
+        this.leaseTime = leaseTime;
+        this.associatedNetwork = associatedNetwork;
     }
 
     public String getHostName() {
@@ -130,6 +141,22 @@ public class VmDhcpConfig extends ConfigBase {
 
     public void setDefaultEntry(boolean defaultEntry) {
         this.defaultEntry = defaultEntry;
+    }
+
+    public Long getLeaseTime() {
+        return leaseTime;
+    }
+
+    public void setLeaseTime(Long leaseTime) {
+        this.leaseTime = leaseTime;
+    }
+
+    public boolean isAssociatedNetwork() {
+        return associatedNetwork;
+    }
+
+    public void setAssociatedNetwork(boolean associatedNetwork) {
+        this.associatedNetwork = associatedNetwork;
     }
 
 }

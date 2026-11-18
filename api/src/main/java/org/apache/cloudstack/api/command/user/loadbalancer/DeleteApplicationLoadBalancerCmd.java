@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -36,12 +35,11 @@ import com.cloud.exception.InvalidParameterValueException;
 @APICommand(name = "deleteLoadBalancer", description = "Deletes an internal load balancer", responseObject = SuccessResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteApplicationLoadBalancerCmd.class.getName());
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the Load Balancer")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "The ID of the Load Balancer")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -73,12 +71,12 @@ public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting load balancer: " + getId();
+        return "Deleting load balancer with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Load balancer ID: " + getId());
+        CallContext.current().setEventDetails("Load balancer ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _appLbService.deleteApplicationLoadBalancer(getId());
 
         if (result) {

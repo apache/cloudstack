@@ -21,7 +21,7 @@ import java.sql.Connection;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class UpgradeSnapshot223to224 implements DbUpgrade {
+public class UpgradeSnapshot223to224 extends DbUpgradeAbstractImpl {
 
     @Override
     public InputStream[] getPrepareScripts() {

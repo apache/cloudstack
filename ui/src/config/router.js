@@ -19,6 +19,7 @@
 import { UserLayout, BasicLayout, RouteView } from '@/layouts'
 import AutogenView from '@/views/AutogenView.vue'
 import IFramePlugin from '@/views/plugins/IFramePlugin.vue'
+import ApiDocsPlugin from '@/views/plugins/ApiDocsPlugin.vue'
 
 import { shallowRef } from 'vue'
 import { vueProps } from '@/vue-app'
@@ -27,9 +28,11 @@ import compute from '@/config/section/compute'
 import storage from '@/config/section/storage'
 import network from '@/config/section/network'
 import image from '@/config/section/image'
+import kms from '@/config/section/kms'
 import project from '@/config/section/project'
 import event from '@/config/section/event'
 import user from '@/config/section/user'
+import keyPair from '@/config/section/keypair'
 import account from '@/config/section/account'
 import domain from '@/config/section/domain'
 import role from '@/config/section/role'
@@ -37,6 +40,8 @@ import infra from '@/config/section/infra'
 import zone from '@/config/section/zone'
 import offering from '@/config/section/offering'
 import config from '@/config/section/config'
+import extension from '@/config/section/extension'
+import customaction from '@/config/section/extension/customaction'
 import tools from '@/config/section/tools'
 import quota from '@/config/section/plugin/quota'
 import cloudian from '@/config/section/plugin/cloudian'
@@ -51,14 +56,13 @@ function generateRouterMap (section) {
       icon: section.icon,
       docHelp: vueProps.$applyDocHelpMappings(section.docHelp),
       searchFilters: section.searchFilters,
-      related: section.related
+      related: section.related,
+      section: true
     },
     component: shallowRef(RouteView)
   }
 
   if (section.children && section.children.length > 0) {
-    map.redirect = '/' + section.children[0].name
-    map.meta.permission = section.children[0].permission
     map.children = []
     for (const child of section.children) {
       if ('show' in child && !child.show()) {
@@ -75,22 +79,23 @@ function generateRouterMap (section) {
           icon: child.icon,
           docHelp: vueProps.$applyDocHelpMappings(child.docHelp),
           permission: child.permission,
-          getApiToCall: child.getApiToCall,
           resourceType: child.resourceType,
           filters: child.filters,
           params: child.params ? child.params : {},
           columns: child.columns,
+          advisories: !vueProps.$config.advisoriesDisabled ? child.advisories : undefined,
           details: child.details,
           searchFilters: child.searchFilters,
           related: child.related,
           actions: child.actions,
-          tabs: child.tabs
+          tabs: child.tabs,
+          customParamHandler: child.customParamHandler
         },
         component: component,
         hideChildrenInMenu: true,
         children: [
           {
-            path: '/' + child.name + '/:id',
+            path: '/' + child.name + '/:id(.*)',
             hidden: child.hidden,
             meta: {
               title: child.title,
@@ -145,7 +150,7 @@ function generateRouterMap (section) {
     map.meta.tabs = section.tabs
 
     map.children = [{
-      path: '/' + section.name + '/:id',
+      path: '/' + section.name + '/:id(.*)',
       actions: section.actions ? section.actions : [],
       meta: {
         title: section.title,
@@ -176,6 +181,10 @@ function generateRouterMap (section) {
 
   if (section.columns) {
     map.meta.columns = section.columns
+  }
+
+  if (!vueProps.$config.advisoriesDisabled && section.advisories) {
+    map.meta.advisories = section.advisories
   }
 
   if (section.actions) {
@@ -211,9 +220,11 @@ export function asyncRouterMap () {
       generateRouterMap(storage),
       generateRouterMap(network),
       generateRouterMap(image),
+      generateRouterMap(kms),
       generateRouterMap(event),
       generateRouterMap(project),
       generateRouterMap(user),
+      generateRouterMap(keyPair),
       generateRouterMap(role),
       generateRouterMap(account),
       generateRouterMap(domain),
@@ -221,10 +232,11 @@ export function asyncRouterMap () {
       generateRouterMap(zone),
       generateRouterMap(offering),
       generateRouterMap(config),
+      generateRouterMap(extension),
+      generateRouterMap(customaction),
       generateRouterMap(tools),
       generateRouterMap(quota),
       generateRouterMap(cloudian),
-
       {
         path: '/exception',
         name: 'exception',
@@ -276,6 +288,16 @@ export function asyncRouterMap () {
     })
   }
 
+  const apidocs = vueProps.$config.apidocs
+  if (apidocs !== false) {
+    routerMap[0].children.push({
+      path: '/apidocs/',
+      name: 'apidocs',
+      component: shallowRef(ApiDocsPlugin),
+      meta: { title: 'label.api.docs', icon: 'read-outlined' }
+    })
+  }
+
   return routerMap
 }
 
@@ -290,6 +312,21 @@ export const constantRouterMap = [
         path: 'login',
         name: 'login',
         component: () => import(/* webpackChunkName: "auth" */ '@/views/auth/Login')
+      },
+      {
+        path: 'forgotPassword',
+        name: 'forgotPassword',
+        component: () => import(/* webpackChunkName: "auth" */ '@/views/auth/ForgotPassword')
+      },
+      {
+        path: 'resetPassword',
+        name: 'resetPassword',
+        component: () => import(/* webpackChunkName: "auth" */ '@/views/auth/ResetPassword')
+      },
+      {
+        path: 'forceChangePassword',
+        name: 'forceChangePassword',
+        component: () => import(/* webpackChunkName: "auth" */ '@/views/iam/ForceChangePassword')
       }
     ]
   },

@@ -17,7 +17,9 @@
 package com.cloud.configuration.dao;
 
 import java.util.List;
+import java.util.Set;
 
+import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimitVO;
@@ -31,7 +33,18 @@ public interface ResourceLimitDao extends GenericDao<ResourceLimitVO, Long> {
 
     ResourceCount.ResourceType getLimitType(String type);
 
-    ResourceLimitVO findByOwnerIdAndType(long ownerId, ResourceOwnerType ownerType, ResourceCount.ResourceType type);
+    ResourceLimitVO findByOwnerIdAndTypeAndTag(long ownerId, ResourceOwnerType ownerType, ResourceCount.ResourceType type, String tag);
 
     long removeEntriesByOwner(Long ownerId, ResourceOwnerType ownerType);
+    void removeResourceLimitsForNonMatchingTags(Long ownerId, ResourceOwnerType ownerType, List<Resource.ResourceType> types, List<String> tags);
+
+    /**
+     * Returns the explicit {@code resource_limit} rows owned by any of
+     * {@code domainIds} for the supplied ({@code type}, {@code tag}),
+     * regardless of their {@code max} value. Domains with no matching row
+     * are simply absent from the result — the caller resolves inheritance
+     * (nearest-ancestor lookup) and the tag -&gt; untagged fallback itself,
+     * mirroring {@code ResourceLimitManagerImpl#findCorrectResourceLimitForDomain}.
+     */
+    List<ResourceLimitVO> listByDomainIdsAndTypeAndTag(Set<Long> domainIds, Resource.ResourceType type, String tag);
 }

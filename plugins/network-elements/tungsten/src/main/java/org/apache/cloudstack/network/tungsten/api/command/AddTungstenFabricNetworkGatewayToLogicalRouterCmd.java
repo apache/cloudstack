@@ -34,22 +34,20 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricLogicalRouterResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = AddTungstenFabricNetworkGatewayToLogicalRouterCmd.APINAME, description = "add Tungsten-Fabric network gateway to logical router",
+@APICommand(name = AddTungstenFabricNetworkGatewayToLogicalRouterCmd.APINAME, description = "Add Tungsten-Fabric network gateway to logical router",
     responseObject = TungstenFabricLogicalRouterResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddTungstenFabricNetworkGatewayToLogicalRouterCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AddTungstenFabricNetworkGatewayToLogicalRouterCmd.class.getName());
     public static final String APINAME = "addTungstenFabricNetworkGatewayToLogicalRouter";
 
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.NETWORK_UUID, type = CommandType.STRING, required = true, description = "Tungsten-Fabric network uuid")

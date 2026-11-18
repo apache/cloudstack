@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Objects;
+
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.BaseResponse;
@@ -24,11 +26,11 @@ import com.cloud.serializer.Param;
 
 public class ImageStoreDetailResponse extends BaseResponse {
     @SerializedName("name")
-    @Param(description = "detail property name of the image store")
+    @Param(description = "Detail property name of the image store")
     private String name;
 
     @SerializedName("value")
-    @Param(description = "detail property value of the image store")
+    @Param(description = "Detail property value of the image store")
     private String value;
 
     public ImageStoreDetailResponse() {
@@ -81,7 +83,7 @@ public class ImageStoreDetailResponse extends BaseResponse {
                 return false;
         } else if (!oid.equals(other.getName()))
             return false;
-        else if (this.getValue().equals(other.getValue()))
+        else if (!Objects.equals(this.getValue(), other.getValue()))
             return false;
         return true;
     }

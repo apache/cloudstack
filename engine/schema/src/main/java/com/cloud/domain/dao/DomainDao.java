@@ -42,5 +42,7 @@ public interface DomainDao extends GenericDao<DomainVO, Long> {
 
     List<Long> getDomainChildrenIds(String path);
 
+    List<Long> getDomainAndChildrenIds(long domainId);
+
     boolean domainIdListContainsAccessibleDomain(String domainIdList, Account caller, Long domainId);
 }

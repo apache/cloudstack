@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.swift;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,19 +35,18 @@ import com.cloud.user.Account;
 @APICommand(name = "addSwift", description = "Adds Swift.", responseObject = ImageStoreResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddSwiftCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddSwiftCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "the URL for swift")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "The URL for swift")
     private String url;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account for swift")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The account for swift")
     private String account;
 
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "the username for swift")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "The username for swift")
     private String username;
 
     @Parameter(name = ApiConstants.KEY, type = CommandType.STRING, description = " key for the user for swift")
@@ -102,7 +100,7 @@ public class AddSwiftCmd extends BaseCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Swift secondary storage");
             }
         } catch (DiscoveryException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }

@@ -36,7 +36,8 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.api.dispatch.DispatchChain;
 import com.cloud.api.dispatch.DispatchChainFactory;
@@ -48,7 +49,7 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ApiDispatcher {
-    private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     Long _createSnapshotQueueSizeLimit;
     Long migrateQueueSizeLimit;
@@ -93,7 +94,7 @@ public class ApiDispatcher {
         if (asyncJobManager.isAsyncJobsEnabled()) {
             asyncCreationDispatchChain.dispatch(new DispatchTask(cmd, params));
         } else {
-            throw new CloudRuntimeException("A shutdown has been triggered. Can not accept new jobs");
+            throw new CloudRuntimeException("Maintenance or Shutdown has been initiated on this management server. Can not accept new async creation jobs");
         }
     }
 
@@ -157,7 +158,7 @@ public class ApiDispatcher {
                         return;
                     }
                 } else {
-                    s_logger.trace("The queue size is unlimited, skipping the synchronizing");
+                    logger.trace("The queue size is unlimited, skipping the synchronizing");
                 }
             }
         }

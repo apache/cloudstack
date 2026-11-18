@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.admin.pod;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -31,39 +30,46 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.dc.Pod;
 import com.cloud.user.Account;
 
+import java.util.List;
+
 @APICommand(name = "createPod", description = "Creates a new Pod.", responseObject = PodResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreatePodCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreatePodCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the Pod")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the Pod")
     private String podName;
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
                required = true,
-               description = "the Zone ID in which the Pod will be created")
+               description = "The Zone ID in which the Pod will be created")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "the starting IP address for the Pod")
+    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "The starting IP address for the Pod")
     private String startIp;
 
-    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "the ending IP address for the Pod")
+    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "The ending IP address for the Pod")
     private String endIp;
 
-    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, description = "the netmask for the Pod")
+    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, description = "The netmask for the Pod")
     private String netmask;
 
-    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, description = "the gateway for the Pod")
+    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, description = "The gateway for the Pod")
     private String gateway;
 
     @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "Allocation state of this Pod for allocation of new resources")
     private String allocationState;
+
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUPS,
+            type = CommandType.LIST, collectionType = CommandType.STRING,
+            description = "comma separated list of storage access groups for the hosts in the pod",
+            since = "4.21.0")
+    private List<String> storageAccessGroups;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -97,6 +103,10 @@ public class CreatePodCmd extends BaseCmd {
         return allocationState;
     }
 
+    public List<String> getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -113,7 +123,7 @@ public class CreatePodCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        Pod result = _configService.createPod(getZoneId(), getPodName(), getStartIp(), getEndIp(), getGateway(), getNetmask(), getAllocationState());
+        Pod result = _configService.createPod(getZoneId(), getPodName(), getStartIp(), getEndIp(), getGateway(), getNetmask(), getAllocationState(), getStorageAccessGroups());
         if (result != null) {
             PodResponse response = _responseGenerator.createPodResponse(result, false);
             response.setResponseName(getCommandName());

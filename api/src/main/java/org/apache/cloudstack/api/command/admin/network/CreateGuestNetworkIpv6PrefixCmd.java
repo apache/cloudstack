@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DataCenterGuestIpv6PrefixResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenterGuestIpv6Prefix;
 import com.cloud.event.EventTypes;
@@ -45,7 +44,6 @@ import com.cloud.user.Account;
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
 public class CreateGuestNetworkIpv6PrefixCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateGuestNetworkIpv6PrefixCmd.class);
 
 
     /////////////////////////////////////////////////////
@@ -85,7 +83,7 @@ public class CreateGuestNetworkIpv6PrefixCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating guest IPv6 prefix " + getPrefix() + " for zone=" + getZoneId();
+        return "Creating guest IPv6 prefix " + getPrefix() + " for zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID);
     }
 
     @Override

@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.log4j.Logger;
 
 import java.util.List;
 
@@ -35,7 +34,6 @@ import java.util.List;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
 public class ListResourceIconCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ListResourceIconCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -44,10 +42,10 @@ public class ListResourceIconCmd extends BaseCmd {
             type = BaseCmd.CommandType.LIST,
             required = true,
             collectionType = BaseCmd.CommandType.STRING,
-            description = "list of resources to upload the icon/image for")
+            description = "List of resources to upload the icon/image for")
     private List<String> resourceIds;
 
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = BaseCmd.CommandType.STRING, required = true, description = "type of the resource")
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = BaseCmd.CommandType.STRING, required = true, description = "Type of the resource")
     private String resourceType;
 
     /////////////////////////////////////////////////////

@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.region;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,7 +34,6 @@ import com.cloud.user.Account;
 @APICommand(name = "updateRegion", description = "Updates a region", responseObject = RegionResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateRegionCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateRegionCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -44,10 +42,10 @@ public class UpdateRegionCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.INTEGER, required = true, description = "Id of region to update")
     private Integer id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "updates region with this name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Updates region with this name")
     private String regionName;
 
-    @Parameter(name = ApiConstants.END_POINT, type = CommandType.STRING, description = "updates region with this end point")
+    @Parameter(name = ApiConstants.END_POINT, type = CommandType.STRING, description = "Updates region with this end point")
     private String endPoint;
 
     @Inject

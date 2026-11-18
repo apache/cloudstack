@@ -36,27 +36,25 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricNetworkResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = ListTungstenFabricNetworkCmd.APINAME, description = "list Tungsten-Fabric network",
+@APICommand(name = ListTungstenFabricNetworkCmd.APINAME, description = "List Tungsten-Fabric network",
     responseObject = TungstenFabricNetworkResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo =
     false)
 public class ListTungstenFabricNetworkCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListTungstenFabricNetworkCmd.class.getName());
     public static final String APINAME = "listTungstenFabricNetwork";
 
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NETWORK_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric network")
+    @Parameter(name = ApiConstants.NETWORK_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric network")
     private String networkUuid;
 
     @Parameter(name = ApiConstants.LIST_ALL,

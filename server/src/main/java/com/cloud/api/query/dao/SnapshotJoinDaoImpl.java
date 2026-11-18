@@ -26,6 +26,22 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
+import com.cloud.api.query.vo.SnapshotJoinVO;
+import com.cloud.storage.GuestOS;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.VMInstanceVO;
+
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject;
@@ -35,40 +51,25 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.ApiResponseHelper;
-import com.cloud.api.query.vo.SnapshotJoinVO;
-import com.cloud.storage.GuestOS;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.Volume.Type;
-import com.cloud.storage.VolumeVO;
-import com.cloud.user.Account;
-import com.cloud.user.AccountService;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.VMInstanceVO;
+import org.apache.commons.collections.CollectionUtils;
 
 public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<SnapshotJoinVO, SnapshotResponse> implements SnapshotJoinDao {
 
-    public static final Logger s_logger = Logger.getLogger(SnapshotJoinDaoImpl.class);
-
     @Inject
-    private AccountService accountService;
+    AccountService accountService;
     @Inject
-    private AnnotationDao annotationDao;
+    AnnotationDao annotationDao;
     @Inject
-    private ConfigurationDao configDao;
+    ConfigurationDao configDao;
     @Inject
     SnapshotDataFactory snapshotDataFactory;
 
     private final SearchBuilder<SnapshotJoinVO> snapshotStorePairSearch;
 
     private final SearchBuilder<SnapshotJoinVO> snapshotIdsSearch;
+
+    private final SearchBuilder<SnapshotJoinVO> snapshotByZoneSearch;
 
     SnapshotJoinDaoImpl() {
         snapshotStorePairSearch = createSearchBuilder();
@@ -81,6 +82,11 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         snapshotIdsSearch.and("idsIN", snapshotIdsSearch.entity().getId(), SearchCriteria.Op.IN);
         snapshotIdsSearch.groupBy(snapshotIdsSearch.entity().getId());
         snapshotIdsSearch.done();
+
+        snapshotByZoneSearch = createSearchBuilder();
+        snapshotByZoneSearch.and("zoneId", snapshotByZoneSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        snapshotByZoneSearch.and("id", snapshotByZoneSearch.entity().getId(), SearchCriteria.Op.EQ);
+        snapshotByZoneSearch.done();
     }
 
     private void setSnapshotInfoDetailsInResponse(SnapshotJoinVO snapshot, SnapshotResponse snapshotResponse, boolean isShowUnique) {
@@ -90,15 +96,35 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         if (snapshot.getDataCenterId() == null) {
             return;
         }
-        SnapshotInfo snapshotInfo = null;
+        SnapshotInfo snapshotInfo;
         snapshotInfo = snapshotDataFactory.getSnapshotWithRoleAndZone(snapshot.getId(), snapshot.getStoreRole(), snapshot.getDataCenterId());
         if (snapshotInfo == null) {
-            s_logger.debug("Unable to find info for image store snapshot with uuid " + snapshot.getUuid());
+            logger.debug("Unable to find info for image store snapshot {}", snapshot);
             snapshotResponse.setRevertable(false);
         } else {
             snapshotResponse.setRevertable(snapshotInfo.isRevertable());
             snapshotResponse.setPhysicalSize(snapshotInfo.getPhysicalSize());
+
+            boolean showChainSize = SnapshotManager.snapshotShowChainSize.valueIn(snapshot.getDataCenterId());
+            if (showChainSize && snapshotInfo.getParent() != null) {
+                long chainSize = calculateChainSize(snapshotInfo);
+                snapshotResponse.setChainSize(chainSize);
+                snapshotResponse.setParent(snapshotInfo.getParent().getUuid());
+                snapshotResponse.setParentName(snapshotInfo.getParent().getName());
+            }
         }
+    }
+
+    private long calculateChainSize(SnapshotInfo snapshotInfo) {
+        long chainSize = snapshotInfo.getPhysicalSize();
+        SnapshotInfo parent = snapshotInfo.getParent();
+
+        while (parent != null) {
+            chainSize += parent.getPhysicalSize();
+            parent = parent.getParent();
+        }
+
+        return chainSize;
     }
 
     private String getSnapshotStatus(SnapshotJoinVO snapshot) {
@@ -274,5 +300,17 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         }
         sc.setParameters("idsIN", ids);
         return searchIncludingRemoved(sc, searchFilter, null, false);
+    }
+
+    public List<SnapshotJoinVO> listBySnapshotIdAndZoneId(Long zoneId, Long snapshotId) {
+        if (snapshotId == null) {
+            return new ArrayList<>();
+        }
+        SearchCriteria<SnapshotJoinVO> sc = snapshotByZoneSearch.create();
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        sc.setParameters("id", snapshotId);
+        return listBy(sc);
     }
 }

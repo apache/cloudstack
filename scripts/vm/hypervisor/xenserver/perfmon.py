@@ -179,7 +179,7 @@ class RRDUpdates:
         (cf, vm_or_host, uuid, param) = col_meta_data.split(':')
         if vm_or_host == 'vm':
             # Create a report for this VM if it doesn't exist
-            if not uuid in self.vm_reports:
+            if uuid not in self.vm_reports:
                 self.vm_reports[uuid] = VMReport(uuid)
                 # Update the VMReport with the col data and meta data
             vm_report = self.vm_reports[uuid]
@@ -210,11 +210,6 @@ def get_vm_group_perfmon(args={}):
     total_counter = int(args['total_counter'])
     now = int(time.time()) / 60
 
-    # Get pool's info of this host
-    #pool = login.xenapi.pool.get_all()[0]
-    # Get master node's address of pool
-    #master = login.xenapi.pool.get_master(pool)
-    #master_address = login.xenapi.host.get_address(master)
     session = login._session
 
     max_duration = 0
@@ -226,7 +221,6 @@ def get_vm_group_perfmon(args={}):
     rrd_updates = RRDUpdates()
     rrd_updates.refresh(login.xenapi, now * 60 - max_duration, session, {})
 
-    #for uuid in rrd_updates.get_vm_list():
     for vm_count in xrange(1, total_vm + 1):
         vm_name = args['vmname' + str(vm_count)]
         vm_uuid = getuuid(vm_name)

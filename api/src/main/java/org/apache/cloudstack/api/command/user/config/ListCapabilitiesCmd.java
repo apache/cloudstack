@@ -21,21 +21,31 @@ import java.util.Map;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.CapabilitiesResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
 @APICommand(name = "listCapabilities", description = "Lists capabilities", responseObject = CapabilitiesResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCapabilitiesCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ListCapabilitiesCmd.class.getName());
 
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+            type = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "the domain for listing capabilities.",
+            since = "4.23.0")
+    private Long domainId;
 
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     @Override
@@ -53,10 +63,12 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setDiskOffMaxSize((Long)capabilities.get("customDiskOffMaxSize"));
         response.setRegionSecondaryEnabled((Boolean)capabilities.get("regionSecondaryEnabled"));
         response.setKVMSnapshotEnabled((Boolean)capabilities.get("KVMSnapshotEnabled"));
+        response.setSnapshotShowChainSize((Boolean)capabilities.get("SnapshotShowChainSize"));
         response.setAllowUserViewDestroyedVM((Boolean)capabilities.get("allowUserViewDestroyedVM"));
         response.setAllowUserExpungeRecoverVM((Boolean)capabilities.get("allowUserExpungeRecoverVM"));
         response.setAllowUserExpungeRecoverVolume((Boolean)capabilities.get("allowUserExpungeRecoverVolume"));
         response.setAllowUserViewAllDomainAccounts((Boolean)capabilities.get("allowUserViewAllDomainAccounts"));
+        response.setAllowUserForceStopVM((Boolean)capabilities.get(ApiConstants.ALLOW_USER_FORCE_STOP_VM));
         response.setKubernetesServiceEnabled((Boolean)capabilities.get("kubernetesServiceEnabled"));
         response.setKubernetesClusterExperimentalFeaturesEnabled((Boolean)capabilities.get("kubernetesClusterExperimentalFeaturesEnabled"));
         response.setCustomHypervisorDisplayName((String) capabilities.get("customHypervisorDisplayName"));
@@ -71,6 +83,16 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setInstancesStatsUserOnly((Boolean) capabilities.get(ApiConstants.INSTANCES_STATS_USER_ONLY));
         response.setInstancesDisksStatsRetentionEnabled((Boolean) capabilities.get(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_ENABLED));
         response.setInstancesDisksStatsRetentionTime((Integer) capabilities.get(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_TIME));
+        response.setSharedFsVmMinCpuCount((Integer)capabilities.get(ApiConstants.SHAREDFSVM_MIN_CPU_COUNT));
+        response.setSharedFsVmMinRamSize((Integer)capabilities.get(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE));
+        response.setInstanceLeaseEnabled((Boolean) capabilities.get(ApiConstants.INSTANCE_LEASE_ENABLED));
+        response.setExtensionsPath((String)capabilities.get(ApiConstants.EXTENSIONS_PATH));
+        response.setDynamicScalingEnabled((Boolean) capabilities.get(ApiConstants.DYNAMIC_SCALING_ENABLED));
+        response.setAdditionalConfigEnabled((Boolean) capabilities.get(ApiConstants.ADDITONAL_CONFIG_ENABLED));
+        if (capabilities.containsKey(ApiConstants.VPN_CUSTOMER_GATEWAY_PARAMETERS)) {
+            Map<String, Object> vpnCustomerGatewayParameters = (Map<String, Object>) capabilities.get(ApiConstants.VPN_CUSTOMER_GATEWAY_PARAMETERS);
+            response.setVpnCustomerGatewayParameters(vpnCustomerGatewayParameters);
+        }
         response.setObjectName("capability");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

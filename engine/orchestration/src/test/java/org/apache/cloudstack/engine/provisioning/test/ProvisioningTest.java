@@ -20,7 +20,6 @@
 package org.apache.cloudstack.engine.provisioning.test;
 
 import java.util.HashMap;
-import java.util.UUID;
 
 import junit.framework.TestCase;
 
@@ -30,11 +29,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.ClusterEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
@@ -51,7 +49,6 @@ import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineHostDao;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineHostPodDao;
 import org.apache.cloudstack.engine.service.api.ProvisioningService;
 
-import com.cloud.dc.DataCenter.NetworkType;
 
 import static org.mockito.ArgumentMatchers.any;
 

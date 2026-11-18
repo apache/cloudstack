@@ -32,7 +32,7 @@ export default {
     return fields
   },
   details: ['username', 'id', 'description', 'resourcetype', 'resourceid', 'state', 'level', 'type', 'account', 'domain', 'created'],
-  searchFilters: ['level', 'domainid', 'account', 'keyword', 'resourcetype'],
+  searchFilters: ['level', 'domainid', 'account', 'keyword', 'resourcetype', 'state'],
   related: [{
     name: 'event',
     title: 'label.event.timeline',

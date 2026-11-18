@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.utils.db.TransactionLegacy;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.DB;
@@ -38,7 +37,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Component
 @DB()
 public class NetworkDomainDaoImpl extends GenericDaoBase<NetworkDomainVO, Long> implements NetworkDomainDao {
-    public static Logger logger = Logger.getLogger(NetworkDomainDaoImpl.class.getName());
     final SearchBuilder<NetworkDomainVO> AllFieldsSearch;
     final SearchBuilder<NetworkDomainVO> DomainsSearch;
 

@@ -19,7 +19,8 @@ package com.cloud.api;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,7 +29,7 @@ import com.google.gson.Gson;
 import org.apache.cloudstack.api.ResponseObject;
 
 public class ApiSerializerHelper {
-    public static final Logger s_logger = Logger.getLogger(ApiSerializerHelper.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(ApiSerializerHelper.class);
     private static String token = "/";
 
     public static String toSerializedString(Object result) {
@@ -80,7 +81,7 @@ public class ApiSerializerHelper {
             }
             return null;
         } catch (RuntimeException e) {
-            s_logger.error("Caught runtime exception when doing GSON deserialization on: " + result);
+            LOGGER.error("Caught runtime exception when doing GSON deserialization on: " + result);
             throw e;
         }
     }
@@ -101,7 +102,7 @@ public class ApiSerializerHelper {
                 }
             }
         } catch (RuntimeException | JsonProcessingException e) {
-            s_logger.error("Caught runtime exception when doing GSON deserialization to map on: " + result, e);
+            LOGGER.error("Caught runtime exception when doing GSON deserialization to map on: " + result, e);
         }
 
         return objParams;

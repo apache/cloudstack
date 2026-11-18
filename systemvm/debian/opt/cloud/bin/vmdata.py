@@ -31,7 +31,7 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv, "f:d:")
     except getopt.GetoptError:
-        print 'params: -f <filename> -d <b64jsondata>'
+        print('params: -f <filename> -d <b64jsondata>')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-f':
@@ -46,7 +46,7 @@ def main(argv):
     elif b64data != '':
         json_data = json.loads(base64.b64decode(b64data))
     else:
-        print '-f <filename> or -d <b64jsondata> required'
+        print('-f <filename> or -d <b64jsondata> required')
         sys.exit(2)
 
     for ip in json_data:
@@ -81,33 +81,41 @@ def deletefile(ip, folder, file):
         os.remove(datafile)
 
 
+def writefile(dest, data, mode):
+    fh = open(dest, mode)
+    exflock(fh)
+    fh.write(data)
+    unflock(fh)
+    fh.close()
+    os.chmod(dest, 0o644)
+
+
 def createfile(ip, folder, file, data):
     dest = "/var/www/html/" + folder + "/" + ip + "/" + file
     metamanifestdir = "/var/www/html/" + folder + "/" + ip
     metamanifest = metamanifestdir + "/meta-data"
 
-    # base64 decode userdata
-    if folder == "userdata" or folder == "user-data":
-        if data is not None:
-            data = base64.b64decode(data)
-
-    fh = open(dest, "w")
-    exflock(fh)
     if data is not None:
-        fh.write(data)
+        # base64 decode userdata
+        if folder == "userdata" or folder == "user-data":
+            # need to pad data if it is not valid base 64
+            if len(data) % 4 != 0:
+                data += (4 - (len(data) % 4)) * "="
+            data = base64.b64decode(data)
+        if isinstance(data, str):
+            writefile(dest, data, "w")
+        elif isinstance(data, bytes):
+            writefile(dest, data, "wb")
     else:
-        fh.write("")
-    unflock(fh)
-    fh.close()
-    os.chmod(dest, 0644)
+        writefile(dest, "", "w")
 
     if folder == "metadata" or folder == "meta-data":
         try:
-            os.makedirs(metamanifestdir, 0755)
+            os.makedirs(metamanifestdir, 0o755)
         except OSError as e:
             # error 17 is already exists, we do it this way for concurrency
             if e.errno != 17:
-                print "failed to make directories " + metamanifestdir + " due to :" + e.strerror
+                print("failed to make directories " + metamanifestdir + " due to :" + e.strerror)
                 sys.exit(1)
         if os.path.exists(metamanifest):
             fh = open(metamanifest, "r+a")
@@ -124,7 +132,7 @@ def createfile(ip, folder, file, data):
             fh.close()
 
     if os.path.exists(metamanifest):
-        os.chmod(metamanifest, 0644)
+        os.chmod(metamanifest, 0o644)
 
 
 def htaccess(ip, folder, file):
@@ -133,11 +141,11 @@ def htaccess(ip, folder, file):
     htaccessFile = htaccessFolder+"/.htaccess"
 
     try:
-        os.makedirs(htaccessFolder, 0755)
+        os.makedirs(htaccessFolder, 0o755)
     except OSError as e:
         # error 17 is already exists, we do it this way for sake of concurrency
         if e.errno != 17:
-            print "failed to make directories " + htaccessFolder + " due to :" + e.strerror
+            print("failed to make directories " + htaccessFolder + " due to :" + e.strerror)
             sys.exit(1)
 
     fh = open(htaccessFile, "w")
@@ -151,7 +159,7 @@ def exflock(file):
     try:
         flock(file, LOCK_EX)
     except IOError as e:
-        print "failed to lock file" + file.name + " due to : " + e.strerror
+        print("failed to lock file" + file.name + " due to : " + e.strerror)
         sys.exit(1)
     return True
 
@@ -160,7 +168,7 @@ def unflock(file):
     try:
         flock(file, LOCK_UN)
     except IOError as e:
-        print "failed to unlock file" + file.name + " due to : " + e.strerror
+        print("failed to unlock file" + file.name + " due to : " + e.strerror)
         sys.exit(1)
     return True
 

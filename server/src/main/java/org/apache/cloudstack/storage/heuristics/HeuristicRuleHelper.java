@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.heuristics;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.storage.StorageManager;
@@ -26,6 +27,8 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -35,6 +38,7 @@ import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.heuristics.presetvariables.Account;
+import org.apache.cloudstack.storage.heuristics.presetvariables.Backup;
 import org.apache.cloudstack.storage.heuristics.presetvariables.Domain;
 import org.apache.cloudstack.storage.heuristics.presetvariables.PresetVariables;
 import org.apache.cloudstack.storage.heuristics.presetvariables.SecondaryStorage;
@@ -42,7 +46,8 @@ import org.apache.cloudstack.storage.heuristics.presetvariables.Snapshot;
 import org.apache.cloudstack.storage.heuristics.presetvariables.Template;
 import org.apache.cloudstack.storage.heuristics.presetvariables.Volume;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -54,7 +59,7 @@ import java.util.List;
  */
 public class HeuristicRuleHelper {
 
-    protected static final Logger LOGGER = Logger.getLogger(HeuristicRuleHelper.class);
+    protected Logger logger = LogManager.getLogger(HeuristicRuleHelper.class);
 
     private static final Long HEURISTICS_SCRIPT_TIMEOUT = StorageManager.HEURISTICS_SCRIPT_TIMEOUT.value();
 
@@ -73,6 +78,12 @@ public class HeuristicRuleHelper {
     @Inject
     private AccountDao accountDao;
 
+    @Inject
+    private DataCenterDao zoneDao;
+
+    @Inject
+    private BackupOfferingDao backupOfferingDao;
+
     /**
      * Returns the {@link DataStore} object if the zone, specified by the ID, has an active heuristic rule for the given {@link HeuristicType}.
      * It returns null otherwise.
@@ -86,10 +97,10 @@ public class HeuristicRuleHelper {
         HeuristicVO heuristicsVO = secondaryStorageHeuristicDao.findByZoneIdAndType(zoneId, heuristicType);
 
         if (heuristicsVO == null) {
-            LOGGER.debug(String.format("No heuristic rules found for zone with ID [%s] and heuristic type [%s]. Returning null.", zoneId, heuristicType));
+            logger.debug("No heuristic rules found for zone [{}] and heuristic type [{}]. Returning null.", () -> zoneDao.findById(zoneId), heuristicType::toString);
             return null;
         } else {
-            LOGGER.debug(String.format("Found the heuristic rule %s to apply for zone with ID [%s].", heuristicsVO, zoneId));
+            logger.debug("Found the heuristic rule {} to apply for zone [{}].", heuristicsVO::toString, () -> zoneDao.findById(zoneId));
             return interpretHeuristicRule(heuristicsVO.getHeuristicRule(), heuristicType, obj, zoneId);
         }
     }
@@ -112,8 +123,12 @@ public class HeuristicRuleHelper {
                 accountId = ((SnapshotInfo) obj).getAccountId();
                 break;
             case VOLUME:
-                presetVariables.setVolume(setVolumePresetVariable((VolumeVO) obj));
-                accountId = ((VolumeVO) obj).getAccountId();
+                presetVariables.setVolume(setVolumePresetVariable((com.cloud.storage.Volume) obj));
+                accountId = ((com.cloud.storage.Volume) obj).getAccountId();
+                break;
+            case BACKUP:
+                presetVariables.setBackup(setBackupPresetVariable((BackupVO) obj));
+                accountId = ((BackupVO) obj).getAccountId();
                 break;
         }
         presetVariables.setAccount(setAccountPresetVariable(accountId));
@@ -134,23 +149,27 @@ public class HeuristicRuleHelper {
      * @param presetVariables used for injecting in the JS interpreter.
      */
     protected void injectPresetVariables(JsInterpreter jsInterpreter, PresetVariables presetVariables) {
-        jsInterpreter.injectVariable("secondaryStorages", presetVariables.getSecondaryStorages().toString());
+        jsInterpreter.injectVariable("secondaryStorages", presetVariables.getSecondaryStorages());
 
         if (presetVariables.getTemplate() != null) {
-            jsInterpreter.injectVariable("template", presetVariables.getTemplate().toString());
-            jsInterpreter.injectVariable("iso", presetVariables.getTemplate().toString());
+            jsInterpreter.injectVariable("template", presetVariables.getTemplate());
+            jsInterpreter.injectVariable("iso", presetVariables.getTemplate());
         }
 
         if (presetVariables.getSnapshot() != null) {
-            jsInterpreter.injectVariable("snapshot", presetVariables.getSnapshot().toString());
+            jsInterpreter.injectVariable("snapshot", presetVariables.getSnapshot());
         }
 
         if (presetVariables.getVolume() != null) {
-            jsInterpreter.injectVariable("volume", presetVariables.getVolume().toString());
+            jsInterpreter.injectVariable("volume", presetVariables.getVolume());
+        }
+
+        if (presetVariables.getBackup() != null) {
+            jsInterpreter.injectVariable("backup", presetVariables.getBackup());
         }
 
         if (presetVariables.getAccount() != null) {
-            jsInterpreter.injectVariable("account", presetVariables.getAccount().toString());
+            jsInterpreter.injectVariable("account", presetVariables.getAccount());
         }
     }
 
@@ -180,20 +199,20 @@ public class HeuristicRuleHelper {
         Template template = new Template();
 
         template.setName(templateVO.getName());
-        template.setFormat(templateVO.getFormat());
-        template.setHypervisorType(templateVO.getHypervisorType());
+        template.setFormat(templateVO.getFormat().toString());
+        template.setHypervisorType(templateVO.getHypervisorType().toString());
 
         return template;
     }
 
-    protected Volume setVolumePresetVariable(VolumeVO volumeVO) {
-        Volume volume = new Volume();
+    protected Volume setVolumePresetVariable(com.cloud.storage.Volume volumeVO) {
+        Volume volumePresetVariable = new Volume();
 
-        volume.setName(volumeVO.getName());
-        volume.setFormat(volumeVO.getFormat());
-        volume.setSize(volumeVO.getSize());
+        volumePresetVariable.setName(volumeVO.getName());
+        volumePresetVariable.setFormat(volumeVO.getFormat().toString());
+        volumePresetVariable.setSize(volumeVO.getSize());
 
-        return volume;
+        return volumePresetVariable;
     }
 
     protected Snapshot setSnapshotPresetVariable(SnapshotInfo snapshotInfo) {
@@ -201,9 +220,19 @@ public class HeuristicRuleHelper {
 
         snapshot.setName(snapshotInfo.getName());
         snapshot.setSize(snapshotInfo.getSize());
-        snapshot.setHypervisorType(snapshotInfo.getHypervisorType());
+        snapshot.setHypervisorType(snapshotInfo.getHypervisorType().toString());
 
         return snapshot;
+    }
+
+    protected Backup setBackupPresetVariable(BackupVO backupVO) {
+        Backup backup = new Backup();
+
+        backup.setName(backupVO.getName());
+        backup.setVirtualSize(backupVO.getProtectedSize());
+        backup.setOfferingUuid(backupOfferingDao.findById(backupVO.getBackupOfferingId()).getUuid());
+
+        return backup;
     }
 
     protected Account setAccountPresetVariable(Long accountId) {
@@ -252,7 +281,7 @@ public class HeuristicRuleHelper {
      * @return the {@link DataStore} returned by the script.
      */
     public DataStore interpretHeuristicRule(String rule, HeuristicType heuristicType, Object obj, long zoneId) {
-        try (JsInterpreter jsInterpreter = new JsInterpreter(HEURISTICS_SCRIPT_TIMEOUT)) {
+        try (JsInterpreter jsInterpreter = new JsInterpreter(HEURISTICS_SCRIPT_TIMEOUT, StorageManager.HEURISTICS_SCRIPT_TIMEOUT.key())) {
             buildPresetVariables(jsInterpreter, heuristicType, zoneId, obj);
             Object scriptReturn = jsInterpreter.executeScript(rule);
 
@@ -270,7 +299,7 @@ public class HeuristicRuleHelper {
             return dataStore;
         } catch (IOException ex) {
             String message = String.format("Error while executing script [%s].", rule);
-            LOGGER.error(message, ex);
+            logger.error(message, ex);
             throw new CloudRuntimeException(message, ex);
         }
     }

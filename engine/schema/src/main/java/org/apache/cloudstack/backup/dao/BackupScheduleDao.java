@@ -20,16 +20,15 @@ package org.apache.cloudstack.backup.dao;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.cloudstack.api.response.BackupScheduleResponse;
-import org.apache.cloudstack.backup.BackupSchedule;
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.backup.BackupScheduleVO;
 
 import com.cloud.utils.db.GenericDao;
 
 public interface BackupScheduleDao extends GenericDao<BackupScheduleVO, Long> {
-    BackupScheduleVO findByVM(Long vmId);
+    List<BackupScheduleVO> listByVM(Long vmId);
+
+    BackupScheduleVO findByVMAndIntervalType(Long vmId, DateUtil.IntervalType intervalType);
 
     List<BackupScheduleVO> getSchedulesToExecute(Date currentTimestamp);
-
-    BackupScheduleResponse newBackupScheduleResponse(BackupSchedule schedule);
 }

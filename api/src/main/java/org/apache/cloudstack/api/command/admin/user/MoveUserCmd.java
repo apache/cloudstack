@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.user;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -32,7 +33,6 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -46,7 +46,6 @@ import com.google.common.base.Preconditions;
         since = "4.11",
         authorized = {RoleType.Admin})
 public class MoveUserCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(MoveUserCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -56,7 +55,7 @@ public class MoveUserCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = UserResponse.class,
             required = true,
-            description = "id of the user to be moved.")
+            description = "ID of the user to be moved.")
     private Long id;
 
     @Parameter(name = ApiConstants.ACCOUNT,
@@ -114,11 +113,11 @@ public class MoveUserCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() {
+    public void execute() throws ResourceAllocationException {
         Preconditions.checkNotNull(getId(),"I have to have an user to move!");
         Preconditions.checkState(ObjectUtils.anyNotNull(getAccountId(),getAccountName()),"provide either an account name or an account id!");
 
-        CallContext.current().setEventDetails("UserId: " + getId());
+        CallContext.current().setEventDetails("User ID: " + getResourceUuid(ApiConstants.ID));
         boolean result =
                 _regionService.moveUser(this);
         if (result) {

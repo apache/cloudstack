@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.firewall;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -39,7 +38,6 @@ import com.cloud.network.rules.PortForwardingRule;
 @APICommand(name = "deletePortForwardingRule", description = "Deletes a port forwarding rule", responseObject = SuccessResponse.class, entityType = {PortForwardingRule.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeletePortForwardingRuleCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -50,7 +48,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the port forwarding rule")
+               description = "The ID of the port forwarding rule")
     private Long id;
 
     // unexposed parameter needed for events logging
@@ -75,7 +73,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting port forwarding rule for ID=" + id);
+        return "Deleting port forwarding rule with ID:" + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -94,7 +92,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Rule ID: " + id);
+        CallContext.current().setEventDetails("Rule ID: " + getResourceUuid(ApiConstants.ID));
         //revoke corresponding firewall rule first
         boolean result = _firewallService.revokeRelatedFirewallRule(id, true);
         result = result && _rulesService.revokePortForwardingRule(id, true);

@@ -50,6 +50,10 @@
             {{ $toLocaleDate(text) }}
           </template>
 
+          <template v-else-if="column.key === 'size' || column.key === 'virtualsize'">
+            {{ $bytesToHumanReadableSize(text) }}
+          </template>
+
           <template v-else>
             {{ text }}
           </template>
@@ -78,7 +82,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import Status from '@/components/widgets/Status'
 
@@ -173,7 +177,7 @@ export default {
       params.listall = true
       params.response = 'json'
       params.details = 'min'
-      api(this.apiName, params).then(json => {
+      getAPI(this.apiName, params).then(json => {
         var responseName
         var objectName
         for (const key in json) {

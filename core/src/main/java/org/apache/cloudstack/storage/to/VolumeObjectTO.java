@@ -27,13 +27,18 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering.DiskCacheMode;
+import com.cloud.offering.DiskOffering.DiskErrorPolicy;
 import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
+import java.io.Serializable;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
-public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
+public class VolumeObjectTO extends DownloadableObjectTO implements DataTO, Serializable {
     private String uuid;
     private Volume.Type volumeType;
     private DataStoreTO dataStore;
@@ -64,6 +69,7 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
     private Long iopsWriteRateMax;
     private Long iopsWriteRateMaxLength;
     private DiskCacheMode cacheMode;
+    private DiskErrorPolicy errorPolicy;
     private Hypervisor.HypervisorType hypervisorType;
     private MigrationOptions migrationOptions;
     private boolean directDownload;
@@ -75,6 +81,8 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
     @LogLevel(LogLevel.Log4jLevel.Off)
     private byte[] passphrase;
     private String encryptFormat;
+    private List<String> checkpointPaths;
+    private Set<String> checkpointImageStoreUrls;
 
     public VolumeObjectTO() {
 
@@ -111,8 +119,9 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
         iopsWriteRate = volume.getIopsWriteRate();
         iopsWriteRateMax = volume.getIopsWriteRateMax();
         iopsWriteRateMaxLength = volume.getIopsWriteRateMaxLength();
-        cacheMode = volume.getCacheMode();
         hypervisorType = volume.getHypervisorType();
+        setCacheMode(volume.getCacheMode());
+        setErrorPolicy(volume.getErrorPolicy());
         setDeviceId(volume.getDeviceId());
         this.migrationOptions = volume.getMigrationOptions();
         this.directDownload = volume.isDirectDownload();
@@ -121,6 +130,8 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
         this.passphrase = volume.getPassphrase();
         this.encryptFormat = volume.getEncryptFormat();
         this.followRedirects = volume.isFollowRedirects();
+        this.checkpointPaths = volume.getCheckpointPaths();
+        this.checkpointImageStoreUrls = volume.getCheckpointImageStoreUrls();
     }
 
     public String getUuid() {
@@ -258,7 +269,9 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
 
     @Override
     public String toString() {
-        return new StringBuilder("volumeTO[uuid=").append(uuid).append("|path=").append(path).append("|datastore=").append(dataStore).append("]").toString();
+        return String.format("volumeTO %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "path", "dataStore"));
     }
 
     public void setBytesReadRate(Long bytesReadRate) {
@@ -334,11 +347,23 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
     }
 
     public void setCacheMode(DiskCacheMode cacheMode) {
+        if (DiskCacheMode.HYPERVISOR_DEFAULT.equals(cacheMode) && !Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+            this.cacheMode = DiskCacheMode.NONE;
+            return;
+        }
         this.cacheMode = cacheMode;
     }
 
     public DiskCacheMode getCacheMode() {
         return cacheMode;
+    }
+
+    public void setErrorPolicy(DiskErrorPolicy errorPolicy) {
+        this.errorPolicy = errorPolicy;
+    }
+
+    public DiskErrorPolicy getErrorPolicy() {
+        return errorPolicy;
     }
 
     public MigrationOptions getMigrationOptions() {
@@ -393,5 +418,22 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
 
     public boolean requiresEncryption() {
         return passphrase != null && passphrase.length > 0;
+    }
+
+
+    public List<String> getCheckpointPaths() {
+        return checkpointPaths;
+    }
+
+    public void setCheckpointPaths(List<String> checkpointPaths) {
+        this.checkpointPaths = checkpointPaths;
+    }
+
+    public Set<String> getCheckpointImageStoreUrls() {
+        return checkpointImageStoreUrls;
+    }
+
+    public void setCheckpointImageStoreUrls(Set<String> checkpointImageStoreUrls) {
+        this.checkpointImageStoreUrls = checkpointImageStoreUrls;
     }
 }

@@ -17,6 +17,8 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { i18n } from '@/locales'
+import { escapeHtml } from '@/utils/util'
 
 export default {
   name: 'accountuser',
@@ -25,7 +27,32 @@ export default {
   docHelp: 'adminguide/accounts.html#users',
   hidden: true,
   permission: ['listUsers'],
-  columns: ['username', 'state', 'firstname', 'lastname', 'email', 'account', 'domain'],
+  searchFilters: () => {
+    const filters = ['usersource']
+    if (store.getters.userInfo.roletype === 'Admin') {
+      filters.push('apikeyaccess')
+    }
+    return filters
+  },
+  columns: [
+    'username', 'state', 'firstname', 'lastname',
+    'email', 'account', 'domain',
+    {
+      field: 'userSource',
+      customTitle: 'userSource',
+      userSource: (record) => {
+        let { usersource: source } = record
+
+        if (source === 'saml2') {
+          source = 'saml'
+        } else if (source === 'saml2disabled') {
+          source = 'saml.disabled'
+        }
+
+        return i18n.global.t(`label.${source}`)
+      }
+    }
+  ],
   details: ['username', 'id', 'firstname', 'lastname', 'email', 'usersource', 'timezone', 'rolename', 'roletype', 'is2faenabled', 'account', 'domain', 'created'],
   tabs: [
     {
@@ -37,6 +64,12 @@ export default {
       resourceType: 'User',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
       show: () => { return 'listEvents' in store.getters.apis }
+    },
+    {
+      name: 'apikeypairs',
+      resourceType: 'User',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/ApiKeyPairsTab.vue'))),
+      show: () => { return 'listUserKeys' in store.getters.apis }
     }
   ],
   actions: [
@@ -58,10 +91,32 @@ export default {
     },
     {
       api: 'updateUser',
+      icon: 'redo-outlined',
+      label: 'label.change.password.reset',
+      message: 'message.change.password.reset',
+      dataView: true,
+      args: ['passwordchangerequired'],
+      mapping: {
+        passwordchangerequired: {
+          value: (record) => { return true }
+        }
+      },
+      popup: true,
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          store.userInfo.id !== record.id && record.state === 'enabled' && record.usersource === 'native'
+      }
+    },
+    {
+      api: 'updateUser',
       icon: 'key-outlined',
       label: 'label.action.change.password',
       dataView: true,
       popup: true,
+      show: (record, store) => {
+        return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) || store.userInfo.id === record.id) &&
+          ['native'].includes(record.usersource) && record.state === 'enabled'
+      },
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/ChangeUserPassword.vue')))
     },
     {
@@ -79,9 +134,10 @@ export default {
       message: 'message.enable.user',
       dataView: true,
       show: (record, store) => {
-        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
-          !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&
-          record.state === 'disabled'
+        if (!['disabled', 'locked'].includes(record.state) || record.isdefault || !['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
+          return false
+        }
+        return ![1, 4].includes(record.accounttype) || store.userInfo.roletype === 'Admin'
       }
     },
     {
@@ -91,9 +147,25 @@ export default {
       message: 'message.disable.user',
       dataView: true,
       show: (record, store) => {
-        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
-          !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&
-          record.state === 'enabled'
+        if (record.state !== 'enabled' || record.isdefault || !['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
+          return false
+        }
+        return ![1, 4].includes(record.accounttype) || (store.userInfo.roletype === 'Admin' && record.id !== store.userInfo.id)
+      }
+    },
+    {
+      api: 'lockUser',
+      icon: 'LockOutlined',
+      label: 'label.action.lock.user',
+      message: (record) => ['message.lock.user', { user: escapeHtml(record.username) }],
+      successMessage: (record) => ['message.lock.user.success', { user: record.username }],
+      dataView: true,
+      popup: true,
+      show: (record, store) => {
+        if (record.state !== 'enabled' || record.isdefault || !['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
+          return false
+        }
+        return ![1, 4].includes(record.accounttype) || (store.userInfo.roletype === 'Admin' && record.id !== store.userInfo.id)
       }
     },
     {
@@ -114,7 +186,7 @@ export default {
       dataView: true,
       popup: true,
       show: (record, store) => {
-        return (record.is2faenabled === false && record.id === store.userInfo.id)
+        return (!record.is2faenabled && record.id === store.userInfo.id)
       },
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/SetupTwoFaAtUserProfile.vue')))
     },

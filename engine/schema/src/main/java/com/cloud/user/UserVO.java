@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.user.Account.State;
-import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import org.apache.commons.lang3.StringUtils;
 
@@ -70,13 +69,6 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Column(name = "state")
     @Enumerated(value = EnumType.STRING)
     private State state;
-
-    @Column(name = "api_key")
-    private String apiKey = null;
-
-    @Encrypt
-    @Column(name = "secret_key")
-    private String secretKey = null;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
@@ -115,13 +107,16 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Column(name = "key_for_2fa")
     private String keyFor2fa;
 
+    @Column(name = "api_key_access")
+    private Boolean apiKeyAccess;
+
     public UserVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
     public UserVO(long id) {
+        this();
         this.id = id;
-        this.uuid = UUID.randomUUID().toString();
     }
 
     public UserVO(long accountId, String username, String password, String firstName, String lastName, String email, String timezone, String uuid, Source source) {
@@ -147,8 +142,6 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.setTimezone(user.getTimezone());
         this.setUuid(user.getUuid());
         this.setSource(user.getSource());
-        this.setApiKey(user.getApiKey());
-        this.setSecretKey(user.getSecretKey());
         this.setExternalEntity(user.getExternalEntity());
         this.setRegistered(user.isRegistered());
         this.setRegistrationToken(user.getRegistrationToken());
@@ -241,26 +234,6 @@ public class UserVO implements User, Identity, InternalIdentity {
     }
 
     @Override
-    public String getApiKey() {
-        return apiKey;
-    }
-
-    @Override
-    public void setApiKey(String apiKey) {
-        this.apiKey = apiKey;
-    }
-
-    @Override
-    public String getSecretKey() {
-        return secretKey;
-    }
-
-    @Override
-    public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
-    }
-
-    @Override
     public String getTimezone() {
         if (StringUtils.isEmpty(timezone)) {
             return "UTC";
@@ -293,7 +266,7 @@ public class UserVO implements User, Identity, InternalIdentity {
 
     @Override
     public String toString() {
-        return String.format("User %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "username", "uuid"));
+        return String.format("User %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "username"));
     }
 
     @Override
@@ -350,4 +323,13 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.user2faProvider = user2faProvider;
     }
 
+    @Override
+    public void setApiKeyAccess(Boolean apiKeyAccess) {
+        this.apiKeyAccess = apiKeyAccess;
+    }
+
+    @Override
+    public Boolean getApiKeyAccess() {
+        return apiKeyAccess;
+    }
 }

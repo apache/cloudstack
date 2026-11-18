@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.Pair;
@@ -34,7 +33,6 @@ import com.cloud.utils.db.TransactionStatus;
 
 @Component
 public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> implements QuotaAccountDao {
-    public static final Logger s_logger = Logger.getLogger(QuotaAccountDaoImpl.class);
 
     @Override
     public List<QuotaAccountVO> listAllQuotaAccount() {
@@ -44,7 +42,7 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
                 accountsWithQuotaEnabled.add(account);
                 continue;
             }
-            s_logger.trace(String.format("Account [%s] has the quota plugin disabled. Thus, it will not receive quota emails.", account));
+            logger.trace(String.format("Account [%s] has the quota plugin disabled. Thus, it will not receive quota emails.", account));
         }
         return accountsWithQuotaEnabled;
     }

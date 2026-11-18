@@ -1,5 +1,3 @@
-//
-// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -19,11 +17,12 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,18 +38,26 @@ import java.util.concurrent.TimeoutException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
+import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.hypervisor.kvm.resource.BridgeVifDriver;
+import com.cloud.hypervisor.kvm.resource.LibvirtGpuDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtXMLParser;
+import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.Storage;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
@@ -65,26 +72,25 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
-import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.DpdkTO;
+import com.cloud.agent.api.to.NetworkTO;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.hypervisor.kvm.resource.disconnecthook.MigrationCancelHook;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.MigrateKVMAsync;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
-import com.cloud.resource.CommandWrapper;
-import com.cloud.resource.ResourceWrapper;
-import com.cloud.utils.Ternary;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachine;
+import com.cloud.network.Networks;
 
 @ResourceWrapper(handles =  MigrateCommand.class)
 public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCommand, Answer, LibvirtComputingResource> {
@@ -93,7 +99,6 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     private static final String GRAPHICS_ELEM_START = "<graphics";
     private static final String CONTENTS_WILDCARD = "(?s).*";
     private static final String CDROM_LABEL = "hdc";
-    private static final Logger s_logger = Logger.getLogger(LibvirtMigrateCommandWrapper.class);
 
     protected String createMigrationURI(final String destinationIp, final LibvirtComputingResource libvirtComputingResource) {
         if (StringUtils.isEmpty(destinationIp)) {
@@ -108,14 +113,16 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         final Map<String, Boolean> vlanToPersistenceMap = command.getVlanToPersistenceMap();
         final String destinationUri = createMigrationURI(command.getDestinationIp(), libvirtComputingResource);
         final List<MigrateDiskInfo> migrateDiskInfoList = command.getMigrateDiskInfoList();
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Trying to migrate VM [%s] to destination host: [%s].", vmName, destinationUri));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Trying to migrate VM [%s] to destination host: [%s].", vmName, destinationUri));
         }
 
         String result = null;
+        Command.State commandState = null;
 
         List<InterfaceDef> ifaces = null;
-        List<DiskDef> disks;
+        List<DiskDef> disks = new ArrayList<>();
+        VirtualMachineTO to = null;
 
         Domain dm = null;
         Connect dconn = null;
@@ -123,6 +130,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         Connect conn = null;
         String xmlDesc = null;
         List<Ternary<String, Boolean, String>> vmsnapshots = null;
+        MigrationCancelHook cancelHook = null;
 
         try {
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
@@ -130,10 +138,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
             ifaces = libvirtComputingResource.getInterfaces(conn, vmName);
             disks = libvirtComputingResource.getDisks(conn, vmName);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Found domain with name [%s]. Starting VM migration to host [%s].", vmName, destinationUri));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Found domain with name [%s]. Starting VM migration to host [%s].", vmName, destinationUri));
             }
-            VirtualMachineTO to = command.getVirtualMachine();
+            to = command.getVirtualMachine();
 
             dm = conn.domainLookupByName(vmName);
             /*
@@ -159,8 +167,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
             final String target = command.getDestinationIp();
             xmlDesc = dm.getXMLDesc(xmlFlag);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("VM [%s] with XML configuration [%s] will be migrated to host [%s].", vmName, xmlDesc, target));
+            if (logger.isDebugEnabled()) {
+                logger.debug("VM {} with XML configuration {} will be migrated to host {}.", vmName, maskSensitiveInfoInXML(xmlDesc), target);
             }
 
             // Limit the VNC password in case the length is greater than 8 characters
@@ -172,10 +180,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             String oldIsoVolumePath = getOldVolumePath(disks, vmName);
             String newIsoVolumePath = getNewVolumePathIfDatastoreHasChanged(libvirtComputingResource, conn, to);
             if (newIsoVolumePath != null && !newIsoVolumePath.equals(oldIsoVolumePath)) {
-                s_logger.debug(String.format("Editing mount path of iso from %s to %s", oldIsoVolumePath, newIsoVolumePath));
+                logger.debug(String.format("Editing mount path of ISO from %s to %s", oldIsoVolumePath, newIsoVolumePath));
                 xmlDesc = replaceDiskSourceFile(xmlDesc, newIsoVolumePath, vmName);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Replaced disk mount point [%s] with [%s] in VM [%s] XML configuration. New XML configuration is [%s].", oldIsoVolumePath, newIsoVolumePath, vmName, xmlDesc));
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Replaced disk mount point {} with {} in Instance {} XML configuration. New XML configuration is {}.", oldIsoVolumePath, newIsoVolumePath, vmName, maskSensitiveInfoInXML(xmlDesc));
                 }
             }
 
@@ -205,28 +213,32 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             Set<String> migrateDiskLabels = null;
 
             if (migrateStorage) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Changing VM [%s] volumes during migration to host: [%s].", vmName, target));
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Changing VM {} volumes during migration to host: {}.", vmName, target);
                 }
                 xmlDesc = replaceStorage(xmlDesc, mapMigrateStorage, migrateStorageManaged);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Changed VM [%s] XML configuration of used storage. New XML configuration is [%s].", vmName, xmlDesc));
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Changed VM {} XML configuration of used storage. New XML configuration is {}.", vmName, maskSensitiveInfoInXML(xmlDesc));
                 }
                 migrateDiskLabels = getMigrateStorageDeviceLabels(disks, mapMigrateStorage);
             }
 
             Map<String, DpdkTO> dpdkPortsMapping = command.getDpdkInterfaceMapping();
             if (MapUtils.isNotEmpty(dpdkPortsMapping)) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("Changing VM [%s] DPDK interfaces during migration to host: [%s].", vmName, target));
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Changing VM {} DPDK interfaces during migration to host: {}.", vmName, target);
                 }
                 xmlDesc = replaceDpdkInterfaces(xmlDesc, dpdkPortsMapping);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Changed VM [%s] XML configuration of DPDK interfaces. New XML configuration is [%s].", vmName, xmlDesc));
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Changed VM {} XML configuration of DPDK interfaces. New XML configuration is {}.", vmName, maskSensitiveInfoInXML(xmlDesc));
                 }
             }
 
+            xmlDesc = replaceVlanTrunkInterfaces(xmlDesc, command, libvirtComputingResource);
+
             xmlDesc = updateVmSharesIfNeeded(command, xmlDesc, libvirtComputingResource);
+
+            xmlDesc = updateGpuDevicesIfNeeded(command, xmlDesc, libvirtComputingResource);
 
             dconn = libvirtUtilitiesHelper.retrieveQemuConnection(destinationUri);
 
@@ -235,9 +247,15 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
 
             //run migration in thread so we can monitor it
-            s_logger.info(String.format("Starting live migration of instance [%s] to destination host [%s] having the final XML configuration: [%s].", vmName, dconn.getURI(), xmlDesc));
+            logger.info("Starting live migration of instance {} to destination host {} having the final XML configuration: {}.", vmName, dconn.getURI(), maskSensitiveInfoInXML(xmlDesc));
             final ExecutorService executor = Executors.newFixedThreadPool(1);
             boolean migrateNonSharedInc = command.isMigrateNonSharedInc() && !migrateStorageManaged;
+
+            // add cancel hook before we start. If migration fails to start and hook is called, it's non-fatal
+            cancelHook = new MigrationCancelHook(dm);
+            libvirtComputingResource.addDisconnectHook(cancelHook);
+
+            libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.PROCESSING);
 
             final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc,
                     migrateStorage, migrateNonSharedInc,
@@ -245,86 +263,106 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             final Future<Domain> migrateThread = executor.submit(worker);
             executor.shutdown();
             long sleeptime = 0;
+            final int migrateDowntime = libvirtComputingResource.getMigrateDowntime();
+            boolean isMigrateDowntimeSet = false;
+
+            final int migrateWait = libvirtComputingResource.getMigrateWait();
+            logger.info("vm.migrate.wait value set to: {} secs for VM: {}", migrateWait, vmName);
+
+            final int migratePauseAfter = libvirtComputingResource.getMigratePauseAfter();
+            logger.info("vm.migrate.pauseafter value set to: {} ms for VM: {}", migratePauseAfter, vmName);
+
             while (!executor.isTerminated()) {
                 Thread.sleep(100);
                 sleeptime += 100;
-                if (sleeptime == 1000) { // wait 1s before attempting to set downtime on migration, since I don't know of a VIR_DOMAIN_MIGRATING state
-                    final int migrateDowntime = libvirtComputingResource.getMigrateDowntime();
-                    if (migrateDowntime > 0 ) {
-                        try {
-                            final int setDowntime = dm.migrateSetMaxDowntime(migrateDowntime);
-                            if (setDowntime == 0 ) {
-                                s_logger.debug("Set max downtime for migration of " + vmName + " to " + String.valueOf(migrateDowntime) + "ms");
-                            }
-                        } catch (final LibvirtException e) {
-                            s_logger.debug("Failed to set max downtime for migration, perhaps migration completed? Error: " + e.getMessage());
+                if (!isMigrateDowntimeSet && migrateDowntime > 0 && sleeptime >= 1000) { // wait 1s before attempting to set downtime on migration, since I don't know of a VIR_DOMAIN_MIGRATING state
+                    try {
+                        final int setDowntime = dm.migrateSetMaxDowntime(migrateDowntime);
+                        if (setDowntime == 0 ) {
+                            isMigrateDowntimeSet = true;
+                            logger.debug("Set max downtime for migration of " + vmName + " to " + String.valueOf(migrateDowntime) + "ms");
                         }
+                    } catch (final LibvirtException e) {
+                        logger.debug("Failed to set max downtime for migration, perhaps migration completed? Error: " + e.getMessage());
                     }
                 }
                 if (sleeptime % 1000 == 0) {
-                    s_logger.info("Waiting for migration of " + vmName + " to complete, waited " + sleeptime + "ms");
+                    logger.info("Waiting for migration of " + vmName + " to complete, waited " + sleeptime + "ms");
                 }
 
                 // abort the vm migration if the job is executed more than vm.migrate.wait
-                final int migrateWait = libvirtComputingResource.getMigrateWait();
                 if (migrateWait > 0 && sleeptime > migrateWait * 1000) {
                     DomainState state = null;
                     try {
                         state = dm.getInfo().state;
+                        logger.info("VM domain state when trying to abort migration : {}", state);
                     } catch (final LibvirtException e) {
-                        s_logger.info("Couldn't get VM domain state after " + sleeptime + "ms: " + e.getMessage());
+                        logger.info("Couldn't get VM domain state after " + sleeptime + "ms: " + e.getMessage());
                     }
-                    if (state != null && state == DomainState.VIR_DOMAIN_RUNNING) {
+                    if (state != null && (state == DomainState.VIR_DOMAIN_RUNNING || state == DomainState.VIR_DOMAIN_PAUSED)) {
                         try {
                             DomainJobInfo job = dm.getJobInfo();
-                            s_logger.info(String.format("Aborting migration of VM [%s] with domain job [%s] due to time out after %d seconds.", vmName, job, migrateWait));
+                            logger.warn("Aborting migration of VM {} with domain job [{}] due to timeout after {} seconds. " +
+                                    "Job stats: data processed={} bytes, data remaining={} bytes", vmName, job, migrateWait, job.getDataProcessed(), job.getDataRemaining());
                             dm.abortJob();
                             result = String.format("Migration of VM [%s] was cancelled by CloudStack due to time out after %d seconds.", vmName, migrateWait);
-                            s_logger.debug(result);
+                            commandState = Command.State.FAILED;
+                            libvirtComputingResource.createOrUpdateLogFileForCommand(command, commandState);
+                            logger.debug(result);
                             break;
                         } catch (final LibvirtException e) {
-                            s_logger.error(String.format("Failed to abort the VM migration job of VM [%s] due to: [%s].", vmName, e.getMessage()), e);
+                            logger.error(String.format("Failed to abort the VM migration job of VM [%s] due to: [%s].", vmName, e.getMessage()), e);
                         }
                     }
                 }
 
                 // pause vm if we meet the vm.migrate.pauseafter threshold and not already paused
-                final int migratePauseAfter = libvirtComputingResource.getMigratePauseAfter();
                 if (migratePauseAfter > 0 && sleeptime > migratePauseAfter) {
                     DomainState state = null;
                     try {
                         state = dm.getInfo().state;
+                        logger.info("VM domain state when trying to pause VM for migration: {}", state);
                     } catch (final LibvirtException e) {
-                        s_logger.info("Couldn't get VM domain state after " + sleeptime + "ms: " + e.getMessage());
+                        logger.info("Couldn't get VM domain state after " + sleeptime + "ms: " + e.getMessage());
                     }
                     if (state != null && state == DomainState.VIR_DOMAIN_RUNNING) {
                         try {
-                            s_logger.info("Pausing VM " + vmName + " due to property vm.migrate.pauseafter setting to " + migratePauseAfter + "ms to complete migration");
+                            logger.info("Pausing VM " + vmName + " due to property vm.migrate.pauseafter setting to " + migratePauseAfter + "ms to complete migration");
                             dm.suspend();
                         } catch (final LibvirtException e) {
                             // pause could be racy if it attempts to pause right when vm is finished, simply warn
-                            s_logger.info("Failed to pause vm " + vmName + " : " + e.getMessage());
+                            logger.info("Failed to pause vm " + vmName + " : " + e.getMessage());
                         }
                     }
                 }
             }
-            s_logger.info(String.format("Migration thread of VM [%s] finished.", vmName));
+            logger.info(String.format("Migration thread of VM [%s] finished.", vmName));
 
             destDomain = migrateThread.get(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MIGRATE_DOMAIN_RETRIEVE_TIMEOUT), TimeUnit.SECONDS);
 
             if (destDomain != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Cleaning the disks of VM [%s] in the source pool after VM migration finished.", vmName));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("Cleaning the disks of VM [%s] in the source pool after VM migration finished.", vmName));
                 }
+                resumeDomainIfPaused(destDomain, vmName);
+
+                // For cross-pool CLVM migration, skip deactivation so the source LV stays
+                // active (in shared mode) and deletion can route directly to the source host
+                // without fanning out across the cluster to find an inactive LV.
+                if (to != null && !command.isClvmCrossPoolMigration()) {
+                    LibvirtComputingResource.modifyClvmVolumesStateForMigration(disks, to, LibvirtComputingResource.ClvmVolumeState.DEACTIVATE);
+                }
+
                 deleteOrDisconnectDisksOnSourcePool(libvirtComputingResource, migrateDiskInfoList, disks);
                 libvirtComputingResource.cleanOldSecretsByDiskDef(conn, disks);
             }
 
         } catch (final LibvirtException e) {
-            s_logger.error(String.format("Can't migrate domain [%s] due to: [%s].", vmName, e.getMessage()), e);
+            logger.error(String.format("Can't migrate domain [%s] due to: [%s].", vmName, e.getMessage()), e);
             result = e.getMessage();
             if (result.startsWith("unable to connect to server") && result.endsWith("refused")) {
-                result = String.format("Migration was refused connection to destination: %s. Please check libvirt configuration compatibility and firewall rules on the source and destination hosts.", destinationUri);
+                logger.debug("Migration failed as connection to destination [{}] was refused. Please check libvirt configuration compatibility and firewall rules on the source and destination hosts.", destinationUri);
+                result = String.format("Failed to migrate domain [%s].", vmName);
             }
         } catch (final InterruptedException
             | ExecutionException
@@ -334,11 +372,14 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             | SAXException
             | TransformerException
             | URISyntaxException e) {
-            s_logger.error(String.format("Can't migrate domain [%s] due to: [%s].", vmName, e.getMessage()), e);
+            logger.error(String.format("Can't migrate domain [%s] due to: [%s].", vmName, e.getMessage()), e);
             if (result == null) {
                 result = "Exception during migrate: " + e.getMessage();
             }
         } finally {
+            if (cancelHook != null) {
+                libvirtComputingResource.removeDisconnectHook(cancelHook);
+            }
             try {
                 if (dm != null && result != null) {
                     // restore vm snapshots in case of failed migration
@@ -358,12 +399,17 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 if (destDomain != null) {
                     destDomain.free();
                 }
+                // Revert CLVM volumes to exclusive mode on failure
+                if (to != null && result != null) {
+                    LibvirtComputingResource.modifyClvmVolumesStateForMigration(disks, to, LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE);
+                }
             } catch (final LibvirtException e) {
-                s_logger.trace("Ignoring libvirt error.", e);
+                logger.trace("Ignoring libvirt error.", e);
             }
         }
 
         if (result == null) {
+            logger.info("Post-migration cleanup for VM {}: ", vmName);
             libvirtComputingResource.destroyNetworkRulesForVM(conn, vmName);
             for (final InterfaceDef iface : ifaces) {
                 String vlanId = libvirtComputingResource.getVlanIdFromBridgeName(iface.getBrName());
@@ -374,9 +420,37 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     vifDriver.unplug(iface, libvirtComputingResource.shouldDeleteBridge(vlanToPersistenceMap, vlanId));
                 }
             }
+            commandState = Command.State.COMPLETED;
+            libvirtComputingResource.createOrUpdateLogFileForCommand(command, commandState);
+        } else if (commandState == null) {
+            logger.error("Migration of VM {} failed with result: {}", vmName, result);
+            commandState = Command.State.FAILED;
+            libvirtComputingResource.createOrUpdateLogFileForCommand(command, commandState);
         }
 
         return new MigrateAnswer(command, result == null, result, null);
+    }
+
+    private DomainState getDestDomainState(Domain destDomain, String vmName) {
+        DomainState dmState = null;
+        try {
+            dmState = destDomain.getInfo().state;
+        } catch (final LibvirtException e) {
+            logger.info("Failed to get domain state for VM: " + vmName + " due to: " + e.getMessage());
+        }
+        return dmState;
+    }
+
+    private void resumeDomainIfPaused(Domain destDomain, String vmName) {
+        DomainState dmState = getDestDomainState(destDomain, vmName);
+        if (dmState == DomainState.VIR_DOMAIN_PAUSED) {
+            logger.info("Resuming VM " + vmName + " on destination after migration");
+            try {
+                destDomain.resume();
+            } catch (final Exception e) {
+                logger.error("Failed to resume vm " + vmName + " on destination after migration due to : " + e.getMessage());
+            }
+        }
     }
 
     /**
@@ -387,13 +461,13 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
      * */
     protected Set<String> getMigrateStorageDeviceLabels(List<DiskDef> diskDefinitions, Map<String, MigrateCommand.MigrateDiskInfo> mapMigrateStorage) {
         HashSet<String> setOfLabels = new HashSet<>();
-        s_logger.debug(String.format("Searching for disk labels of disks [%s].", mapMigrateStorage.keySet()));
+        logger.debug("Searching for disk labels of disks [{}].", mapMigrateStorage.keySet());
         for (String fileName : mapMigrateStorage.keySet()) {
             for (DiskDef diskDef : diskDefinitions) {
                 String diskPath = diskDef.getDiskPath();
                 if (diskPath != null && diskPath.contains(fileName)) {
                     setOfLabels.add(diskDef.getDiskLabel());
-                    s_logger.debug(String.format("Found label [%s] for disk [%s].", diskDef.getDiskLabel(), fileName));
+                    logger.debug("Found label [{}] for disk [{}].", diskDef.getDiskLabel(), fileName);
                     break;
                 }
             }
@@ -402,6 +476,116 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         return setOfLabels;
     }
 
+        String updateGpuDevicesIfNeeded(MigrateCommand migrateCommand, String xmlDesc, LibvirtComputingResource libvirtComputingResource)
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        GPUDeviceTO gpuDevice = migrateCommand.getVirtualMachine().getGpuDevice();
+        if (gpuDevice == null || CollectionUtils.isEmpty(gpuDevice.getGpuDevices())) {
+            logger.debug("No GPU device to update for VM [{}].", migrateCommand.getVmName());
+            return xmlDesc;
+        }
+
+        List<VgpuTypesInfo> devices = gpuDevice.getGpuDevices();
+        logger.info("Updating GPU devices for VM [{}] during migration. Number of devices: {}",
+                    migrateCommand.getVmName(), devices.size());
+
+        // Parse XML and find devices element
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document document;
+        try (InputStream inputStream = IOUtils.toInputStream(xmlDesc, StandardCharsets.UTF_8)) {
+            document = docBuilder.parse(inputStream);
+        }
+
+        NodeList devicesList = document.getElementsByTagName("devices");
+        if (devicesList.getLength() == 0) {
+            logger.warn("No devices section found in XML for VM [{}]", migrateCommand.getVmName());
+            return xmlDesc;
+        }
+
+        Element devicesElement = (Element) devicesList.item(0);
+
+        // Remove existing GPU hostdev elements and add new ones
+        removeExistingGpuHostdevElements(devicesElement);
+        addNewGpuHostdevElements(document, devicesElement, devices);
+
+        String newXmlDesc = LibvirtXMLParser.getXml(document);
+        logger.debug("Updated XML configuration for VM [{}] with new GPU devices", migrateCommand.getVmName());
+
+        return newXmlDesc;
+    }
+
+    /**
+     * Removes existing GPU hostdev elements from the devices section.
+     * GPU devices are identified as hostdev elements with type='pci' or type='mdev'.
+     */
+    private void removeExistingGpuHostdevElements(Element devicesElement) {
+        NodeList hostdevNodes = devicesElement.getElementsByTagName("hostdev");
+        List<Node> nodesToRemove = new ArrayList<>();
+
+        for (int i = 0; i < hostdevNodes.getLength(); i++) {
+            Node hostdevNode = hostdevNodes.item(i);
+            if (hostdevNode.getNodeType() == Node.ELEMENT_NODE) {
+                Element hostdevElement = (Element) hostdevNode;
+                String hostdevType = hostdevElement.getAttribute("type");
+
+                // Remove hostdev elements that represent GPU devices (type='pci' or type='mdev')
+                if ("pci".equals(hostdevType) || "mdev".equals(hostdevType)) {
+                    // Additional check: ensure this is actually a GPU device by checking mode='subsystem'
+                    String mode = hostdevElement.getAttribute("mode");
+                    if ("subsystem".equals(mode)) {
+                        nodesToRemove.add(hostdevNode);
+                    }
+                }
+            }
+        }
+
+        // Remove the nodes
+        for (Node node : nodesToRemove) {
+            devicesElement.removeChild(node);
+        }
+
+        logger.debug("Removed {} existing GPU hostdev elements", nodesToRemove.size());
+    }
+
+    /**
+     * Adds new GPU hostdev elements to the devices section based on the GPU devices
+     * allocated on the destination host.
+     */
+    private void addNewGpuHostdevElements(Document document, Element devicesElement, List<VgpuTypesInfo> devices)
+            throws ParserConfigurationException, IOException, SAXException {
+        if (devices.isEmpty()) {
+            return;
+        }
+
+        // Reuse parser for efficiency
+        DocumentBuilderFactory factory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+
+        for (VgpuTypesInfo deviceInfo : devices) {
+            Element hostdevElement = createGpuHostdevElement(document, deviceInfo, builder);
+            devicesElement.appendChild(hostdevElement);
+            logger.debug("Added new GPU hostdev element for device: {} (type: {}, busAddress: {})",
+                         deviceInfo.getDeviceName(), deviceInfo.getDeviceType(), deviceInfo.getBusAddress());
+        }
+    }
+
+    /**
+     * Creates a hostdev element for a GPU device using LibvirtGpuDef.
+     */
+    private Element createGpuHostdevElement(Document document, VgpuTypesInfo deviceInfo, DocumentBuilder builder)
+            throws IOException, SAXException {
+        // Generate GPU XML using LibvirtGpuDef
+        LibvirtGpuDef gpuDef = new LibvirtGpuDef();
+        gpuDef.defGpu(deviceInfo);
+        String gpuXml = gpuDef.toString();
+
+        // Parse and import into target document
+        try (InputStream xmlStream = IOUtils.toInputStream(gpuXml, StandardCharsets.UTF_8)) {
+            Document gpuDocument = builder.parse(xmlStream);
+            Element hostdevElement = gpuDocument.getDocumentElement();
+            return (Element) document.importNode(hostdevElement, true);
+        }
+    }
 
     /**
      * Checks if the CPU shares are equal in the source host and destination host.
@@ -421,7 +605,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         int currentCpuShares = libvirtComputingResource.calculateCpuShares(migrateCommand.getVirtualMachine());
 
         if (newVmCpuShares == currentCpuShares) {
-            s_logger.info(String.format("Current CPU shares [%s] is equal in both hosts; therefore, there is no need to update the CPU shares for the new host.",
+            logger.info(String.format("Current CPU shares [%s] is equal in both hosts; therefore, there is no need to update the CPU shares for the new host.",
                     currentCpuShares));
             return xmlDesc;
         }
@@ -435,10 +619,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         Node sharesNode = root.getElementsByTagName("shares").item(0);
         String currentShares = sharesNode.getTextContent();
 
-        s_logger.info(String.format("VM [%s] will have CPU shares altered from [%s] to [%s] as part of migration because the cgroups version differs between hosts.",
+        logger.info(String.format("VM [%s] will have CPU shares altered from [%s] to [%s] as part of migration because the cgroups version differs between hosts.",
                 migrateCommand.getVmName(), currentShares, newVmCpuShares));
         sharesNode.setTextContent(String.valueOf(newVmCpuShares));
-        return getXml(document);
+        return LibvirtXMLParser.getXml(document);
     }
 
     /**
@@ -508,7 +692,167 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
         }
 
-        return getXml(doc);
+        return LibvirtXMLParser.getXml(doc);
+    }
+
+    // Rewrites Vlan-broadcast nics' bridge/trunk XML for the destination's capability; fails closed if that capability is unknown.
+    protected String replaceVlanTrunkInterfaces(String xmlDesc, MigrateCommand command, LibvirtComputingResource libvirtComputingResource)
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO[] nics = command.getVirtualMachine().getNics();
+        boolean sourceVlanFilteringEnabled = libvirtComputingResource.hostSupportsVlanFiltering();
+        // destination-shared-bridge is also a rewrite trigger: a legacy-source nic's bridge name (breth1-<vid>)
+        // doesn't exist on a shared-bridge destination, needs rewriting to cloudbr1 just as much as the reverse
+        boolean destVlanFilteringEnabled = Boolean.TRUE.equals(command.getDestVlanFilteringEnabled());
+        boolean anyNicNeedsHandling = false;
+        for (NicTO nic : nics) {
+            if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && (sourceVlanFilteringEnabled || destVlanFilteringEnabled || nic.isTrunkVlan())) {
+                failIfBroadcastUriMissing(nic);
+                anyNicNeedsHandling = true;
+            }
+        }
+        if (!anyNicNeedsHandling) {
+            return xmlDesc;
+        }
+
+        InputStream in = IOUtils.toInputStream(xmlDesc);
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(in);
+
+        Node domainNode = doc.getFirstChild();
+        NodeList domainChildNodes = domainNode.getChildNodes();
+        for (int i = 0; i < domainChildNodes.getLength(); i++) {
+            Node domainChildNode = domainChildNodes.item(i);
+            if (!"devices".equals(domainChildNode.getNodeName())) {
+                continue;
+            }
+            NodeList devicesChildNodes = domainChildNode.getChildNodes();
+            for (int x = 0; x < devicesChildNodes.getLength(); x++) {
+                Node deviceChildNode = devicesChildNodes.item(x);
+                if (!"interface".equals(deviceChildNode.getNodeName()) || !(deviceChildNode instanceof Element)) {
+                    continue;
+                }
+                Element interfaceElement = (Element) deviceChildNode;
+                String mac = findInterfaceMacAddress(interfaceElement);
+                NicTO nic = mac == null ? null : findNicByMac(nics, mac);
+                if (nic == null || nic.getBroadcastType() != Networks.BroadcastDomainType.Vlan
+                        || !(sourceVlanFilteringEnabled || destVlanFilteringEnabled || nic.isTrunkVlan())) {
+                    continue;
+                }
+                replaceVlanTrunkInterface(doc, interfaceElement, nic, command);
+            }
+        }
+
+        return LibvirtXMLParser.getXml(doc);
+    }
+
+    // A VLAN nic (or associated network) without a broadcast URI would be migrated onto the destination with no VLAN membership.
+    private void failIfBroadcastUriMissing(NicTO nic) {
+        boolean missing = nic.getBroadcastUri() == null;
+        if (nic.getAssociatedNetworks() != null) {
+            for (NetworkTO associatedNetwork : nic.getAssociatedNetworks()) {
+                missing = missing || associatedNetwork.getBroadcastUri() == null;
+            }
+        }
+        if (missing) {
+            throw new CloudRuntimeException(String.format("Refusing to migrate nic %s: the broadcast URI of its primary or an associated network is not set (reboot the router or stop/start the VM to restore it)", nic.getMac()));
+        }
+    }
+
+    private NicTO findNicByMac(NicTO[] nics, String mac) {
+        for (NicTO nic : nics) {
+            if (mac.equalsIgnoreCase(nic.getMac())) {
+                return nic;
+            }
+        }
+        return null;
+    }
+
+    private String findInterfaceMacAddress(Element interfaceElement) {
+        NodeList children = interfaceElement.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if ("mac".equals(child.getNodeName()) && child.getAttributes() != null) {
+                Node addressAttr = child.getAttributes().getNamedItem("address");
+                if (addressAttr != null) {
+                    return addressAttr.getNodeValue();
+                }
+            }
+        }
+        return null;
+    }
+
+    private void replaceVlanTrunkInterface(Document doc, Element interfaceElement, NicTO nic, MigrateCommand command) {
+        String destBridge = command.getNicBridgeMapping().get(nic.getMac());
+        Boolean destVlanFilteringEnabled = command.getDestVlanFilteringEnabled();
+        Boolean destVlanTrunkXmlSupported = command.getDestVlanTrunkXmlSupported();
+        if (StringUtils.isBlank(destBridge) || destVlanFilteringEnabled == null || destVlanTrunkXmlSupported == null) {
+            throw new CloudRuntimeException(String.format(
+                    "Refusing to migrate nic %s: destination host's multi-VLAN capability is unknown to this migration command", nic.getMac()));
+        }
+
+        NodeList children = interfaceElement.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if ("source".equals(child.getNodeName()) && child.getAttributes() != null) {
+                Node bridgeAttr = child.getAttributes().getNamedItem("bridge");
+                if (bridgeAttr != null) {
+                    bridgeAttr.setNodeValue(destBridge);
+                }
+            }
+        }
+
+        Node existingVlanNode = null;
+        for (int i = 0; i < children.getLength(); i++) {
+            if ("vlan".equals(children.item(i).getNodeName())) {
+                existingVlanNode = children.item(i);
+                break;
+            }
+        }
+        if (existingVlanNode != null) {
+            interfaceElement.removeChild(existingVlanNode);
+        }
+
+        boolean untaggedOrdinaryNic = BridgeVifDriver.isUntaggedBroadcast(nic) && !nic.isTrunkVlan();
+        if (destVlanTrunkXmlSupported && !untaggedOrdinaryNic) {
+            interfaceElement.appendChild(buildVlanTrunkElement(doc, nic));
+        }
+        // else: membership is applied manually on the destination tap instead (ensureVlanTrunkMembership)
+    }
+
+    private Element buildVlanTrunkElement(Document doc, NicTO nic) {
+        Element vlanElement = doc.createElement("vlan");
+        vlanElement.setAttribute("trunk", "yes");
+
+        Integer primaryTag = parseVlanTag(nic.getBroadcastUri());
+        appendVlanTagElement(doc, vlanElement, primaryTag, true);
+        if (nic.getAssociatedNetworks() != null) {
+            for (NetworkTO associatedNetwork : nic.getAssociatedNetworks()) {
+                appendVlanTagElement(doc, vlanElement, parseVlanTag(associatedNetwork.getBroadcastUri()), false);
+            }
+        }
+        return vlanElement;
+    }
+
+    private void appendVlanTagElement(Document doc, Element vlanElement, Integer tag, boolean nativeUntagged) {
+        Element tagElement = doc.createElement("tag");
+        tagElement.setAttribute("id", String.valueOf(tag));
+        if (nativeUntagged) {
+            tagElement.setAttribute("nativeMode", "untagged");
+        }
+        vlanElement.appendChild(tagElement);
+    }
+
+    private Integer parseVlanTag(URI broadcastUri) {
+        String vlanValue = broadcastUri == null ? null : Networks.BroadcastDomainType.getValue(broadcastUri);
+        if (StringUtils.isBlank(vlanValue)) {
+            throw new CloudRuntimeException("Cannot determine VLAN from broadcast URI " + broadcastUri + " while preparing migration XML");
+        }
+        try {
+            return Integer.valueOf(vlanValue);
+        } catch (NumberFormatException e) {
+            throw new CloudRuntimeException("Invalid VLAN value '" + vlanValue + "' in broadcast URI " + broadcastUri);
+        }
     }
 
     /**
@@ -518,7 +862,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     protected void deleteOrDisconnectDisksOnSourcePool(final LibvirtComputingResource libvirtComputingResource, final List<MigrateDiskInfo> migrateDiskInfoList,
             List<DiskDef> disks) {
         for (DiskDef disk : disks) {
-            MigrateDiskInfo migrateDiskInfo = searchDiskDefOnMigrateDiskInfoList(migrateDiskInfoList, disk);
+            MigrateCommand.MigrateDiskInfo migrateDiskInfo = searchDiskDefOnMigrateDiskInfoList(migrateDiskInfoList, disk);
             if (migrateDiskInfo != null && migrateDiskInfo.isSourceDiskOnStorageFileSystem()) {
                 deleteLocalVolume(disk.getDiskPath());
             } else {
@@ -536,7 +880,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             StorageVol storageVolLookupByPath = conn.storageVolLookupByPath(localPath);
             storageVolLookupByPath.delete(0);
         } catch (LibvirtException e) {
-            s_logger.error(String.format("Cannot delete local volume [%s] due to: %s", localPath, e));
+            logger.error(String.format("Cannot delete local volume [%s] due to: %s", localPath, e));
         }
     }
 
@@ -549,7 +893,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 return migrateDiskInfo;
             }
         }
-        s_logger.debug(String.format("Cannot find Disk [uuid: %s] on the list of disks to be migrated", disk.getDiskPath()));
+        logger.debug(String.format("Cannot find Disk [uuid: %s] on the list of disks to be migrated", disk.getDiskPath()));
         return null;
     }
 
@@ -576,9 +920,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     graphElem = graphElem.replaceAll("passwd='([^\\s]+)'", "passwd='" + vncPassword + "'");
                 }
                 xmlDesc = xmlDesc.replaceAll(GRAPHICS_ELEM_START + CONTENTS_WILDCARD + GRAPHICS_ELEM_END, graphElem);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Replaced the VNC IP address [%s] with [%s] in VM [%s].", originalGraphElem, graphElem, vmName));
-                }
+                logger.debug("Replaced the VNC IP address {} with {} in VM {}.", maskSensitiveInfoInXML(originalGraphElem), maskSensitiveInfoInXML(graphElem), vmName);
             }
         }
         return xmlDesc;
@@ -637,7 +979,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                             for (int z = 0; z < diskChildNodes.getLength(); z++) {
                                 Node diskChildNode = diskChildNodes.item(z);
 
-                                if (migrateStorageManaged && "driver".equals(diskChildNode.getNodeName())) {
+                                boolean shouldUpdateDriverType = shouldUpdateDriverTypeForMigration(
+                                    migrateStorageManaged, migrateDiskInfo);
+
+                                if (shouldUpdateDriverType && "driver".equals(diskChildNode.getNodeName())) {
                                     Node driverNode = diskChildNode;
 
                                     NamedNodeMap driverNodeAttributes = driverNode.getAttributes();
@@ -683,7 +1028,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
         }
 
-        return getXml(doc);
+        return LibvirtXMLParser.getXml(doc);
     }
 
     private  String getOldVolumePath(List<DiskDef> disks, String vmName) {
@@ -775,8 +1120,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                                     Element newChildSourceNode = doc.createElement("source");
                                     newChildSourceNode.setAttribute("file", newIsoVolumePath);
                                     diskNode.appendChild(newChildSourceNode);
-                                    s_logger.debug(String.format("Replaced ISO path [%s] with [%s] in VM [%s] XML configuration.", oldIsoVolumePath, newIsoVolumePath, vmName));
-                                    return getXml(doc);
+                                    logger.debug(String.format("Replaced ISO path [%s] with [%s] in VM [%s] XML configuration.", oldIsoVolumePath, newIsoVolumePath, vmName));
+                                    return LibvirtXMLParser.getXml(doc);
                                 }
                             }
                         }
@@ -785,7 +1130,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
         }
 
-        return getXml(doc);
+        return LibvirtXMLParser.getXml(doc);
     }
 
     private String getPathFromSourceText(Set<String> paths, String sourceText) {
@@ -840,20 +1185,6 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         return null;
     }
 
-    private String getXml(Document doc) throws TransformerException {
-        TransformerFactory transformerFactory = ParserUtils.getSaferTransformerFactory();
-        Transformer transformer = transformerFactory.newTransformer();
-
-        DOMSource source = new DOMSource(doc);
-
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        StreamResult result = new StreamResult(byteArrayOutputStream);
-
-        transformer.transform(source, result);
-
-        return byteArrayOutputStream.toString();
-    }
-
     private String replaceDiskSourceFile(String xmlDesc, String isoPath, String vmName) throws IOException, SAXException, ParserConfigurationException, TransformerException {
         InputStream in = IOUtils.toInputStream(xmlDesc);
 
@@ -876,7 +1207,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 }
             }
         }
-        return getXml(doc);
+        return LibvirtXMLParser.getXml(doc);
     }
 
     private boolean findDiskNode(Document doc, NodeList devicesChildNodes, String vmName, String isoPath) {
@@ -900,7 +1231,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 Node sourceNode = diskChildNode;
                 NamedNodeMap sourceNodeAttributes = sourceNode.getAttributes();
                 Node sourceNodeAttribute = sourceNodeAttributes.getNamedItem("file");
-                if ( sourceNodeAttribute.getNodeValue().contains(vmName)) {
+                if (sourceNodeAttribute != null && sourceNodeAttribute.getNodeValue().contains(vmName)) {
                     diskNode.removeChild(diskChildNode);
                     Element newChildSourceNode = doc.createElement("source");
                     newChildSourceNode.setAttribute("file", isoPath);
@@ -910,5 +1241,71 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
         }
         return false;
+    }
+
+    public static String maskSensitiveInfoInXML(String xmlDesc) {
+        if (xmlDesc == null) return null;
+        return xmlDesc.replaceAll("(graphics\\s+[^>]*type=['\"]vnc['\"][^>]*passwd=['\"])([^'\"]*)(['\"])",
+                "$1*****$3");
+    }
+
+    /**
+     * Checks if any of the destination disks in the migration target a CLVM or CLVM_NG storage pool.
+     * This is used to determine if incremental migration should be disabled to avoid libvirt
+     * precreate errors with QCOW2-on-LVM setups.
+     *
+     * @param mapMigrateStorage the map containing migration disk information with destination pool types
+     * @return true if any destination disk targets CLVM or CLVM_NG, false otherwise
+     */
+    protected boolean hasClvmDestinationDisks(Map<String, MigrateCommand.MigrateDiskInfo> mapMigrateStorage) {
+        if (MapUtils.isEmpty(mapMigrateStorage)) {
+            return false;
+        }
+
+        try {
+            for (Map.Entry<String, MigrateCommand.MigrateDiskInfo> entry : mapMigrateStorage.entrySet()) {
+                MigrateCommand.MigrateDiskInfo diskInfo = entry.getValue();
+               if (isClvmBlockDevice(diskInfo)) {
+                    logger.debug("Found disk targeting CLVM/CLVM_NG destination pool");
+                    return true;
+               }
+            }
+        } catch (final Exception e) {
+            logger.debug("Failed to check for CLVM destination disks: {}. Assuming no CLVM disks.", e.getMessage());
+        }
+
+        return false;
+    }
+
+    private boolean isClvmBlockDevice(MigrateCommand.MigrateDiskInfo diskInfo) {
+        if (diskInfo == null ||diskInfo.getDestPoolType() == null) {
+            return false;
+        }
+        return (Storage.StoragePoolType.CLVM.equals(diskInfo.getDestPoolType()) || Storage.StoragePoolType.CLVM_NG.equals(diskInfo.getDestPoolType()));
+    }
+
+    /**
+     * Determines if the driver type should be updated during migration based on CLVM involvement.
+     * The driver type needs to be updated when:
+     * - Managed storage is being migrated, OR
+     * - Source pool is CLVM or CLVM_NG, OR
+     * - Destination pool is CLVM or CLVM_NG
+     *
+     * This ensures the libvirt XML driver type matches the destination format (raw/qcow2/etc).
+     *
+     * @param migrateStorageManaged true if migrating managed storage
+     * @param migrateDiskInfo the migration disk information containing source and destination pool types
+     * @return true if driver type should be updated, false otherwise
+     */
+    private boolean shouldUpdateDriverTypeForMigration(boolean migrateStorageManaged,
+                                                        MigrateCommand.MigrateDiskInfo migrateDiskInfo) {
+        boolean sourceIsClvm = Storage.StoragePoolType.CLVM == migrateDiskInfo.getSourcePoolType() ||
+                Storage.StoragePoolType.CLVM_NG == migrateDiskInfo.getSourcePoolType();
+
+        boolean destIsClvm = Storage.StoragePoolType.CLVM == migrateDiskInfo.getDestPoolType() ||
+                Storage.StoragePoolType.CLVM_NG == migrateDiskInfo.getDestPoolType();
+
+        boolean isClvmRelatedMigration = sourceIsClvm || destIsClvm;
+        return migrateStorageManaged || isClvmRelatedMigration;
     }
 }

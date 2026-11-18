@@ -22,11 +22,11 @@ import com.google.gson.annotations.SerializedName;
 public abstract class BaseResponseWithAssociatedNetwork extends BaseResponseWithAnnotations {
 
     @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID)
-    @Param(description = "the ID of the Network associated with this private gateway")
+    @Param(description = "The ID of the Network associated with this private gateway")
     private String associatedNetworkId;
 
     @SerializedName(ApiConstants.ASSOCIATED_NETWORK)
-    @Param(description = "the name of the Network associated with this private gateway")
+    @Param(description = "The name of the Network associated with this private gateway")
     private String associatedNetworkName;
 
     public void setAssociatedNetworkId(String associatedNetworkId) {

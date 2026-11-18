@@ -18,8 +18,9 @@ package com.cloud.storage.upload;
 
 import java.util.Date;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.storage.UploadAnswer;
 
@@ -29,7 +30,7 @@ public abstract class UploadState {
         UPLOAD_ANSWER, ABANDON_UPLOAD, TIMEOUT_CHECK, DISCONNECT
     };
 
-    protected static final Logger s_logger = Logger.getLogger(UploadState.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private UploadListener ul;
 
@@ -42,7 +43,7 @@ public abstract class UploadState {
     }
 
     public String handleEvent(UploadEvent event, Object eventObj) {
-        if (s_logger.isTraceEnabled()) {
+        if (logger.isTraceEnabled()) {
             getUploadListener().log("handleEvent, event type=" + event + ", curr state=" + getName(), Level.TRACE);
         }
         switch (event) {
@@ -62,7 +63,7 @@ public abstract class UploadState {
     }
 
     public void onEntry(String prevState, UploadEvent event, Object evtObj) {
-        if (s_logger.isTraceEnabled()) {
+        if (logger.isTraceEnabled()) {
             getUploadListener().log("onEntry, event type=" + event + ", curr state=" + getName(), Level.TRACE);
         }
         if (event == UploadEvent.UPLOAD_ANSWER) {

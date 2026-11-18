@@ -41,6 +41,7 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.ConvertSnapshotCommand;
 import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
@@ -53,8 +54,6 @@ import org.apache.cloudstack.storage.formatinspector.Qcow2HeaderField;
 import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
 import org.apache.cloudstack.utils.security.ChecksumValue;
 import org.apache.cloudstack.utils.security.DigestHelper;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -87,15 +86,20 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.VhdProcessor;
 import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Proxy;
-import com.cloud.utils.script.Script;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.script.Script;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class DownloadManagerImpl extends ManagerBase implements DownloadManager {
+    protected static Logger LOGGER = LogManager.getLogger(DownloadManagerImpl.class);
     private String _name;
     StorageLayer _storage;
     public Map<String, Processor> _processors;
@@ -252,7 +256,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
     }
 
-    public static final Logger LOGGER = Logger.getLogger(DownloadManagerImpl.class);
     private String _templateDir;
     private String _volumeDir;
     private String createTmpltScr;
@@ -285,12 +288,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     public void setDownloadStatus(String jobId, Status status) {
         DownloadJob dj = jobs.get(jobId);
         if (dj == null) {
-            LOGGER.warn("setDownloadStatus for jobId: " + jobId + ", status=" + status + " no job found");
+            logger.warn("setDownloadStatus for jobId: " + jobId + ", status=" + status + " no job found");
             return;
         }
         TemplateDownloader td = dj.getTemplateDownloader();
-        LOGGER.info("Download Completion for jobId: " + jobId + ", status=" + status);
-        LOGGER.info("local: " + td.getDownloadLocalPath() + ", bytes=" + toHumanReadableSize(td.getDownloadedBytes()) + ", error=" + td.getDownloadError() + ", pct=" +
+        logger.info("Download Completion for jobId: " + jobId + ", status=" + status);
+        logger.info("local: " + td.getDownloadLocalPath() + ", bytes=" + toHumanReadableSize(td.getDownloadedBytes()) + ", error=" + td.getDownloadError() + ", pct=" +
                 td.getDownloadPercent());
 
         switch (status) {
@@ -303,7 +306,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         case UNKNOWN:
             return;
         case IN_PROGRESS:
-            LOGGER.info("Resuming jobId: " + jobId + ", status=" + status);
+            logger.info("Resuming jobId: " + jobId + ", status=" + status);
             td.setResume(true);
             threadPool.execute(td);
             break;
@@ -318,7 +321,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 td.setDownloadError("Download success, starting install ");
                 String result = postRemoteDownload(jobId);
                 if (result != null) {
-                    LOGGER.error("Failed post download install: " + result);
+                    logger.error("Failed post download install: " + result);
                     td.setStatus(Status.UNRECOVERABLE_ERROR);
                     td.setDownloadError("Failed post download install: " + result);
                     ((S3TemplateDownloader) td).cleanupAfterError();
@@ -332,7 +335,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 td.setDownloadError("Download success, starting install ");
                 String result = postLocalDownload(jobId);
                 if (result != null) {
-                    LOGGER.error("Failed post download script: " + result);
+                    logger.error("Failed post download script: " + result);
                     td.setStatus(Status.UNRECOVERABLE_ERROR);
                     td.setDownloadError("Failed post download script: " + result);
                 } else {
@@ -406,6 +409,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
         String[] items = uri.getPath().split("/");
         name = items[items.length - 1];
+        name = name.replace(ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME, "");
         if (items.length < 2) {
             return name;
         }
@@ -503,8 +507,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String finalResourcePath = dnld.getTmpltPath(); // template download path on secondary storage
         File originalTemplate = new File(td.getDownloadLocalPath());
         if(StringUtils.isBlank(dnld.getChecksum())) {
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("No checksum available for '%s'", originalTemplate.getName()));
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("No checksum available for '%s'", originalTemplate.getName()));
             }
         }
         // check or create checksum
@@ -544,7 +548,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         try {
             loc.create(dnld.getId(), true, dnld.getTmpltName());
         } catch (IOException e) {
-            LOGGER.warn("Something is wrong with template location " + resourcePath, e);
+            logger.warn("Something is wrong with Template location " + resourcePath, e);
             loc.purge();
             return "Unable to download due to " + e.getMessage();
         }
@@ -564,7 +568,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         long timeout = (long)imgSizeGigs * installTimeoutPerGig;
         Script scr = null;
         String script = resourceType == ResourceType.TEMPLATE ? createTmpltScr : createVolScr;
-        scr = new Script(script, timeout, LOGGER);
+        scr = new Script(script, timeout, logger);
         scr.add("-s", Integer.toString(imgSizeGigs));
         scr.add("-S", Long.toString(td.getMaxTemplateSizeInBytes()));
         if (dnld.getDescription() != null && dnld.getDescription().length() > 1) {
@@ -592,7 +596,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         if (extension.equals("iso")) {
             templateName = jobs.get(jobId).getTmpltName().trim().replace(" ", "_");
         } else {
-            templateName = UUID.nameUUIDFromBytes((jobs.get(jobId).getTmpltName() + System.currentTimeMillis()).getBytes(com.cloud.utils.StringUtils.getPreferredCharset())).toString();
+            templateName = UuidUtils.nameUUIDFromBytes((jobs.get(jobId).getTmpltName() + System.currentTimeMillis()).getBytes(com.cloud.utils.StringUtils.getPreferredCharset())).toString();
         }
         return templateName;
     }
@@ -617,8 +621,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         ChecksumValue newValue = null;
         try {
             newValue = computeCheckSum(oldValue.getAlgorithm(), targetFile);
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("computed checksum: %s", newValue));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("computed checksum: %s", newValue));
             }
         } catch (NoSuchAlgorithmException e) {
             return "checksum algorithm not recognised: " + oldValue.getAlgorithm();
@@ -628,7 +632,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
         String checksum = newValue.toString();
         if (checksum == null) {
-            LOGGER.warn("Something wrong happened when try to calculate the checksum of downloaded template!");
+            logger.warn("Something wrong happened when try to calculate the checksum of downloaded Template!");
         }
         dnld.setCheckSum(checksum);
         return null;
@@ -643,7 +647,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             try {
                 info = processor.process(resourcePath, null, templateName, this._processTimeout);
             } catch (InternalErrorException e) {
-                LOGGER.error("Template process exception ", e);
+                logger.error("Template process exception ", e);
                 return e.toString();
             }
             if (info != null) {
@@ -661,7 +665,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
 
         if (!loc.save()) {
-            LOGGER.warn("Cleaning up because we're unable to save the formats");
+            logger.warn("Cleaning up because we're unable to save the formats");
             loc.purge();
         }
 
@@ -714,7 +718,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
     private String createTempDirAndPropertiesFile(ResourceType resourceType, String tmpDir) throws IOException {
         if (!_storage.mkdirs(tmpDir)) {
-            LOGGER.warn("Unable to create " + tmpDir);
+            logger.warn("Unable to create " + tmpDir);
             return "Unable to create " + tmpDir;
         }
         if (ResourceType.SNAPSHOT.equals(resourceType)) {
@@ -727,12 +731,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                         _storage.getFile(tmpDir + File.separator + "volume.properties");
         if (file.exists()) {
             if(! file.delete()) {
-                LOGGER.warn("Deletion of file '" + file.getAbsolutePath() + "' failed.");
+                logger.warn("Deletion of file '" + file.getAbsolutePath() + "' failed.");
             }
         }
 
         if (!file.createNewFile()) {
-            LOGGER.warn("Unable to create new file: " + file.getAbsolutePath());
+            logger.warn("Unable to create new file: " + file.getAbsolutePath());
             return "Unable to create new file: " + file.getAbsolutePath();
         }
         return null;
@@ -802,7 +806,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
             return jobId;
         } catch (IOException e) {
-            LOGGER.warn("Unable to download to " + tmpDir, e);
+            logger.warn("Unable to download to " + tmpDir, e);
             return null;
         }
     }
@@ -995,7 +999,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             break; // TODO
         }
         return new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId), getInstallPath(jobId),
-                getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId), getDownloadCheckSum(jobId));
+                getDownloadTemplateSize(jobId), td.getDownloadedBytes(), getDownloadCheckSum(jobId));
     }
 
     private String getInstallPath(String jobId) {
@@ -1009,32 +1013,32 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     private List<String> listVolumes(String rootdir) {
         List<String> result = new ArrayList<String>();
 
-        Script script = new Script(listVolScr, LOGGER);
+        Script script = new Script(listVolScr, logger);
         script.add("-r", rootdir);
         PathParser zpp = new PathParser(rootdir);
         script.execute(zpp);
         if (script.getExitValue() != 0) {
-            LOGGER.error("Error while executing script " + script.toString());
+            logger.error("Error while executing script " + script.toString());
             throw new CloudRuntimeException("Error while executing script " + script.toString());
         }
         result.addAll(zpp.getPaths());
-        LOGGER.info("found " + zpp.getPaths().size() + " volumes" + zpp.getPaths());
+        logger.info("found " + zpp.getPaths().size() + " volumes" + zpp.getPaths());
         return result;
     }
 
     private List<String> listTemplates(String rootdir) {
         List<String> result = new ArrayList<String>();
 
-        Script script = new Script(listTmpltScr, LOGGER);
+        Script script = new Script(listTmpltScr, logger);
         script.add("-r", rootdir);
         PathParser zpp = new PathParser(rootdir);
         script.execute(zpp);
         if (script.getExitValue() != 0) {
-            LOGGER.error("Error while executing script " + script.toString());
+            logger.error("Error while executing script " + script.toString());
             throw new CloudRuntimeException("Error while executing script " + script.toString());
         }
         result.addAll(zpp.getPaths());
-        LOGGER.info("found " + zpp.getPaths().size() + " templates" + zpp.getPaths());
+        logger.info("Found " + zpp.getPaths().size() + " Templates" + zpp.getPaths());
         return result;
     }
 
@@ -1053,13 +1057,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             TemplateLocation loc = new TemplateLocation(_storage, path);
             try {
                 if (!loc.load()) {
-                    LOGGER.warn("Post download installation was not completed for " + path);
-                    // loc.purge();
+                    logger.warn("Post download installation was not completed for " + path);
                     _storage.cleanup(path, templateDir);
                     continue;
                 }
             } catch (IOException e) {
-                LOGGER.warn("Unable to load template location " + path, e);
+                logger.warn("Unable to load Template location " + path, e);
                 continue;
             }
 
@@ -1074,12 +1077,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     loc.updateVirtualSize(vSize);
                     loc.save();
                 } catch (Exception e) {
-                    LOGGER.error("Unable to get the virtual size of the template: " + tInfo.getInstallPath() + " due to " + e.getMessage());
+                    logger.error("Unable to get the virtual size of the Template: " + tInfo.getInstallPath() + " due to " + e.getMessage());
                 }
             }
 
             result.put(tInfo.getTemplateName(), tInfo);
-            LOGGER.debug("Added template name: " + tInfo.getTemplateName() + ", path: " + tmplt);
+            logger.debug("Added Template name: " + tInfo.getTemplateName() + ", path: " + tmplt);
         }
         return result;
     }
@@ -1099,13 +1102,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             TemplateLocation loc = new TemplateLocation(_storage, path);
             try {
                 if (!loc.load()) {
-                    LOGGER.warn("Post download installation was not completed for " + path);
-                    // loc.purge();
+                    logger.warn("Post download installation was not completed for " + path);
                     _storage.cleanup(path, volumeDir);
                     continue;
                 }
             } catch (IOException e) {
-                LOGGER.warn("Unable to load volume location " + path, e);
+                logger.warn("Unable to load volume location " + path, e);
                 continue;
             }
 
@@ -1120,12 +1122,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     loc.updateVirtualSize(vSize);
                     loc.save();
                 } catch (Exception e) {
-                    LOGGER.error("Unable to get the virtual size of the volume: " + vInfo.getInstallPath() + " due to " + e.getMessage());
+                    logger.error("Unable to get the virtual size of the volume: " + vInfo.getInstallPath() + " due to " + e.getMessage());
                 }
             }
 
             result.put(vInfo.getId(), vInfo);
-            LOGGER.debug("Added volume name: " + vInfo.getTemplateName() + ", path: " + vol);
+            logger.debug("Added volume name: " + vInfo.getTemplateName() + ", path: " + vol);
         }
         return result;
     }
@@ -1162,7 +1164,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         String inSystemVM = (String)params.get("secondary.storage.vm");
         if (inSystemVM != null && "true".equalsIgnoreCase(inSystemVM)) {
-            LOGGER.info("DownloadManager: starting additional services since we are inside system vm");
+            logger.info("DownloadManager: starting additional services since we are inside system vm");
             _nfsVersion = NfsSecondaryStorageResource.retrieveNfsVersionFromParams(params);
             startAdditionalServices();
             blockOutgoingOnPrivate();
@@ -1183,25 +1185,25 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         if (listTmpltScr == null) {
             throw new ConfigurationException("Unable to find the listvmtmplt.sh");
         }
-        LOGGER.info("listvmtmplt.sh found in " + listTmpltScr);
+        logger.info("listvmtmplt.sh found in " + listTmpltScr);
 
         createTmpltScr = Script.findScript(scriptsDir, "createtmplt.sh");
         if (createTmpltScr == null) {
             throw new ConfigurationException("Unable to find createtmplt.sh");
         }
-        LOGGER.info("createtmplt.sh found in " + createTmpltScr);
+        logger.info("createtmplt.sh found in " + createTmpltScr);
 
         listVolScr = Script.findScript(scriptsDir, "listvolume.sh");
         if (listVolScr == null) {
             throw new ConfigurationException("Unable to find the listvolume.sh");
         }
-        LOGGER.info("listvolume.sh found in " + listVolScr);
+        logger.info("listvolume.sh found in " + listVolScr);
 
         createVolScr = Script.findScript(scriptsDir, "createvolume.sh");
         if (createVolScr == null) {
             throw new ConfigurationException("Unable to find createvolume.sh");
         }
-        LOGGER.info("createvolume.sh found in " + createVolScr);
+        logger.info("createvolume.sh found in " + createVolScr);
 
         _processors = new HashMap<String, Processor>();
 
@@ -1271,12 +1273,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     private void startAdditionalServices() {
-        Script command = new Script("/bin/systemctl", LOGGER);
+        Script command = new Script("/bin/systemctl", logger);
         command.add("stop");
         command.add("apache2");
         String result = command.execute();
         if (result != null) {
-            LOGGER.warn("Error in stopping httpd service err=" + result);
+            logger.warn("Error in stopping httpd service err=" + result);
         }
 
         result = IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN
@@ -1294,16 +1296,16 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             return;
         }
 
-        command = new Script("/bin/systemctl", LOGGER);
+        command = new Script("/bin/systemctl", logger);
         command.add("start");
         command.add("apache2");
         result = command.execute();
         if (result != null) {
-            LOGGER.warn("Error in starting apache2 service err=" + result);
+            logger.warn("Error in starting apache2 service err=" + result);
             return;
         }
 
-        command = new Script("/bin/su", LOGGER);
+        command = new Script("/bin/su", logger);
         command.add("-s");
         command.add("/bin/bash");
         command.add("-c");
@@ -1311,7 +1313,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         command.add("www-data");
         result = command.execute();
         if (result != null) {
-            LOGGER.warn("Error in creating directory =" + result);
+            logger.warn("Error in creating directory =" + result);
             return;
         }
     }

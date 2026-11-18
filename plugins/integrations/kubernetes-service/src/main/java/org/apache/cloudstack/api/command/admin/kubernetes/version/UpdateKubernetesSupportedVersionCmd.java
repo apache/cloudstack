@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
@@ -45,7 +44,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         entityType = {KubernetesSupportedVersion.class},
         authorized = {RoleType.Admin})
 public class UpdateKubernetesSupportedVersionCmd extends BaseCmd implements AdminCmd {
-    public static final Logger LOGGER = Logger.getLogger(UpdateKubernetesSupportedVersionCmd.class.getName());
 
     @Inject
     private KubernetesVersionService kubernetesVersionService;
@@ -55,12 +53,12 @@ public class UpdateKubernetesSupportedVersionCmd extends BaseCmd implements Admi
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID,
             entityType = KubernetesSupportedVersionResponse.class,
-            description = "the ID of the Kubernetes supported version",
+            description = "The ID of the Kubernetes supported version",
             required = true)
     private Long id;
 
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING,
-            description = "the enabled or disabled state of the Kubernetes supported version",
+            description = "The enabled or disabled state of the Kubernetes supported version",
             required = true)
     private String state;
 

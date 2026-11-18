@@ -28,7 +28,10 @@ from marvin.lib.base import (Account,
                              SecurityGroup,
                              Router,
                              Host,
-                             Network)
+                             Network,
+                             PhysicalNetwork,
+                             TrafficType,
+                             NetworkServiceProvider)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
@@ -73,6 +76,26 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        if cls.zone.securitygroupsenabled is False:
+            physical_networks = PhysicalNetwork.list(cls.api_client, zoneid=cls.zone.id)
+            selected_physical_network = None
+            for net in physical_networks:
+                traffic_types = TrafficType.list(cls.api_client, physicalnetworkid=net.id)
+                for traffic_type in traffic_types:
+                    if traffic_type.traffictype == 'Guest':
+                        selected_physical_network = net
+                        break
+                if selected_physical_network is not None:
+                    break
+            if selected_physical_network is None:
+                raise Exception("No physical network found with guest traffic type")
+
+            # Enable security group provider for physical network
+            nsps = NetworkServiceProvider.list(cls.api_client, physicalnetworkid=selected_physical_network.id, name='SecurityGroupProvider')
+            if len(nsps) == 0:
+                raise Exception("No security group provider found for physical network")
+            NetworkServiceProvider.update(cls.api_client, nsps[0].id, state='Enabled')
+
         cls.testdata['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -115,7 +138,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
 
         return
 
-    @attr(tags=["sg", "basic", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg", "advanced"])
     def test_01_deployVM_InDefaultSecurityGroup(self):
         """Test deploy VM in default security group
         """
@@ -193,7 +216,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["sg", "basic", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg", "advanced"])
     def test_02_listSecurityGroups(self):
         """Test list security groups for admin account
         """
@@ -204,31 +227,31 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         #    for the admin account
         # 3. No Ingress Rules should be part of the default security group
 
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
             self.apiclient,
             account=self.account.name,
             domainid=self.account.domainid
         )
         self.assertEqual(
-            isinstance(sercurity_groups, list),
+            isinstance(security_groups, list),
             True,
             "Check for list security groups response"
         )
         self.assertNotEqual(
-            len(sercurity_groups),
+            len(security_groups),
             0,
             "Check List Security groups response"
         )
         self.debug("List Security groups response: %s" %
-                   str(sercurity_groups))
+                   str(security_groups))
         self.assertEqual(
-            hasattr(sercurity_groups, 'ingressrule'),
+            hasattr(security_groups, 'ingressrule'),
             False,
             "Check ingress rule attribute for default security group"
         )
         return
 
-    @attr(tags=["sg", "basic", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg", "advanced"])
     def test_03_accessInDefaultSecurityGroup(self):
         """Test access in default security group
         """
@@ -283,26 +306,26 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
             "Check virtual machine displayname in listVirtualMachines"
         )
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
             self.apiclient,
             account=self.account.name,
             domainid=self.account.domainid
         )
         self.assertEqual(
-            isinstance(sercurity_groups, list),
+            isinstance(security_groups, list),
             True,
             "Check for list security groups response"
         )
 
         self.debug("List Security groups response: %s" %
-                   str(sercurity_groups))
+                   str(security_groups))
         self.assertNotEqual(
-            len(sercurity_groups),
+            len(security_groups),
             0,
             "Check List Security groups response"
         )
         self.assertEqual(
-            hasattr(sercurity_groups, 'ingressrule'),
+            hasattr(security_groups, 'ingressrule'),
             False,
             "Check ingress rule attribute for default security group"
         )
@@ -314,7 +337,8 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
                 self.virtual_machine.ssh_ip,
                 self.virtual_machine.ssh_port,
                 self.virtual_machine.username,
-                self.virtual_machine.password
+                self.virtual_machine.password,
+                retries=5
             )
         return
 
@@ -408,19 +432,19 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
         )
         self.debug("Created security group with ID: %s" % security_group.id)
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
             self.apiclient,
             account=self.account.name,
             domainid=self.account.domainid
         )
         self.assertEqual(
-            isinstance(sercurity_groups, list),
+            isinstance(security_groups, list),
             True,
             "Check for list security groups response"
         )
 
         self.assertEqual(
-            len(sercurity_groups),
+            len(security_groups),
             2,
             "Check List Security groups response"
         )
@@ -453,7 +477,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
         # Should be able to SSH VM
         try:
             self.debug("SSH into VM: %s" % self.virtual_machine.id)
-            self.virtual_machine.get_ssh_client()
+            self.virtual_machine.get_ssh_client(retries=5)
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
                       (self.virtual_machine.ipaddress, e)
@@ -556,19 +580,19 @@ class TestRevokeIngressRule(cloudstackTestCase):
         self.debug("Created security group with ID: %s" % security_group.id)
 
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
             self.apiclient,
             account=self.account.name,
             domainid=self.account.domainid
         )
         self.assertEqual(
-            isinstance(sercurity_groups, list),
+            isinstance(security_groups, list),
             True,
             "Check for list security groups response"
         )
 
         self.assertEqual(
-            len(sercurity_groups),
+            len(security_groups),
             2,
             "Check List Security groups response"
         )
@@ -604,7 +628,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
         # Should be able to SSH VM
         try:
             self.debug("SSH into VM: %s" % self.virtual_machine.id)
-            self.virtual_machine.get_ssh_client()
+            self.virtual_machine.get_ssh_client(retries=5)
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
                       (self.virtual_machine.ipaddress, e)
@@ -885,18 +909,18 @@ class TestdeployVMWithUserData(cloudstackTestCase):
         )
         self.debug("Created security group with ID: %s" % security_group.id)
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
             self.apiclient,
             account=self.account.name,
             domainid=self.account.domainid
         )
         self.assertEqual(
-            isinstance(sercurity_groups, list),
+            isinstance(security_groups, list),
             True,
             "Check for list security groups response"
         )
         self.assertEqual(
-            len(sercurity_groups),
+            len(security_groups),
             2,
             "Check List Security groups response"
         )
@@ -937,7 +961,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
                 % self.virtual_machine.ssh_ip
             )
 
-            ssh = self.virtual_machine.get_ssh_client()
+            ssh = self.virtual_machine.get_ssh_client(retries=5)
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
                       (self.virtual_machine.ipaddress, e)
@@ -1048,19 +1072,19 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         )
         self.debug("Created security group with ID: %s" % security_group.id)
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
             self.apiclient,
             account=self.account.name,
             domainid=self.account.domainid
         )
         self.assertEqual(
-            isinstance(sercurity_groups, list),
+            isinstance(security_groups, list),
             True,
             "Check for list security groups response"
         )
 
         self.assertEqual(
-            len(sercurity_groups),
+            len(security_groups),
             2,
             "Check List Security groups response"
         )
@@ -1102,12 +1126,12 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         time.sleep(self.testdata["sleep"])
 
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
             self.apiclient,
             id=security_group.id
         )
         self.assertNotEqual(
-            sercurity_groups,
+            security_groups,
             None,
             "Check List Security groups response"
         )
@@ -1132,18 +1156,18 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         )
         self.debug("Created security group with ID: %s" % security_group.id)
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
             self.apiclient,
             account=self.account.name,
             domainid=self.account.domainid
         )
         self.assertEqual(
-            isinstance(sercurity_groups, list),
+            isinstance(security_groups, list),
             True,
             "Check for list security groups response"
         )
         self.assertEqual(
-            len(sercurity_groups),
+            len(security_groups),
             2,
             "Check List Security groups response"
         )
@@ -1279,18 +1303,18 @@ class TestIngressRule(cloudstackTestCase):
         )
         self.debug("Created security group with ID: %s" % security_group.id)
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
             self.apiclient,
             account=self.account.name,
             domainid=self.account.domainid
         )
         self.assertEqual(
-            isinstance(sercurity_groups, list),
+            isinstance(security_groups, list),
             True,
             "Check for list security groups response"
         )
         self.assertEqual(
-            len(sercurity_groups),
+            len(security_groups),
             2,
             "Check List Security groups response"
         )
@@ -1348,7 +1372,7 @@ class TestIngressRule(cloudstackTestCase):
                 self.virtual_machine.ssh_ip,
                 self.testdata["ingress_rule"]["endport"]
             ))
-            self.virtual_machine.get_ssh_client()
+            self.virtual_machine.get_ssh_client(retries=5)
 
         except Exception as e:
             self.fail("SSH access failed for ingress rule ID: %s, %s"
@@ -1401,18 +1425,18 @@ class TestIngressRule(cloudstackTestCase):
         self.debug("Created security group with ID: %s" % security_group.id)
 
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
             self.apiclient,
             account=self.account.name,
             domainid=self.account.domainid
         )
         self.assertEqual(
-            isinstance(sercurity_groups, list),
+            isinstance(security_groups, list),
             True,
             "Check for list security groups response"
         )
         self.assertEqual(
-            len(sercurity_groups),
+            len(security_groups),
             2,
             "Check List Security groups response"
         )
@@ -1476,7 +1500,7 @@ class TestIngressRule(cloudstackTestCase):
                 self.virtual_machine.ssh_ip,
                 self.testdata["ingress_rule"]["endport"]
             ))
-            self.virtual_machine.get_ssh_client()
+            self.virtual_machine.get_ssh_client(retries=5)
 
         except Exception as e:
             self.fail("SSH access failed for ingress rule ID: %s, %s"
@@ -1570,19 +1594,19 @@ class TestIngressRule(cloudstackTestCase):
         )
         self.debug("Created security group with ID: %s" % security_group.id)
         # Default Security group should not have any ingress rule
-        sercurity_groups = SecurityGroup.list(
+        security_groups = SecurityGroup.list(
             self.apiclient,
             account=self.account.name,
             domainid=self.account.domainid
         )
         self.assertEqual(
-            isinstance(sercurity_groups, list),
+            isinstance(security_groups, list),
             True,
             "Check for list security groups response"
         )
 
         self.assertEqual(
-            len(sercurity_groups),
+            len(security_groups),
             2,
             "Check List Security groups response"
         )
@@ -1623,7 +1647,7 @@ class TestIngressRule(cloudstackTestCase):
             self.debug(
                 "Trying to SSH into VM %s" %
                 self.virtual_machine.ssh_ip)
-            self.virtual_machine.get_ssh_client()
+            self.virtual_machine.get_ssh_client(retries=5)
         except Exception as e:
             self.fail("SSH access failed for ingress rule ID: %s"
                       % ingress_rule["id"]
@@ -1642,7 +1666,7 @@ class TestIngressRule(cloudstackTestCase):
             self.debug(
                 "Trying to SSH into VM %s" %
                 self.virtual_machine.ssh_ip)
-            self.virtual_machine.get_ssh_client()
+            self.virtual_machine.get_ssh_client(retries=5)
         except Exception as e:
             self.fail("SSH access failed for ingress rule ID: %s"
                       % ingress_rule["id"]

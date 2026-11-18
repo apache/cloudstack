@@ -19,7 +19,6 @@ package org.apache.cloudstack.network.dao;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.network.NetworkPermissionVO;
@@ -31,7 +30,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class NetworkPermissionDaoImpl extends GenericDaoBase<NetworkPermissionVO, Long> implements NetworkPermissionDao {
-    private static final Logger s_logger = Logger.getLogger(NetworkPermissionDaoImpl.class);
 
     private SearchBuilder<NetworkPermissionVO> NetworkAndAccountSearch;
     private SearchBuilder<NetworkPermissionVO> NetworkIdSearch;
@@ -82,7 +80,7 @@ public class NetworkPermissionDaoImpl extends GenericDaoBase<NetworkPermissionVO
         sc.setParameters("accountId", accountId);
         int networkPermissionRemoved = expunge(sc);
         if (networkPermissionRemoved > 0) {
-            s_logger.debug(String.format("Removed [%s] network permission(s) for the account with Id [%s]", networkPermissionRemoved, accountId));
+            logger.debug(String.format("Removed [%s] network permission(s) for the account with Id [%s]", networkPermissionRemoved, accountId));
         }
     }
 

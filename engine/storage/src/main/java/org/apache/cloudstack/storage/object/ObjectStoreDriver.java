@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.object;
 
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.BucketPolicy;
+import com.cloud.agent.api.to.BucketTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 
 import java.util.List;
@@ -30,30 +31,30 @@ public interface ObjectStoreDriver extends DataStoreDriver {
 
     List<Bucket> listBuckets(long storeId);
 
-    boolean deleteBucket(String bucketName, long storeId);
+    boolean deleteBucket(BucketTO bucket, long storeId);
 
-    AccessControlList getBucketAcl(String bucketName, long storeId);
+    AccessControlList getBucketAcl(BucketTO bucket, long storeId);
 
-    void setBucketAcl(String bucketName, AccessControlList acl, long storeId);
+    void setBucketAcl(BucketTO bucket, AccessControlList acl, long storeId);
 
-    void setBucketPolicy(String bucketName, String policyType, long storeId);
+    void setBucketPolicy(BucketTO bucket, String policyType, long storeId);
 
-    BucketPolicy getBucketPolicy(String bucketName, long storeId);
+    BucketPolicy getBucketPolicy(BucketTO bucket, long storeId);
 
-    void deleteBucketPolicy(String bucketName, long storeId);
+    void deleteBucketPolicy(BucketTO bucket, long storeId);
 
     boolean createUser(long accountId, long storeId);
 
-    boolean setBucketEncryption(String bucketName, long storeId);
+    boolean setBucketEncryption(BucketTO bucket, long storeId);
 
-    boolean deleteBucketEncryption(String bucketName, long storeId);
+    boolean deleteBucketEncryption(BucketTO bucket, long storeId);
 
 
-    boolean setBucketVersioning(String bucketName, long storeId);
+    boolean setBucketVersioning(BucketTO bucket, long storeId);
 
-    boolean deleteBucketVersioning(String bucketName, long storeId);
+    boolean deleteBucketVersioning(BucketTO bucket, long storeId);
 
-    void setBucketQuota(String bucketName, long storeId, long size);
+    void setBucketQuota(BucketTO bucket, long storeId, long size);
 
     Map<String, Long> getAllBucketsUsage(long storeId);
 }

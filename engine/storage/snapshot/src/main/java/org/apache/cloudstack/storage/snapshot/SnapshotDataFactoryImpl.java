@@ -23,11 +23,16 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
+import com.cloud.utils.fsm.NoTransitionException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
@@ -57,7 +62,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     public SnapshotInfo getSnapshot(DataObject obj, DataStore store) {
         SnapshotVO snapshot = snapshotDao.findById(obj.getId());
         if (snapshot == null) {
-            throw new CloudRuntimeException("Can't find snapshot: " + obj.getId());
+            throw new CloudRuntimeException("Can't find snapshot: " + obj);
         }
         SnapshotObject so = SnapshotObject.getSnapshotObject(snapshot, store);
         return so;
@@ -73,7 +78,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         for (SnapshotDataStoreVO snapshotDataStoreVO : allSnapshotsFromVolumeAndDataStore) {
             DataStore store = storeMgr.getDataStore(snapshotDataStoreVO.getDataStoreId(), role);
             SnapshotVO snapshot = snapshotDao.findById(snapshotDataStoreVO.getSnapshotId());
-            if (snapshot == null){ //snapshot may have been removed;
+            if (snapshot == null) { //snapshot may have been removed;
                 continue;
             }
             SnapshotObject info = SnapshotObject.getSnapshotObject(snapshot, store);
@@ -89,7 +94,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         if (snapshot == null) { //snapshot may have been removed;
             return new ArrayList<>();
         }
-        List<SnapshotDataStoreVO> allSnapshotsAndDataStore = snapshotStoreDao.findBySnapshotId(snapshotId);
+        List<SnapshotDataStoreVO> allSnapshotsAndDataStore = snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId);
         if (CollectionUtils.isEmpty(allSnapshotsAndDataStore)) {
             return new ArrayList<>();
         }
@@ -107,15 +112,29 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         return infos;
     }
 
-
-
     @Override
     public SnapshotInfo getSnapshot(long snapshotId, long storeId, DataStoreRole role) {
         SnapshotVO snapshot = snapshotDao.findById(snapshotId);
         if (snapshot == null) {
             return null;
         }
-        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(role, storeId, snapshotId);
+        return getSnapshotOnStore(snapshot, storeId, role);
+    }
+
+    @Override
+    public SnapshotInfo getSnapshotIncludingRemoved(long snapshotId, long storeId, DataStoreRole role) {
+        SnapshotVO snapshot = snapshotDao.findByIdIncludingRemoved(snapshotId);
+        if (snapshot == null) {
+            return null;
+        }
+        return getSnapshotOnStore(snapshot, storeId, role);
+    }
+
+    private SnapshotInfo getSnapshotOnStore(SnapshotVO snapshot, long storeId, DataStoreRole role) {
+        if (snapshot == null) {
+            return null;
+        }
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(role, storeId, snapshot.getId());
         if (snapshotStore == null) {
             return null;
         }
@@ -202,4 +221,17 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         return snapObjs;
     }
 
+    @Override
+    public void updateOperationFailed(long snapshotId) throws NoTransitionException {
+        List<SnapshotDataStoreVO> snapshotStoreRefs = snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId);
+        for (SnapshotDataStoreVO snapshotStoreRef : snapshotStoreRefs) {
+            SnapshotInfo snapshotInfo = getSnapshot(snapshotStoreRef.getSnapshotId(), snapshotStoreRef.getDataStoreId(), snapshotStoreRef.getRole());
+            if (snapshotInfo != null) {
+                VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
+                volumeInfo.stateTransit(Volume.Event.OperationFailed);
+                ((SnapshotObject)snapshotInfo).processEvent(Snapshot.Event.OperationFailed);
+                snapshotInfo.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+            }
+        }
+    }
 }

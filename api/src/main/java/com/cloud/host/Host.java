@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.host;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.fsm.StateObject;
@@ -52,9 +53,37 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
             return strs;
         }
     }
-    public static final String HOST_UEFI_ENABLE = "host.uefi.enable";
-    public static final String HOST_VOLUME_ENCRYPTION = "host.volume.encryption";
-    public static final String HOST_INSTANCE_CONVERSION = "host.instance.conversion";
+
+    String HOST_UEFI_ENABLE = "host.uefi.enable";
+    String HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM = "host.kvm.diskonlyvmsnapshot.nvram";
+    String HOST_VOLUME_ENCRYPTION = "host.volume.encryption";
+    String HOST_RBD_VOLUME_ENCRYPTION = "host.volume.encryption.rbd";
+    String HOST_INSTANCE_CONVERSION = "host.instance.conversion";
+    String HOST_VDDK_SUPPORT = "host.vddk.support";
+    String HOST_VDDK_LIB_DIR = "vddk.lib.dir";
+    String HOST_VDDK_VERSION = "host.vddk.version";
+    String HOST_VDDK_BLOCKCOPY_SUPPORT = "host.vddk.blockcopy.support";
+    String HOST_VDDK_BLOCKCOPY_INPLACE_FINALIZATION_SUPPORT = "host.vddk.blockcopy.inplace.finalization.support";
+    String HOST_VDDK_BLOCKCOPY_RBD_SUPPORT = "host.vddk.blockcopy.rbd.support";
+    String HOST_QEMU_IMG_VERSION = "host.qemu.img.version";
+    String HOST_QEMU_NBD_VERSION = "host.qemu.nbd.version";
+    String HOST_QEMU_IO_VERSION = "host.qemu.io.version";
+    String HOST_OVFTOOL_VERSION = "host.ovftool.version";
+    String HOST_VIRTV2V_VERSION = "host.virtv2v.version";
+    String HOST_VIRTV2V_INPLACE_VERSION = "host.virtv2v.inplace.version";
+    String HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT = "host.vddk.rbd.direct.import.support";
+    String HOST_VIRTV2V_INPLACE_SUPPORT = "host.virtv2v.inplace.support";
+    String HOST_QEMU_RBD_SUPPORT = "host.qemu.rbd.support";
+    String HOST_SSH_PORT = "host.ssh.port";
+    String HOST_CDROM_MAX_COUNT = "host.cdrom.max.count";
+    String HOST_VLAN_FILTERING_ENABLED = "vlan.filtering.enabled";
+    String HOST_VLAN_TRUNK_XML_SUPPORTED = "vlan.trunk.xml.supported";
+    String HOST_GUEST_BRIDGE_STP_ENABLED = "guest.bridge.stp.enabled";
+    String GUEST_OS_CATEGORY_ID = "guest.os.category.id";
+    String GUEST_OS_RULE = "guest.os.rule";
+    String HOST_CPU_MAX_SPEED_MHZ = "host.cpu.max.speed.mhz";
+
+    int DEFAULT_SSH_PORT = 22;
 
     /**
      * @return name of the machine.
@@ -176,6 +205,8 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
      */
     Long getManagementServerId();
 
+    Long getLastManagementServerId();
+
     /*
      *@return removal date
      */
@@ -208,4 +239,8 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     boolean isDisabled();
 
     ResourceState getResourceState();
+
+    CPU.CPUArch getArch();
+
+    String getStorageAccessGroups();
 }

@@ -39,7 +39,7 @@ public interface RemoteAccessVpnService {
 
     VpnUser addVpnUser(long vpnOwnerId, String userName, String password);
 
-    boolean removeVpnUser(long vpnOwnerId, String userName, Account caller);
+    boolean removeVpnUser(Account vpnOwner, String userName, Account caller);
 
     List<? extends VpnUser> listVpnUsers(long vpnOwnerId, String userName);
 

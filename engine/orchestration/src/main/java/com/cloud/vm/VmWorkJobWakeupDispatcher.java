@@ -24,7 +24,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
@@ -47,7 +46,6 @@ import com.cloud.vm.dao.VMInstanceDao;
  * Current code base uses blocking calls to wait for job completion
  */
 public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDispatcher {
-    private static final Logger s_logger = Logger.getLogger(VmWorkJobWakeupDispatcher.class);
 
     @Inject
     private VmWorkJobDao _workjobDao;
@@ -69,8 +67,8 @@ public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDi
         try {
             List<AsyncJobJoinMapVO> joinRecords = _joinMapDao.listJoinRecords(job.getId());
             if (joinRecords.size() != 1) {
-                s_logger.warn("AsyncJob-" + job.getId()
-                        + " received wakeup call with un-supported joining job number: " + joinRecords.size());
+                logger.warn("AsyncJob-{} ({}) received wakeup call with un-supported " +
+                        "joining job number: {}", job.getId(), job, joinRecords.size());
 
                 // if we fail wakeup-execution for any reason, avoid release sync-source if there is any
                 job.setSyncSource(null);
@@ -84,7 +82,7 @@ public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDi
             try {
                 workClz = Class.forName(job.getCmd());
             } catch (ClassNotFoundException e) {
-                s_logger.error("VM work class " + job.getCmd() + " is not found", e);
+                logger.error("VM work class {} for job {} is not found", job.getCmd(), job, e);
                 return;
             }
 
@@ -105,14 +103,13 @@ public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDi
                     handler.invoke(_vmMgr);
                 } else {
                     assert (false);
-                    s_logger.error("Unable to find wakeup handler " + joinRecord.getWakeupHandler() +
-                            " when waking up job-" + job.getId());
+                    logger.error("Unable to find wakeup handler {} when waking up job-{} ({})", joinRecord.getWakeupHandler(), job.getId(), job);
                 }
             } finally {
                 CallContext.unregister();
             }
         } catch (Throwable e) {
-            s_logger.warn("Unexpected exception in waking up job-" + job.getId());
+            logger.warn("Unexpected exception in waking up job-{} ({})", job.getId(), job);
 
             // if we fail wakeup-execution for any reason, avoid release sync-source if there is any
             job.setSyncSource(null);
@@ -132,11 +129,11 @@ public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDi
                 method.setAccessible(true);
             } catch (SecurityException e) {
                 assert (false);
-                s_logger.error("Unexpected exception", e);
+                logger.error("Unexpected exception", e);
                 return null;
             } catch (NoSuchMethodException e) {
                 assert (false);
-                s_logger.error("Unexpected exception", e);
+                logger.error("Unexpected exception", e);
                 return null;
             }
 

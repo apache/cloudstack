@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -38,27 +37,26 @@ import com.cloud.user.Account;
 @APICommand(name = "extractIso", description = "Extracts an ISO", responseObject = ExtractResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ExtractIsoCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ExtractIsoCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the ID of the ISO file")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "The ID of the ISO file")
     private Long id;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, length = 2048, description = "the URL to which the ISO would be extracted")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, length = 2048, description = "The URL to which the ISO would be extracted")
     private String url;
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
                required = false,
-               description = "the ID of the zone where the ISO is originally located")
+               description = "The ID of the zone where the ISO is originally located")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.MODE, type = CommandType.STRING, required = true, description = "the mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
+    @Parameter(name = ApiConstants.MODE, type = CommandType.STRING, required = true, description = "The mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
     private String mode;
 
     /////////////////////////////////////////////////////
@@ -103,7 +101,13 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "extracting ISO: " + getId() + " from zone: " + getZoneId();
+        String description = "Extracting ISO: " +  getResourceUuid(ApiConstants.ID);
+
+        if (getZoneId() == null) {
+            description += "from zone: " + getResourceUuid(ApiConstants.ZONE_ID);
+        }
+
+        return description;
     }
 
     @Override
@@ -122,7 +126,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
             CallContext.current().setEventDetails(getEventDescription());
             String uploadUrl = _templateService.extract(this);
             if (uploadUrl != null) {
-                ExtractResponse response = _responseGenerator.createExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
+                ExtractResponse response = _responseGenerator.createImageExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
                 response.setResponseName(getCommandName());
                 response.setObjectName("iso");
                 this.setResponseObject(response);
@@ -130,7 +134,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract ISO");
             }
         } catch (InternalErrorException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }

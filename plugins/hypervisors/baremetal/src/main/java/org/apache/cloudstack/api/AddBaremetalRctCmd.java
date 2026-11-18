@@ -27,22 +27,20 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
 /**
  * Created by frank on 5/8/14.
  */
-@APICommand(name = "addBaremetalRct", description = "adds baremetal rack configuration text", responseObject = BaremetalRctResponse.class,
+@APICommand(name = "addBaremetalRct", description = "Adds baremetal rack configuration text", responseObject = BaremetalRctResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class AddBaremetalRctCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AddBaremetalRctCmd.class);
 
     @Inject
     private BaremetalVlanManager vlanMgr;
 
-    @Parameter(name=ApiConstants.BAREMETAL_RCT_URL, required = true, description = "http url to baremetal RCT configuration")
+    @Parameter(name=ApiConstants.BAREMETAL_RCT_URL, required = true, description = "HTTP URL to baremetal RCT configuration")
     private String rctUrl;
 
     public String getRctUrl() {
@@ -68,7 +66,7 @@ public class AddBaremetalRctCmd extends BaseAsyncCmd {
             BaremetalRctResponse rsp = vlanMgr.addRct(this);
             this.setResponseObject(rsp);
         } catch (Exception e) {
-            s_logger.warn(String.format("unable to add baremetal RCT[%s]", getRctUrl()), e);
+            logger.warn(String.format("unable to add baremetal RCT[%s]", getRctUrl()), e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

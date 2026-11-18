@@ -31,6 +31,48 @@
               :percent="parseFloat(item.percentused)"
               :format="p => parseFloat(item.percentused).toFixed(2) + '%'" />
           </div>
+          <a-collapse
+              v-if="item.tagged"
+              class="list-item__collapse"
+              @change="handleCollapseChange(item.type)">
+            <a-collapse-panel key="1" :header="$t('label.tagged') + ' ' + returnCapacityTitle(item.type) + (collapseActive[item.type] ? ''  : ' - ' + item.tagsasstring)">
+              <a-list
+                size="small"
+                :dataSource="item.tagged" >
+                <template #renderItem="{ item }">
+                  <a-list-item class="sub-list-item">
+                    <div class="sub-list-item__container">
+                      <div class="list-item__data list-item__title">{{ '#' + item.tag }}</div>
+                      <div class="list-item__vals">
+                        <div class="list-item__data">
+                          Allocated:
+                          {{ convertByType(item.type, item.capacityused) }} / {{ convertByType(item.type, item.capacitytotal) }}
+                        </div>
+                        <a-progress
+                          status="normal"
+                          :percent="parseFloat(item.percentused)"
+                          :format="p => parseFloat(item.percentused).toFixed(2) + '%'" />
+                      </div>
+                    </div>
+                  </a-list-item>
+                </template>
+              </a-list>
+            </a-collapse-panel>
+          </a-collapse>
+        </div>
+      </a-list-item>
+      <a-list-item v-if="showHostReadiness" class="list-item">
+        <div class="list-item__container">
+          <div class="list-item__data list-item__title">{{ $t('label.multinetworknic.hosts.ready') }}</div>
+          <div class="list-item__vals">
+            <div class="list-item__data">
+              {{ $t('label.multinetworknic.hosts.ready.count', { ready: hostReadiness.ready, total: hostReadiness.total }) }}
+            </div>
+            <a-progress
+              status="normal"
+              :percent="hostReadinessPercent"
+              :format="p => p.toFixed(2) + '%'" />
+          </div>
         </div>
       </a-list-item>
     </a-list>
@@ -38,7 +80,8 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
+import { isMultiNetworkNicEnabledForZone, fetchMultiNetworkNicEnabledForZone } from '@/utils/multiNetworkNic'
 
 export default {
   name: 'Resources',
@@ -61,7 +104,23 @@ export default {
   data () {
     return {
       fetchLoading: false,
-      resourcesList: []
+      resourcesList: [],
+      collapseActive: {},
+      hostReadiness: { ready: 0, total: 0 }
+    }
+  },
+  computed: {
+    zoneId () {
+      return this.$route.meta.name === 'zone' ? this.resource.id : this.resource.zoneid
+    },
+    showHostReadiness () {
+      return isMultiNetworkNicEnabledForZone(this.zoneId) && this.hostReadiness.total > 0
+    },
+    hostReadinessPercent () {
+      if (this.hostReadiness.total === 0) {
+        return 0
+      }
+      return (this.hostReadiness.ready / this.hostReadiness.total) * 100
     }
   },
   created () {
@@ -73,17 +132,52 @@ export default {
       const params = {}
       params[entity] = this.resource.id
       this.fetchLoading = true
-      api('listCapacity', params).then(response => {
+      getAPI('listCapacity', params).then(response => {
         this.resourcesList = response.listcapacityresponse.capacity
-        this.animatePercentVals()
+        this.updateTaggedCapacities()
+        this.animatePercentVals(this.resourcesList)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
       })
+      fetchMultiNetworkNicEnabledForZone(this.zoneId)
+      this.fetchHostReadiness(entity, params[entity])
     },
-    animatePercentVals () {
+    fetchHostReadiness (entity, entityId) {
+      const params = { type: 'Routing' }
+      params[entity] = entityId
+      getAPI('listHosts', params).then(response => {
+        const hosts = response.listhostsresponse.host || []
+        this.hostReadiness = {
+          ready: hosts.filter(host => host.vlanfilteringenabled).length,
+          total: hosts.length
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    updateTaggedCapacities () {
+      var resourcesListCopy = [...this.resourcesList]
+      this.resourcesList = this.resourcesList.filter(x => !x.tag)
       this.resourcesList.forEach(resource => {
+        var tagged = []
+        var tags = []
+        for (var x of resourcesListCopy) {
+          if (resource.type === x.type && x.tag) {
+            tagged.push(x)
+            tags.push(x.tag)
+          }
+        }
+        if (tagged.length > 0) {
+          resource.tagged = tagged
+          resource.tags = tags
+          resource.tagsasstring = '#' + tags.join(', #')
+        }
+      })
+    },
+    animatePercentVals (resources) {
+      resources.forEach(resource => {
         const percent = resource.percentused
         resource.percentused = 0
         setTimeout(() => {
@@ -130,6 +224,17 @@ export default {
         case 90: return this.$t('label.num.cpu.cores')
         default: return ''
       }
+    },
+    handleCollapseChange (type) {
+      if (this.collapseActive[type]) {
+        this.collapseActive[type] = null
+        return
+      }
+      this.collapseActive[type] = true
+      var typeItems = this.resourcesList.filter(x => x.type === type)
+      typeItems.forEach(resource => {
+        this.animatePercentVals(resource.tagged)
+      })
     }
   }
 }
@@ -157,6 +262,33 @@ export default {
     }
 
     &__vals {
+      @media (min-width: 760px) {
+        display: flex;
+      }
+    }
+  }
+  .sub-list-item {
+
+    &__container {
+      max-width: 90%;
+      width: 100%;
+
+      @media (min-width: 760px) {
+        max-width: 95%;
+      }
+    }
+
+    &__title {
+      font-weight: bold;
+    }
+
+    &__data {
+      margin-right: 20px;
+      white-space: nowrap;
+    }
+
+    &__vals {
+      margin-top: 10px;
       @media (min-width: 760px) {
         display: flex;
       }

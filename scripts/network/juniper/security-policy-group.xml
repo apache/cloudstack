@@ -19,13 +19,13 @@ under the License.
 <rpc>
 <get-configuration>
 <configuration>
-<security>        
-<policies>            
-<policy %delete%>                
-<from-zone-name>%from-zone%</from-zone-name>                
-<to-zone-name>%to-zone%</to-zone-name>            
-</policy>        
-</policies>    
+<security>
+<policies>
+<policy %delete%>
+<from-zone-name>%from-zone%</from-zone-name>
+<to-zone-name>%to-zone%</to-zone-name>
+</policy>
+</policies>
 </security>
 </configuration>
 </get-configuration>

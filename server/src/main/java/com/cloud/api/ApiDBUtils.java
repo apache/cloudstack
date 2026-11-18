@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
+import com.cloud.storage.GuestOSVO;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -44,18 +46,19 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.NicNetworkMapResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.SharedFSResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -72,13 +75,17 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
-import org.apache.cloudstack.backup.BackupSchedule;
+import org.apache.cloudstack.backup.BackupRepository;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.dao.DnsZoneDao;
+import org.apache.cloudstack.dns.dao.DnsZoneNetworkMapDao;
+import org.apache.cloudstack.dns.vo.DnsZoneNetworkMapVO;
+import org.apache.cloudstack.dns.vo.DnsZoneVO;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -88,8 +95,13 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.resourcedetail.SnapshotPolicyDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
+import org.apache.cloudstack.storage.sharedfs.query.dao.SharedFSJoinDao;
+import org.apache.cloudstack.storage.sharedfs.query.vo.SharedFSJoinVO;
 
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.dao.AccountJoinDao;
@@ -100,7 +112,6 @@ import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.DomainJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
-import com.cloud.api.query.dao.HostTagDao;
 import com.cloud.api.query.dao.ImageStoreJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
 import com.cloud.api.query.dao.NetworkOfferingJoinDao;
@@ -126,7 +137,6 @@ import com.cloud.api.query.vo.DomainJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
-import com.cloud.api.query.vo.HostTagVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.NetworkOfferingJoinVO;
@@ -180,9 +190,11 @@ import com.cloud.gpu.dao.VGPUTypesDao;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
+import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -313,7 +325,6 @@ import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
-import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
@@ -329,35 +340,43 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
+import org.apache.cloudstack.acl.dao.ApiKeyPairDao;
 
-import org.apache.cloudstack.api.response.ObjectStoreResponse;
-import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.util.Strings;
 
 public class ApiDBUtils {
+    private static final Logger log = LogManager.getLogger(ApiDBUtils.class);
     private static ManagementServer s_ms;
     static AsyncJobManager s_asyncMgr;
     static SecurityGroupManager s_securityGroupMgr;
@@ -429,7 +448,7 @@ public class ApiDBUtils {
     static HighAvailabilityManager s_haMgr;
     static VpcManager s_vpcMgr;
     static TaggedResourceService s_taggedResourceService;
-    static UserVmDetailsDao s_userVmDetailsDao;
+    static VMInstanceDetailsDao s_vmInstanceDetailsDao;
     static SSHKeyPairDao s_sshKeyPairDao;
 
     static ConditionDao s_asConditionDao;
@@ -452,7 +471,7 @@ public class ApiDBUtils {
     static VolumeJoinDao s_volJoinDao;
     static StoragePoolJoinDao s_poolJoinDao;
     static StoragePoolTagsDao s_tagDao;
-    static HostTagDao s_hostTagDao;
+    static HostTagsDao s_hostTagDao;
     static ImageStoreJoinDao s_imageStoreJoinDao;
     static AccountJoinDao s_accountJoinDao;
     static AsyncJobJoinDao s_jobJoinDao;
@@ -473,6 +492,7 @@ public class ApiDBUtils {
     static VMSnapshotDao s_vmSnapshotDao;
     static ClusterDetailsDao s_clusterDetailsDao;
     static NicSecondaryIpDao s_nicSecondaryIpDao;
+    static NicNetworkMapDao s_nicNetworkMapDao;
     static VpcProvisioningService s_vpcProvSvc;
     static AffinityGroupDao s_affinityGroupDao;
     static AffinityGroupJoinDao s_affinityGroupJoinDao;
@@ -486,12 +506,19 @@ public class ApiDBUtils {
     static BackupDao s_backupDao;
     static BackupScheduleDao s_backupScheduleDao;
     static BackupOfferingDao s_backupOfferingDao;
+    static BackupRepositoryDao s_backupRepositoryDao;
     static NicDao s_nicDao;
     static ResourceManagerUtil s_resourceManagerUtil;
+    static ApiKeyPairDao s_apiKeyPairDao;
     static SnapshotPolicyDetailsDao s_snapshotPolicyDetailsDao;
     static ObjectStoreDao s_objectStoreDao;
 
+    static SharedFSJoinDao s_sharedFSJoinDao;
+
     static BucketDao s_bucketDao;
+    static DnsZoneDao s_dnsZoneDao;
+    static DnsZoneNetworkMapDao s_dnsZoneNetworkMapDao;
+    static VirtualMachineManager s_virtualMachineManager;
 
     @Inject
     private ManagementServer ms;
@@ -631,7 +658,7 @@ public class ApiDBUtils {
     @Inject
     private TaggedResourceService taggedResourceService;
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private SSHKeyPairDao sshKeyPairDao;
 
@@ -674,7 +701,7 @@ public class ApiDBUtils {
     @Inject
     private StoragePoolTagsDao tagDao;
     @Inject
-    private HostTagDao hosttagDao;
+    private HostTagsDao hosttagDao;
     @Inject
     private ImageStoreJoinDao imageStoreJoinDao;
     @Inject
@@ -715,6 +742,8 @@ public class ApiDBUtils {
     @Inject
     private NicSecondaryIpDao nicSecondaryIpDao;
     @Inject
+    private NicNetworkMapDao nicNetworkMapDao;
+    @Inject
     private VpcProvisioningService vpcProvSvc;
     @Inject
     private AffinityGroupDao affinityGroupDao;
@@ -741,6 +770,8 @@ public class ApiDBUtils {
     @Inject
     private BackupOfferingDao backupOfferingDao;
     @Inject
+    private BackupRepositoryDao backupRepositoryDao;
+    @Inject
     private BackupScheduleDao backupScheduleDao;
     @Inject
     private NicDao nicDao;
@@ -749,12 +780,22 @@ public class ApiDBUtils {
     @Inject
     private ResourceManagerUtil resourceManagerUtil;
     @Inject
+    private ApiKeyPairDao apiKeyPairDao;
+    @Inject
     SnapshotPolicyDetailsDao snapshotPolicyDetailsDao;
 
     @Inject
     private ObjectStoreDao objectStoreDao;
     @Inject
     private BucketDao bucketDao;
+    @Inject
+    private VirtualMachineManager virtualMachineManager;
+    @Inject
+    private SharedFSJoinDao sharedFSJoinDao;
+    @Inject
+    private DnsZoneDao dnsZoneDao;
+    @Inject
+    private DnsZoneNetworkMapDao dnsZoneNetworkMapDao;
 
     @PostConstruct
     void init() {
@@ -827,7 +868,7 @@ public class ApiDBUtils {
         s_vpcMgr = vpcMgr;
         s_taggedResourceService = taggedResourceService;
         s_sshKeyPairDao = sshKeyPairDao;
-        s_userVmDetailsDao = userVmDetailsDao;
+        s_vmInstanceDetailsDao = vmInstanceDetailsDao;
         s_asConditionDao = asConditionDao;
         s_asPolicyDao = asPolicyDao;
         s_asPolicyConditionMapDao = asPolicyConditionMapDao;
@@ -870,6 +911,7 @@ public class ApiDBUtils {
         s_vmSnapshotDao = vmSnapshotDao;
         s_nicDao = nicDao;
         s_nicSecondaryIpDao = nicSecondaryIpDao;
+        s_nicNetworkMapDao = nicNetworkMapDao;
         s_vpcProvSvc = vpcProvSvc;
         s_affinityGroupDao = affinityGroupDao;
         s_affinityGroupJoinDao = affinityGroupJoinDao;
@@ -885,10 +927,16 @@ public class ApiDBUtils {
         s_backupDao = backupDao;
         s_backupScheduleDao = backupScheduleDao;
         s_backupOfferingDao = backupOfferingDao;
+        s_backupRepositoryDao = backupRepositoryDao;
         s_resourceIconDao = resourceIconDao;
         s_resourceManagerUtil = resourceManagerUtil;
+        s_apiKeyPairDao = apiKeyPairDao;
         s_objectStoreDao = objectStoreDao;
         s_bucketDao = bucketDao;
+        s_virtualMachineManager = virtualMachineManager;
+        s_sharedFSJoinDao = sharedFSJoinDao;
+        s_dnsZoneDao = dnsZoneDao;
+        s_dnsZoneNetworkMapDao = dnsZoneNetworkMapDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -940,7 +988,7 @@ public class ApiDBUtils {
             return -1;
         }
 
-        return s_resourceLimitMgr.findCorrectResourceLimitForDomain(domain, type);
+        return s_resourceLimitMgr.findCorrectResourceLimitForDomain(domain, type, null);
     }
 
     public static long findCorrectResourceLimitForDomain(Long limit, boolean isRootDomain, ResourceType type, long domainId) {
@@ -955,16 +1003,6 @@ public class ApiDBUtils {
         } else {
             return findCorrectResourceLimitForDomain(type, domainId);
         }
-    }
-
-    public static long findCorrectResourceLimit(ResourceType type, long accountId) {
-        AccountVO account = s_accountDao.findById(accountId);
-
-        if (account == null) {
-            return -1;
-        }
-
-        return s_resourceLimitMgr.findCorrectResourceLimitForAccount(account, type);
     }
 
     public static long findCorrectResourceLimit(Long limit, long accountId, ResourceType type) {
@@ -987,7 +1025,7 @@ public class ApiDBUtils {
             return -1;
         }
 
-        return s_resourceLimitMgr.getResourceCount(account, type);
+        return s_resourceLimitMgr.getResourceCount(account, type, null);
     }
 
     public static String getSecurityGroupsNamesForVm(long vmId) {
@@ -1061,6 +1099,10 @@ public class ApiDBUtils {
         return s_storageMgr.getSecondaryStorageUsedStats(hostId, zoneId);
     }
 
+    public static CapacityVO getObjectStorageUsedStats(Long zoneId) {
+        return s_storageMgr.getObjectStorageUsedStats(zoneId);
+    }
+
     // ///////////////////////////////////////////////////////////
     // Dao methods //
     // ///////////////////////////////////////////////////////////
@@ -1098,7 +1140,7 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
+    public static DiskOfferingVO findNonComputeDiskOfferingById(Long diskOfferingId) {
         if (diskOfferingId == null) {
             return null;
         }
@@ -1107,6 +1149,14 @@ public class ApiDBUtils {
             return off;
         }
         return null;
+    }
+
+    public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
+        if (diskOfferingId == null) {
+            return null;
+        }
+        DiskOfferingVO off = s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
+        return off;
     }
 
     public static ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(Long diskOfferingId, boolean includingRemoved) {
@@ -1314,7 +1364,8 @@ public class ApiDBUtils {
                            StoragePoolType.PowerFlex,
                            StoragePoolType.CLVM,
                            StoragePoolType.Linstor,
-                           StoragePoolType.FiberChannel).contains(pool.getPoolType())) {
+                           StoragePoolType.FiberChannel,
+                           StoragePoolType.NVMeTCP).contains(pool.getPoolType())) {
                   // This case will note the presence of non-qcow2 primary stores, suggesting KVM without NFS. Otherwse,
                   // If this check is not passed, the hypervisor type will remain OVM.
                   type = HypervisorType.KVM;
@@ -1532,6 +1583,10 @@ public class ApiDBUtils {
         return s_networkModel.canElementEnableIndividualServices(serviceProvider);
     }
 
+    public static boolean canElementEnableIndividualServicesByName(String providerName) {
+        return s_networkModel.canElementEnableIndividualServicesByName(providerName);
+    }
+
     public static Pair<Long, Boolean> getDomainNetworkDetails(long networkId) {
         NetworkDomainVO map = s_networkDomainDao.getDomainNetworkMapByNetworkId(networkId);
 
@@ -1617,8 +1672,8 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static UserVmDetailVO  findPublicKeyByVmId(long vmId) {
-        return s_userVmDetailsDao.findDetail(vmId, VmDetailConstants.SSH_PUBLIC_KEY);
+    public static VMInstanceDetailVO findPublicKeyByVmId(long vmId) {
+        return s_vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.SSH_PUBLIC_KEY);
     }
 
     public static void getAutoScaleVmGroupPolicies(long vmGroupId, List<AutoScalePolicy> scaleUpPolicies, List<AutoScalePolicy> scaleDownPolicies) {
@@ -1703,6 +1758,21 @@ public class ApiDBUtils {
         return s_zoneDao.listByIds(zoneIds);
     }
 
+    public static List<StoragePoolVO> findSnapshotPolicyPools(SnapshotPolicy policy, Volume volume) {
+        List<SnapshotPolicyDetailVO> poolDetails = s_snapshotPolicyDetailsDao.findDetails(policy.getId(), ApiConstants.STORAGE_ID);
+        List<Long> poolIds = new ArrayList<>();
+        for (SnapshotPolicyDetailVO detail : poolDetails) {
+            try {
+                poolIds.add(Long.valueOf(detail.getValue()));
+            } catch (NumberFormatException ignored) {
+                log.debug(String.format("Could not parse the storage ID value of %s", detail.getValue()), ignored);
+            }
+        }
+        if (volume != null && !poolIds.contains(volume.getPoolId())) {
+            poolIds.add(0, volume.getPoolId());
+        }
+        return s_storagePoolDao.listByIds(poolIds);
+    }
     public static VpcOffering findVpcOfferingById(long offeringId) {
         return s_vpcOfferingDao.findById(offeringId);
     }
@@ -1728,7 +1798,7 @@ public class ApiDBUtils {
             return null;
         }
         String jobInstanceId = null;
-        ApiCommandResourceType jobInstanceType = EnumUtils.fromString(ApiCommandResourceType.class, job.getInstanceType(), ApiCommandResourceType.None);
+        ApiCommandResourceType jobInstanceType = EnumUtils.getEnumIgnoreCase(ApiCommandResourceType.class, job.getInstanceType(), ApiCommandResourceType.None);
 
         if (job.getInstanceId() == null) {
             // when assert is hit, implement 'getInstanceId' of BaseAsyncCmd and return appropriate instance id
@@ -1941,14 +2011,12 @@ public class ApiDBUtils {
     }
 
     public static UserResponse newUserResponse(UserAccountJoinVO usr) {
-        return newUserResponse(usr, null);
+        return newUserResponse(ResponseView.Restricted, null, usr);
     }
 
-    public static UserResponse newUserResponse(UserAccountJoinVO usr, Long domainId) {
-        UserResponse response = s_userAccountJoinDao.newUserResponse(usr);
-        if(!AccountManager.UseSecretKeyInResponse.value()){
-            response.setSecretKey(null);
-        }
+    public static UserResponse newUserResponse(ResponseView view, Long domainId, UserAccountJoinVO usr) {
+        ApiKeyPairVO lastKeyPair = searchForLatestUserKeyPair(usr.getId());
+        UserResponse response = s_userAccountJoinDao.newUserResponse(view, usr, lastKeyPair);
         // Populate user account role information
         if (usr.getAccountRoleId() != null) {
             Role role = s_roleService.findRole( usr.getAccountRoleId());
@@ -1963,6 +2031,10 @@ public class ApiDBUtils {
         else
             response.setIsCallerChildDomain(false);
         return response;
+    }
+
+    public static ApiKeyPairVO searchForLatestUserKeyPair(Long userId) {
+        return s_apiKeyPairDao.getLastApiKeyCreatedByUser(userId);
     }
 
     public static UserAccountJoinVO newUserView(User usr) {
@@ -2003,6 +2075,10 @@ public class ApiDBUtils {
         return s_projectInvitationJoinDao.newProjectInvitationView(proj);
     }
 
+    public static HostResponse newMinimalHostResponse(HostJoinVO vr) {
+        return s_hostJoinDao.newMinimalHostResponse(vr);
+    }
+
     public static HostResponse newHostResponse(HostJoinVO vr, EnumSet<HostDetails> details) {
         return s_hostJoinDao.newHostResponse(vr, details);
     }
@@ -2029,6 +2105,10 @@ public class ApiDBUtils {
 
     public static StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO vr, boolean customStats) {
         return s_poolJoinDao.newStoragePoolResponse(vr, customStats);
+    }
+
+    public static StoragePoolResponse newMinimalStoragePoolResponse(StoragePoolJoinVO vr) {
+        return s_poolJoinDao.newMinimalStoragePoolResponse(vr);
     }
 
     public static StorageTagResponse newStorageTagResponse(StoragePoolTagVO vr) {
@@ -2124,6 +2204,22 @@ public class ApiDBUtils {
         return s_jobJoinDao.newAsyncJobView(e);
     }
 
+    public static List<DiskOfferingResponse> newDiskOfferingResponses(Long vmId, List<DiskOfferingJoinVO> offerings) {
+        List<DiskOfferingResponse> list = new ArrayList<>();
+        Map<Long, Boolean> suitability = null;
+        if (vmId != null) {
+            suitability = s_virtualMachineManager.getDiskOfferingSuitabilityForVm(vmId, offerings.stream().map(DiskOfferingJoinVO::getId).collect(Collectors.toList()));
+        }
+        for (DiskOfferingJoinVO offering : offerings) {
+            DiskOfferingResponse response = s_diskOfferingJoinDao.newDiskOfferingResponse(offering);
+            if (vmId != null) {
+                response.setSuitableForVm(suitability.getOrDefault(offering.getId(), true));
+            }
+            list.add(response);
+        }
+        return list;
+    }
+
     public static DiskOfferingResponse newDiskOfferingResponse(DiskOfferingJoinVO offering) {
         return s_diskOfferingJoinDao.newDiskOfferingResponse(offering);
     }
@@ -2144,6 +2240,10 @@ public class ApiDBUtils {
         return s_dcJoinDao.newDataCenterResponse(view, dc, showCapacities, showResourceImage);
     }
 
+    public static ZoneResponse newMinimalDataCenterResponse(ResponseView view, DataCenterJoinVO dc) {
+        return s_dcJoinDao.newMinimalDataCenterResponse(view, dc);
+    }
+
     public static DataCenterJoinVO newDataCenterView(DataCenter dc) {
         return s_dcJoinDao.newDataCenterView(dc);
     }
@@ -2154,6 +2254,62 @@ public class ApiDBUtils {
 
     public static List<NicSecondaryIpVO> findNicSecondaryIps(long nicId) {
         return s_nicSecondaryIpDao.listByNicId(nicId);
+    }
+
+    /**
+     * Builds the response for every additional network a multi-VLAN trunk nic is associated with (beyond its
+     * primary network). Shared by every response builder that surfaces a nic's associations - {@code listNics},
+     * {@code listVirtualMachines}, and the associate/disassociate/change-primary command responses all need the
+     * identical shape, so it's built once here rather than duplicated per builder.
+     */
+    public static List<NicNetworkMapResponse> findAssociatedNetworkResponses(long nicId) {
+        return findAssociatedNetworkResponses(nicId, null);
+    }
+
+    /**
+     * Same as {@link #findAssociatedNetworkResponses(long)}, narrowed to the given network when one is passed -
+     * for callers like {@code listNics?networkid=X} that asked about one specific network and should not get
+     * back every other network this nic happens to trunk too.
+     */
+    public static List<NicNetworkMapResponse> findAssociatedNetworkResponses(long nicId, Long networkId) {
+        List<NicNetworkMapVO> associations = s_nicNetworkMapDao.listByNicId(nicId);
+        List<NicNetworkMapResponse> associatedNetworkResponses = new ArrayList<>();
+        for (NicNetworkMapVO association : associations) {
+            if (networkId != null && association.getNetworkId() != networkId) {
+                continue;
+            }
+            NetworkVO associatedNetwork = findNetworkById(association.getNetworkId());
+            if (associatedNetwork == null) {
+                continue;
+            }
+            NicNetworkMapResponse associationResponse = new NicNetworkMapResponse();
+            associationResponse.setNetworkId(associatedNetwork.getUuid());
+            associationResponse.setNetworkName(associatedNetwork.getName());
+            if (associatedNetwork.getBroadcastUri() != null) {
+                associationResponse.setBroadcastUri(associatedNetwork.getBroadcastUri().toString());
+            }
+            // gateway/netmask/IPv6 gateway/IPv6 CIDR describe the associated network itself, not this nic's
+            // specific address on it - sourced the same way ApiResponseHelper#createNetworkResponse does for
+            // NetworkResponse. A Shared network with more than one IP range has these as a comma-separated
+            // list (one per range); only the first is surfaced here, matching that same existing convention.
+            associationResponse.setGateway(StringUtils.getFirstValueFromCommaSeparatedString(associatedNetwork.getGateway()));
+            String cidr = StringUtils.getFirstValueFromCommaSeparatedString(associatedNetwork.getCidr());
+            if (associatedNetwork.getNetworkCidr() != null) {
+                associationResponse.setNetmask(NetUtils.cidr2Netmask(associatedNetwork.getNetworkCidr()));
+            } else if (cidr != null) {
+                associationResponse.setNetmask(NetUtils.cidr2Netmask(cidr));
+            }
+            associationResponse.setIp6Gateway(StringUtils.getFirstValueFromCommaSeparatedString(associatedNetwork.getIp6Gateway()));
+            associationResponse.setIp6Cidr(StringUtils.getFirstValueFromCommaSeparatedString(associatedNetwork.getIp6Cidr()));
+            associationResponse.setIpAddress(association.getIp4Address());
+            associationResponse.setIp6Address(association.getIp6Address());
+            associatedNetworkResponses.add(associationResponse);
+        }
+        return associatedNetworkResponses;
+    }
+
+    public static NicVO findNicById(long nicId) {
+        return s_nicDao.findById(nicId);
     }
 
     public static TemplateResponse newTemplateUpdateResponse(TemplateJoinVO vr) {
@@ -2220,8 +2376,23 @@ public class ApiDBUtils {
         return details.isEmpty() ? null : details;
     }
 
+    public static Pair<String, String> findDnsZoneByNetworkId(long networkId) {
+        DnsZoneNetworkMapVO dnsNetworkMapVO = s_dnsZoneNetworkMapDao.findByNetworkId(networkId);
+        if (dnsNetworkMapVO != null) {
+            DnsZoneVO dnsZoneVO = s_dnsZoneDao.findById(dnsNetworkMapVO.getDnsZoneId());
+            if (dnsZoneVO != null && Strings.isNotBlank(dnsZoneVO.getName())) {
+                return new Pair<> (dnsZoneVO.getName(), dnsNetworkMapVO.getSubDomain());
+            }
+        }
+        return new Pair<>(null, null);
+    }
+
     public static boolean isAdmin(Account account) {
         return s_accountService.isAdmin(account.getId());
+    }
+
+    public static Account getSystemAccount() {
+        return s_accountService.getSystemAccount();
     }
 
     public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
@@ -2232,20 +2403,18 @@ public class ApiDBUtils {
         return s_resourceIconDao.findByResourceUuid(resourceUUID, resourceType);
     }
 
-    public static BackupResponse newBackupResponse(Backup backup) {
-        return s_backupDao.newBackupResponse(backup);
-    }
-
-    public static BackupScheduleResponse newBackupScheduleResponse(BackupSchedule schedule) {
-        return s_backupScheduleDao.newBackupScheduleResponse(schedule);
-    }
-
-    public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering policy) {
-        return s_backupOfferingDao.newBackupOfferingResponse(policy);
+    public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering offering) {
+        BackupRepository repository = s_backupRepositoryDao.findByUuid(offering.getExternalId());
+        Boolean crossZoneInstanceCreationEnabled = repository != null ? Boolean.TRUE.equals(repository.crossZoneInstanceCreationEnabled()) : false;
+        return s_backupOfferingDao.newBackupOfferingResponse(offering, crossZoneInstanceCreationEnabled);
     }
 
     public static NicVO findByIp4AddressAndNetworkId(String ip4Address, long networkId) {
         return s_nicDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
+    }
+
+    public static NicVO findNonPlaceHolderByIp4AddressAndNetworkId(String ip4Address, long networkId) {
+        return s_nicDao.findNonPlaceHolderByIp4AddressAndNetworkId(ip4Address, networkId);
     }
 
     public static NicSecondaryIpVO findSecondaryIpByIp4AddressAndNetworkId(String ip4Address, long networkId) {
@@ -2258,5 +2427,28 @@ public class ApiDBUtils {
 
     public static ObjectStoreResponse fillObjectStoreDetails(ObjectStoreResponse storeData, ObjectStoreVO store) {
         return s_objectStoreDao.setObjectStoreResponse(storeData, store);
+    }
+
+    public static SharedFSResponse newSharedFSResponse(ResponseView view, SharedFSJoinVO sharedFSView) {
+        return s_sharedFSJoinDao.newSharedFSResponse(view, sharedFSView);
+    }
+
+    public static SharedFSJoinVO newSharedFSView(SharedFS sharedFS) {
+        return s_sharedFSJoinDao.newSharedFSView(sharedFS);
+    }
+
+    public static List<CPU.CPUArch> listZoneClustersArchs(long zoneId) {
+        return s_clusterDao.getClustersArchsByZone(zoneId);
+    }
+
+    public static String getTemplateGuestOSName(VMTemplateVO template) {
+        long guestOSId = template.getGuestOSId();
+        GuestOSVO guestOS = s_guestOSDao.findById(guestOSId);
+
+        if (guestOS == null) {
+            return null;
+        }
+
+        return guestOS.getDisplayName();
     }
 }

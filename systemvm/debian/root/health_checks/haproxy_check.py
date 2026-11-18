@@ -23,10 +23,96 @@ from utility import getHealthChecksData, formatPort
 def checkMaxconn(haproxyData, haCfgSections):
     if "maxconn" in haproxyData and "maxconn" in haCfgSections["global"]:
         if haproxyData["maxconn"] != haCfgSections["global"]["maxconn"][0].strip():
-            print "global maxconn mismatch occurred"
+            print("global maxconn mismatch occurred")
             return False
 
     return True
+
+def checkIdletimeout(haproxyData, haCfgSections):
+    if "idletimeout" not in haproxyData:
+        return True
+
+    # Normalize idletimeout value to string for comparison
+    idle_value = str(haproxyData["idletimeout"]).strip()
+
+    # Safely get the defaults section and its timeout directives
+    defaults_section = haCfgSections.get("defaults", {})
+    timeout_lines = defaults_section.get("timeout", [])
+
+    # Extract client and server timeout values from the parsed "timeout" entries
+    timeout_values = {}
+    for tline in timeout_lines:
+        tline = tline.strip()
+        if not tline:
+            continue
+        parts = tline.split(None, 1)
+        if len(parts) < 2:
+            continue
+        kind, value = parts[0].strip(), parts[1].strip()
+        if kind in ("client", "server"):
+            timeout_values[kind] = value
+
+    # Special handling for idletimeout == 0: there should be no client/server timeouts configured
+    if idle_value == "0":
+        if "client" in timeout_values or "server" in timeout_values:
+            print("defaults timeout client or timeout server should be absent when idletimeout is 0")
+            return False
+        return True
+
+    # Non-zero idletimeout: both client and server timeouts must be present
+    if "client" not in timeout_values or "server" not in timeout_values:
+        print("defaults timeout client or timeout server missing")
+        return False
+
+    if idle_value != timeout_values["client"] or idle_value != timeout_values["server"]:
+        print("defaults timeout client or timeout server mismatch occurred")
+        return False
+    return True
+
+def hasOption(cfgSection, option):
+    return option in cfgSection.get("option", [])
+
+
+def timeoutValue(cfgSection, kind):
+    for tline in cfgSection.get("timeout", []):
+        parts = tline.strip().split(None, 1)
+        if len(parts) == 2 and parts[0].strip() == kind:
+            return parts[1].strip()
+    return None
+
+
+def checkRuleConnectionSettings(lbSec, cfgSection, secName, httpModeExpected):
+    """
+    Per rule keepalive and timeouts, which live in the rule's own listen section rather than in
+    defaults. An empty value means the rule inherits, so there is nothing to check.
+    """
+    correct = True
+
+    keepAlive = lbSec.get("ruleKeepAlive", "")
+    if keepAlive != "" and httpModeExpected:
+        expected = "http-keep-alive" if keepAlive == "true" else "httpclose"
+        if not hasOption(cfgSection, expected):
+            print("Expected 'option " + expected + "' in " + secName)
+            correct = False
+
+    idleTimeout = lbSec.get("ruleIdleTimeout", "")
+    if idleTimeout != "":
+        for kind in ("client", "server"):
+            found = timeoutValue(cfgSection, kind)
+            if found != idleTimeout:
+                print("Expected 'timeout " + kind + " " + idleTimeout + "' in " + secName +
+                      " but found " + str(found))
+                correct = False
+
+    keepAliveTimeout = lbSec.get("ruleKeepAliveTimeout", "")
+    if keepAliveTimeout != "" and keepAlive == "true" and httpModeExpected:
+        found = timeoutValue(cfgSection, "http-keep-alive")
+        if found != keepAliveTimeout:
+            print("Expected 'timeout http-keep-alive " + keepAliveTimeout + "' in " + secName +
+                  " but found " + str(found))
+            correct = False
+
+    return correct
 
 
 def checkLoadBalance(haproxyData, haCfgSections):
@@ -38,27 +124,35 @@ def checkLoadBalance(haproxyData, haCfgSections):
         secName = "listen " + srcServer
 
         if secName not in haCfgSections:
-            print "Missing section for load balancing " + secName + "\n"
+            print("Missing section for load balancing " + secName + "\n")
             correct = False
         else:
             cfgSection = haCfgSections[secName]
             if "server" in cfgSection:
                 if lbSec["algorithm"] != cfgSection["balance"][0]:
-                    print "Incorrect balance method for " + secName + \
-                          "Expected : " + lbSec["algorithm"] + \
-                          " but found " + cfgSection["balance"][0] + "\n"
+                    print("Incorrect balance method for " + secName +
+                          "Expected : " + lbSec["algorithm"] +
+                          " but found " + cfgSection["balance"][0] + "\n")
                     correct = False
 
                 bindStr = lbSec["sourceIp"] + ":" + formatPort(lbSec["sourcePortStart"], lbSec["sourcePortEnd"])
                 if cfgSection["bind"][0] != bindStr:
-                    print "Incorrect bind string found. Expected " + bindStr + " but found " + cfgSection["bind"][0] + "."
+                    print("Incorrect bind string found. Expected " + bindStr + " but found " + cfgSection["bind"][0] + ".")
                     correct = False
 
-                if (lbSec["sourcePortStart"] == "80" and lbSec["sourcePortEnd"] == "80" and lbSec["keepAliveEnabled"] == "false") \
-                        or (lbSec["stickiness"].find("AppCookie") != -1 or lbSec["stickiness"].find("LbCookie") != -1):
+                # A rule that sets keepalive itself stays in http mode on port 80. Without it, the
+                # network offering decides, and keepalive there drops the rule to tcp mode.
+                onHttpPort = lbSec["sourcePortStart"] == "80" and lbSec["sourcePortEnd"] == "80"
+                ruleKeepAlive = lbSec.get("ruleKeepAlive", "")
+                httpModeExpected = (onHttpPort and (ruleKeepAlive != "" or lbSec["keepAliveEnabled"] == "false")) \
+                    or lbSec["stickiness"].find("AppCookie") != -1 or lbSec["stickiness"].find("LbCookie") != -1
+                if httpModeExpected:
                     if not ("mode" in cfgSection and cfgSection["mode"][0] == "http"):
-                        print "Expected HTTP mode but not found"
+                        print("Expected HTTP mode but not found")
                         correct = False
+
+                if not checkRuleConnectionSettings(lbSec, cfgSection, secName, httpModeExpected):
+                    correct = False
 
                 expectedServerIps = lbSec["vmIps"].split(" ")
                 for expectedServerIp in expectedServerIps:
@@ -74,7 +168,7 @@ def checkLoadBalance(haproxyData, haCfgSections):
 
                     if not foundPattern:
                         correct = False
-                        print "Missing load balancing for " + pattern + ". "
+                        print("Missing load balancing for " + pattern + ". ")
 
     return correct
 
@@ -86,7 +180,7 @@ def main():
     '''
     haproxyData = getHealthChecksData("haproxyData")
     if haproxyData is None or len(haproxyData) == 0:
-        print "No data provided to check, skipping"
+        print("No data provided to check, skipping")
         exit(0)
 
     with open("/etc/haproxy/haproxy.cfg", 'r') as haCfgFile:
@@ -94,7 +188,7 @@ def main():
         haCfgFile.close()
 
     if len(haCfgLines) == 0:
-        print "Unable to read config file /etc/haproxy/haproxy.cfg"
+        print("Unable to read config file /etc/haproxy/haproxy.cfg")
         exit(1)
 
     haCfgSections = {}
@@ -120,10 +214,11 @@ def main():
             currSectionDict[lineSec[0]].append(lineSec[1] if len(lineSec) > 1 else '')
 
     checkMaxConn = checkMaxconn(haproxyData[0], haCfgSections)
+    checkIdleTimeout = checkIdletimeout(haproxyData[0], haCfgSections)
     checkLbRules = checkLoadBalance(haproxyData, haCfgSections)
 
-    if checkMaxConn and checkLbRules:
-        print "All checks pass"
+    if checkMaxConn and checkIdleTimeout and checkLbRules:
+        print("All checks pass")
         exit(0)
     else:
         exit(1)

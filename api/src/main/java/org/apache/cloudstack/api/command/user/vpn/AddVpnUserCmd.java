@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,36 +28,34 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.network.VpnUser;
 import com.cloud.user.Account;
 
-@APICommand(name = "addVpnUser", description = "Adds vpn users", responseObject = VpnUsersResponse.class, entityType = {VpnUser.class},
+@APICommand(name = "addVpnUser", description = "Adds VPN Users", responseObject = VpnUsersResponse.class, entityType = {VpnUser.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddVpnUserCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(AddVpnUserCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "username for the vpn user")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Username for the VPN User")
     private String userName;
 
-    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "password for the username")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "Password for the username")
     private String password;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the vpn user. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional Account for the VPN User. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "add vpn user to the specific project")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Add VPN User to the specific project")
     private Long projectId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "an optional domainId for the vpn user. If the account parameter is used, domainId must also be used.")
+               description = "An optional domainId for the VPN User. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
     /////////////////////////////////////////////////////
@@ -91,7 +88,7 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -101,7 +98,7 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "Add Remote Access VPN user for account " + getEntityOwnerId() + " username= " + getUserName();
+        return "Add Remote Access VPN User for Account " + getEntityOwnerId() + " username= " + getUserName();
     }
 
     @Override
@@ -112,32 +109,17 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         VpnUser vpnUser = _entityMgr.findById(VpnUser.class, getEntityId());
-        Account account = _entityMgr.findById(Account.class, vpnUser.getAccountId());
         try {
             if (!_ravService.applyVpnUsers(vpnUser.getAccountId(), userName)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add vpn user");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add VPN User");
             }
         } catch (Exception ex) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
-
-        VpnUsersResponse vpnResponse = new VpnUsersResponse();
-        vpnResponse.setId(vpnUser.getUuid());
-        vpnResponse.setUserName(vpnUser.getUsername());
-        vpnResponse.setAccountName(account.getAccountName());
         // re-retrieve the vpnuser, as the call to `applyVpnUsers` might have changed the state
         vpnUser = _entityMgr.findById(VpnUser.class, getEntityId());
-        vpnResponse.setState(vpnUser.getState().toString());
-
-        Domain domain = _entityMgr.findById(Domain.class, account.getDomainId());
-        if (domain != null) {
-            vpnResponse.setDomainId(domain.getUuid());
-            vpnResponse.setDomainName(domain.getName());
-            vpnResponse.setDomainPath(domain.getPath());
-        }
-
+        VpnUsersResponse vpnResponse = _responseGenerator.createVpnUserResponse(vpnUser);
         vpnResponse.setResponseName(getCommandName());
-        vpnResponse.setObjectName("vpnuser");
         setResponseObject(vpnResponse);
     }
 
@@ -147,7 +129,7 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
 
         VpnUser vpnUser = _ravService.addVpnUser(owner.getId(), userName, password);
         if (vpnUser == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add vpn user");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add VPN User");
         }
         setEntityId(vpnUser.getId());
         setEntityUuid(vpnUser.getUuid());

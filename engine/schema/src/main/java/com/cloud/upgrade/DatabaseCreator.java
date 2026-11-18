@@ -99,7 +99,7 @@ public class DatabaseCreator {
             String username = dbProperties.getProperty(String.format("db.%s.username", database));
             String password = dbProperties.getProperty(String.format("db.%s.password", database));
             String dbName = dbProperties.getProperty(String.format("db.%s.name", database));
-            System.out.println(String.format("========> Initializing database=%s with host=%s port=%s username=%s password=%s", dbName, host, port, username, password));
+            System.out.println(String.format("========> Initializing database=%s with host=%s port=%s username=%s password=******", dbName, host, port, username));
 
             List<String> queries = new ArrayList<String>();
             queries.add(String.format("drop database if exists `%s`", dbName));
@@ -116,10 +116,6 @@ public class DatabaseCreator {
     }
 
     public static void main(String[] args) {
-
-        ClassPathXmlApplicationContext appContext = new ClassPathXmlApplicationContext(new String[] {"/com/cloud/upgrade/databaseCreatorContext.xml"});
-        appContext.getBean(ComponentContext.class);
-
         String dbPropsFile = "";
         List<String> sqlFiles = new ArrayList<String>();
         List<String> upgradeClasses = new ArrayList<String>();
@@ -166,13 +162,17 @@ public class DatabaseCreator {
             System.exit(1);
         }
 
+        initDB(dbPropsFile, rootPassword, databases, dryRun);
+
+        ClassPathXmlApplicationContext appContext = new ClassPathXmlApplicationContext(new String[] {"/com/cloud/upgrade/databaseCreatorContext.xml"});
+        appContext.getBean(ComponentContext.class);
+
         try {
             TransactionLegacy.initDataSource(dbPropsFile);
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
         }
-        initDB(dbPropsFile, rootPassword, databases, dryRun);
 
         // Process sql files
         for (String sqlFile : sqlFiles) {

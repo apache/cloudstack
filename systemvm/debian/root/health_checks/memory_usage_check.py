@@ -28,25 +28,26 @@ def main():
         data = entries[0]
 
     if "maxMemoryUsage" not in data:
-        print "Missing maxMemoryUsage in health_checks_data " + \
-              "systemThresholds, skipping"
+        print("Missing maxMemoryUsage in health_checks_data " +
+              "systemThresholds, skipping")
         exit(0)
 
     maxMemoryUsage = float(data["maxMemoryUsage"])
     cmd = "free | awk 'FNR == 2 { print $3 * 100 / $2 }'"
     pout = Popen(cmd, shell=True, stdout=PIPE)
+    stdout, _ = pout.communicate()
 
-    if pout.wait() == 0:
-        currentUsage = float(pout.communicate()[0].strip())
+    if pout.returncode == 0:
+        currentUsage = float(stdout.decode().strip())
         if currentUsage > maxMemoryUsage:
-            print "Memory Usage " + str(currentUsage) + \
-                  "% has crossed threshold of " + str(maxMemoryUsage) + "%"
+            print("Memory Usage " + str(currentUsage) +
+                  "% has crossed threshold of " + str(maxMemoryUsage) + "%")
             exit(1)
-        print "Memory Usage within limits with current at " + \
-              str(currentUsage) + "%"
+        print("Memory Usage within limits with current at " +
+              str(currentUsage) + "%")
         exit(0)
     else:
-        print "Failed to retrieve memory usage using " + cmd
+        print("Failed to retrieve memory usage using " + cmd)
         exit(1)
 
 

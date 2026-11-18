@@ -35,7 +35,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 export default {
   props: {
@@ -65,7 +65,7 @@ export default {
   methods: {
     fetchData () {
       if (!this.resource.id) return
-      api('listVmwareDcs', {
+      getAPI('listVmwareDcs', {
         zoneid: this.resource.id
       }).then(response => {
         if (response.listvmwaredcsresponse.VMwareDC && response.listvmwaredcsresponse.VMwareDC.length > 0) {

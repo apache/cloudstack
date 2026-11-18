@@ -24,6 +24,7 @@ import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.ca.Certificate;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 
@@ -36,6 +37,9 @@ import java.util.Base64;
  *
  */
 public interface VirtualMachineGuru {
+
+    static final ConfigKey<String> NTPServerConfig = new ConfigKey<String>(String.class, "ntp.server.list", "Advanced", null,
+            "Comma separated list of NTP servers to configure in System VMs", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
 
     boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context);
 

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -42,7 +41,6 @@ import com.cloud.user.Account;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class DestroyVolumeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DestroyVolumeCmd.class.getName());
 
     private static final String s_name = "destroyvolumeresponse";
 
@@ -52,7 +50,7 @@ public class DestroyVolumeCmd extends BaseAsyncCmd {
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
-            required=true, description="The ID of the volume")
+            required=true, description = "The ID of the volume")
     private Long id;
 
     @Parameter(name = ApiConstants.EXPUNGE,
@@ -102,7 +100,7 @@ public class DestroyVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "destroying volume: " + getId();
+        return  "Destroying volume with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -117,8 +115,8 @@ public class DestroyVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Volume Id: " + getId());
-        Volume result = _volumeService.destroyVolume(getId(), CallContext.current().getCallingAccount(), getExpunge(), false);
+        CallContext.current().setEventDetails("Volume ID: " + getResourceUuid(ApiConstants.ID));
+        Volume result = _volumeService.destroyVolume(getId(), CallContext.current().getCallingAccount(), getExpunge(), false, null);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, result);
             response.setResponseName(getCommandName());
