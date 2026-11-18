@@ -21,6 +21,7 @@ import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.BackupResponse;
@@ -36,7 +37,7 @@ import java.util.List;
 @APICommand(name = "listBackupFiles",
         description = "List a backup inner files",
         responseObject = DataStoreObjectResponse.class, since = "24.0.0")
-public class ListBackupFilesCmd extends BaseListCmd {
+public class ListBackupFilesCmd extends BaseCmd {
 
     @Inject
     private BackupManager backupManager;
