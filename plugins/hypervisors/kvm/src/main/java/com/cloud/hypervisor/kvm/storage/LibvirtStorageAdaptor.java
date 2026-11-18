@@ -103,8 +103,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private static final int RBD_FEATURE_DEEP_FLATTEN = 32;
     public static final int RBD_FEATURES = RBD_FEATURE_LAYERING + RBD_FEATURE_EXCLUSIVE_LOCK + RBD_FEATURE_OBJECT_MAP + RBD_FEATURE_FAST_DIFF + RBD_FEATURE_DEEP_FLATTEN;
     private int rbdOrder = 0; /* Order 0 means 4MB blocks (the default) */
-    /* Space reserved at the front of an encrypted RBD image for the LUKS2 header/keyslots so the
-       usable (decrypted) size still matches the requested volume size. */
+    /* Size of the LUKS2 header (and keyslots) librbd keeps at the front of an encrypted RBD image with objects of
+       up to 16 MiB, see getRbdLuks2HeaderSize(long). The image is made larger than the volume by the size of its
+       header, so that the Instance sees the size of the volume, as it does on every other pool type. */
     public static final long LUKS2_HEADER_RESERVE_BYTES = 16L << 20; // 16 MiB
     /* libvirt's VIR_STORAGE_VOL_DELETE_WITH_SNAPSHOTS, not exposed as a constant by libvirt-java */
     private static final int VIR_STORAGE_VOL_DELETE_WITH_SNAPSHOTS = 2;
@@ -770,6 +771,88 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     /**
+     * Returns the size of the LUKS2 header librbd keeps at the front of an encrypted RBD image with objects of the given
+     * size: 16 MiB, or one object if the objects are larger, as librbd starts the data of the image on an object boundary.
+     */
+    public static long getRbdLuks2HeaderSize(long objectSize) {
+        return Math.max(LUKS2_HEADER_RESERVE_BYTES, objectSize);
+    }
+
+    /**
+     * Returns the size of an encrypted RBD volume as the Instance sees it: the size of its image without the LUKS2 header
+     * librbd keeps at the front of the image.
+     */
+    public static long getEncryptedRbdVolumeSize(KVMStoragePool pool, String image) {
+        try {
+            Rados r = connectToCeph(pool);
+            try {
+                IoCTX io = r.ioCtxCreate(pool.getSourceDir());
+                try {
+                    Rbd rbd = new Rbd(io);
+                    // The image is only stat'ed, so it is opened read only: a running Instance holds its exclusive lock.
+                    RbdImage rbdImage = rbd.openReadOnly(image);
+                    try {
+                        RbdImageInfo info = rbdImage.stat();
+                        return info.size - getRbdLuks2HeaderSize(info.obj_size);
+                    } finally {
+                        try {
+                            rbd.close(rbdImage);
+                        } catch (RbdException ignored) {
+                            // the size was read already, a failing close must not hide it
+                        }
+                    }
+                } finally {
+                    r.ioCtxDestroy(io);
+                }
+            } finally {
+                r.shutDown();
+            }
+        } catch (RadosException | RbdException e) {
+            throw new CloudRuntimeException(String.format("Failed to get the size of the encrypted RBD volume %s/%s: %s",
+                    pool.getSourceDir(), image, e.getMessage()), e);
+        }
+    }
+
+    /**
+     * Makes room for the LUKS2 header in front of the given size in a new RBD image, which was created with room for a
+     * header of {@link #LUKS2_HEADER_RESERVE_BYTES}: the image is grown if its objects are larger, as the header then
+     * takes one object (see {@link #getRbdLuks2HeaderSize(long)}).
+     */
+    private void reserveRbdLuks2Header(KVMStoragePool pool, String image, long size) {
+        try {
+            Rados r = connectToCeph(pool);
+            try {
+                IoCTX io = r.ioCtxCreate(pool.getSourceDir());
+                try {
+                    reserveRbdLuks2Header(new Rbd(io), image, size);
+                } finally {
+                    r.ioCtxDestroy(io);
+                }
+            } finally {
+                r.shutDown();
+            }
+        } catch (RadosException | RbdException e) {
+            throw new CloudRuntimeException(String.format("Failed to make room for the encryption header in RBD image %s/%s: %s",
+                    pool.getSourceDir(), image, e.getMessage()), e);
+        }
+    }
+
+    private void reserveRbdLuks2Header(Rbd rbd, String image, long size) throws RbdException {
+        RbdImage rbdImage = rbd.open(image);
+        try {
+            RbdImageInfo info = rbdImage.stat();
+            long imageSize = size + getRbdLuks2HeaderSize(info.obj_size);
+            if (info.size < imageSize) {
+                logger.debug("Growing RBD image {} to {}, as the encryption header of an image with objects of {} takes one object",
+                        image, toHumanReadableSize(imageSize), toHumanReadableSize(info.obj_size));
+                rbdImage.resize(imageSize);
+            }
+        } finally {
+            closeRbdImage(rbd, rbdImage, image);
+        }
+    }
+
+    /**
      * Closes an RBD image without throwing, so that a failure to close cannot discard a
      * successful result or hide the exception that is already on its way out.
      */
@@ -1092,11 +1175,16 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             // Create the raw RBD image first. For encrypted volumes we apply a native librbd LUKS header
             // afterwards via `rbd encryption format` (engine='librbd'). We deliberately do NOT hand the
             // passphrase to qemu-img, which would instead produce a qemu-native LUKS container.
+            // librbd keeps the header in the image, in front of the data, so the image of an encrypted volume
+            // is larger than the volume by the size of the header: the Instance then sees the size of the volume.
+            boolean encrypted = passphrase != null && passphrase.length > 0;
+            long imageSize = encrypted ? size + LUKS2_HEADER_RESERVE_BYTES : size;
             KVMPhysicalDisk disk = (dataPool == null) ?
-                    createPhysicalDiskByLibVirt(name, pool, PhysicalDiskFormat.RAW, provisioningType, size) :
-                    createPhysicalDiskByQemuImg(name, pool, PhysicalDiskFormat.RAW, provisioningType, size, null);
+                    createPhysicalDiskByLibVirt(name, pool, PhysicalDiskFormat.RAW, provisioningType, imageSize) :
+                    createPhysicalDiskByQemuImg(name, pool, PhysicalDiskFormat.RAW, provisioningType, imageSize, null);
 
-            if (passphrase != null && passphrase.length > 0) {
+            if (encrypted) {
+                reserveRbdLuks2Header(pool, name, size);
                 formatRbdImageEncryption(pool, name, passphrase);
                 disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS2);
             }
@@ -1278,6 +1366,64 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             return true;
         } catch (LibvirtException e) {
             throw new CloudRuntimeException(e.toString());
+        }
+    }
+
+    static String maskRbdKey(String message) {
+        return message == null ? null : message.replaceAll("key=[^:\\s]*", "key=******");
+    }
+
+    private static Rados connectToCeph(KVMStoragePool pool) throws RadosException {
+        Rados r = new Rados(pool.getAuthUserName());
+        r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
+        // librados aborts the process rather than returning an error if it is handed a null key, which a pool without
+        // a cephx user has
+        if (pool.getAuthUserName() != null) {
+            r.confSet("key", pool.getAuthSecret());
+        } else {
+            r.confSet("auth_client_required", "none");
+        }
+        r.confSet("client_mount_timeout", "30");
+        r.connect();
+        return r;
+    }
+
+    private boolean rbdImageExists(KVMStoragePool pool, String imageName) throws RadosException, RbdException {
+        Rados r = connectToCeph(pool);
+        try {
+            IoCTX io = r.ioCtxCreate(pool.getSourceDir());
+            try {
+                return Arrays.asList(new Rbd(io).list()).contains(imageName);
+            } finally {
+                r.ioCtxDestroy(io);
+            }
+        } finally {
+            r.shutDown();
+        }
+    }
+
+    /**
+     * Removes an RBD image left behind by a failed copy, so that it does not make every later copy fail with "File exists"
+     */
+    private void removeRbdImageQuietly(KVMStoragePool pool, String imageName) {
+        try {
+            Rados r = connectToCeph(pool);
+            try {
+                IoCTX io = r.ioCtxCreate(pool.getSourceDir());
+                try {
+                    Rbd rbd = new Rbd(io);
+                    if (Arrays.asList(rbd.list()).contains(imageName)) {
+                        rbd.remove(imageName);
+                        logger.info("Removed the incomplete RBD image {}/{} left by the failed copy", pool.getSourceDir(), imageName);
+                    }
+                } finally {
+                    r.ioCtxDestroy(io);
+                }
+            } finally {
+                r.shutDown();
+            }
+        } catch (RadosException | RbdException e) {
+            logger.warn("Failed to remove the incomplete RBD image {}/{} left by the failed copy, remove it manually: {}", pool.getSourceDir(), imageName, e.getMessage());
         }
     }
 
@@ -1578,9 +1724,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     /**
      * Option A (thin CoW encrypted root), used when the template already lives on the same RBD cluster
      * as the destination pool. Per the Ceph "Image Encryption" clone recipe: grow the template base to
-     * reserve LUKS2-header space, snapshot+protect that grown state, clone from it, apply a LUKS2 header,
-     * then resize the clone to the requested size. The inherited (plaintext) template data stays readable
-     * through the clone's encryption, and the clone is a thin CoW image (only the header is written).
+     * reserve LUKS2-header space, snapshot+protect that grown state (the template itself is shrunk back),
+     * clone from it, apply a LUKS2 header, then resize the clone to the requested size. The inherited
+     * (plaintext) template data stays readable through the clone's encryption, and the clone is a thin CoW
+     * image (only the header is written).
      *
      * @return the encrypted CoW clone, or {@code null} if the Ceph operations failed
      */
@@ -1591,6 +1738,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         IoCTX ioContext = null;
         Rbd rbdClient = null;
         RbdImage templateImage = null;
+        long cloneSize;
         try {
             radosConnection = new Rados(destPool.getAuthUserName());
             radosConnection.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
@@ -1600,20 +1748,35 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             ioContext = radosConnection.ioCtxCreate(destPool.getSourceDir());
             rbdClient = new Rbd(ioContext);
             templateImage = rbdClient.open(template.getName());
-            boolean luksSnapshotExists = false;
+            Long luksSnapshotSize = null;
             for (RbdSnapInfo snapshotInfo : templateImage.snapList()) {
                 if (luksReservedSnapshotName.equals(snapshotInfo.name)) {
-                    luksSnapshotExists = true;
+                    luksSnapshotSize = snapshotInfo.size;
                     break;
                 }
             }
-            if (!luksSnapshotExists) {
-                templateImage.resize(template.getVirtualSize() + LUKS2_HEADER_RESERVE_BYTES);
-                templateImage.snapCreate(luksReservedSnapshotName);
-                templateImage.snapProtect(luksReservedSnapshotName);
+            if (luksSnapshotSize == null) {
+                // The template is grown by the size of the header only for the snapshot the encrypted clones are made of,
+                // and shrunk back right after: its unencrypted clones are made of its base snapshot, which may not exist
+                // yet, and must keep the size of the template.
+                RbdImageInfo templateInfo = templateImage.stat();
+                luksSnapshotSize = templateInfo.size + getRbdLuks2HeaderSize(templateInfo.obj_size);
+                templateImage.resize(luksSnapshotSize);
+                try {
+                    templateImage.snapCreate(luksReservedSnapshotName);
+                    templateImage.snapProtect(luksReservedSnapshotName);
+                } finally {
+                    templateImage.resize(templateInfo.size);
+                }
                 logger.debug("Prepared LUKS-reserved template snapshot {}@{}", template.getName(), luksReservedSnapshotName);
             }
             rbdClient.clone(template.getName(), luksReservedSnapshotName, ioContext, newUuid, RBD_FEATURES, rbdOrder);
+            RbdImage cloneImage = rbdClient.open(newUuid);
+            try {
+                cloneSize = luksSnapshotSize - getRbdLuks2HeaderSize(cloneImage.stat().obj_size);
+            } finally {
+                closeRbdImage(rbdClient, cloneImage, newUuid);
+            }
         } catch (RadosException | RbdException e) {
             logger.error("Failed to create encrypted CoW clone {}: {}", newUuid, e.getMessage());
             return null;
@@ -1630,7 +1793,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
         }
         formatRbdImageEncryption(destPool, newUuid, passphrase);
-        if (disk.getVirtualSize() > template.getVirtualSize()) {
+        if (disk.getVirtualSize() > cloneSize) {
             // grow the clone to the requested root size (encryption-aware)
             new RbdEncryption().resize(destPool.getSourceHost(), destPool.getSourcePort(),
                     destPool.getAuthUserName(), destPool.getAuthSecret(), destPool.getSourceDir(),
@@ -1661,6 +1824,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             ioContext = radosConnection.ioCtxCreate(destPool.getSourceDir());
             Rbd rbdClient = new Rbd(ioContext);
             rbdClient.create(newUuid, imageSizeWithLuksHeader, RBD_FEATURES, rbdOrder);
+            reserveRbdLuks2Header(rbdClient, newUuid, disk.getVirtualSize());
         } catch (RadosException | RbdException e) {
             logger.error("Failed to create encrypted RBD image {}: {}", newUuid, e.getMessage());
             return null;
