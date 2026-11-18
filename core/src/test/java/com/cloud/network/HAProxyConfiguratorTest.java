@@ -106,13 +106,22 @@ public class HAProxyConfiguratorTest {
 
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "4", true, 0L);
         String result = genConfig(hpg, cmd);
-        assertTrue("idleTimeout of 0 should not generate 'timeout server' in the resulting haproxy config", !result.contains("\ttimeout server"));
-        assertTrue("idleTimeout of 0 should not generate 'timeout client' in the resulting haproxy config", !result.contains("\ttimeout client"));
+        assertTrue("idleTimeout of 0 should not generate 'timeout server' in the resulting haproxy config", !result.contains("\ttimeout server "));
+        assertTrue("idleTimeout of 0 should not generate 'timeout client' in the resulting haproxy config", !result.contains("\ttimeout client "));
+        assertTrue("idleTimeout of 0 leaves nothing else to bound half-closed connections, so they fall back to 50000",
+            result.contains("\ttimeout client-fin 50000") && result.contains("\ttimeout server-fin 50000"));
 
         cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "4", true, 1234L);
         result = genConfig(hpg, cmd);
         assertTrue("idleTimeout of 1234 should result in 'timeout server     1234' in the resulting haproxy config", result.contains("\ttimeout server     1234"));
         assertTrue("idleTimeout of 1234 should result in 'timeout client     1234' in the resulting haproxy config", result.contains("\ttimeout client     1234"));
+        assertTrue("a half-closed connection must not outlive an active one, so the fin timeout tracks a smaller idleTimeout",
+            result.contains("\ttimeout client-fin 1234") && result.contains("\ttimeout server-fin 1234"));
+
+        cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "4", true, 3600000L);
+        result = genConfig(hpg, cmd);
+        assertTrue("idleTimeout of 3600000 should still be capped to 50000 for half-closed connections",
+            result.contains("\ttimeout client-fin 50000") && result.contains("\ttimeout server-fin 50000"));
     }
 
     /**
