@@ -126,6 +126,8 @@ public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgra
     @Override
     public void performDataMigration(Connection conn) {
         insertBackupReportEmailTemplate(conn);
+        addIndexes(conn);
+        dropOldIndexes(conn);
     }
 
     private void insertBackupReportEmailTemplate(Connection conn) {
@@ -147,6 +149,29 @@ public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgra
             String message = String.format("Unable to insert email template for backup_report_template due to [%s].", e.getMessage());
             logger.error(message, e);
             throw new CloudRuntimeException(message, e);
+        }
+    }
+
+    private void addIndexes(Connection conn) {
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__archived__created",
+                "archived", "created");
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__account_id__archived__created",
+                "account_id", "archived", "created");
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__domain_id__archived__created",
+                "domain_id", "archived", "created");
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__resource_type__resource_id__archived__created",
+                "resource_type", "resource_id", "archived", "created");
+    }
+
+    private void dropOldIndexes(Connection conn) {
+        if (DbUpgradeUtils.indexExists(conn, "event", "i_event__archived__created")) {
+            DbUpgradeUtils.dropIndexIfExists(conn, "event", "archived");
+        }
+        if (DbUpgradeUtils.indexExists(conn, "event", "i_event__account_id__archived__created")) {
+            DbUpgradeUtils.dropIndexIfExists(conn, "event", "i_event__account_id");
+        }
+        if (DbUpgradeUtils.indexExists(conn, "event", "i_event__resource_type__resource_id__archived__created")) {
+            DbUpgradeUtils.dropIndexIfExists(conn, "event", "i_event__resource_type__resource_id");
         }
     }
 }
