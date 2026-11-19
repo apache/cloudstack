@@ -801,6 +801,10 @@ backup_stopped_vm() {
   sync
 
   ls -l --numeric-uid-gid $dest | awk '{print $5}'
+
+  # The backup is complete at this point, so a failed unmount is logged and does not fail it.
+  umount "$mount_point" 2>>"$logFile" || { log "WARNING: umount of $mount_point failed"; true; }
+  rmdir "$mount_point" 2>>"$logFile" || { log "WARNING: rmdir of $mount_point failed"; true; }
 }
 
 delete_backup() {
