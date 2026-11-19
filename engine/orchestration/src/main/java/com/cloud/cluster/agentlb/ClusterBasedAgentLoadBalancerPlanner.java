@@ -17,7 +17,6 @@
 package com.cloud.cluster.agentlb;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -122,25 +121,15 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
         return hostsToReturn;
     }
 
+    /**
+     * Orders the clusters by the number of hosts in them, largest first. Clusters without a host
+     * list go last. Clusters of the same size keep the order in which the map returns them.
+     */
     public static LinkedHashMap<Long, List<HostVO>> sortByClusterSize(final Map<Long, List<HostVO>> hostToClusterMap) {
         List<Long> keys = new ArrayList<Long>();
         keys.addAll(hostToClusterMap.keySet());
-        Collections.sort(keys, new Comparator<Long>() {
-            @Override
-            public int compare(Long o1, Long o2) {
-                List<HostVO> v1 = hostToClusterMap.get(o1);
-                List<HostVO> v2 = hostToClusterMap.get(o2);
-                if (v1 == null) {
-                    return (v2 == null) ? 0 : 1;
-                }
-
-                if (v1.size() < v2.size()) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            }
-        });
+        Comparator<List<HostVO>> largestFirst = Comparator.comparingInt((List<HostVO> hosts) -> hosts.size()).reversed();
+        keys.sort(Comparator.comparing(hostToClusterMap::get, Comparator.nullsLast(largestFirst)));
 
         LinkedHashMap<Long, List<HostVO>> sortedMap = new LinkedHashMap<Long, List<HostVO>>();
         for (Long key : keys) {
