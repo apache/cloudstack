@@ -2296,17 +2296,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         final Map<String, String> params = new HashMap<>();
         params.put(SetHostParamsCommand.SYSTEM_TRAFFIC_LABELS, String.join(",", _physicalNetworkDao.getKvmNetworkLabelsInZone(zoneId)));
 
-        final List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.Routing, zoneId);
-        for (final HostVO host : hosts) {
-            if (host.getHypervisorType() != HypervisorType.KVM) {
-                continue;
-            }
-            try {
-                easySend(host.getId(), new SetHostParamsCommand(params));
-            } catch (Exception e) {
-                logger.debug("Failed to send the system traffic labels to the agent of host [{}].", host, e);
-            }
-        }
+        final List<HostVO> hosts = _resourceMgr.listAllUpHostsInOneZoneByHypervisor(HypervisorType.KVM, zoneId);
+        final List<Long> hostIds = hosts.stream().map(HostVO::getId).collect(Collectors.toList());
+
+        final Map<Long, List<Long>> hostsPerZone = new HashMap<>();
+        hostsPerZone.put(zoneId, hostIds);
+        sendCommandToAgents(hostsPerZone, params);
     }
 
     @Override
