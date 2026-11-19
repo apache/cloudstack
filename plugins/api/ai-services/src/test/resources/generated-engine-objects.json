@@ -1,0 +1,180 @@
+{
+  "AiAdapterResponse": {
+    "account": "sample",
+    "basemodel": "sample",
+    "created": "sample",
+    "id": "sample",
+    "name": "sample",
+    "rank": 7,
+    "servedmodelname": "sample",
+    "shared": true,
+    "sizebytes": 1234
+  },
+  "AiApiKeyResponse": {
+    "allowedmodels": "sample",
+    "apikey": "sample",
+    "expires": "sample",
+    "id": "sample",
+    "lastused": "sample",
+    "name": "sample"
+  },
+  "AiBatchResponse": {
+    "account": "sample",
+    "created": "sample",
+    "finished": "sample",
+    "id": "sample",
+    "inputuri": "sample",
+    "model": "sample",
+    "outputuri": "sample",
+    "requestcount": 7,
+    "status": "sample"
+  },
+  "AiBudgetResponse": {
+    "account": "sample",
+    "blocked": true,
+    "currency": "sample",
+    "domain": "sample",
+    "id": "sample",
+    "monthly": 1.5,
+    "on_exceed": "sample",
+    "percent_used": 1.5,
+    "spent": 1.5
+  },
+  "AiCertificateResponse": {
+    "account": "sample",
+    "created": "sample",
+    "customdomain": "sample",
+    "expires": "sample",
+    "fingerprint": "sample",
+    "id": "sample",
+    "serial": 7
+  },
+  "AiEffectiveParameterResponse": {
+    "locked": true,
+    "locked_at": "sample",
+    "name": "sample",
+    "policy": "sample",
+    "source": "sample",
+    "value": "sample"
+  },
+  "AiEndpointResponse": {
+    "base_url": "sample",
+    "model": "sample",
+    "price_tier": "sample",
+    "snippets": "sample",
+    "task": "sample"
+  },
+  "AiEvaluationResponse": {
+    "id": "sample",
+    "model": "sample",
+    "overridden": true,
+    "passed": true,
+    "revision": "sample",
+    "summary": "sample"
+  },
+  "AiGpuCapacityResponse": {
+    "gpu_class": "sample",
+    "gpus_free": 7,
+    "gpus_total": 7,
+    "nodes_free": 7,
+    "nodes_healthy": 7,
+    "nodes_total": 7,
+    "zone": "sample"
+  },
+  "AiGpuClassProposalResponse": {
+    "host_tag": "sample",
+    "hosts": 7,
+    "suggested_name": "sample"
+  },
+  "AiGuardrailCheckResponse": {
+    "action": "sample",
+    "name": "sample",
+    "policy": "sample"
+  },
+  "AiGuardrailProfileResponse": {
+    "checks": "sample",
+    "id": "sample",
+    "name": "sample",
+    "scope": "sample",
+    "target": "sample"
+  },
+  "AiHfCheckResponse": {
+    "architecture": "sample",
+    "compatible": true,
+    "context_length": 7,
+    "download_bytes": 1234,
+    "gated": true,
+    "license": "sample",
+    "repo_id": "sample",
+    "requires_remote_code": true,
+    "revision": "sample"
+  },
+  "AiHfModelResponse": {
+    "gated": true,
+    "license": "sample",
+    "repo_id": "sample",
+    "task": "sample"
+  },
+  "AiPlaygroundSessionResponse": {
+    "apikey": "sample",
+    "base_url": "sample",
+    "expires": "sample",
+    "id": "sample",
+    "model": "sample"
+  },
+  "AiPrivateEndpointResponse": {
+    "account": "sample",
+    "certificate": "sample",
+    "created": "sample",
+    "customdomain": "sample",
+    "deployment": "sample",
+    "exposure": "sample",
+    "id": "sample",
+    "network": "sample",
+    "publicenabled": true,
+    "tls": "sample"
+  },
+  "AiProfileResponse": {
+    "id": "sample",
+    "kind": "sample",
+    "name": "sample",
+    "scope": "sample",
+    "target": "sample"
+  },
+  "AiReconcilerActionResponse": {
+    "error": "sample",
+    "kind": "sample",
+    "name": "sample",
+    "outcome": "sample",
+    "resource_type": "sample"
+  },
+  "AiReconcilerRunResponse": {
+    "actions": "sample",
+    "dry_run": true,
+    "finished_at": "sample",
+    "id": "sample",
+    "started_at": "sample",
+    "status": "sample",
+    "zone": "sample"
+  },
+  "AiSetupCheckResponse": {
+    "detail": "sample",
+    "name": "sample",
+    "remedy": "sample",
+    "status": "sample"
+  },
+  "AiSnippetResponse": {
+    "code": "sample",
+    "language": "sample",
+    "name": "sample"
+  },
+  "AiUsageResponse": {
+    "account": "sample",
+    "cost": 1.5,
+    "currency": "sample",
+    "gpu_hours": 1.5,
+    "input_tokens": 1234,
+    "model": "sample",
+    "output_tokens": 1234
+  }
+}
