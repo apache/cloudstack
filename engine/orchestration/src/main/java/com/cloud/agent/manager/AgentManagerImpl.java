@@ -2211,7 +2211,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 params.put(NetworkOrchestrationService.TUNGSTEN_ENABLED.key(), String.valueOf(NetworkOrchestrationService.TUNGSTEN_ENABLED.valueIn(host.getDataCenterId())));
                 params.put(ReconcileCommandService.ReconcileCommandsEnabled.key(), String.valueOf(_reconcileCommandsEnabled));
                 if (hypervisorType == HypervisorType.KVM) {
-                    params.put(SetHostParamsCommand.SYSTEM_TRAFFIC_LABELS, String.join(",", _physicalNetworkDao.getKvmNetworkLabelsInZone(host.getDataCenterId())));
+                    String systemTrafficLabels = getSystemTrafficLabels(host.getDataCenterId());
+                    if (systemTrafficLabels != null) {
+                        params.put(SetHostParamsCommand.SYSTEM_TRAFFIC_LABELS, systemTrafficLabels);
+                    }
                 }
 
                     try {
@@ -2291,10 +2294,25 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
+    private String getSystemTrafficLabels(long zoneId) {
+        try {
+            return String.join(",", _physicalNetworkDao.getKvmNetworkLabelsInZone(zoneId));
+        } catch (Exception e) {
+            logger.warn("Failed to retrieve the KVM network labels for zone [{}].", zoneId, e);
+            return null;
+        }
+    }
+
     @Override
     public void propagateSystemTrafficLabelsToAgents(long zoneId) {
+        final String systemTrafficLabels = getSystemTrafficLabels(zoneId);
+        if (systemTrafficLabels == null) {
+            logger.warn("Skipping system traffic labels propagation to agents for zone [{}] because they could not be retrieved.", zoneId);
+            return;
+        }
+
         final Map<String, String> params = new HashMap<>();
-        params.put(SetHostParamsCommand.SYSTEM_TRAFFIC_LABELS, String.join(",", _physicalNetworkDao.getKvmNetworkLabelsInZone(zoneId)));
+        params.put(SetHostParamsCommand.SYSTEM_TRAFFIC_LABELS, systemTrafficLabels);
 
         final List<HostVO> hosts = _resourceMgr.listAllUpHostsInOneZoneByHypervisor(HypervisorType.KVM, zoneId);
         final List<Long> hostIds = hosts.stream().map(HostVO::getId).collect(Collectors.toList());

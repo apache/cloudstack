@@ -4676,7 +4676,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_DELETE, eventDescription = "deleting physical network", async = true)
-    @DB
     public boolean deletePhysicalNetwork(final Long physicalNetworkId) {
 
         // verify input parameters
@@ -4687,7 +4686,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         checkIfPhysicalNetworkIsDeletable(physicalNetworkId);
 
-        return Transaction.execute(new TransactionCallback<Boolean>() {
+        boolean removed = Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 disablePhysicalNetwork(physicalNetworkId, pNetwork);
@@ -4753,6 +4752,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
             }
         });
+
+        if (removed) {
+            propagateSystemTrafficLabelsToAgents(pNetwork.getDataCenterId());
+        }
+        return removed;
     }
 
     @DB
@@ -5385,7 +5389,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     @Override
-    @DB
     @ActionEvent(eventType = EventTypes.EVENT_TRAFFIC_TYPE_CREATE, eventDescription = "Creating Physical Network TrafficType", create = true)
     public PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficTypeStr, String isolationMethod, String xenLabel, String kvmLabel, String vmwareLabel,
             String simulatorLabel, String vlan, String hypervLabel, String ovm3Label) {
@@ -5438,38 +5441,56 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             checkForPhysicalNetworksWithoutTag(network, trafficType);
         }
 
+        final Networks.TrafficType parsedTrafficType = trafficType;
+        final PhysicalNetworkTrafficTypeVO pNetworktrafficType;
         try {
-            // Create the new traffic type in the database
-            if (xenLabel == null) {
-                xenLabel = getDefaultXenNetworkLabel(trafficType);
-            }
-            PhysicalNetworkTrafficTypeVO pNetworktrafficType = new PhysicalNetworkTrafficTypeVO(physicalNetworkId, trafficType, xenLabel, kvmLabel, vmwareLabel, simulatorLabel, vlan, hypervLabel,
-                    ovm3Label);
-            pNetworktrafficType = _pNTrafficTypeDao.persist(pNetworktrafficType);
-
-            // For public traffic, get isolation method of physical network and update the public network accordingly
-            // each broadcast type will individually need to be qualified for support of public traffic
-            if (TrafficType.Public.equals(trafficType)) {
-                List<String> isolationMethods = network.getIsolationMethods();
-                if ((isolationMethods.size() == 1 && isolationMethods.get(0).toLowerCase().equals("vxlan"))
-                        || (isolationMethod != null && isolationMethods.contains(isolationMethod) && isolationMethod.toLowerCase().equals("vxlan"))) {
-                    // find row in networks table that is defined as 'Public', created when zone was deployed
-                    NetworkVO publicNetwork = _networksDao.listByZoneAndTrafficType(network.getDataCenterId(), TrafficType.Public).get(0);
-                    if (publicNetwork != null) {
-                        logger.debug("setting public network " + publicNetwork + " to broadcast type vxlan");
-                        publicNetwork.setBroadcastDomainType(BroadcastDomainType.Vxlan);
-                        _networksDao.persist(publicNetwork);
-                    }
-                }
-            }
-
-            _agentManager.propagateSystemTrafficLabelsToAgents(network.getDataCenterId());
-            return pNetworktrafficType;
+            pNetworktrafficType = Transaction.execute((TransactionCallback<PhysicalNetworkTrafficTypeVO>) status ->
+                    addTrafficTypeToPhysicalNetworkInTransaction(physicalNetworkId, network, parsedTrafficType, isolationMethod,
+                            xenLabel, kvmLabel, vmwareLabel, simulatorLabel, vlan, hypervLabel, ovm3Label));
         } catch (Exception ex) {
             logger.warn("Exception: ", ex);
             throw new CloudRuntimeException("Fail to add a traffic type to physical network");
         }
 
+        propagateSystemTrafficLabelsToAgents(network.getDataCenterId());
+        return pNetworktrafficType;
+    }
+
+    private PhysicalNetworkTrafficTypeVO addTrafficTypeToPhysicalNetworkInTransaction(long physicalNetworkId, PhysicalNetworkVO network, TrafficType trafficType,
+            String isolationMethod, String xenLabel, String kvmLabel, String vmwareLabel, String simulatorLabel, String vlan, String hypervLabel, String ovm3Label) {
+        // Create the new traffic type in the database
+        if (xenLabel == null) {
+            xenLabel = getDefaultXenNetworkLabel(trafficType);
+        }
+        PhysicalNetworkTrafficTypeVO pNetworktrafficType = new PhysicalNetworkTrafficTypeVO(physicalNetworkId, trafficType, xenLabel, kvmLabel, vmwareLabel, simulatorLabel, vlan, hypervLabel,
+                ovm3Label);
+        pNetworktrafficType = _pNTrafficTypeDao.persist(pNetworktrafficType);
+
+        // For public traffic, get isolation method of physical network and update the public network accordingly
+        // each broadcast type will individually need to be qualified for support of public traffic
+        if (TrafficType.Public.equals(trafficType)) {
+            List<String> isolationMethods = network.getIsolationMethods();
+            if ((isolationMethods.size() == 1 && isolationMethods.get(0).toLowerCase().equals("vxlan"))
+                    || (isolationMethod != null && isolationMethods.contains(isolationMethod) && isolationMethod.toLowerCase().equals("vxlan"))) {
+                // find row in networks table that is defined as 'Public', created when zone was deployed
+                NetworkVO publicNetwork = _networksDao.listByZoneAndTrafficType(network.getDataCenterId(), TrafficType.Public).get(0);
+                if (publicNetwork != null) {
+                    logger.debug("setting public network " + publicNetwork + " to broadcast type vxlan");
+                    publicNetwork.setBroadcastDomainType(BroadcastDomainType.Vxlan);
+                    _networksDao.persist(publicNetwork);
+                }
+            }
+        }
+
+        return pNetworktrafficType;
+    }
+
+    private void propagateSystemTrafficLabelsToAgents(long zoneId) {
+        if (TransactionLegacy.currentTxn().dbTxnStarted()) {
+            logger.debug("Skipping system traffic labels propagation to agents for zone [{}] because a database transaction is still active.", zoneId);
+            return;
+        }
+        _agentManager.propagateSystemTrafficLabelsToAgents(zoneId);
     }
 
     private String getDefaultXenNetworkLabel(TrafficType trafficType) {
@@ -5548,7 +5569,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         _pNTrafficTypeDao.update(id, trafficType);
         PhysicalNetworkVO pNetwork = _physicalNetworkDao.findById(trafficType.getPhysicalNetworkId());
         if (pNetwork != null) {
-            _agentManager.propagateSystemTrafficLabelsToAgents(pNetwork.getDataCenterId());
+            propagateSystemTrafficLabelsToAgents(pNetwork.getDataCenterId());
         }
         return trafficType;
     }
@@ -5576,7 +5597,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         PhysicalNetworkVO pNetwork = _physicalNetworkDao.findById(trafficType.getPhysicalNetworkId());
         boolean removed = _pNTrafficTypeDao.remove(id);
         if (removed && pNetwork != null) {
-            _agentManager.propagateSystemTrafficLabelsToAgents(pNetwork.getDataCenterId());
+            propagateSystemTrafficLabelsToAgents(pNetwork.getDataCenterId());
         }
         return removed;
     }

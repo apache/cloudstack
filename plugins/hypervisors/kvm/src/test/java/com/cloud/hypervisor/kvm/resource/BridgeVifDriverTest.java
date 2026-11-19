@@ -27,6 +27,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -34,11 +37,15 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.Networks;
+import com.cloud.utils.script.Script;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BridgeVifDriverTest {
 
     private static final String BRIDGE_NAME = "cloudbr1";
+
+    @Mock
+    private LibvirtComputingResource libvirtComputingResource;
 
     @Spy
     @InjectMocks
@@ -131,5 +138,23 @@ public class BridgeVifDriverTest {
         Assert.assertFalse(driver.isSystemTrafficLabel(null, labels));
         Assert.assertFalse(driver.isSystemTrafficLabel("", labels));
         Assert.assertFalse(driver.isSystemTrafficLabel("  ", labels));
+    }
+
+    @Test
+    public void unplugDoesNotDeleteSystemTrafficBridge() {
+        Mockito.when(libvirtComputingResource.getSystemTrafficLabels()).thenReturn(Collections.singleton("brbond0-100"));
+
+        LibvirtVMDef.InterfaceDef iface = Mockito.mock(LibvirtVMDef.InterfaceDef.class);
+        Mockito.when(iface.getBrName()).thenReturn("brbond0-100");
+
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class);
+             MockedConstruction<Script> constructedScripts = Mockito.mockConstruction(Script.class)) {
+            script.when(() -> Script.runSimpleBashScript("ls /sys/class/net/brbond0-100")).thenReturn("brbond0-100");
+            script.when(() -> Script.runSimpleBashScript("ls /sys/class/net/brbond0-100/brif | tr '\n' ' '")).thenReturn("");
+
+            driver.unplug(iface, true);
+
+            Assert.assertTrue(constructedScripts.constructed().isEmpty());
+        }
     }
 }
