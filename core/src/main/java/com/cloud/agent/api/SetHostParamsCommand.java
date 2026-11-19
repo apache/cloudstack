@@ -23,6 +23,8 @@ import java.util.Map;
 
 public class SetHostParamsCommand extends Command {
 
+    public static final String SYSTEM_TRAFFIC_LABELS = "systemTrafficLabels";
+
     Map<String, String> params;
 
     public SetHostParamsCommand(Map<String, String> params) {

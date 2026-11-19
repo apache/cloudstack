@@ -18,11 +18,18 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -30,11 +37,15 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.Networks;
+import com.cloud.utils.script.Script;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BridgeVifDriverTest {
 
     private static final String BRIDGE_NAME = "cloudbr1";
+
+    @Mock
+    private LibvirtComputingResource libvirtComputingResource;
 
     @Spy
     @InjectMocks
@@ -99,5 +110,51 @@ public class BridgeVifDriverTest {
         nic.setBroadcastUri(new URI(Networks.BroadcastDomainType.Storage.scheme() + "://untagged"));
         String result = driver.createStorageVnetBridgeIfNeeded(nic, "trafficLabel", BRIDGE_NAME);
         Assert.assertEquals(BRIDGE_NAME, result);
+    }
+
+    @Test
+    public void isSystemTrafficLabelReturnsTrueForMatchingVlanBridge() {
+        Set<String> labels = new HashSet<>(Arrays.asList("cloudbr0", "brbond0-100"));
+        Assert.assertTrue(driver.isSystemTrafficLabel("brbond0-100", labels));
+    }
+
+    @Test
+    public void isSystemTrafficLabelReturnsTrueForMatchingVxlanBridge() {
+        Set<String> labels = Collections.singleton("brvx-1000");
+        Assert.assertTrue(driver.isSystemTrafficLabel("brvx-1000", labels));
+    }
+
+    @Test
+    public void isSystemTrafficLabelReturnsFalseForNonMatchingBridge() {
+        Set<String> labels = Collections.singleton("brbond0-100");
+        Assert.assertFalse(driver.isSystemTrafficLabel("brbond0-200", labels));
+    }
+
+    @Test
+    public void isSystemTrafficLabelReturnsFalseWhenBridgeOrLabelsAreNullOrBlank() {
+        Set<String> labels = Collections.singleton("brbond0-100");
+        Assert.assertFalse(driver.isSystemTrafficLabel("brbond0-100", null));
+        Assert.assertFalse(driver.isSystemTrafficLabel("brbond0-100", Collections.emptySet()));
+        Assert.assertFalse(driver.isSystemTrafficLabel(null, labels));
+        Assert.assertFalse(driver.isSystemTrafficLabel("", labels));
+        Assert.assertFalse(driver.isSystemTrafficLabel("  ", labels));
+    }
+
+    @Test
+    public void unplugDoesNotDeleteSystemTrafficBridge() {
+        Mockito.when(libvirtComputingResource.getSystemTrafficLabels()).thenReturn(Collections.singleton("brbond0-100"));
+
+        LibvirtVMDef.InterfaceDef iface = Mockito.mock(LibvirtVMDef.InterfaceDef.class);
+        Mockito.when(iface.getBrName()).thenReturn("brbond0-100");
+
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class);
+             MockedConstruction<Script> constructedScripts = Mockito.mockConstruction(Script.class)) {
+            script.when(() -> Script.runSimpleBashScript("ls /sys/class/net/brbond0-100")).thenReturn("brbond0-100");
+            script.when(() -> Script.runSimpleBashScript("ls /sys/class/net/brbond0-100/brif | tr '\n' ' '")).thenReturn("");
+
+            driver.unplug(iface, true);
+
+            Assert.assertTrue(constructedScripts.constructed().isEmpty());
+        }
     }
 }

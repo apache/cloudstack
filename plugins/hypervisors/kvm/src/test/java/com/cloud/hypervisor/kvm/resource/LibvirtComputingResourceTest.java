@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.Semaphore;
@@ -972,6 +973,15 @@ public class LibvirtComputingResourceTest {
         uuid = oldUuid;
         uuid = lcr.getUuid(uuid);
         assertEquals(uuid, oldUuid);
+    }
+
+    @Test
+    public void parseSystemTrafficLabelsTest() {
+        final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        assertTrue(lcr.parseSystemTrafficLabels(null).isEmpty());
+        assertTrue(lcr.parseSystemTrafficLabels("  ").isEmpty());
+        assertEquals(Set.of("cloudbr0", "brbond0-100"), lcr.parseSystemTrafficLabels(" cloudbr0 , brbond0-100, "));
+        assertEquals(Set.of("cloudbr0"), lcr.parseSystemTrafficLabels("cloudbr0,cloudbr0"));
     }
 
     /*
