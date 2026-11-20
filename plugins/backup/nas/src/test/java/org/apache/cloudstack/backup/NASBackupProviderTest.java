@@ -348,7 +348,7 @@ public class NASBackupProviderTest {
     }
 
     @Test
-    public void takeBackupFailureWithoutCleanupRemovesBackup() throws AgentUnavailableException, OperationTimedoutException {
+    public void takeBackupFailureWithoutCleanupKeepsFailedBackup() throws AgentUnavailableException, OperationTimedoutException {
         VMInstanceVO vm = mockRunningVmForBackup(1L, 2L, 3L, 4L, 5L, 6L);
 
         BackupAnswer answer = mock(BackupAnswer.class);
@@ -361,8 +361,10 @@ public class NASBackupProviderTest {
         Pair<Boolean, Backup> result = nasBackupProvider.takeBackup(vm, false, false);
 
         Assert.assertFalse(result.first());
-        Assert.assertNull(result.second());
-        Mockito.verify(backupDao).remove(Mockito.anyLong());
+        Assert.assertNotNull(result.second());
+        Assert.assertEquals(Backup.Status.Failed, result.second().getStatus());
+        Mockito.verify(backupDao).update(Mockito.anyLong(), Mockito.any(BackupVO.class));
+        Mockito.verify(backupDao, Mockito.never()).remove(Mockito.anyLong());
         Mockito.verifyNoInteractions(alertManager);
     }
 
