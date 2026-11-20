@@ -87,6 +87,22 @@ public class KVMPhysicalDiskTest {
     }
 
     @Test
+    public void testRBDStringBuilderWithBareIpv6Monitors() {
+        // nasbackup.sh splits this string back into "-m [fd00::1]:6789,[fd00::2]:6789", so the monitors
+        // must come out bracketed and with their port, and the ':' and ';' of the list must be escaped.
+        Mockito.doReturn("fd00::1,fd00::2").when(kvmStoragePoolMock).getSourceHost();
+        Mockito.doReturn(6789).when(kvmStoragePoolMock).getSourcePort();
+        Mockito.doReturn(authUserName).when(kvmStoragePoolMock).getAuthUserName();
+        Mockito.doReturn(authSecret).when(kvmStoragePoolMock).getAuthSecret();
+
+        String expected = "rbd:volume1:" +
+                "mon_host=[fd00\\:\\:1]\\:6789\\;[fd00\\:\\:2]\\:6789:" +
+                "auth_client_required=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30";
+
+        Assert.assertEquals(expected, KVMPhysicalDisk.RBDStringBuilder(kvmStoragePoolMock, "volume1"));
+    }
+
+    @Test
     public void testAttributes() {
         String name = "3bc186e0-6c29-45bf-b2b0-ddef6f91f5ef";
         String path = "/" + name;
