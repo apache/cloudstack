@@ -14,13 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.kvm.storage;
-
-import com.cloud.storage.Storage;
+package com.cloud.storage;
 
 import java.util.Map;
 
-class StoragePoolInformation {
+/**
+ * What an agent needs to know to reach a primary storage pool: for a pool that is not (yet) defined on the host, e.g. a
+ * pool of another cluster to which an Instance is migrated.
+ */
+public class StoragePoolInformation {
     private String name;
     private String host;
     private int port;

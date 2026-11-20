@@ -36,6 +36,7 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.StoragePoolInformation;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import org.apache.cloudstack.backup.InternalBackupService;
 import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferCommand;
@@ -2128,13 +2129,17 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 MigrateCommand.MigrateDiskInfo migrateDiskInfo;
 
-                boolean isNonManagedToNfs = supportStoragePoolType(sourceStoragePool.getPoolType(), StoragePoolType.Filesystem, StoragePoolType.CLVM, StoragePoolType.CLVM_NG) && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && !managedStorageDestination;
+                boolean isNonManagedToNfs = supportStoragePoolType(sourceStoragePool.getPoolType(), StoragePoolType.Filesystem, StoragePoolType.CLVM, StoragePoolType.CLVM_NG, StoragePoolType.RBD) && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && !managedStorageDestination;
                 if (isNonManagedToNfs) {
                     migrateDiskInfo = new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(),
                             MigrateCommand.MigrateDiskInfo.DiskType.FILE,
                             MigrateCommand.MigrateDiskInfo.DriverType.QCOW2,
                             MigrateCommand.MigrateDiskInfo.Source.FILE,
                             connectHostToVolume(destHost, destVolumeInfo.getPoolId(), volumeIdentifier));
+                } else if (destStoragePool.getPoolType() == StoragePoolType.RBD && !managedStorageDestination) {
+                    migrateDiskInfo = configureMigrateDiskInfoForRbd(srcVolumeInfo, destPath, destStoragePool);
+                    migrateDiskInfo.setSourceDiskOnStorageFileSystem(isStoragePoolTypeOfFile(sourceStoragePool));
+                    migrateDiskInfoList.add(migrateDiskInfo);
                 } else {
                     String backingPath = generateBackingPath(destStoragePool, destVolumeInfo);
                     migrateDiskInfo = configureMigrateDiskInfo(srcVolumeInfo, destPath, backingPath);
@@ -2258,12 +2263,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             throw new CloudRuntimeException(errMsg);
         } finally {
             if (!success && !srcVolumeInfoToDestVolumeInfo.isEmpty()) {
-                for (VolumeInfo destVolumeInfo : srcVolumeInfoToDestVolumeInfo.values()) {
-                    logger.info(String.format("Expunging dest volume [id: %s, state: %s] as part of failed VM migration with volumes command for VM [%s].", destVolumeInfo.getId(), destVolumeInfo.getState(), vmTO.getId()));
-                    destVolumeInfo.processEvent(Event.OperationFailed);
-                    destVolumeInfo.processEvent(Event.DestroyRequested);
-                    _volumeService.expungeVolumeAsync(destVolumeInfo);
-                }
+                cleanUpDestVolumesOfFailedMigration(srcVolumeInfoToDestVolumeInfo.values(), vmTO);
             }
 
             CopyCmdAnswer copyCmdAnswer = new CopyCmdAnswer(errMsg);
@@ -2273,6 +2273,27 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             result.setResult(errMsg);
 
             callback.complete(result);
+        }
+    }
+
+    /**
+     * Expunges the destination volumes created for a failed VM migration with volumes. When the migrate command itself failed,
+     * {@link #handlePostMigration} has already destroyed and expunged them, so volumes which are gone (or being removed) are skipped:
+     * sending more events to a volume whose row is already removed ends in a NullPointerException in the volume object.
+     */
+    protected void cleanUpDestVolumesOfFailedMigration(Collection<VolumeInfo> destVolumeInfos, VirtualMachineTO vmTO) {
+        for (VolumeInfo destVolumeInfo : destVolumeInfos) {
+            VolumeVO destVolumeVO = _volumeDao.findById(destVolumeInfo.getId());
+            if (destVolumeVO == null || Arrays.asList(Volume.State.Expunging, Volume.State.Expunged).contains(destVolumeVO.getState())) {
+                logger.debug("Dest volume [id: {}] is already cleaned up after the failed VM migration with volumes command for VM [{}].", destVolumeInfo.getId(), vmTO.getId());
+                continue;
+            }
+            logger.info("Expunging dest volume [id: {}, state: {}] as part of failed VM migration with volumes command for VM [{}].", destVolumeInfo.getId(), destVolumeVO.getState(), vmTO.getId());
+            if (destVolumeVO.getState() != Volume.State.Destroy) {
+                destVolumeInfo.processEvent(Event.OperationFailed);
+                destVolumeInfo.processEvent(Event.DestroyRequested);
+            }
+            _volumeService.expungeVolumeAsync(destVolumeInfo);
         }
     }
 
@@ -2310,9 +2331,11 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         // For block device sources, use FullClone (VIR_MIGRATE_NON_SHARED_DISK)
         boolean sourceIsBlockDevice = sourceStoragePool.getPoolType() == StoragePoolType.CLVM ||
                                        sourceStoragePool.getPoolType() == StoragePoolType.CLVM_NG;
+        // An RBD image is a raw clone of the template: libvirt sees no backing chain, so the whole image has to be copied
+        boolean sourceIsRbd = sourceStoragePool.getPoolType() == StoragePoolType.RBD;
 
         if (StringUtils.isNotBlank(srcVolumeBackingFile) && supportStoragePoolType(destStoragePool.getPoolType(), StoragePoolType.Filesystem) &&
-                !sourceIsBlockDevice &&
+                !sourceIsBlockDevice && !sourceIsRbd &&
                 srcVolumeInfo.getTemplateId() != null &&
                 Objects.nonNull(vmTemplate) &&
                 !Arrays.asList(KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME, VM_IMPORT_DEFAULT_TEMPLATE_NAME).contains(vmTemplate.getName())) {
@@ -2389,6 +2412,21 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 MigrateCommand.MigrateDiskInfo.DiskType.BLOCK,
                 MigrateCommand.MigrateDiskInfo.DriverType.RAW,
                 MigrateCommand.MigrateDiskInfo.Source.DEV, destPath, backingPath);
+    }
+
+    /**
+     * Configures a {@link MigrateDiskInfo} for a destination volume on a Ceph RBD pool: a network disk of the raw format
+     * that is addressed as "pool/image". The monitors and the authentication of the destination pool are handed over as
+     * the host the Instance runs on may not know that pool, which can belong to another cluster.
+     */
+    protected MigrateCommand.MigrateDiskInfo configureMigrateDiskInfoForRbd(VolumeInfo srcVolumeInfo, String destPath, StoragePoolVO destStoragePool) {
+        MigrateCommand.MigrateDiskInfo migrateDiskInfo = new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(),
+                MigrateCommand.MigrateDiskInfo.DiskType.NETWORK,
+                MigrateCommand.MigrateDiskInfo.DriverType.RAW,
+                MigrateCommand.MigrateDiskInfo.Source.NETWORK, destPath);
+        migrateDiskInfo.setDestPoolInformation(new StoragePoolInformation(destStoragePool.getUuid(), destStoragePool.getHostAddress(), destStoragePool.getPort(),
+                destStoragePool.getPath(), StringUtils.substringBefore(destStoragePool.getUserInfo(), ":"), StoragePoolType.RBD, null, true));
+        return migrateDiskInfo;
     }
 
     /**
@@ -2516,7 +2554,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 VolumeVO volumeVO = _volumeDao.findById(destVolumeInfo.getId());
                 StoragePoolVO srcPoolVO = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
                 StoragePoolVO destPoolVO = _storagePoolDao.findById(destVolumeInfo.getPoolId());
-                volumeVO.setFormat(destPoolVO != null && destPoolVO.getPoolType() == StoragePoolType.CLVM
+                volumeVO.setFormat(destPoolVO != null && (destPoolVO.getPoolType() == StoragePoolType.CLVM || destPoolVO.getPoolType() == StoragePoolType.RBD)
                         ? ImageFormat.RAW : ImageFormat.QCOW2);
                 volumeVO.setLastId(srcVolumeInfo.getId());
 
@@ -2610,6 +2648,13 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         newVol.setPoolType(storagePoolVO.getPoolType());
         newVol.setLastPoolId(lastPoolId);
         newVol.setLastId(volume.getId());
+        // the destination volume is created in the format of its pool: raw on RBD, qcow2 on a file based pool
+        if (storagePoolVO.getPoolType() == StoragePoolType.RBD) {
+            newVol.setFormat(ImageFormat.RAW);
+        } else if (volume.getFormat() == ImageFormat.RAW && isStoragePoolTypeInList(storagePoolVO.getPoolType(),
+                StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint, StoragePoolType.Filesystem)) {
+            newVol.setFormat(ImageFormat.QCOW2);
+        }
 
         if (volume.getKmsKeyId() != null) {
             newVol.setKmsKeyId(volume.getKmsKeyId());

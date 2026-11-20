@@ -172,6 +172,10 @@ public interface KVMStoragePool {
     default void customizeLibvirtDiskDef(LibvirtVMDef.DiskDef disk) {
     }
 
+    default String getAuthSecretUUID() {
+        return null;
+    }
+
     /**
      * Whether the volume {@code volumeUuid}, freshly created in this pool, already reads as zeroes,
      * so a copy onto it may skip zero regions (qemu-img --target-is-zero). Says nothing about a

@@ -1434,7 +1434,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             if (this.bridgeType == BridgeType.OPENVSWITCH) {
                 if (conn.getLibVirVersion() < 10 * 1000 + 0) {
-                    throw new ConfigurationException("Libvirt version 0.10.0 required for openvswitch support, but version " + conn.getLibVirVersion() + " detected");
+                    throw new ConfigurationException("Libvirt version 0.10.0 required for openvswitch support, but version " + prettyVersion(conn.getLibVirVersion()) + " detected");
                 }
             }
         } catch (final LibvirtException e) {
@@ -6121,7 +6121,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private String prettyVersion(final long version) {
+    public static String prettyVersion(final long version) {
         final long major = version / 1000000;
         final long minor = version % 1000000 / 1000;
         final long release = version % 1000000 % 1000;

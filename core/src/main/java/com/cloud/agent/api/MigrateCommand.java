@@ -27,6 +27,7 @@ import java.util.Map;
 import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePoolInformation;
 
 public class MigrateCommand extends Command {
     private String vmName;
@@ -190,7 +191,7 @@ public class MigrateCommand extends Command {
 
     public static class MigrateDiskInfo {
         public enum DiskType {
-            FILE, BLOCK;
+            FILE, BLOCK, NETWORK;
 
             @Override
             public String toString() {
@@ -208,7 +209,7 @@ public class MigrateCommand extends Command {
         }
 
         public enum Source {
-            FILE, DEV;
+            FILE, DEV, NETWORK;
 
             @Override
             public String toString() {
@@ -225,6 +226,7 @@ public class MigrateCommand extends Command {
         private boolean isSourceDiskOnStorageFileSystem;
         private Storage.StoragePoolType sourcePoolType;
         private Storage.StoragePoolType destPoolType;
+        private StoragePoolInformation destPoolInformation;
 
         public MigrateDiskInfo(final String serialNumber, final DiskType diskType, final DriverType driverType, final Source source, final String sourceText) {
             this.serialNumber = serialNumber;
@@ -288,6 +290,19 @@ public class MigrateCommand extends Command {
 
         public void setDestPoolType(Storage.StoragePoolType destPoolType) {
             this.destPoolType = destPoolType;
+        }
+
+        /**
+         * Describes the destination pool of a {@link DiskType#NETWORK} disk: the source host cannot look it up, as the
+         * pool may belong to a cluster it is not part of. The name is the UUID of the pool, the host holds the
+         * (comma separated) monitors and the user info only the user, so that no secret travels with the command.
+         */
+        public void setDestPoolInformation(StoragePoolInformation destPoolInformation) {
+            this.destPoolInformation = destPoolInformation;
+        }
+
+        public StoragePoolInformation getDestPoolInformation() {
+            return destPoolInformation;
         }
     }
 
