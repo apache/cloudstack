@@ -57,11 +57,15 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.withSettings;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import java.util.HashMap;
+import com.cloud.storage.StoragePool;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.storage.provider.StorageProviderFactory;
 import org.apache.cloudstack.storage.service.StorageStrategy;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
@@ -1118,6 +1122,106 @@ public class OntapPrimaryDatastoreLifecycleTest {
 
             assertTrue(result, "attachZone should succeed for KVM hypervisor");
             verify(_dataStoreHelper, times(1)).attachZone(any(DataStore.class), eq(Hypervisor.HypervisorType.KVM));
+        }
+    }
+
+    // ========== updateStoragePool() Tests ==========
+
+    @Test
+    public void testUpdateStoragePool_positive_resizesFlexVolume() {
+        // Setup
+        StoragePool storagePool = mock(StoragePool.class);
+        when(storagePool.getName()).thenReturn("test-pool");
+        when(storagePool.getCapacityBytes()).thenReturn(2147483648L); // 2 GB current
+
+        Map<String, String> details = new HashMap<>();
+        details.put(PrimaryDataStoreLifeCycle.CAPACITY_BYTES, String.valueOf(5368709120L)); // 5 GB new
+        details.put(OntapStorageConstants.VOLUME_UUID, "flex-vol-uuid-123");
+        details.put(OntapStorageConstants.VOLUME_NAME, "flexvol-name");
+        details.put("protocol", "NFS3");
+
+        Volume updatedVolume = new Volume();
+        updatedVolume.setUuid("flex-vol-uuid-123");
+        updatedVolume.setSize(5368709120L);
+        when(storageStrategy.updateStorageVolume(any(Volume.class))).thenReturn(updatedVolume);
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
+                    .thenReturn(storageStrategy);
+
+            // Execute
+            ontapPrimaryDatastoreLifecycle.updateStoragePool(storagePool, details);
+
+            // Verify
+            verify(storageStrategy, times(1)).updateStorageVolume(any(Volume.class));
+        }
+    }
+
+    @Test
+    public void testUpdateStoragePool_noCapacityBytesInDetails_skipsResize() {
+        // Setup
+        StoragePool storagePool = mock(StoragePool.class);
+        when(storagePool.getName()).thenReturn("test-pool");
+
+        Map<String, String> details = new HashMap<>();
+        details.put(OntapStorageConstants.VOLUME_UUID, "flex-vol-uuid-123");
+        details.put("protocol", "NFS3");
+        // No CAPACITY_BYTES key — resize should be skipped
+
+        // Execute
+        ontapPrimaryDatastoreLifecycle.updateStoragePool(storagePool, details);
+
+        // Verify — storageStrategy should never be called
+        verify(storageStrategy, never()).updateStorageVolume(any());
+    }
+
+    @Test
+    public void testUpdateStoragePool_missingVolumeUuid_throwsCloudRuntimeException() {
+        // Setup
+        StoragePool storagePool = mock(StoragePool.class);
+        when(storagePool.getName()).thenReturn("test-pool");
+        when(storagePool.getCapacityBytes()).thenReturn(1073741824L);
+
+        Map<String, String> details = new HashMap<>();
+        details.put(PrimaryDataStoreLifeCycle.CAPACITY_BYTES, String.valueOf(3221225472L));
+        details.put("protocol", "NFS3");
+        // No VOLUME_UUID — cannot resize without it
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
+                    .thenReturn(storageStrategy);
+
+            // Execute & Verify
+            assertThrows(CloudRuntimeException.class,
+                    () -> ontapPrimaryDatastoreLifecycle.updateStoragePool(storagePool, details));
+            verify(storageStrategy, never()).updateStorageVolume(any());
+        }
+    }
+
+    @Test
+    public void testUpdateStoragePool_updateStorageVolumeThrows_propagatesCloudRuntimeException() {
+        // Setup
+        StoragePool storagePool = mock(StoragePool.class);
+        when(storagePool.getName()).thenReturn("test-pool");
+        when(storagePool.getCapacityBytes()).thenReturn(1073741824L);
+
+        Map<String, String> details = new HashMap<>();
+        details.put(PrimaryDataStoreLifeCycle.CAPACITY_BYTES, String.valueOf(3221225472L));
+        details.put(OntapStorageConstants.VOLUME_UUID, "flex-vol-uuid-err");
+        details.put(OntapStorageConstants.VOLUME_NAME, "flexvol-err");
+        details.put("protocol", "NFS3");
+
+        when(storageStrategy.updateStorageVolume(any(Volume.class)))
+                .thenThrow(new CloudRuntimeException("ONTAP resize failed"));
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
+                    .thenReturn(storageStrategy);
+
+            // Execute & Verify
+            assertThrows(CloudRuntimeException.class,
+                    () -> ontapPrimaryDatastoreLifecycle.updateStoragePool(storagePool, details));
+            verify(storageStrategy, times(1)).updateStorageVolume(any(Volume.class));
         }
     }
 
