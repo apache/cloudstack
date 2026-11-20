@@ -123,6 +123,12 @@ public class BackupVO implements Backup {
     @Column(name = "host_id")
     private Long hostId;
 
+    @Column(name = "failure_reason")
+    private String failureReason;
+
+    @Column(name = "logid")
+    private String logid;
+
     @Transient
     Map<String, String> details;
 
@@ -131,7 +137,7 @@ public class BackupVO implements Backup {
     }
 
     public BackupVO(String name, long vmId, long backupOfferingId, long accountId, long domainId, long zoneId, long virtualSize,
-                    Status status, Long backupScheduleId, CompressionStatus compressionStatus, ValidationStatus validationStatus) {
+                    Status status, Long backupScheduleId, CompressionStatus compressionStatus, ValidationStatus validationStatus, String logid) {
         this.name = name;
         this.vmId = vmId;
         this.backupOfferingId = backupOfferingId;
@@ -145,6 +151,7 @@ public class BackupVO implements Backup {
         this.backupScheduleId = backupScheduleId;
         this.compressionStatus = compressionStatus;
         this.validationStatus = validationStatus;
+        this.logid = logid;
     }
 
     @Override
@@ -351,6 +358,22 @@ public class BackupVO implements Backup {
 
     public void setUncompressedSize(Long uncompressedSize) {
         this.uncompressedSize = uncompressedSize;
+    }
+
+    public String getFailureReason() {
+        return failureReason;
+    }
+
+    public void setFailureReason(String failureReason) {
+        this.failureReason = failureReason;
+    }
+
+    public String getLogid() {
+        return logid;
+    }
+
+    public void setLogid(String logid) {
+        this.logid = logid;
     }
 
     @Override
