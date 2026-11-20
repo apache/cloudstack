@@ -1064,6 +1064,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public boolean isL3NetworkWithoutSpecifyVlan(NetworkOffering offering) {
+        return false;
+    }
+
+    @Override
     public IpAddress updateIP(Long id, String customId, Boolean displayIp) {
         // TODO Auto-generated method stub
         return null;

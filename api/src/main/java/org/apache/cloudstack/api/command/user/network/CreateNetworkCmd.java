@@ -87,6 +87,12 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
         + "for shared networks and isolated networks when it belongs to VPC")
     private String netmask;
 
+    @Parameter(name = ApiConstants.CIDR, type = CommandType.STRING, since = "24.0.0",
+        description = "The IPv4 subnet of the Network in CIDR notation, e.g. 192.0.2.0/24. Supported for L3 (Direct Routed) "
+        + "networks only, as an alternative to netmask: the IP range defaults to the subnet's usable addresses, "
+        + "and startip/endip may narrow it")
+    private String cidr;
+
     @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "The beginning IP address in the Network IP range")
     private String startIp;
 
@@ -231,6 +237,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
         return netmask;
     }
 
+    public String getCidr() {
+        return cidr;
+    }
+
     public String getStartIp() {
         return startIp;
     }
@@ -340,10 +350,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             }
         }
         if (physicalNetworkId != null) {
-            if ((offering.getGuestType() == GuestType.Shared) || (offering.getGuestType() == GuestType.L2)) {
+            if ((offering.getGuestType() == GuestType.Shared) || (offering.getGuestType() == GuestType.L2) || (offering.getGuestType() == GuestType.L3)) {
                 return physicalNetworkId;
             } else {
-                throw new InvalidParameterValueException("Physical network ID can be specified for networks of guest IP type " + GuestType.Shared + " or " + GuestType.L2 + " only.");
+                throw new InvalidParameterValueException(String.format("Physical network ID can be specified for networks of guest IP type %s, %s or %s only.", GuestType.Shared, GuestType.L2, GuestType.L3));
             }
         } else {
             if (zoneId == null) {
