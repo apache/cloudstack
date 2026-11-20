@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ScriptTest {
@@ -106,6 +107,28 @@ public class ScriptTest {
         script.add("legacy-password");
         String commandLine = script.toString();
         Assert.assertEquals("test.sh -y ****** ", commandLine);
+    }
+
+    @Test
+    public void testRunSimpleBashScriptWithFullResultSuccess() {
+        String result = Script.runSimpleBashScriptWithFullResult("echo hello", 10);
+        Assert.assertNotNull(result);
+        Assert.assertEquals("hello", result.trim());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testRunSimpleBashScriptWithFullResultFailureIncludesOutput() {
+        try {
+            Script.runSimpleBashScriptWithFullResult("echo 'some error detail' >&2; exit 1", 10);
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("Error executing command"));
+            throw e;
+        }
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testRunSimpleBashScriptWithFullResultFailureOnInvalidCommand() {
+        Script.runSimpleBashScriptWithFullResult("nonexistent_command_xyz_12345", 10);
     }
 
 }

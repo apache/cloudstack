@@ -663,6 +663,15 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         logger.info("Connected to the host: {}", shell.getConnectedHost());
     }
 
+    protected void waitForCommandsAndReconnect(final Link link) {
+        int inProgress = commandsInProgress.get();
+        if (inProgress > 0) {
+            logger.warn("Agent disconnected with {} command(s) still in progress. Reconnecting — local operations (e.g. blockcommit) will continue in their threads.",
+                    inProgress);
+        }
+        reconnect(link);
+    }
+
     protected void closeAndTerminateLink(final Link link) {
         if (link == null) {
             return;
@@ -700,7 +709,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 reconnect(link);
                 return;
             }
-            System.exit(1);
+            waitForCommandsAndReconnect(link);
         }
         if (!answerValid) {
             logger.warn("Threw away a startup answer because we're reconnecting.");
@@ -772,7 +781,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                             reconnect(link);
                             return;
                         }
-                        System.exit(1);
+                        waitForCommandsAndReconnect(link);
                         return;
                     } else if (cmd instanceof MaintainCommand) {
                         logger.debug("Received maintainCommand, do not cancel current tasks");
