@@ -301,6 +301,12 @@
             </template>
             <a-input v-model:value="form.capacityBytes" :placeholder="apiParams.capacitybytes.description" />
           </a-form-item>
+          <a-form-item name="capacityIops" ref="capacityIops">
+            <template #label>
+              <tooltip-label :title="$t('label.capacityiops')" :tooltip="apiParams.capacityiops.description"/>
+            </template>
+            <a-input v-model:value="form.capacityIops" :placeholder="apiParams.capacityiops.description" />
+          </a-form-item>
         </div>
         <div v-if="form.provider === 'PowerFlex'">
           <a-form-item name="powerflexGateway" ref="powerflexGateway">

@@ -1619,6 +1619,9 @@ export default {
         if (this.prefillContent.capacityBytes && this.prefillContent.capacityBytes.length > 0) {
           params.capacityBytes = this.prefillContent.capacityBytes.split(',').join('')
         }
+        if (this.prefillContent.capacityIops && this.prefillContent.capacityIops.length > 0) {
+          params.capacityIops = this.prefillContent.capacityIops.split(',').join('')
+        }
       }
 
       params.tags = this.prefillContent?.primaryStorageTags || ''

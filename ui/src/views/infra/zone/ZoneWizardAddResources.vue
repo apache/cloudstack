@@ -611,7 +611,7 @@ export default {
           title: 'label.capacityiops',
           key: 'capacityIops',
           hidden: {
-            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor', 'NetApp ONTAP']
+            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor']
           }
         },
         {

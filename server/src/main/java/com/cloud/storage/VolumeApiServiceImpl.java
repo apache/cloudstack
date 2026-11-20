@@ -884,7 +884,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                         minIops = 0L;
                         maxIops = 0L;
                     } else {
-                        if (minIops == null || minIops <= 0) {
+                        if (minIops == null || minIops < 0) {
                             throw new InvalidParameterValueException("The min IOPS must be greater than 0.");
                         }
 
@@ -2333,7 +2333,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     if (volumeMigrateRequired) {
                         logger.warn(String.format("Volume change offering operation succeeded for volume ID: %s but volume resize operation failed, so please try resize volume operation separately", volume.getUuid()));
                     } else {
-                        throw new CloudRuntimeException(String.format("Volume disk offering change operation failed for volume ID [%s] because the volume resize operation failed.", volume.getUuid()));
+                        throw new CloudRuntimeException(String.format("Volume disk offering change operation failed for volume ID [%s] because the volume resize operation failed: %s", volume.getUuid(), e.getMessage()));
                     }
                 }
             }
@@ -2377,7 +2377,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     if (volumeMigrateRequired) {
                         logger.warn(String.format("Volume change offering operation succeeded for volume ID: %s but volume resize operation failed, so please try resize volume operation separately", volume.getUuid()));
                     } else {
-                        throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume ID: %s due to resize volume operation failed", volume.getUuid()));
+                        throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume ID: %s due to resize volume operation failed: %s", volume.getUuid(), e.getMessage()), e);
                     }
                 }
             }

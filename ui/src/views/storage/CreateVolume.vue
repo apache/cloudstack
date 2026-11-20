@@ -311,7 +311,7 @@ export default {
         size: [{ required: true, message: this.$t('message.error.custom.disk.size') }],
         miniops: [{
           validator: async (rule, value) => {
-            if (value && (isNaN(value) || value <= 0)) {
+            if (value && (isNaN(value) || value < 0)) {
               return Promise.reject(this.$t('message.error.number'))
             }
             return Promise.resolve()

@@ -19,29 +19,38 @@
 
 package org.apache.cloudstack.storage.service;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.feign.FeignClientFactory;
 import org.apache.cloudstack.storage.feign.client.AggregateFeignClient;
+import org.apache.cloudstack.storage.feign.client.ClusterFeignClient;
 import org.apache.cloudstack.storage.feign.client.JobFeignClient;
 import org.apache.cloudstack.storage.feign.client.NASFeignClient;
 import org.apache.cloudstack.storage.feign.client.NetworkFeignClient;
+import org.apache.cloudstack.storage.feign.client.QosFeignClient;
 import org.apache.cloudstack.storage.feign.client.SANFeignClient;
 import org.apache.cloudstack.storage.feign.client.SnapshotFeignClient;
 import org.apache.cloudstack.storage.feign.client.SvmFeignClient;
 import org.apache.cloudstack.storage.feign.client.VolumeFeignClient;
 import org.apache.cloudstack.storage.feign.model.Aggregate;
+import org.apache.cloudstack.storage.feign.model.Cluster;
+import org.apache.cloudstack.storage.feign.model.ClusterNode;
 import org.apache.cloudstack.storage.feign.model.IpInterface;
 import org.apache.cloudstack.storage.feign.model.IscsiService;
 import org.apache.cloudstack.storage.feign.model.Job;
 import org.apache.cloudstack.storage.feign.model.Nas;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
 import org.apache.cloudstack.storage.feign.model.Svm;
+import org.apache.cloudstack.storage.feign.model.Version;
 import org.apache.cloudstack.storage.feign.model.Volume;
+import org.apache.cloudstack.storage.feign.model.VolumeQosPolicy;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
@@ -49,6 +58,7 @@ import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
 import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.apache.cloudstack.storage.utils.OntapStorageUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -72,9 +82,11 @@ public abstract class StorageStrategy {
     protected SvmFeignClient svmFeignClient;
     protected JobFeignClient jobFeignClient;
     protected NetworkFeignClient networkFeignClient;
+    protected QosFeignClient qosFeignClient;
     protected SANFeignClient sanFeignClient;
     protected NASFeignClient nasFeignClient;
     protected SnapshotFeignClient snapshotFeignClient;
+    protected ClusterFeignClient clusterFeignClient;
 
     protected OntapStorage storage;
 
@@ -103,9 +115,140 @@ public abstract class StorageStrategy {
         this.svmFeignClient = feignClientFactory.createClient(SvmFeignClient.class, baseURL);
         this.jobFeignClient = feignClientFactory.createClient(JobFeignClient.class, baseURL);
         this.networkFeignClient = feignClientFactory.createClient(NetworkFeignClient.class, baseURL);
+        this.qosFeignClient = feignClientFactory.createClient(QosFeignClient.class, baseURL);
         this.sanFeignClient = feignClientFactory.createClient(SANFeignClient.class, baseURL);
         this.nasFeignClient = feignClientFactory.createClient(NASFeignClient.class, baseURL);
         this.snapshotFeignClient = feignClientFactory.createClient(SnapshotFeignClient.class, baseURL);
+        this.clusterFeignClient = feignClientFactory.createClient(ClusterFeignClient.class, baseURL);
+    }
+
+    /**
+     * Fetches the ONTAP {@link Cluster} (name, uuid, version) and, for ASUP, the rolled-up node
+     * {@code model} and {@code platformType} from {@code GET /api/cluster/nodes}. Best-effort:
+     * returns {@code null} if the cluster GET fails. Node fields are left unset if the nodes GET
+     * fails. Callers must never fail a storage operation because of this.
+     *
+     * @return the ONTAP {@link Cluster}, or {@code null} if it cannot be resolved
+     */
+    public Cluster getClusterInfo() {
+        try {
+            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+            Cluster cluster = clusterFeignClient.getCluster(authHeader, true);
+            if (cluster != null) {
+                populateNodeAsupFields(cluster, authHeader);
+            }
+            return cluster;
+        } catch (Exception e) {
+            logger.warn("getClusterInfo: failed to fetch ONTAP cluster info for storage IP {}: {}",
+                    storage.getStorageIP(), e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Sets {@link Cluster#setModel(String)} and {@link Cluster#setPlatformType(String)} from one
+     * {@code GET /api/cluster/nodes}. Distinct models are joined with a comma. Platform type is
+     * {@code performance}, {@code capacity}, {@code fas}, or {@code composite} when personalities mix.
+     */
+    private void populateNodeAsupFields(Cluster cluster, String authHeader) {
+        try {
+            Map<String, Object> query = new HashMap<>();
+            query.put(OntapStorageConstants.FIELDS, OntapStorageConstants.CLUSTER_NODE_ASUP_FIELDS);
+            OntapResponse<ClusterNode> response = clusterFeignClient.getClusterNodes(authHeader, query);
+            if (response == null || response.getRecords() == null || response.getRecords().isEmpty()) {
+                return;
+            }
+            LinkedHashSet<String> models = new LinkedHashSet<>();
+            LinkedHashSet<String> platformTypes = new LinkedHashSet<>();
+            for (ClusterNode node : response.getRecords()) {
+                if (node == null) {
+                    continue;
+                }
+                if (node.getModel() != null && !node.getModel().isBlank()) {
+                    models.add(node.getModel().trim());
+                }
+                platformTypes.add(classifyNodePlatformType(node));
+            }
+            if (!models.isEmpty()) {
+                cluster.setModel(String.join(OntapStorageConstants.COMMA, models));
+            }
+            cluster.setPlatformType(rollupPlatformType(platformTypes));
+        } catch (Exception e) {
+            logger.warn("getClusterInfo: failed to fetch ONTAP node hardware for storage IP {}: {}",
+                    storage.getStorageIP(), e.getMessage());
+        }
+    }
+
+    /**
+     * Extracts a clean, parser-friendly ONTAP version string from a {@link Cluster}.
+     *
+     * <p>Prefers the compact "generation.major.minor" numeric form (e.g. "9.17.1"), which avoids
+     * the colon/date noise in {@code version.full}. Falls back to the verbose {@code version.full}
+     * banner only when the numeric fields are unavailable.</p>
+     *
+     * @param cluster the cluster (may be {@code null})
+     * @return the ONTAP version string, or {@code null} if it cannot be resolved
+     */
+    public String getClusterVersion(Cluster cluster) {
+        if (cluster == null || cluster.getVersion() == null) {
+            return null;
+        }
+        Version version = cluster.getVersion();
+        if (version.getGeneration() != null && version.getMajor() != null && version.getMinor() != null) {
+            return version.getGeneration() + OntapStorageConstants.DOT + version.getMajor()
+                    + OntapStorageConstants.DOT + version.getMinor();
+        }
+        if (version.getFull() != null && !version.getFull().isEmpty()) {
+            return version.getFull();
+        }
+        return null;
+    }
+
+    /**
+     * Classifies one node: not all-flash → {@code fas}; all-flash + capacity → {@code capacity};
+     * otherwise all-flash (including performance-optimized or classic AFF) → {@code performance}.
+     */
+    private static String classifyNodePlatformType(ClusterNode node) {
+        boolean allFlash = Boolean.TRUE.equals(node.getAllFlashOptimized());
+        boolean capacity = Boolean.TRUE.equals(node.getCapacityOptimized());
+        if (!allFlash) {
+            return OntapStorageConstants.ASUP_PLATFORM_TYPE_FAS;
+        }
+        if (capacity) {
+            return OntapStorageConstants.ASUP_PLATFORM_TYPE_CAPACITY;
+        }
+        return OntapStorageConstants.ASUP_PLATFORM_TYPE_PERFORMANCE;
+    }
+
+    private static String rollupPlatformType(LinkedHashSet<String> platformTypes) {
+        if (platformTypes == null || platformTypes.isEmpty()) {
+            return null;
+        }
+        if (platformTypes.size() == 1) {
+            return platformTypes.iterator().next();
+        }
+        return OntapStorageConstants.ASUP_PLATFORM_TYPE_COMPOSITE;
+    }
+
+    /**
+     * True when every cluster node reports {@code is_all_flash_optimized} (AFF, including C-series).
+     * A FAS node, or a node that omits the flag, makes this false. Used for min-throughput QoS support.
+     */
+    public boolean isAff() {
+        Map<String, Object> query = new HashMap<>();
+        query.put(OntapStorageConstants.FIELDS, OntapStorageConstants.CLUSTER_NODE_ASUP_FIELDS);
+        OntapResponse<ClusterNode> response = clusterFeignClient.getClusterNodes(getAuthHeader(), query);
+        if (response == null || response.getRecords() == null
+                || response.getRecords().stream().allMatch(node -> node == null)) {
+            throw new CloudRuntimeException(
+                    "Unable to determine whether the ONTAP cluster is AFF or FAS");
+        }
+        for (ClusterNode node : response.getRecords()) {
+            if (node == null || !Boolean.TRUE.equals(node.getAllFlashOptimized())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -191,7 +334,6 @@ public abstract class StorageStrategy {
             logger.error("No aggregates are assigned to SVM " + svmName);
             throw new CloudRuntimeException("No aggregates are assigned to SVM " + svmName);
         }
-        List<Aggregate> eligibleAggregates = new ArrayList<>();
         for (Aggregate aggr : aggrs) {
             logger.debug("Found aggregate: " + aggr.getName() + " with UUID: " + aggr.getUuid());
             Aggregate aggrResp = aggregateFeignClient.getAggregateByUUID(authHeader, aggr.getUuid(),
@@ -211,13 +353,12 @@ public abstract class StorageStrategy {
                 continue;
             }
             logger.info("Selected aggregate: " + aggr.getName() + " for volume operations.");
-            eligibleAggregates.add(aggrResp);
+            this.aggregates = List.of(aggr);
         }
-        if (eligibleAggregates.isEmpty()) {
+        if (this.aggregates == null || this.aggregates.isEmpty()) {
             logger.error("No suitable aggregates found on SVM " + svmName + " for volume creation.");
             throw new CloudRuntimeException("No suitable aggregates found on SVM " + svmName + " for volume creation.");
         }
-        this.aggregates = eligibleAggregates;
     }
 
     // Common methods like create/delete etc., should be here
@@ -387,7 +528,25 @@ public abstract class StorageStrategy {
      * @return the updated Volume object
      */
     public Volume updateStorageVolume(Volume volume) {
-        return null;
+        logger.info("Resizing ONTAP FlexVolume '{}' (UUID: {}) to {} bytes", volume.getName(), volume.getUuid(), volume.getSize());
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        try {
+            Volume resizeRequest = new Volume();
+            resizeRequest.setSize(volume.getSize());
+            JobResponse jobResponse = volumeFeignClient.updateVolume(authHeader, volume.getUuid(), resizeRequest);
+            pollJobIfPresent(jobResponse, "resize FlexVolume [" + volume.getUuid() + "]",
+                    OntapStorageConstants.ONTAP_VOLUME_JOB_MAX_RETRIES, OntapStorageConstants.ONTAP_VOLUME_JOB_POLL_INTERVAL_MS);
+            logger.info("FlexVolume '{}' (UUID: {}) resized successfully to {} bytes", volume.getName(), volume.getUuid(), volume.getSize());
+        } catch (FeignException e) {
+            if (OntapStorageUtils.isOntapObjectNotFoundError(e)) {
+                String msg = String.format("Cannot resize FlexVolume '%s' (UUID: %s): volume not found on ONTAP (404). ", volume.getName(), volume.getUuid());
+                logger.error(msg);
+                throw new CloudRuntimeException(msg, e);
+            }
+            logger.error("Exception while resizing FlexVolume '{}' (UUID: {}): {}", volume.getName(), volume.getUuid(), e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to resize ONTAP FlexVolume: " + e.getMessage(), e);
+        }
+        return volume;
     }
 
     /**
@@ -420,15 +579,38 @@ public abstract class StorageStrategy {
     }
 
     /**
-     * Gets ONTAP Flex-Volume
-     * Eligible only for Unified ONTAP storage
-     * throw exception in case of disaggregated ONTAP storage
+     * Gets an ONTAP FlexVolume by UUID.
+     * Eligible only for Unified ONTAP storage.
+     * Throws exception in case of disaggregated ONTAP storage.
      *
-     * @param volume the volume to retrieve
-     * @return the retrieved Volume object
+     * <p>Callers pass ONTAP query parameters when they need a partial record. For example,
+     * {@code fields=space.used} returns only used space instead of the full volume.
+     * A null or empty map returns the default volume representation.</p>
+     *
+     * @param uuid the UUID of the volume to retrieve
+     * @param queryParams ONTAP query parameters applied to {@code GET /storage/volumes/{uuid}};
+     *                    may be null
+     * @return the retrieved Volume object, or null if not found
      */
-    public Volume getStorageVolume(Volume volume) {
-        return null;
+    public Volume getStorageVolume(String uuid, Map<String, Object> queryParams) {
+        if (StringUtils.isBlank(uuid)) {
+            throw new CloudRuntimeException("Cannot fetch ONTAP volume: UUID is null or empty");
+        }
+        Map<String, Object> params = queryParams != null ? queryParams : Collections.emptyMap();
+        logger.info("getStorageVolume: Fetching ONTAP volume [{}] with query params {}", uuid, params);
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        try {
+            Volume fetchedVolume = volumeFeignClient.getVolumeByUUID(authHeader, uuid, params);
+            logger.info("getStorageVolume: Volume [{}] fetched successfully", uuid);
+            return fetchedVolume;
+        } catch (FeignException e) {
+            if (OntapStorageUtils.isOntapObjectNotFoundError(e)) {
+                logger.warn("getStorageVolume: Volume [{}] not found in ONTAP", uuid);
+                return null;
+            }
+            logger.error("getStorageVolume: Exception while fetching volume [{}]: ", uuid, e);
+            throw new CloudRuntimeException("Failed to fetch volume: " + e.getMessage());
+        }
     }
 
     /**
@@ -531,10 +713,7 @@ public abstract class StorageStrategy {
             IpInterface fallbackInterface = null;
 
             for (IpInterface iface : response.getRecords()) {
-                if (iface == null || !Boolean.TRUE.equals(iface.getEnabled()) || !OntapStorageConstants.LIF_STATE_UP.equals(iface.getState())) {
-                    continue;
-                }
-                if (iface.getIp() == null || iface.getIp().getAddress() == null) {
+                if (!Boolean.TRUE.equals(iface.getEnabled()) || !OntapStorageConstants.LIF_STATE_UP.equals(iface.getState())) {
                     continue;
                 }
                 if (!isIPv4Address(iface.getIp().getAddress())) {
@@ -613,6 +792,27 @@ public abstract class StorageStrategy {
     abstract public CloudStackVolume createCloudStackVolume(CloudStackVolume cloudstackVolume);
 
     /**
+     * Creates the protocol-specific backend object that caches a template on this pool.
+     *
+     * <p>iSCSI creates an empty LUN ({@code /vol/&lt;flexVol&gt;/cs_tmpl_&lt;id&gt;}) sized to
+     * {@code sizeInBytes}. NFS is a no-op on the array: the KVM agent later writes the qcow2
+     * into the mounted FlexVolume.</p>
+     *
+     * <p>Returns a {@link CloudStackVolume} so the driver can map it to {@code CreateCmdResult}
+     * and update {@code template_spool_ref}. SAN populates {@code lun}; NAS returns an empty
+     * volume (no LUN / file yet).</p>
+     *
+     * @param storagePool   CloudStack primary storage pool (one FlexVolume)
+     * @param templateInfo  template being cached
+     * @param details       pool details (SVM, protocol, etc.)
+     * @param sizeInBytes   virtual size for the cache object (required for SAN; ignored for NAS)
+     * @return created cache identity, or an empty {@link CloudStackVolume} when nothing is
+     *         pre-created on the array
+     */
+    abstract public CloudStackVolume createTemplateCache(StoragePoolVO storagePool, TemplateInfo templateInfo,
+            Map<String, String> details, long sizeInBytes);
+
+    /**
      * Method encapsulates the behavior based on the opted protocol in subclasses.
      * it is going to mimic
      * updateLun       for iSCSI, FC protocols
@@ -622,7 +822,7 @@ public abstract class StorageStrategy {
      * @param cloudstackVolume the CloudStack volume to update
      * @return the updated CloudStackVolume object
      */
-    abstract CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume);
+    public abstract CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume);
 
     /**
      * Method encapsulates the behavior based on the opted protocol in subclasses.
@@ -636,14 +836,41 @@ public abstract class StorageStrategy {
     abstract public void deleteCloudStackVolume(CloudStackVolume cloudstackVolume);
 
     /**
-     * Method encapsulates the behavior based on the opted protocol in subclasses.
+     * Creates a space-efficient clone of an existing object inside the same FlexVolume.
      * it is going to mimic
      *     cloneLun       for iSCSI, FC protocols
      *     cloneFile      for NFS3.0 and NFS4.1 protocols
      *     cloneNameSpace for Nvme/TCP and Nvme/FC protocol
-     * @param cloudstackVolume the CloudStack volume to copy
+     *
+     * <p>ONTAP requires the source and the destination to live in the same FlexVolume, which
+     * holds because a CloudStack primary storage pool maps one-to-one onto a FlexVolume.</p>
+     *
+     * <p>The source may be an active object or one inside a FlexVolume snapshot:</p>
+     * <ul>
+     *   <li><b>SAN</b> — {@code lun.clone.source.name} set to
+     *       {@code /vol/&lt;fv&gt;/.snapshot/&lt;snap&gt;/&lt;lun&gt;}</li>
+     *   <li><b>NAS</b> — {@link CloudStackVolume#getSnapshotName()} set; it is sent as
+     *       {@code snapshot.name} on {@code POST /api/storage/file/clone}</li>
+     * </ul>
+     *
+     * @param cloudstackVolume describes the clone to create; the source is carried in the
+     *                         protocol-specific clone reference (for SAN, {@code lun.clone.source})
+     * @return the created CloudStackVolume, populated with the backend identity of the clone
      */
-    abstract public void copyCloudStackVolume(CloudStackVolume cloudstackVolume);
+    abstract public CloudStackVolume cloneCloudStackVolume(CloudStackVolume cloudstackVolume);
+
+    /**
+     * Grows an existing backend object to {@code sizeInBytes}.
+     *
+     * <p>Needed after cloning a cached template, because a clone inherits the size of its source
+     * while the service offering may ask for a larger disk.</p>
+     *
+     * <p>When the request already carries a QoS policy on the LUN or file, that policy is applied
+     * as part of this resize. iSCSI sends one LUN update with the new size and the policy.
+     * NFS grows the file on the host, then updates the file policy. A request with no policy
+     * changes size only.</p>
+     */
+    abstract public void resizeCloudStackVolume(CloudStackVolume cloudstackVolume, long sizeInBytes);
 
     /**
      * Method encapsulates the behavior based on the opted protocol in subclasses.
@@ -763,6 +990,112 @@ public abstract class StorageStrategy {
      */
     public String getAuthHeader() {
         return OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+    }
+
+    public VolumeQosPolicy createVolumeQosPolicy(String policyName, Long minIops, Long maxIops) {
+        VolumeQosPolicy policy = buildVolumeQosPolicy(policyName, minIops, maxIops);
+        Svm svm = new Svm();
+        svm.setName(storage.getSvmName());
+        policy.setSvm(svm);
+        try {
+            JobResponse response = qosFeignClient.createPolicy(getAuthHeader(), policy);
+            pollJobIfPresent(response, "create QoS policy [" + policyName + "]");
+        } catch (FeignException e) {
+            if (e.status() != 409) {
+                throw new CloudRuntimeException("Failed to create ONTAP QoS policy [" + policyName + "]: "
+                        + e.getMessage(), e);
+            }
+            logger.info("QoS policy [{}] already exists; using the existing policy", policyName);
+        }
+
+        VolumeQosPolicy createdPolicy = getVolumeQosPolicy(policyName);
+        return createdPolicy;
+    }
+
+    public void deleteVolumeQosPolicy(String policyUuid) {
+        if (policyUuid == null || policyUuid.isEmpty()) {
+            return;
+        }
+        VolumeQosPolicy policy = getVolumeQosPolicyByUuid(policyUuid);
+        if (policy == null) {
+            logger.info("QoS policy [{}] not found on ONTAP; skipping delete", policyUuid);
+            return;
+        }
+        if (policy.getObjectCount() != null && policy.getObjectCount() > 0) {
+            logger.info("QoS policy [{}] still has object_count={}; skipping delete",
+                    policyUuid, policy.getObjectCount());
+            return;
+        }
+        try {
+            JobResponse response = qosFeignClient.deletePolicy(getAuthHeader(), policyUuid);
+            pollJobIfPresent(response, "delete QoS policy [" + policyUuid + "]");
+        } catch (Exception e) {
+            if ((e instanceof FeignException && ((FeignException) e).status() == 409)
+                    || OntapStorageUtils.isOntapObjectNotFoundError(e)) {
+                logger.info("QoS policy [{}] was not deleted on ONTAP (already absent or conflict): {}",
+                        policyUuid, e.getMessage());
+                return;
+            }
+            throw new CloudRuntimeException("Failed to delete ONTAP QoS policy [" + policyUuid + "]: "
+                    + e.getMessage(), e);
+        }
+    }
+
+    private VolumeQosPolicy getVolumeQosPolicyByUuid(String policyUuid) {
+        Map<String, Object> queryParams = new HashMap<>();
+        queryParams.put(OntapStorageConstants.FIELDS, OntapStorageConstants.QOS_POLICY_OBJECT_COUNT_FIELDS);
+        try {
+            VolumeQosPolicy policy = qosFeignClient.getPolicy(getAuthHeader(), policyUuid, queryParams);
+            if (policy == null || StringUtils.isEmpty(policy.getUuid())) {
+                throw new CloudRuntimeException("Failed to fetch ONTAP QoS policy [" + policyUuid
+                        + "]: empty response");
+            }
+            return policy;
+        } catch (FeignException e) {
+            if (OntapStorageUtils.isOntapObjectNotFoundError(e)) {
+                return null;
+            }
+            throw new CloudRuntimeException("Failed to fetch ONTAP QoS policy [" + policyUuid + "]: "
+                    + e.getMessage(), e);
+        }
+    }
+
+    private VolumeQosPolicy getVolumeQosPolicy(String policyName) {
+        Map<String, Object> queryParams = new HashMap<>();
+        queryParams.put(OntapStorageConstants.NAME, policyName);
+        queryParams.put(OntapStorageConstants.SVM_DOT_NAME, storage.getSvmName());
+        try {
+            OntapResponse<VolumeQosPolicy> response = qosFeignClient.getPolicies(getAuthHeader(), queryParams);
+            if (response == null || response.getRecords() == null || response.getRecords().size() <= 0) {
+                throw new CloudRuntimeException("Unable to get ONTAP QoS policy [" + policyName + "] after creation");
+            }
+            VolumeQosPolicy policy = response.getRecords().get(0);
+            if (policy == null || StringUtils.isEmpty(policy.getUuid())) {
+                throw new CloudRuntimeException("Failed to fetch ONTAP QoS policy [" + policyName
+                        + "]: empty response");
+            }
+            return policy;
+        } catch (FeignException e) {
+            throw new CloudRuntimeException("Failed to fetch ONTAP QoS policy [" + policyName + "]: "
+                    + e.getMessage(), e);
+        }
+    }
+
+    private VolumeQosPolicy buildVolumeQosPolicy(String policyName, Long minIops, Long maxIops) {
+        VolumeQosPolicy.Fixed fixed = new VolumeQosPolicy.Fixed();
+        fixed.setCapacityShared(false);
+        // ONTAP rejects a policy whose throughput limit is zero, so only unlimited-side values are omitted.
+        if (minIops != null && minIops > 0) {
+            fixed.setMinThroughputIops(minIops);
+        }
+        if (maxIops != null && maxIops > 0) {
+            fixed.setMaxThroughputIops(maxIops);
+        }
+
+        VolumeQosPolicy policy = new VolumeQosPolicy();
+        policy.setName(policyName);
+        policy.setFixed(fixed);
+        return policy;
     }
 
     /**

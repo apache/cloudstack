@@ -158,7 +158,7 @@ export default {
         miniops: [{
           type: 'number',
           validator: async (rule, value) => {
-            if (value && (isNaN(value) || value <= 0)) {
+            if (value && (isNaN(value) || value < 0)) {
               return Promise.reject(this.$t('message.error.number'))
             }
             return Promise.resolve()
