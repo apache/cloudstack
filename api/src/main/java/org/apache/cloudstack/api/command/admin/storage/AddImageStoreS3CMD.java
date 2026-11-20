@@ -97,7 +97,7 @@ public final class AddImageStoreS3CMD extends BaseCmd implements ClientOptions {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException {
 
-        Map<String, String> dm = new HashMap();
+        Map<String, String> dm = new HashMap<>();
 
         dm.put(ApiConstants.S3_ACCESS_KEY, getAccessKey());
         dm.put(ApiConstants.SECRET_KEY, getSecretKey());
