@@ -200,6 +200,26 @@ Then:
 To create packages for noredist add the `-p noredist` option to the package script.
 All the rpm packages will be created in `dist/rpmbuild/RPMS/x86_64` directory.
 
+## Management server identity
+
+The server saves its ID in `${user.home}/.cloudstack/management-server.id`
+and reuses it after restarts. Keep this file when upgrading or restoring the
+same server. Do not copy it to a different management server.
+
+The service account needs write access to the directory and its `.lock` file.
+Startup fails if the ID cannot be read, validated, or saved.
+
+These options can be added to `JAVA_OPTS` in `/etc/default/cloudstack-management`:
+
+* `-Dmanagement.server.id.file=/path/to/management-server.id` chooses a different
+  persistent local file location.
+* `-Dmanagement.server.id=123456789` overrides the ID with a positive number
+  unique to this server. It does not change the saved file.
+
+If interface order already changed before upgrading, set `management.server.id`
+to this server's original `msid` from `cloud.mshost` before the first start.
+Keep that override configured on later starts.
+
 ## Notes
 
 If you will be using Xen as your hypervisor, please download [vhd-util](https://download.cloudstack.org/tools/vhd-util)
