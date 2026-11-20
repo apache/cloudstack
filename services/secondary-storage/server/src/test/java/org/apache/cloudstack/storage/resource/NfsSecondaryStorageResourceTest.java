@@ -40,6 +40,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.NfsTO;
 import org.apache.cloudstack.storage.command.BackupDeleteAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
 import org.apache.cloudstack.storage.to.BackupDeltaTO;
@@ -57,6 +58,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.S3TO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.EncryptionUtil;
 import com.cloud.utils.net.NetUtils;
@@ -262,6 +264,19 @@ public class NfsSecondaryStorageResourceTest {
         String result = resource.getUploadProtocol();
 
         Assert.assertEquals(NetUtils.HTTP_PROTO, result);
+    }
+
+    @Test
+    public void testExecuteRequestRedactsS3Credentials() {
+        S3TO mockS3 = Mockito.mock(S3TO.class);
+        DownloadCommand mockCmd = Mockito.mock(DownloadCommand.class);
+
+        Mockito.when(mockCmd.getDataStore()).thenReturn(mockS3);
+
+        resource.executeRequest(mockCmd);
+
+        Mockito.verify(mockS3).setAccessKey("***REDACTED***");
+        Mockito.verify(mockS3).setSecretKey("***REDACTED***");
     }
 
     @Test
