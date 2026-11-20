@@ -3547,7 +3547,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 || vm.getHypervisorType() == HypervisorType.Simulator)) {
             throw new InvalidParameterValueException("Root volume detach is not supported for hypervisor type " + vm.getHypervisorType());
         }
-        if (!(vm.getState() == State.Stopped) || (vm.getState() == State.Destroyed)) {
+        if (!(vm.getState() == State.Stopped || vm.getState() == State.Destroyed)) {
             throw new InvalidParameterValueException("Root volume detach can happen only when vm is in states: " + State.Stopped.toString() + " or " + State.Destroyed.toString());
         }
 
