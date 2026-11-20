@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.command.user.backup.ListBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupOfferingCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -44,6 +45,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.vm.VmDiskInfo;
+import org.apache.cloudstack.storage.browser.DataStoreObjectResponse;
 
 /**
  * Backup and Recover Manager Interface
@@ -243,6 +245,10 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      */
     boolean deleteBackup(final Long backupId, final Boolean forced) throws ResourceAllocationException;
 
+    List<DataStoreObjectResponse> listBackupFiles(long backupId, Long volumeId, String filesystem, String directory, Boolean isSymlink);
+
+    ExtractResponse downloadBackupFile(long backupId, Long volumeId, String filesystem, String file);
+
     void validateBackupForZone(Long zoneId);
 
     BackupOffering updateBackupOffering(UpdateBackupOfferingCmd updateBackupOfferingCmd);
@@ -264,4 +270,6 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     Capacity getBackupStorageUsedStats(Long zoneId);
 
     void checkAndRemoveBackupOfferingBeforeExpunge(VirtualMachine vm);
+
+    List<DataStoreObjectResponse> listBackupFilesystems(long backupId, Long volumeId);
 }
