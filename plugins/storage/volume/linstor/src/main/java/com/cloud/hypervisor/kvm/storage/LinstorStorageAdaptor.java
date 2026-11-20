@@ -592,11 +592,12 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         }
 
         final DevelopersApi api = getLinstorAPI(pool);
-        final boolean liveMigrateApi = LinstorUtil.supportsLiveMigrateApi(api);
+        final boolean liveMigrateApi;
         String rscName;
         boolean usesDrbd = false;
         try
         {
+            liveMigrateApi = LinstorUtil.supportsLiveMigrateApi(api);
             rscName = findCorrectTemplateName(api, getLinstorRscName(volumePath), pool);
 
             if (liveMigrateApi) {
@@ -749,7 +750,17 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         if (optRsc.isPresent()) {
             Resource rsc = optRsc.get();
 
-            if (LinstorUtil.supportsLiveMigrateApi(api)) {
+            final boolean liveMigrateApi;
+            try {
+                liveMigrateApi = LinstorUtil.supportsLiveMigrateApi(api);
+            } catch (ApiException apiEx) {
+                // don't guess the API level: the connect may have used the other one
+                logger.error("Linstor: unable to query controller version, not disconnecting {}: {}",
+                        rsc.getName(), apiEx.getBestMessage());
+                return false;
+            }
+
+            if (liveMigrateApi) {
                 unmakeAvailable(api, rsc.getName());
             // if it is a non DRBD resource(shared) we need to check if we are the last active one
             // on live migrate, we can have 2 active resources at the same time

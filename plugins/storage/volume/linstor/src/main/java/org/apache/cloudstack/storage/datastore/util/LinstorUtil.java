@@ -107,23 +107,20 @@ public class LinstorUtil {
     }
 
     /**
-     * The REST API version of the connected controller, e.g. "1.29.1", or null if it could not be queried.
+     * The REST API version of the connected controller, e.g. "1.29.1".
+     * @throws ApiException if the controller could not be queried.
      */
-    @Nullable
-    public static String getRestApiVersion(DevelopersApi api) {
-        try {
-            return api.controllerVersion().getRestApiVersion();
-        } catch (ApiException apiExc) {
-            LOGGER.warn("Unable to query controller API version: {}", apiExc.getBestMessage());
-            return null;
-        }
+    public static String getRestApiVersion(DevelopersApi api) throws ApiException {
+        return api.controllerVersion().getRestApiVersion();
     }
 
     /**
      * Check if the connected controller supports the live-migration attach/detach API:
      * make-available with auto_manage_dual_primary and unmake-available, added with REST API 1.29.0.
+     * @throws ApiException if the controller version could not be queried; callers must not guess
+     *                      an API level then, a later call would pick a different one.
      */
-    public static boolean supportsLiveMigrateApi(DevelopersApi api) {
+    public static boolean supportsLiveMigrateApi(DevelopersApi api) throws ApiException {
         return isVersionAtLeast(getRestApiVersion(api), 1, 29, 0);
     }
 

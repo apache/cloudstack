@@ -286,6 +286,41 @@ public class LinstorStorageAdaptorTest {
     }
 
     @Test
+    public void connectPhysicalDiskFailsWhenControllerVersionIsUnknown() throws ApiException {
+        when(api.controllerVersion()).thenThrow(new ApiException(503, "unavailable"));
+
+        Assert.assertThrows(CloudRuntimeException.class,
+                () -> adaptor.connectPhysicalDisk("vol-1", pool, null, false));
+
+        // neither the make-available nor the previous handling may be tried on a guess
+        verify(api, never()).resourceMakeAvailableOnNode(any(), any(), any());
+        verify(api, never()).resourceCreateOnNode(any(), any(), any());
+    }
+
+    @Test
+    public void disconnectPhysicalDiskDoesNothingWhenControllerVersionIsUnknown() throws ApiException {
+        // only disks of registered pools are disconnected
+        doNothing().when(adaptor).deleteLeftoverBackupScratch(any());
+        KVMStoragePool registeredPool = adaptor.createStoragePool("pool-version-unknown", "http://controller:3370",
+                3370, "cloudstack", null, Storage.StoragePoolType.Linstor, null, true);
+        when(api.viewResources(Collections.singletonList(localNode), null, null, null, null, null))
+                .thenReturn(Collections.singletonList(drbdResource()));
+        when(api.controllerVersion()).thenThrow(new ApiException(503, "unavailable"));
+
+        try {
+            Assert.assertFalse(adaptor.disconnectPhysicalDisk("vol-1", registeredPool));
+        } finally {
+            adaptor.deleteStoragePool("pool-version-unknown");
+        }
+
+        verify(api).controllerVersion();
+
+        verify(api, never()).resourceUnmakeAvailableOnNode(any(), any());
+        verify(api, never()).resourceDelete(any(), any(), any());
+        verify(api, never()).resourceDefinitionModify(any(), any());
+    }
+
+    @Test
     public void waitForDeviceReturnsForAnExistingDevice() {
         new LinstorStorageAdaptor().waitForDevice("/dev/null");
     }

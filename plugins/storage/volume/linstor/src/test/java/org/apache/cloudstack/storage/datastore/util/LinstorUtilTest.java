@@ -289,7 +289,8 @@ public class LinstorUtilTest {
 
         DevelopersApi unreachable = mock(DevelopersApi.class);
         when(unreachable.controllerVersion()).thenThrow(new ApiException(503, "unavailable"));
-        Assert.assertFalse(LinstorUtil.supportsLiveMigrateApi(unreachable));
+        // an unreachable controller must not look like an old one
+        Assert.assertThrows(ApiException.class, () -> LinstorUtil.supportsLiveMigrateApi(unreachable));
     }
 
     @Test
