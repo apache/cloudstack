@@ -451,6 +451,9 @@ const user = {
           commit('SET_NAME', result.firstname + ' ' + result.lastname)
           commit('SET_AVATAR', result.icon?.base64image || '')
           store.dispatch('SetCsLatestVersion', result.rolename)
+          store.dispatch('UpdateConfiguration').catch(error => {
+            reject(error)
+          })
         }).catch(error => {
           reject(error)
         })
@@ -462,13 +465,6 @@ const user = {
           const showSecurityGroups = response.listnetworkserviceprovidersresponse.count > 0
           commit('SET_SHOW_SECURITY_GROUPS', showSecurityGroups)
         }).catch(ignored => {
-        })
-
-        getAPI('listLdapConfigurations').then(response => {
-          const ldapEnable = (response.ldapconfigurationresponse.count > 0)
-          commit('SET_LDAP', ldapEnable)
-        }).catch(error => {
-          reject(error)
         })
 
         getAPI('cloudianIsEnabled').then(response => {
@@ -601,13 +597,15 @@ const user = {
       })
     },
     UpdateConfiguration ({ commit }) {
-      return new Promise((resolve, reject) => {
-        getAPI('listLdapConfigurations').then(response => {
-          const ldapEnable = (response.ldapconfigurationresponse.count > 0)
-          commit('SET_LDAP', ldapEnable)
-        }).catch(error => {
-          reject(error)
-        })
+      // Root admins see LDAP as enabled if any configuration exists; everyone else
+      // only when a global configuration or one linked to their own domain exists
+      const userInfo = store.getters.userInfo
+      const queries = userInfo.roletype === 'Admin'
+        ? [{ listall: true }]
+        : [{}, { domainid: userInfo.domainid }]
+      return Promise.all(queries.map(params => getAPI('listLdapConfigurations', params))).then(responses => {
+        const ldapEnable = responses.some(response => response.ldapconfigurationresponse.count > 0)
+        commit('SET_LDAP', ldapEnable)
       })
     },
     SetDomainStore ({ commit }, domainStore) {
