@@ -35,6 +35,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
@@ -48,6 +49,8 @@ public class KVMFencer extends AdapterBase implements FenceBuilder {
     AlertManager _alertMgr;
     @Inject
     ResourceManager _resourceMgr;
+    @Inject
+    ClvmPoolManager _clvmPoolManager;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -80,6 +83,7 @@ public class KVMFencer extends AdapterBase implements FenceBuilder {
 
         List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(host.getClusterId());
         FenceCommand fence = new FenceCommand(vm, host);
+        _clvmPoolManager.addSanlockHostId(fence.getHost(), host);
         fence.setReportCheckFailureIfOneStorageIsDown(HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.value());
 
         int i = 0;
@@ -105,6 +109,11 @@ public class KVMFencer extends AdapterBase implements FenceBuilder {
                     return true;
                 }
             }
+        }
+
+        if (fence.getHost().getSanlockHostId() == null && _clvmPoolManager.hasClvmPool(host)) {
+            logger.error("Host {} reports no {}, so the CLVM leases of its pools cannot be checked and it is assumed alive. "
+                    + "Restart its agent and check that lvmlockd is running on it.", host, Host.HOST_SANLOCK_ID);
         }
 
         _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(),

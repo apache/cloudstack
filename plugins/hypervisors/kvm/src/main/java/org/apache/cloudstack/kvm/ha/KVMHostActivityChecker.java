@@ -30,6 +30,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -67,6 +68,8 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     private StorageManager storageManager;
     @Inject
     private ResourceManager resourceManager;
+    @Inject
+    private ClvmPoolManager clvmPoolManager;
 
     @Override
     public boolean isActive(Host r, DateTime suspectTime) throws HACheckerException {
@@ -126,6 +129,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         Status hostStatus;
         boolean reportFailureIfOneStorageIsDown = HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.value();
         final CheckOnHostCommand cmd = new CheckOnHostCommand(host, reportFailureIfOneStorageIsDown);
+        clvmPoolManager.addSanlockHostId(cmd.getHost(), host);
         try {
             logger.debug("Checking {} status...", host.toString());
             Answer answer = agentMgr.easySend(host.getId(), cmd);
@@ -153,6 +157,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         Status hostStatusFromNeighbour = Status.Unknown;
         boolean reportFailureIfOneStorageIsDown = HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.value();
         final CheckOnHostCommand cmd = new CheckOnHostCommand(host, reportFailureIfOneStorageIsDown);
+        clvmPoolManager.addSanlockHostId(cmd.getHost(), host);
         List<HostVO> neighbors = resourceManager.listHostsInClusterByStatus(host.getClusterId(), Status.Up);
         for (HostVO neighbor : neighbors) {
             if (neighbor.getId() == host.getId()
@@ -204,6 +209,9 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     protected boolean verifyActivityOfStorageOnHost(HashMap<StoragePool, List<Volume>> poolVolMap, StoragePool pool, Host host, DateTime suspectTime, boolean activityStatus) throws HACheckerException, IllegalStateException {
         List<Volume> volume_list = poolVolMap.get(pool);
         final CheckVMActivityOnStoragePoolCommand cmd = new CheckVMActivityOnStoragePoolCommand(host, pool, volume_list, suspectTime);
+        if (ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            clvmPoolManager.addSanlockHostId(cmd.getHost(), host);
+        }
 
         logger.debug("Checking VM activity for {} on storage pool [{}].", host.toString(), pool);
         try {
