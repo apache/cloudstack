@@ -52,7 +52,11 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
         String readOnlyArg = cmd.getDirection().equals("download") ? "--read-only" : "";
         String imageArg = volumePath;
         String secretArg = "";
-        if (passphrase != null && passphrase.length > 0) {
+        if (cmd.getBlockDeviceSizeBytes() != null) {
+            // the device can be larger than the volume (e.g. DRBD), so only export the volume's size of it
+            imageArg = String.format("--image-opts driver=raw,size=%d,file.driver=host_device,file.filename=%s",
+                    cmd.getBlockDeviceSizeBytes(), volumePath);
+        } else if (passphrase != null && passphrase.length > 0) {
             KeyFile srcKey = new KeyFile(passphrase);
             secretArg = String.format("--object secret,id=sec0,file=%s", srcKey);
             imageArg = String.format("--image-opts driver=qcow2,file.driver=file,file.filename=%s,encrypt.key-secret=sec0", volumePath);

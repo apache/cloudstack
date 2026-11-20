@@ -28,14 +28,22 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -51,6 +59,8 @@ import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.AutoPlaceRequest;
+import com.linbit.linstor.api.model.CbtExtent;
+import com.linbit.linstor.api.model.CbtExtents;
 import com.linbit.linstor.api.model.DrbdResource;
 import com.linbit.linstor.api.model.LayerType;
 import com.linbit.linstor.api.model.Properties;
@@ -67,6 +77,9 @@ import com.linbit.linstor.api.model.VolumeDefinitionCreate;
 public class LinstorStorageAdaptorTest {
 
     private static final String DEVICE = "/dev/drbd/by-res/cs-vol-1/0";
+
+    @Rule
+    public TemporaryFolder tmp = new TemporaryFolder();
 
     private LinstorStorageAdaptor adaptor;
     private LinstorStoragePool pool;
@@ -340,5 +353,84 @@ public class LinstorStorageAdaptorTest {
 
         Assert.assertSame(registered, adaptor.getStoragePool("pool-http://sweep-3:3370"));
         verify(api, never()).resourceDefinitionDelete(anyString());
+    }
+
+    private static CbtExtent cbtExtent(long start, long length, Boolean dirty, boolean zero) {
+        CbtExtent extent = new CbtExtent();
+        extent.setStart(start);
+        extent.setLength(length);
+        extent.setDirty(dirty);
+        extent.setZero(zero);
+        return extent;
+    }
+
+    private static CbtExtents cbtExtents(String baseCbtId, Long nextOffset, CbtExtent... extents) {
+        CbtExtents page = new CbtExtents();
+        page.setBaseCbtId(baseCbtId);
+        page.setNextOffset(nextOffset);
+        for (CbtExtent extent : extents) {
+            page.addExtentsItem(extent);
+        }
+        return page;
+    }
+
+    private static Map<String, String> cbtExtentsSource(String mode, String baseCbtId) {
+        Map<String, String> source = new HashMap<>();
+        source.put(LinstorUtil.CBT_EXTENTS_RESOURCE, "cs-vol-1");
+        source.put(LinstorUtil.CBT_EXTENTS_SNAPSHOT, "ckp-2");
+        source.put(LinstorUtil.CBT_EXTENTS_MODE, mode);
+        if (baseCbtId != null) {
+            source.put(LinstorUtil.CBT_EXTENTS_BASE_CBT_ID, baseCbtId);
+        }
+        return source;
+    }
+
+    private static String read(File file) throws Exception {
+        return new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+    }
+
+    @Test
+    public void writeExtentsPagesThroughTheSession() throws Exception {
+        when(api.snapshotCbtSessionExtents("cs-vol-1", "ckp-2", 0, 0L, 10000, "dirty")).thenReturn(cbtExtents("CBT-1", 8192L,
+                cbtExtent(0, 4096, true, false), cbtExtent(4096, 4096, false, true)));
+        when(api.snapshotCbtSessionExtents("cs-vol-1", "ckp-2", 0, 8192L, 10000, "dirty")).thenReturn(cbtExtents("CBT-1", null,
+                cbtExtent(8192, 1048576, false, false)));
+        File file = tmp.newFile();
+
+        adaptor.writeExtents(pool, cbtExtentsSource(LinstorUtil.CBT_EXTENTS_MODE_DIRTY, "CBT-1"), file.getPath());
+
+        Assert.assertEquals("[{\"start\":0,\"length\":4096,\"dirty\":true,\"zero\":false},"
+                + "{\"start\":4096,\"length\":4096,\"dirty\":false,\"zero\":true},"
+                + "{\"start\":8192,\"length\":1048576,\"dirty\":false,\"zero\":false}]", read(file));
+    }
+
+    @Test
+    public void writeExtentsOfFullBackupHasOnlyZeroFlags() throws Exception {
+        when(api.snapshotCbtSessionExtents("cs-vol-1", "ckp-2", 0, 0L, 10000, "zero")).thenReturn(cbtExtents(null, null,
+                cbtExtent(0, 4096, null, false), cbtExtent(4096, 1048576, null, true)));
+        File file = tmp.newFile();
+
+        adaptor.writeExtents(pool, cbtExtentsSource(LinstorUtil.CBT_EXTENTS_MODE_ZERO, null), file.getPath());
+
+        Assert.assertEquals("[{\"start\":0,\"length\":4096,\"zero\":false},{\"start\":4096,\"length\":1048576,\"zero\":true}]",
+                read(file));
+    }
+
+    @Test
+    public void writeExtentsWritesEmptyList() throws Exception {
+        when(api.snapshotCbtSessionExtents("cs-vol-1", "ckp-2", 0, 0L, 10000, "dirty")).thenReturn(cbtExtents("CBT-1", null));
+        File file = tmp.newFile();
+
+        adaptor.writeExtents(pool, cbtExtentsSource(LinstorUtil.CBT_EXTENTS_MODE_DIRTY, "CBT-1"), file.getPath());
+
+        Assert.assertEquals("[]", read(file));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void writeExtentsFailsIfChangesAreNotSinceTheLastBackup() throws Exception {
+        when(api.snapshotCbtSessionExtents("cs-vol-1", "ckp-2", 0, 0L, 10000, "dirty")).thenReturn(cbtExtents("CBT-OTHER", null,
+                cbtExtent(0, 4096, true, false)));
+
+        adaptor.writeExtents(pool, cbtExtentsSource(LinstorUtil.CBT_EXTENTS_MODE_DIRTY, "CBT-1"), tmp.newFile().getPath());
     }
 }

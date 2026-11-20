@@ -22,11 +22,13 @@ import static org.apache.cloudstack.backup.BackupManager.BackupProviderPlugin;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -45,11 +47,17 @@ import org.apache.cloudstack.api.command.admin.backup.StartBackupCmd;
 import org.apache.cloudstack.api.response.CheckpointResponse;
 import org.apache.cloudstack.api.response.ImageTransferResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeBackupExport;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
@@ -63,6 +71,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.configuration.Config;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
@@ -70,8 +79,10 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -97,12 +108,26 @@ import com.cloud.vm.VmWorkJobHandlerProxy;
 import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
+import com.google.gson.Gson;
 
 @Component
 public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackupExportService, VmWorkJobHandler {
     public static final String VM_WORK_JOB_HANDLER = KVMBackupExportServiceImpl.class.getSimpleName();
     private static final long BACKUP_FINALIZE_WAIT_CHECK_INTERVAL = 15 * 1000L;
     private static Set<String> COMPATIBLE_BACKUP_PROVIDERS = Set.of("veeam", "dummy");
+    /** backup detail per volume exported by its storage driver, followed by the volume id, value: VolumeBackupExport */
+    private static final String BACKUP_DETAIL_VOLUME_EXPORT_PREFIX = "volume.export.";
+    /**
+     * volume detail: the storage's change tracking id of the volume's last backup exported by its storage driver,
+     * value: the checkpoint id of that backup, ':' and the change tracking id
+     */
+    protected static final String VOLUME_DETAIL_BACKUP_CHANGE_TRACKING_ID = "backup.change.tracking.id";
+    /**
+     * volume detail: the temporary device of the storage driver a qcow2 image is being uploaded to, to convert it into
+     * the volume, see {@link PrimaryDataStoreDriver#createUploadStaging}
+     */
+    protected static final String VOLUME_DETAIL_UPLOAD_STAGING = "upload.staging";
+    private static final Gson GSON = new Gson();
 
     @Inject
     private VMInstanceDao vmInstanceDao;
@@ -114,6 +139,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
     private BackupDao backupDao;
 
     @Inject
+    private BackupDetailsDao backupDetailsDao;
+
+    @Inject
     private ImageTransferDao imageTransferDao;
 
     @Inject
@@ -121,6 +149,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Inject
     private VolumeDetailsDao volumeDetailsDao;
+
+    @Inject
+    private ConfigurationDao configDao;
 
     @Inject
     private AgentManager agentManager;
@@ -148,6 +179,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Inject
     private VolumeDataFactory volumeDataFactory;
+
+    @Inject
+    private DataStoreManager dataStoreManager;
 
     VmWorkJobHandlerProxy jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -182,6 +216,163 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         }
     }
 
+    /**
+     * The driver of the pool if it exports the pool's volumes for backups itself, else null.
+     */
+    protected PrimaryDataStoreDriver getBackupExportDriver(StoragePool pool) {
+        DataStore dataStore = dataStoreManager.getPrimaryDataStore(pool.getId());
+        if (dataStore != null && dataStore.getDriver() instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) dataStore.getDriver();
+            if (driver.canExportVolumesForBackup(pool)) {
+                return driver;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean isStorageDriverBackupExportSupported(StoragePool pool) {
+        return getBackupExportDriver(pool) != null;
+    }
+
+    /**
+     * Whether the storage drivers export the volumes for backups, false if the hypervisor reads the volume files.
+     * Volumes of one instance must not mix both.
+     */
+    protected boolean isStorageDriverExport(List<VolumeVO> volumes) {
+        List<StoragePoolVO> pools = volumes.stream()
+                .map(VolumeVO::getPoolId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .map(primaryDataStoreDao::findById)
+                .collect(Collectors.toList());
+        long exportedPools = pools.stream().filter(this::isStorageDriverBackupExportSupported).count();
+        if (exportedPools > 0 && exportedPools < pools.size()) {
+            throw new CloudRuntimeException("The volumes are on storage pools whose storage driver exports them for backups " +
+                    "and on ones whose volume files are read by the hypervisor, this is not supported");
+        }
+        return exportedPools > 0;
+    }
+
+    /**
+     * The volumes of the backup exported by their storage drivers, by volume id; empty if the hypervisor reads the volumes.
+     */
+    protected Map<Long, VolumeBackupExport> getVolumeBackupExports(long backupId) {
+        Map<Long, VolumeBackupExport> exports = new HashMap<>();
+        for (Map.Entry<String, String> detail : backupDetailsDao.listDetailsKeyPairs(backupId).entrySet()) {
+            if (detail.getKey().startsWith(BACKUP_DETAIL_VOLUME_EXPORT_PREFIX)) {
+                VolumeBackupExport export = GSON.fromJson(detail.getValue(), VolumeBackupExport.class);
+                exports.put(export.getVolumeId(), export);
+            }
+        }
+        return exports;
+    }
+
+    /**
+     * The change tracking ids of the volumes' backups at the checkpoint, by volume id. Only these backups' changes
+     * can be the base of the next incremental backup.
+     */
+    protected Map<Long, String> getChangeTrackingIds(List<VolumeVO> volumes, String checkpointId) {
+        Map<Long, String> changeTrackingIds = new HashMap<>();
+        if (checkpointId == null) {
+            return changeTrackingIds;
+        }
+        String prefix = checkpointId + ":";
+        for (VolumeVO volume : volumes) {
+            VolumeDetailVO detail = volumeDetailsDao.findDetail(volume.getId(), VOLUME_DETAIL_BACKUP_CHANGE_TRACKING_ID);
+            if (detail != null && detail.getValue().startsWith(prefix)) {
+                changeTrackingIds.put(volume.getId(), detail.getValue().substring(prefix.length()));
+            }
+        }
+        return changeTrackingIds;
+    }
+
+    /**
+     * Keeps the change tracking ids of the backup's volumes for the next backup, which is incremental to this one.
+     */
+    protected void saveChangeTrackingIds(BackupVO backup, Collection<VolumeBackupExport> exports) {
+        for (VolumeBackupExport export : exports) {
+            if (export.getChangeTrackingId() != null) {
+                volumeDetailsDao.addDetail(export.getVolumeId(), VOLUME_DETAIL_BACKUP_CHANGE_TRACKING_ID,
+                        backup.getToCheckpointId() + ":" + export.getChangeTrackingId(), false);
+            } else {
+                volumeDetailsDao.removeDetail(export.getVolumeId(), VOLUME_DETAIL_BACKUP_CHANGE_TRACKING_ID);
+            }
+        }
+    }
+
+    /**
+     * Backup of an instance whose volumes are exported by their storage drivers: one storage snapshot of the
+     * instance's volumes per pool, each volume read as a raw device on a host the driver chooses. The hypervisor's
+     * backup job and checkpoints are not involved, so running and stopped instances are handled alike.
+     * A volume is backed up incrementally if its storage tracked the changes since the backup at the instance's
+     * active checkpoint.
+     */
+    protected Backup startStorageDriverBackup(BackupVO backup, VMInstanceVO vm, List<VolumeVO> volumes) {
+        Map<Long, List<VolumeInfo>> volumesByPool = volumes.stream()
+                .map(vol -> volumeDataFactory.getVolume(vol.getId()))
+                .collect(Collectors.groupingBy(VolumeInfo::getPoolId));
+        Map<Long, String> changeTrackingIds = getChangeTrackingIds(volumes, backup.getFromCheckpointId());
+        List<VolumeBackupExport> exports = new ArrayList<>();
+        try {
+            for (Map.Entry<Long, List<VolumeInfo>> poolVolumes : volumesByPool.entrySet()) {
+                StoragePoolVO pool = primaryDataStoreDao.findById(poolVolumes.getKey());
+                exports.addAll(getBackupExportDriver(pool).startBackupExport(
+                        pool, backup.getToCheckpointId(), poolVolumes.getValue(), changeTrackingIds));
+            }
+        } catch (RuntimeException e) {
+            logger.error("Failed to export the volumes of {} for {}", vm, backup, e);
+            String finishError = finishStorageDriverExports(backup, volumesByPool);
+            if (finishError != null) {
+                logger.error("Failed to clean up the volume exports of {}: {}", backup, finishError);
+            }
+            removeFailedBackup(backup);
+            throw new CloudRuntimeException("Failed to start Backup: " + e.getMessage(), e);
+        }
+
+        for (VolumeBackupExport export : exports) {
+            backupDetailsDao.addDetail(backup.getId(), BACKUP_DETAIL_VOLUME_EXPORT_PREFIX + export.getVolumeId(),
+                    GSON.toJson(export), false);
+        }
+        if (backup.getHostId() == null && !exports.isEmpty()) {
+            backup.setHostId(exports.get(0).getHostId());
+        }
+        backup.setCheckpointCreateTime(Instant.now().getEpochSecond());
+        updateBackupState(backup, Backup.Status.ReadyForImageTransfer);
+        queueBackupFinalizeWaitWorkJob(vm, backup);
+        return backup;
+    }
+
+    /**
+     * Has the storage drivers release the backup's volume exports.
+     * @return null if all are released, else the errors
+     */
+    protected String finishStorageDriverExports(BackupVO backup, Map<Long, List<VolumeInfo>> volumesByPool) {
+        List<String> errors = new ArrayList<>();
+        for (Map.Entry<Long, List<VolumeInfo>> poolVolumes : volumesByPool.entrySet()) {
+            StoragePoolVO pool = primaryDataStoreDao.findById(poolVolumes.getKey());
+            try {
+                PrimaryDataStoreDriver driver = getBackupExportDriver(pool);
+                if (driver == null) {
+                    errors.add(String.format("storage pool %s does not export volumes for backups (anymore)", pool.getName()));
+                    continue;
+                }
+                driver.finishBackupExport(pool, backup.getToCheckpointId(), poolVolumes.getValue());
+            } catch (RuntimeException e) {
+                logger.warn("Failed to finish the volume exports of {} on {}", backup, pool, e);
+                errors.add(e.getMessage());
+            }
+        }
+        return errors.isEmpty() ? null : String.join("; ", errors);
+    }
+
+    private Map<Long, List<VolumeInfo>> getVolumesByPool(Collection<VolumeBackupExport> exports) {
+        return exports.stream()
+                .map(export -> volumeDataFactory.getVolume(export.getVolumeId()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.groupingBy(VolumeInfo::getPoolId));
+    }
+
     @Override
     public Backup createBackup(StartBackupCmd cmd) {
         Long vmId = cmd.getVmId();
@@ -203,10 +394,12 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         }
 
         validateVmVolumesForBackup(vm);
+        boolean storageDriverExport = isStorageDriverExport(volumeDao.findByInstance(vmId));
 
         Pair<Long, Long> clusterAndHostId = virtualMachineManager.findClusterAndHostIdForVm(vm, false);
         Long hostId = clusterAndHostId.second();
-        if (hostId == null) {
+        // storage driver exports choose the hosts to read the volumes on themselves
+        if (hostId == null && !storageDriverExport) {
             throw new CloudRuntimeException("Host cannot be determined for Instance: " + vm.getUuid());
         }
 
@@ -280,13 +473,26 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         boolean isVmStopped = vm.getState() == State.Stopped;
 
         List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
-        Map<String, String> diskPathUuidMap = new HashMap<>();
-        Map<String, byte[]> diskPathPassphraseMap = new HashMap<>();
         for (Volume vol : volumes) {
             if (vol.getPoolId() == null) {
                 removeFailedBackup(backup);
                 throw new CloudRuntimeException("Storage Pool cannot be determined for Volume: " + vol.getUuid());
             }
+        }
+        boolean storageDriverExport;
+        try {
+            storageDriverExport = isStorageDriverExport(volumes);
+        } catch (CloudRuntimeException e) {
+            removeFailedBackup(backup);
+            throw e;
+        }
+        if (storageDriverExport) {
+            return startStorageDriverBackup(backup, vm, volumes);
+        }
+
+        Map<String, String> diskPathUuidMap = new HashMap<>();
+        Map<String, byte[]> diskPathPassphraseMap = new HashMap<>();
+        for (Volume vol : volumes) {
             String volumePath = getVolumePathForFileBasedBackend(vol);
             diskPathUuidMap.put(volumePath, vol.getUuid());
             if (isVmStopped) {
@@ -401,7 +607,15 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             }
         }
 
-        if (vm.getState() == State.Running) {
+        Map<Long, VolumeBackupExport> volumeExports = getVolumeBackupExports(backupId);
+        if (!volumeExports.isEmpty()) {
+            // the backup's data is complete, so a failed cleanup only leaves the storage's snapshot behind
+            String finishError = finishStorageDriverExports(backup, getVolumesByPool(volumeExports.values()));
+            if (finishError != null) {
+                logger.error("Failed to release the volume exports of {}, the storage may keep its snapshot: {}", backup, finishError);
+            }
+            saveChangeTrackingIds(backup, volumeExports.values());
+        } else if (vm.getState() == State.Running) {
             StopBackupCommand stopCmd = new StopBackupCommand(vm.getInstanceName(), vmId, backupId);
 
             StopBackupAnswer answer;
@@ -440,8 +654,19 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         String transferId = UUID.randomUUID().toString();
 
         String socket = backup.getUuid();
+        Long hostId = backup.getHostId();
+        String checkpointId = backup.getFromCheckpointId();
         VMInstanceVO vm = vmInstanceDao.findById(backup.getVmId());
-        if (vm.getState() == State.Stopped) {
+        VolumeBackupExport volumeExport = getVolumeBackupExports(backupId).get(volume.getId());
+        if (volumeExport != null) {
+            hostId = volumeExport.getHostId();
+            startNBDServer(hostId, new StartNBDServerCommand(transferId, volume.getUuid(), volumeExport.getDevicePath(),
+                    volumeExport.getSizeBytes(), transferId, direction));
+            socket = transferId;
+            // the storage may list the extents of the export (which changed, which read as zeros), else all extents
+            // count as changed data
+            checkpointId = null;
+        } else if (vm.getState() == State.Stopped) {
             Map<String, String> vmDetails = vmInstanceDetailsDao.listDetailsKeyPairs(backup.getVmId());
             String volumePath = getVolumePathForFileBasedBackend(volume);
             VolumeInfo volumeInfo = volumeDataFactory.getVolume(volume.getId());
@@ -455,7 +680,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             socket = transferId;
         }
 
-        HostVO backupHost = hostDao.findById(backup.getHostId());
+        HostVO backupHost = hostDao.findById(hostId);
         if (backupHost == null) {
             throw new CloudRuntimeException("Host not found for backup: " + backupId);
         }
@@ -465,12 +690,16 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                 direction,
                 volume.getUuid(),
                 socket,
-                backup.getFromCheckpointId(),
+                checkpointId,
                 idleTimeoutSec);
+        if (volumeExport != null && volumeExport.getExtentsSource() != null) {
+            StoragePoolVO pool = primaryDataStoreDao.findById(volume.getPoolId());
+            transferCmd.setExtentsSource(pool.getPoolType(), pool.getUuid(), volumeExport.getExtentsSource());
+        }
 
         try {
             CreateImageTransferAnswer answer;
-            answer = (CreateImageTransferAnswer) agentManager.send(backup.getHostId(), transferCmd);
+            answer = (CreateImageTransferAnswer) agentManager.send(hostId, transferCmd);
 
             if (!answer.getResult()) {
                 throw new CloudRuntimeException("Failed to create image transfer: " + answer.getDetails());
@@ -480,7 +709,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                     transferId,
                     backupId,
                     volume.getId(),
-                    backup.getHostId(),
+                    hostId,
                     socket,
                     ImageTransferVO.Phase.transferring,
                     ImageTransfer.Direction.download,
@@ -519,14 +748,6 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
     }
 
     private void startNBDServer(String transferId, String direction, Long hostId, String exportName, String volumePath, String checkpointId, byte[] passphrase) {
-        StartNBDServerAnswer nbdServerAnswer;
-        if (hostId == null) {
-            throw new CloudRuntimeException("Host cannot be determined for starting NBD server");
-        }
-        HostVO host = hostDao.findById(hostId);
-        if (host == null) {
-            throw new CloudRuntimeException("Host cannot be found for starting NBD server with ID: " + hostId);
-        }
         StartNBDServerCommand nbdServerCmd = new StartNBDServerCommand(
                 transferId,
                 exportName,
@@ -536,6 +757,18 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                 checkpointId,
                 passphrase
         );
+        startNBDServer(hostId, nbdServerCmd);
+    }
+
+    private void startNBDServer(Long hostId, StartNBDServerCommand nbdServerCmd) {
+        StartNBDServerAnswer nbdServerAnswer;
+        if (hostId == null) {
+            throw new CloudRuntimeException("Host cannot be determined for starting NBD server");
+        }
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            throw new CloudRuntimeException("Host cannot be found for starting NBD server with ID: " + hostId);
+        }
         try {
             nbdServerAnswer = (StartNBDServerAnswer) agentManager.send(hostId, nbdServerCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
@@ -576,8 +809,34 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             throw new CloudRuntimeException("Storage pool cannot be determined for volume: " + volume.getUuid());
         }
 
-        Host host = getRandomHostFromStoragePool(storagePool);
-        String volumePath = getVolumePathForFileBasedBackend(volume);
+        Host host;
+        String volumePath;
+        StartNBDServerCommand nbdServerCmd = null;
+        String uploadStaging = null;
+        PrimaryDataStoreDriver exportDriver = getBackupExportDriver(storagePool);
+        if (exportDriver != null) {
+            VolumeInfo volumeInfo = volumeDataFactory.getVolume(volume.getId());
+            VolumeBackupExport target = exportDriver.prepareVolumeForRestore(storagePool, volumeInfo);
+            host = hostDao.findById(target.getHostId());
+            if (ImageTransfer.Backend.file.equals(backend)) {
+                // the image is uploaded as is to a temporary device, the host converts it into the volume on finalize
+                String stagingName = getUploadStagingName(transferId);
+                VolumeBackupExport staging = exportDriver.createUploadStaging(storagePool, volumeInfo, stagingName,
+                        host.getId(), getUploadStagingSize(target.getSizeBytes()));
+                if (staging == null) {
+                    throw new CloudRuntimeException(String.format("Only raw images can be uploaded to volume %s on storage pool %s",
+                            volume.getUuid(), storagePool.getName()));
+                }
+                uploadStaging = stagingName;
+                volumePath = staging.getDevicePath();
+            } else {
+                volumePath = target.getDevicePath();
+                nbdServerCmd = new StartNBDServerCommand(transferId, volume.getUuid(), volumePath, target.getSizeBytes(), transferId, direction);
+            }
+        } else {
+            host = getRandomHostFromStoragePool(storagePool);
+            volumePath = getVolumePathForFileBasedBackend(volume);
+        }
         int idleTimeoutSec = ImageTransferIdleTimeoutSeconds.valueIn(host.getDataCenterId());
 
         ImageTransferVO imageTransfer;
@@ -602,8 +861,12 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                     idleTimeoutSec);
 
         } else {
-            VolumeInfo volumeInfo = volumeDataFactory.getVolume(volume.getId());
-            startNBDServer(transferId, direction, host.getId(), volume.getUuid(), volumePath, null, volumeInfo.getPassphrase());
+            if (nbdServerCmd == null) {
+                VolumeInfo volumeInfo = volumeDataFactory.getVolume(volume.getId());
+                nbdServerCmd = new StartNBDServerCommand(transferId, volume.getUuid(), volumePath, transferId, direction,
+                        null, volumeInfo.getPassphrase());
+            }
+            startNBDServer(host.getId(), nbdServerCmd);
             imageTransfer = new ImageTransferVO(
                     transferId,
                     null,
@@ -628,6 +891,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         try {
             transferAnswer = (CreateImageTransferAnswer) agentManager.send(imageTransfer.getHostId(), transferCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
+            deleteUploadStaging(storagePool, uploadStaging);
             throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
 
@@ -635,12 +899,16 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             if (!backend.equals(ImageTransfer.Backend.file)) {
                 stopNBDServer(imageTransfer);
             }
+            deleteUploadStaging(storagePool, uploadStaging);
             throw new CloudRuntimeException("Failed to create image transfer: " + transferAnswer.getDetails());
         }
 
         imageTransfer.setTransferUrl(transferAnswer.getTransferUrl());
         imageTransfer.setSignedTicketId(transferAnswer.getImageTransferId());
         imageTransfer = imageTransferDao.persist(imageTransfer);
+        if (uploadStaging != null) {
+            volumeDetailsDao.addDetail(volume.getId(), VOLUME_DETAIL_UPLOAD_STAGING, uploadStaging, false);
+        }
 
         try {
             final StateMachine2<Volume.State, Volume.Event, Volume> stateMachine = Volume.State.getStateMachine();
@@ -651,6 +919,34 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
         return imageTransfer;
 
+    }
+
+    protected static String getUploadStagingName(String transferId) {
+        return "upload-" + transferId;
+    }
+
+    /**
+     * The most a qcow2 image of a volume of the given size takes: the data plus, for clusters of at least 4 KiB,
+     * an L2 table entry and a refcount of together 10 bytes per cluster, and room for the rest of the metadata.
+     */
+    protected static long getUploadStagingSize(long volumeSize) {
+        return volumeSize + volumeSize / 256 + 64L * 1024 * 1024;
+    }
+
+    /**
+     * Deletes the temporary device of an upload, see {@link PrimaryDataStoreDriver#createUploadStaging}. A failure
+     * only leaves the device behind.
+     */
+    private void deleteUploadStaging(StoragePool storagePool, String name) {
+        if (name == null) {
+            return;
+        }
+        try {
+            DataStore dataStore = dataStoreManager.getPrimaryDataStore(storagePool.getId());
+            ((PrimaryDataStoreDriver) dataStore.getDriver()).deleteUploadStaging(storagePool, name);
+        } catch (RuntimeException e) {
+            logger.warn("Unable to delete the temporary device {} of an upload to {}: {}", name, storagePool, e.getMessage());
+        }
     }
 
     private ImageTransfer.Backend getImageTransferBackend(ImageTransfer.Format format, ImageTransfer.Direction direction) {
@@ -707,7 +1003,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Override
     public boolean cancelImageTransfer(long imageTransferId) {
-        finalizeImageTransfer(imageTransferId);
+        finalizeImageTransfer(imageTransferId, false);
         return true;
     }
 
@@ -720,7 +1016,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
         Answer answer;
         try {
-            answer = agentManager.send(backup.getHostId(), finalizeCmd);
+            answer = agentManager.send(imageTransfer.getHostId(), finalizeCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
@@ -730,7 +1026,8 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         }
 
         VMInstanceVO vm = vmInstanceDao.findById(backup.getVmId());
-        if (vm.getState() == State.Stopped) {
+        // storage driver exports are always served by a qemu-nbd of their own
+        if (vm.getState() == State.Stopped || getVolumeBackupExports(backup.getId()).containsKey(imageTransfer.getVolumeId())) {
             boolean stopNbdServerResult = stopNBDServer(imageTransfer);
             if (!stopNbdServerResult) {
                 throw new CloudRuntimeException("Failed to stop the nbd server");
@@ -752,7 +1049,10 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         return answer.getResult();
     }
 
-    private String finalizeUploadImageTransferWithResult(ImageTransferVO imageTransfer) {
+    /**
+     * @param complete whether the upload is complete, false if it is cancelled
+     */
+    private String finalizeUploadImageTransferWithResult(ImageTransferVO imageTransfer, boolean complete) {
         String transferId = imageTransfer.getUuid();
         boolean stopNbdServerResult = stopNBDServer(imageTransfer);
         if (!stopNbdServerResult) {
@@ -760,11 +1060,27 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         }
 
         FinalizeImageTransferCommand finalizeCmd = new FinalizeImageTransferCommand(transferId);
+        VolumeDetailVO uploadStaging = volumeDetailsDao.findDetail(imageTransfer.getVolumeId(), VOLUME_DETAIL_UPLOAD_STAGING);
+        StoragePoolVO storagePool = null;
+        if (uploadStaging != null) {
+            VolumeVO volume = volumeDao.findById(imageTransfer.getVolumeId());
+            storagePool = primaryDataStoreDao.findById(volume.getPoolId());
+            if (complete) {
+                finalizeCmd.setConvertInto(imageTransfer.getFile(), storagePool.getPoolType(), storagePool.getUuid(), volume.getPath());
+                finalizeCmd.setWait(NumbersUtil.parseInt(configDao.getValue(Config.CopyVolumeWait.toString()),
+                        Integer.parseInt(Config.CopyVolumeWait.getDefaultValue())));
+            }
+        }
         Answer answer;
         try {
             answer = agentManager.send(imageTransfer.getHostId(), finalizeCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             return "Failed to communicate with agent";
+        } finally {
+            if (uploadStaging != null) {
+                deleteUploadStaging(storagePool, uploadStaging.getValue());
+                volumeDetailsDao.removeDetail(imageTransfer.getVolumeId(), VOLUME_DETAIL_UPLOAD_STAGING);
+            }
         }
 
         if (!answer.getResult()) {
@@ -773,8 +1089,8 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         return null;
     }
 
-    private void finalizeUploadImageTransfer(ImageTransferVO imageTransfer) {
-        String failureReason = finalizeUploadImageTransferWithResult(imageTransfer);
+    private void finalizeUploadImageTransfer(ImageTransferVO imageTransfer, boolean complete) {
+        String failureReason = finalizeUploadImageTransferWithResult(imageTransfer, complete);
         Volume.Event event = failureReason == null ? Volume.Event.RestoreSucceeded : Volume.Event.RestoreFailed;
 
         VolumeVO volume = volumeDao.findById(imageTransfer.getVolumeId());
@@ -797,6 +1113,13 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Override
     public boolean finalizeImageTransfer(final long imageTransferId) {
+        return finalizeImageTransfer(imageTransferId, true);
+    }
+
+    /**
+     * @param complete whether the transfer is complete, false if it is cancelled
+     */
+    private boolean finalizeImageTransfer(final long imageTransferId, boolean complete) {
         ImageTransferVO imageTransfer = imageTransferDao.findById(imageTransferId);
         if (imageTransfer == null) {
             throw new CloudRuntimeException("Image transfer not found: " + imageTransferId);
@@ -805,7 +1128,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         if (imageTransfer.getDirection().equals(ImageTransfer.Direction.download)) {
             finalizeDownloadImageTransfer(imageTransfer);
         } else {
-            finalizeUploadImageTransfer(imageTransfer);
+            finalizeUploadImageTransfer(imageTransfer, complete);
         }
         imageTransfer.setPhase(ImageTransferVO.Phase.finished);
         imageTransferDao.update(imageTransfer.getId(), imageTransfer);
@@ -913,7 +1236,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             return true;
         }
 
-        sendDeleteCheckpointCommand(vm, activeCheckpointId);
+        if (!isStorageDriverExport(volumeDao.findByInstance(vmId))) {
+            sendDeleteCheckpointCommand(vm, activeCheckpointId);
+        }
         revertVmCheckpointDetailsAfterActiveDelete(vmId, details);
 
         return true;

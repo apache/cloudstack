@@ -17,7 +17,10 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+
+import java.util.Map;
 
 import org.apache.cloudstack.backup.CreateImageTransferAnswer;
 import org.apache.cloudstack.backup.CreateImageTransferCommand;
@@ -34,6 +37,10 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.ImageServerControlSocket;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.storage.Storage;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -116,6 +123,63 @@ public class LibvirtCreateImageTransferCommandWrapperTest {
 
             Assert.assertFalse(answer.getResult());
             Assert.assertEquals("Failed to register transfer with image server.", answer.getDetails());
+        }
+    }
+
+    private KVMStoragePool mockNbdTransferWithExtentsSource(String transferId, Map<String, String> source) {
+        Mockito.when(command.getTransferId()).thenReturn(transferId);
+        Mockito.when(command.getBackend()).thenReturn(ImageTransfer.Backend.nbd);
+        Mockito.when(command.getSocket()).thenReturn("sock-3");
+        Mockito.when(command.getExportName()).thenReturn("vol-3");
+        Mockito.when(command.getExtentsSource()).thenReturn(source);
+        Mockito.when(command.getExtentsPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        Mockito.when(command.getExtentsPoolUuid()).thenReturn("pool-1");
+
+        Mockito.when(resource.getImageServerPath()).thenReturn("/opt/cloudstack/image/server.py");
+        Mockito.when(resource.getImageServerListenAddress()).thenReturn("192.168.10.10");
+        KVMStoragePoolManager poolManager = Mockito.mock(KVMStoragePoolManager.class);
+        KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
+        Mockito.when(resource.getStoragePoolMgr()).thenReturn(poolManager);
+        Mockito.when(poolManager.getStoragePool(Storage.StoragePoolType.Linstor, "pool-1")).thenReturn(pool);
+        return pool;
+    }
+
+    @Test
+    public void testExecuteWithExtentsSourceHasImageServerReadTheListedExtents() {
+        Map<String, String> source = Map.of("snapshot", "ckp-1");
+        KVMStoragePool pool = mockNbdTransferWithExtentsSource("tr-3", source);
+
+        try (MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class,
+                (mock, context) -> Mockito.when(mock.execute()).thenReturn(null));
+             MockedStatic<ImageServerControlSocket> imageServerControlMock = Mockito.mockStatic(ImageServerControlSocket.class)) {
+            imageServerControlMock.when(ImageServerControlSocket::isReady).thenReturn(true);
+            imageServerControlMock.when(() -> ImageServerControlSocket.registerTransfer(eq("tr-3"), anyMap())).thenReturn(true);
+
+            Answer answer = wrapper.execute(command, resource);
+
+            Assert.assertTrue(answer.getResult());
+            String extentsFile = LibvirtCreateImageTransferCommandWrapper.getExtentsFile("tr-3");
+            Mockito.verify(pool).writeExtents(source, extentsFile);
+            imageServerControlMock.verify(() -> ImageServerControlSocket.registerTransfer(eq("tr-3"),
+                    Mockito.argThat(payload -> extentsFile.equals(payload.get("extents_file")))));
+        }
+    }
+
+    @Test
+    public void testExecuteFailsIfStorageCannotListTheExtents() {
+        KVMStoragePool pool = mockNbdTransferWithExtentsSource("tr-4", Map.of("snapshot", "ckp-1"));
+        Mockito.doThrow(new CloudRuntimeException("no CBT session")).when(pool).writeExtents(anyMap(), anyString());
+
+        try (MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class,
+                (mock, context) -> Mockito.when(mock.execute()).thenReturn(null));
+             MockedStatic<ImageServerControlSocket> imageServerControlMock = Mockito.mockStatic(ImageServerControlSocket.class)) {
+            imageServerControlMock.when(ImageServerControlSocket::isReady).thenReturn(true);
+
+            Answer answer = wrapper.execute(command, resource);
+
+            Assert.assertFalse(answer.getResult());
+            Assert.assertEquals("Failed to list the extents: no CBT session", answer.getDetails());
+            imageServerControlMock.verify(() -> ImageServerControlSocket.registerTransfer(anyString(), anyMap()), Mockito.never());
         }
     }
 }

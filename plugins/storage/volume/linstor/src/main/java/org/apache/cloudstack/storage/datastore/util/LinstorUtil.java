@@ -80,6 +80,17 @@ public class LinstorUtil {
     public static final String CLUSTER_DEFAULT_MIN_IOPS = "clusterDefaultMinIops";
     public static final String CLUSTER_DEFAULT_MAX_IOPS = "clusterDefaultMaxIops";
 
+    // extents source of a backup export: the CBT session of the snapshot of the resource, its extents mode and
+    // for mode dirty the CBT id the changes have to be relative to
+    public static final String CBT_EXTENTS_RESOURCE = "resource";
+    public static final String CBT_EXTENTS_SNAPSHOT = "snapshot";
+    public static final String CBT_EXTENTS_MODE = "mode";
+    public static final String CBT_EXTENTS_BASE_CBT_ID = "baseCbtId";
+    // the changed and the never written extents, of an incremental backup
+    public static final String CBT_EXTENTS_MODE_DIRTY = "dirty";
+    // only the never written extents, of a full backup
+    public static final String CBT_EXTENTS_MODE_ZERO = "zero";
+
     public static DevelopersApi getLinstorAPI(String linstorUrl) {
         return getLinstorAPI(linstorUrl, null, false);
     }
@@ -101,6 +112,49 @@ public class LinstorUtil {
         }
         client.discoverHttps();
         return new DevelopersApi(client);
+    }
+
+    /**
+     * The REST API version of the connected controller, e.g. "1.29.1", or null if it could not be queried.
+     */
+    @Nullable
+    public static String getRestApiVersion(DevelopersApi api) {
+        try {
+            return api.controllerVersion().getRestApiVersion();
+        } catch (ApiException apiExc) {
+            LOGGER.warn("Unable to query controller API version: {}", apiExc.getBestMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Check if a controller with the given REST API version (see {@link #getRestApiVersion}) has changed block
+     * tracking snapshots and sessions (REST API 1.30.0).
+     */
+    public static boolean supportsCbt(@Nullable String restApiVersion) {
+        return isVersionAtLeast(restApiVersion, 1, 30, 0);
+    }
+
+    static boolean isVersionAtLeast(String version, int major, int minor, int patch) {
+        if (version == null || version.isEmpty()) {
+            return false;
+        }
+        String[] parts = version.split("\\.");
+        try {
+            int maj = Integer.parseInt(parts[0]);
+            int min = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+            int pat = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
+            if (maj != major) {
+                return maj > major;
+            }
+            if (min != minor) {
+                return min > minor;
+            }
+            return pat >= patch;
+        } catch (NumberFormatException nfExc) {
+            LOGGER.warn("Unable to parse controller API version '{}'", version);
+            return false;
+        }
     }
 
     public static String getBestErrorMessage(ApiCallRcList answers) {

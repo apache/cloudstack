@@ -23,6 +23,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -47,6 +48,7 @@ import org.apache.logging.log4j.LogManager;
 import org.libvirt.LibvirtException;
 
 import com.cloud.utils.storage.TemplateDownloaderUtil;
+import com.google.gson.stream.JsonWriter;
 import com.linbit.linstor.api.ApiClient;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiException;
@@ -55,6 +57,8 @@ import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.AutoPlaceRequest;
 import com.linbit.linstor.api.model.AutoSelectFilter;
+import com.linbit.linstor.api.model.CbtExtent;
+import com.linbit.linstor.api.model.CbtExtents;
 import com.linbit.linstor.api.model.LayerType;
 import com.linbit.linstor.api.model.Node;
 import com.linbit.linstor.api.model.Properties;
@@ -85,6 +89,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     static final String BACKUP_SCRATCH_PREFIX = "cs-bkscratch-";
     static final String BACKUP_SCRATCH_VM_PROP = "Aux/cs-backup-vm";
     private static final long DEVICE_WAIT_MS = 10000;
+    private static final int CBT_EXTENTS_PAGE_SIZE = 10000;
     // Controllers this agent has already removed its leftover backup scratch from, see deleteLeftoverBackupScratch().
     private static final Set<String> BackupScratchSweptControllers = ConcurrentHashMap.newKeySet();
     private final String localNodeName;
@@ -436,6 +441,62 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             checkLinstorAnswersThrow(getLinstorAPI(pool).resourceDefinitionDelete(rscName));
         } catch (ApiException apiEx) {
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+    }
+
+    /**
+     * Writes the extents of a CBT snapshot, as listed by its CBT session in the mode of the source, see
+     * {@link KVMStoragePool#writeExtents(Map, String)}. In mode dirty, fails if the changes are not relative to the
+     * snapshot of the last backup anymore.
+     */
+    public void writeExtents(KVMStoragePool pool, Map<String, String> source, String file) {
+        final String rscName = source.get(LinstorUtil.CBT_EXTENTS_RESOURCE);
+        final String snapshotName = source.get(LinstorUtil.CBT_EXTENTS_SNAPSHOT);
+        final String mode = source.get(LinstorUtil.CBT_EXTENTS_MODE);
+        final String baseCbtId = source.get(LinstorUtil.CBT_EXTENTS_BASE_CBT_ID);
+        final boolean dirtyMode = LinstorUtil.CBT_EXTENTS_MODE_DIRTY.equals(mode);
+        final DevelopersApi api = getLinstorAPI(pool);
+        long extents = 0;
+        long dirtyBytes = 0;
+        long zeroBytes = 0;
+        try (JsonWriter out = new JsonWriter(Files.newBufferedWriter(Paths.get(file)))) {
+            out.beginArray();
+            Long offset = 0L;
+            do {
+                CbtExtents page = api.snapshotCbtSessionExtents(
+                        rscName, snapshotName, 0, offset, CBT_EXTENTS_PAGE_SIZE, mode);
+                if (dirtyMode && !Objects.equals(baseCbtId, page.getBaseCbtId())) {
+                    throw new CloudRuntimeException(String.format("Linstor: the changes of %s/%s are relative to %s, not %s",
+                            rscName, snapshotName, page.getBaseCbtId(), baseCbtId));
+                }
+                for (CbtExtent extent : page.getExtents()) {
+                    out.beginObject().name("start").value(extent.getStart()).name("length").value(extent.getLength());
+                    if (extent.isDirty() != null) {
+                        out.name("dirty").value(extent.isDirty());
+                    }
+                    if (extent.isZero() != null) {
+                        out.name("zero").value(extent.isZero());
+                    }
+                    out.endObject();
+                    extents++;
+                    dirtyBytes += Boolean.TRUE.equals(extent.isDirty()) ? extent.getLength() : 0;
+                    zeroBytes += Boolean.TRUE.equals(extent.isZero()) ? extent.getLength() : 0;
+                }
+                offset = page.getNextOffset();
+            } while (offset != null);
+            out.endArray();
+        } catch (ApiException apiEx) {
+            throw new CloudRuntimeException(String.format("Linstor: unable to list the extents of %s/%s: %s",
+                    rscName, snapshotName, apiEx.getBestMessage()), apiEx);
+        } catch (IOException e) {
+            throw new CloudRuntimeException(String.format("Linstor: unable to write the extents of %s/%s to %s: %s",
+                    rscName, snapshotName, file, e.getMessage()), e);
+        }
+        if (dirtyMode) {
+            logger.info("Linstor: {} extents of {}/{}, {} bytes changed since {}, {} bytes never written",
+                    extents, rscName, snapshotName, dirtyBytes, baseCbtId, zeroBytes);
+        } else {
+            logger.info("Linstor: {} extents of {}/{}, {} bytes never written", extents, rscName, snapshotName, zeroBytes);
         }
     }
 

@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.response.ImageTransferResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
+import com.cloud.storage.StoragePool;
 import com.cloud.utils.component.PluggableService;
 
 /**
@@ -103,4 +104,10 @@ public interface KVMBackupExportService extends Configurable, PluggableService {
      * List Compatible Data Center Ids for the service
      */
     List<Long> listCompatibleDataCenterIds();
+
+    /**
+     * Whether the storage driver of the pool exports the pool's volumes for backups itself (block storage),
+     * instead of the hypervisor reading the volume files
+     */
+    boolean isStorageDriverBackupExportSupported(StoragePool pool);
 }

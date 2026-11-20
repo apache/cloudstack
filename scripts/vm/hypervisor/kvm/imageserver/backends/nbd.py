@@ -28,7 +28,7 @@ from ..constants import (
     NBD_STATE_HOLE,
     NBD_STATE_ZERO,
 )
-from ..util import coalesce_allocation_extents, merge_dirty_zero_extents
+from ..util import coalesce_allocation_extents, merge_dirty_zero_extents, read_extents_file
 from .base import BackendSession, ImageBackend
 
 
@@ -360,10 +360,12 @@ class NbdBackend(ImageBackend):
         socket_path: str,
         export: Optional[str] = None,
         export_bitmap: Optional[str] = None,
+        extents_file: Optional[str] = None,
     ):
         self._socket_path = socket_path
         self._export = export
         self._export_bitmap = export_bitmap
+        self._extents_file = extents_file
 
     @property
     def supports_extents(self) -> bool:
@@ -376,6 +378,10 @@ class NbdBackend(ImageBackend):
     @property
     def export_bitmap(self) -> Optional[str]:
         return self._export_bitmap
+
+    @property
+    def extents_file(self) -> Optional[str]:
+        return self._extents_file
 
     def _connect(
         self,
@@ -476,6 +482,18 @@ class NbdBackend(ImageBackend):
             need_block_status=True, extra_meta_contexts=extra_contexts
         ) as conn:
             return conn.get_extents_dirty_and_zero(dirty_bitmap_context)
+
+    def get_listed_extents(self, dirty: bool) -> List[Dict[str, Any]]:
+        """
+        The extents the storage listed in extents_file (see read_extents_file): with the dirty and
+        zero flags if dirty is True, else with the zero flag only.
+        """
+        extents = read_extents_file(self._extents_file, self.size())
+        if dirty:
+            return extents
+        return coalesce_allocation_extents(
+            [{"start": e["start"], "length": e["length"], "zero": e["zero"]} for e in extents]
+        )
 
     def open_session(self) -> NbdSession:
         return NbdSession(self._connect())

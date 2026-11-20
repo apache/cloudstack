@@ -62,6 +62,24 @@ public class VolumeJoinVOToDiskConverterTest {
     }
 
     @Test
+    public void testToDiskAttachment_DiskOfStorageTrackingItsChanges_SupportsIncrementalBackup() {
+        final VolumeJoinVO vol = mock(VolumeJoinVO.class);
+        when(vol.getUuid()).thenReturn("vol-3");
+        when(vol.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        when(vol.getFormat()).thenReturn(Storage.ImageFormat.RAW);
+        when(vol.getState()).thenReturn(Volume.State.Ready);
+
+        final DiskAttachment tracked = VolumeJoinVOToDiskConverter.toDiskAttachment(vol, null,
+                v -> Storage.ImageFormat.QCOW2, v -> true);
+        final DiskAttachment untracked = VolumeJoinVOToDiskConverter.toDiskAttachment(vol, null);
+
+        assertEquals("incremental", tracked.getDisk().getBackup());
+        assertEquals("cow", tracked.getDisk().getFormat());
+        assertEquals("none", untracked.getDisk().getBackup());
+        assertEquals("raw", untracked.getDisk().getFormat());
+    }
+
+    @Test
     public void testToDiskAttachment_MapsVmAndDisk() {
         final VolumeJoinVO vol = mock(VolumeJoinVO.class);
         when(vol.getUuid()).thenReturn("vol-2");

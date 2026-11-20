@@ -734,7 +734,9 @@ class Handler(BaseHTTPRequestHandler):
                     HTTPStatus.BAD_REQUEST, "extents not supported for file backend"
                 )
                 return
-            if context == "dirty":
+            if backend.extents_file:
+                extents = backend.get_listed_extents(dirty=context == "dirty")
+            elif context == "dirty":
                 export_bitmap = backend.export_bitmap
                 if not export_bitmap:
                     allocation = backend.get_allocation_extents()
