@@ -73,6 +73,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.DisassociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
+import org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.firewall.DeleteFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
@@ -92,16 +93,21 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesC
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpdateKubernetesClusterAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpgradeKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.AssignToLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.DeleteLBStickinessPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListLBStickinessPoliciesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRuleInstancesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLoadBalancerRulesCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.RemoveFromLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
@@ -112,6 +118,7 @@ import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListVPCsCmd;
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.KubernetesUserVmResponse;
@@ -267,6 +274,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private static final String DEFAULT_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME = "DefaultNetworkOfferingforKubernetesService";
     private static final List<Class<?>> PROJECT_KUBERNETES_ACCOUNT_ROLE_ALLOWED_APIS = Arrays.asList(
             QueryAsyncJobResultCmd.class,
+            ListCapabilitiesCmd.class,
             ListVMsCmd.class,
             ListVolumesCmd.class,
             CreateVolumeCmd.class,
@@ -275,6 +283,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             DetachVolumeCmd.class,
             ResizeVolumeCmd.class,
             ListNetworksCmd.class,
+            ListVPCsCmd.class,
             CreateSnapshotCmd.class,
             ListSnapshotsCmd.class,
             DeleteSnapshotCmd.class,
@@ -288,6 +297,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             AssignToLoadBalancerRuleCmd.class,
             RemoveFromLoadBalancerRuleCmd.class,
             ListLoadBalancerRuleInstancesCmd.class,
+            ListLBStickinessPoliciesCmd.class,
+            CreateLBStickinessPolicyCmd.class,
+            DeleteLBStickinessPolicyCmd.class,
             ListFirewallRulesCmd.class,
             CreateFirewallRuleCmd.class,
             UpdateFirewallRuleCmd.class,
@@ -295,6 +307,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             ListNetworkACLsCmd.class,
             CreateNetworkACLCmd.class,
             DeleteNetworkACLCmd.class,
+            ListNetworkACLListsCmd.class,
+            UpdateNetworkACLItemCmd.class,
             ListKubernetesClustersCmd.class,
             ScaleKubernetesClusterCmd.class
     );
