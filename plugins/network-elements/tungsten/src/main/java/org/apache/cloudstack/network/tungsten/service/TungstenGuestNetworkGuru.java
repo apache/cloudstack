@@ -266,7 +266,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
                     // add default tungsten guest network policy
                     tungstenService.addTungstenDefaultNetworkPolicy(zoneId, tungstenProjectFqn,
                         TungstenUtils.getVirtualNetworkPolicyName(network.getId()), network.getUuid(),
-                        getDefautlGuestNetworkPolicyRule(network), 100, 0);
+                        getDefaultGuestNetworkPolicyRule(network), 100, 0);
 
                     IPAddressVO ipAddressVO = ipAddressDao.findByIpAndDcId(network.getDataCenterId(), natIp);
                     Pair<String, Integer> pair = NetUtils.getCidr(network.getCidr());
@@ -466,7 +466,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
         tungstenFabricUtils.sendTungstenCommand(setTungstenNetworkGatewayCommand, network.getDataCenterId());
     }
 
-    private List<TungstenRule> getDefautlGuestNetworkPolicyRule(Network network) {
+    private List<TungstenRule> getDefaultGuestNetworkPolicyRule(Network network) {
         Pair<String, Integer> pair = NetUtils.getCidr(network.getCidr());
         List<TungstenRule> tungstenRuleList = new ArrayList<>();
         tungstenRuleList.add(

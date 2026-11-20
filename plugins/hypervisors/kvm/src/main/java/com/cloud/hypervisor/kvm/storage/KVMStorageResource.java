@@ -24,7 +24,7 @@ import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.CreatePrimaryDataStoreCmd;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.DetachCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 
 import com.cloud.agent.api.Answer;
@@ -51,8 +51,8 @@ public class KVMStorageResource {
             return execute((DeleteCommand)command);
         } else if (command instanceof AttachCommand) {
             return execute((AttachCommand)command);
-        } else if (command instanceof DettachCommand) {
-            return execute((DettachCommand)command);
+        } else if (command instanceof DetachCommand) {
+            return execute((DetachCommand)command);
         }
         return new Answer((Command)command, false, "not implemented yet");
     }
@@ -81,7 +81,7 @@ public class KVMStorageResource {
         return new Answer(cmd, false, "not implemented yet");
     }
 
-    protected Answer execute(DettachCommand cmd) {
+    protected Answer execute(DetachCommand cmd) {
         return new Answer(cmd, false, "not implemented yet");
     }
 

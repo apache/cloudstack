@@ -121,7 +121,7 @@ import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
-import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.DetachCommand;
 import org.apache.cloudstack.storage.command.SyncVolumePathAnswer;
 import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -2393,7 +2393,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
                         DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
 
-                        DettachCommand cmd = new DettachCommand(disk, null);
+                        DetachCommand cmd = new DetachCommand(disk, null);
 
                         cmd.setManaged(true);
 

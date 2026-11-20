@@ -192,7 +192,7 @@ if __name__ == '__main__':
                     --primary|-p: match for primary storage to monitor.
                     --failcmd|-f: executed on timeout.
                     --cmd|-c: command to execute next to hb file(s) on primary.
-                    --timeout|-t: excute failcmd after timeout(s) is hit.
+                    --timeout|-t: execute failcmd after timeout(s) is hit.
                     --interval|-i: run the checks every %ss>
                     --state|-s check state"""
             sys.exit()

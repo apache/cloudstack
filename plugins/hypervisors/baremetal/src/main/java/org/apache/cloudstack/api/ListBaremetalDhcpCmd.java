@@ -88,7 +88,7 @@ public class ListBaremetalDhcpCmd extends BaseListCmd {
             response.setObjectName("baremetaldhcps");
             this.setResponseObject(response);
         } catch (Exception e) {
-            logger.debug("Exception happend while executing ListBaremetalDhcpCmd");
+            logger.debug("Exception happened while executing ListBaremetalDhcpCmd");
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
 

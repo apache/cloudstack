@@ -69,7 +69,7 @@ applyPatch() {
             else
                 rm $tmp -f
                 popd &>/dev/null
-                errExit "Can not apply $patchFile beacuse $test"
+                errExit "Can not apply $patchFile because $test"
             fi
         fi
         patch -p$level < $patchFile

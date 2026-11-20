@@ -42,7 +42,7 @@ public class HypervisorCapabilitiesResponse extends BaseResponse {
     @Param(description = "The maximum number of guest Instances recommended for this hypervisor")
     private Long maxGuestsLimit;
 
-    @SerializedName(ApiConstants.SECURITY_GROUP_EANBLED)
+    @SerializedName(ApiConstants.SECURITY_GROUP_ENABLED)
     @Param(description = "True if security group is supported")
     private boolean isSecurityGroupEnabled;
 

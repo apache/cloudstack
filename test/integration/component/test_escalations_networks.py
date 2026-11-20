@@ -275,7 +275,7 @@ class TestNetworks_1(cloudstackTestCase):
         @Steps
         Step1    : Create Network Offering without sourcenat
         Step2    : Enable network offering
-        Step3    : Create network with sourcenat diasbled network offering
+        Step3    : Create network with sourcenat disabled network offering
         Step4    : Verifying that it raises an exception
         """
         # Create Network offering specifically sourcenat disabled

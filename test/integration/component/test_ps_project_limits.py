@@ -216,7 +216,7 @@ class TestProjectsVolumeLimits(cloudstackTestCase):
         try:
             self.vm.delete(self.apiclient)
         except Exception as e:
-            self.fail("Failed to detroy VM: %s" % e)
+            self.fail("Failed to destroy VM: %s" % e)
 
         self.assertTrue(isVmExpunged(self.apiclient, self.vm.id, self.project.id),\
                 "VM not expunged")

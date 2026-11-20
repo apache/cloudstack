@@ -68,11 +68,11 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
         }
         if (setting != null) {
             if (networkType != NetworkType.Advanced) {
-                logger.info("SSP enebled by " + setting + " but not active because networkType was " + networkType);
+                logger.info("SSP enabled by " + setting + " but not active because networkType was " + networkType);
             } else if (!isMyTrafficType(offering.getTrafficType())) {
                 logger.info("SSP enabled by " + setting + " but not active because traffic type not Guest");
             } else if (offering.getGuestType() != Network.GuestType.Isolated) {
-                logger.info("SSP works for network isolatation.");
+                logger.info("SSP works for network isolation.");
             } else if (!_sspMgr.canHandle(physicalNetwork)) {
                 logger.info("SSP manager not ready");
             } else {
