@@ -125,7 +125,7 @@ export default {
       label: 'label.action.enable.maintenance.mode',
       message: 'message.action.primarystorage.enable.maintenance.mode',
       dataView: true,
-      show: (record) => { return ['Up', 'Connecting', 'Down', 'ErrorInMaintenance'].includes(record.state) }
+      show: (record) => { return ['Up', 'Disabled', 'Connecting', 'Down', 'ErrorInMaintenance'].includes(record.state) }
     },
     {
       api: 'cancelStorageMaintenance',

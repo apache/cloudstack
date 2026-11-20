@@ -26,6 +26,8 @@ import com.cloud.storage.StoragePool;
 public interface PrimaryDataStoreLifeCycle extends DataStoreLifeCycle {
     String CAPACITY_BYTES = "capacityBytes";
     String CAPACITY_IOPS = "capacityIops";
+    /** Pool detail holding the pool status to restore when maintenance is cancelled (set only for Disabled pools). */
+    String STATUS_BEFORE_MAINTENANCE = "statusBeforeMaintenance";
 
     void updateStoragePool(StoragePool storagePool, Map<String, String> details);
     void enableStoragePool(DataStore store);
