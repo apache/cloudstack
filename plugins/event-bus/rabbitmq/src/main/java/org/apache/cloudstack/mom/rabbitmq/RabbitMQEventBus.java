@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -85,11 +86,23 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
 
     private static Integer retryInterval;
 
+    // max number of events kept in memory while the AMQP server is unreachable, 0 disables buffering
+    private static Integer bufferSize = 1000;
+
+    // time in milliseconds after which a buffered event is dropped if it could not be sent
+    private static Integer bufferExpiry = 300000;
+
+    // events (routing key, description, time of buffering) waiting to be sent, oldest first
+    private static final ArrayDeque<Ternary<String, String, Long>> s_buffer = new ArrayDeque<>();
+
+    // events are buffered only after the AMQP server was reachable at least once
+    private static volatile boolean s_connectedOnce = false;
+
     // hashmap to book keep the registered subscribers
     private static ConcurrentHashMap<String, Ternary<String, Channel, EventSubscriber>> s_subscribers;
 
     // connection to AMQP server,
-    private static Connection s_connection = null;
+    private static volatile Connection s_connection = null;
 
     // AMQP server should consider messages acknowledged once delivered if _autoAck is true
     private static boolean s_autoAck = true;
@@ -175,6 +188,14 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
 
     public static void setRetryInterval(Integer retryInterval) {
         RabbitMQEventBus.retryInterval = retryInterval;
+    }
+
+    public static void setBufferSize(Integer bufferSize) {
+        RabbitMQEventBus.bufferSize = bufferSize;
+    }
+
+    public static void setBufferExpiry(Integer bufferExpiry) {
+        RabbitMQEventBus.bufferExpiry = bufferExpiry;
     }
 
     /** Call to subscribe to interested set of events
@@ -273,17 +294,103 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
         String routingKey = createRoutingKey(event);
         String eventDescription = event.getDescription();
 
+        // keep the order: nothing is sent directly while older events are waiting or the connection is down
+        if (bufferEvent(routingKey, eventDescription, false)) {
+            return;
+        }
+
         try {
-            Connection connection = getConnection();
-            Channel channel = createChannel(connection);
-            createExchange(channel, amqpExchangeName);
-            publishEventToExchange(channel, amqpExchangeName, routingKey, eventDescription);
-            channel.close();
+            sendEvent(getConnection(), routingKey, eventDescription);
         } catch (AlreadyClosedException e) {
             closeConnection();
+            if (bufferEvent(routingKey, eventDescription, true)) {
+                return;
+            }
             throw new EventBusException("Failed to publish event to message broker as connection to AMQP broker in lost");
+        } catch (IOException e) {
+            if (bufferEvent(routingKey, eventDescription, true)) {
+                return;
+            }
+            throw new EventBusException("Failed to publish event to message broker due to " + e.getMessage());
         } catch (Exception e) {
             throw new EventBusException("Failed to publish event to message broker due to " + e.getMessage());
+        }
+    }
+
+    private void sendEvent(Connection connection, String routingKey, String eventDescription) throws Exception {
+        Channel channel = createChannel(connection);
+        createExchange(channel, amqpExchangeName);
+        publishEventToExchange(channel, amqpExchangeName, routingKey, eventDescription);
+        channel.close();
+    }
+
+    /** adds the event to the buffer, dropping the oldest one if the buffer is full
+     *
+     * @param sendFailed false if the event was not tried yet and has to be buffered only to keep the order
+     * @return true if the event was buffered, false if the caller has to deal with it
+     */
+    private boolean bufferEvent(String routingKey, String eventDescription, boolean sendFailed) {
+        if (!s_connectedOnce || bufferSize <= 0) {
+            return false;
+        }
+        synchronized (s_buffer) {
+            if (!sendFailed && s_buffer.isEmpty() && s_connection != null) {
+                return false;
+            }
+            if (s_buffer.isEmpty()) {
+                logger.warn("Unable to send events to AMQP server, buffering them until they can be sent");
+            }
+            if (s_buffer.size() >= bufferSize) {
+                logger.warn("Event buffer is full, dropping the oldest event " + s_buffer.poll().first());
+            }
+            s_buffer.add(new Ternary<>(routingKey, eventDescription, System.currentTimeMillis()));
+        }
+        return true;
+    }
+
+    // drops the expired events and, if connected, sends the buffered ones in the order they were added
+    private void flushBuffer() {
+        int sent = 0;
+        while (true) {
+            Ternary<String, String, Long> bufferedEvent;
+            synchronized (s_buffer) {
+                bufferedEvent = s_buffer.peek();
+            }
+            if (bufferedEvent == null) {
+                break;
+            }
+
+            boolean expired = System.currentTimeMillis() - bufferedEvent.third() > bufferExpiry;
+            Connection connection = s_connection;
+            if (!expired && connection == null) {
+                break;
+            }
+
+            if (expired) {
+                logger.warn("Dropping expired event " + bufferedEvent.first() + " as it could not be sent to AMQP server in time");
+            } else {
+                try {
+                    sendEvent(connection, bufferedEvent.first(), bufferedEvent.second());
+                    sent++;
+                } catch (AlreadyClosedException e) {
+                    closeConnection();
+                    break;
+                } catch (IOException e) {
+                    break; // retry with the next run
+                } catch (Exception e) {
+                    logger.warn("Dropping buffered event " + bufferedEvent.first() + " due to " + e.getMessage());
+                }
+            }
+
+            // the event stays in the buffer while being sent, so that newer events queue up behind it
+            synchronized (s_buffer) {
+                if (s_buffer.peek() == bufferedEvent) {
+                    s_buffer.poll();
+                }
+            }
+        }
+        if (sent > 0) {
+            logger.info("Sent " + sent + " buffered events to AMQP server");
         }
     }
 
@@ -392,6 +499,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             connection.addShutdownListener(disconnectHandler);
             connection.addBlockedListener(blockedConnectionHandler);
             s_connection = connection;
+            s_connectedOnce = true;
             return s_connection;
     }
 
@@ -508,6 +616,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
         }
 
         closeConnection();
+        executorService.shutdownNow();
         return true;
     }
 
@@ -540,35 +649,38 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
                 }
 
                 abortConnection(); // disconnected to AMQP server, so abort the connection and channels
+                // the ReconnectionTask started with the event bus takes care of the re-connect
                 logger.warn("Connection has been shutdown by AMQP server. Attempting to reconnect.");
-
-                // initiate re-connect process
-                ReconnectionTask reconnect = new ReconnectionTask();
-                executorService.submit(reconnect);
             }
         }
     }
 
-    // retry logic to connect back to AMQP server after loss of connection
+    // runs for the lifetime of the event bus: connects back to AMQP server after any loss of connection
+    // and sends the events buffered in the meantime
     private class ReconnectionTask extends ManagedContextRunnable {
 
-        boolean connected = false;
         Connection connection = null;
 
         @Override
         protected void runInContext() {
 
-            while (!connected) {
+            while (true) {
                 try {
                     Thread.sleep(retryInterval);
                 } catch (InterruptedException ie) {
-                    // ignore timer interrupts
+                    return; // event bus is being stopped
                 }
 
                 try {
+                    flushBuffer();
                     try {
-                        connection = createConnection();
-                        connected = true;
+                        // check and connect under the same lock as getConnection(), so a connection is never replaced
+                        synchronized (RabbitMQEventBus.this) {
+                            if (s_connection != null) {
+                                continue;
+                            }
+                            connection = createConnection();
+                        }
                     } catch (IOException ie) {
                         continue; // can't establish connection to AMQP server yet, so continue
                     }
@@ -617,11 +729,11 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
                         subscriberDetails.second(channel);
                         s_subscribers.put(subscriberId, subscriberDetails);
                     }
+                    flushBuffer();
                 } catch (Exception e) {
                     logger.warn("Failed to recreate queues and binding for the subscribers due to " + e.getMessage());
                 }
             }
-            return;
         }
     }
 }
