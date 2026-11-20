@@ -50,7 +50,15 @@ public final class LibvirtCheckVMActivityOnStoragePoolCommandWrapper extends Com
 
         if (primaryPool.isPoolSupportHA()) {
             final HAStoragePool haPool = monitor.getStoragePool(pool.getUuid());
-            final KVMHAVMActivityChecker ha = new KVMHAVMActivityChecker(haPool, command.getHost(), command.getVolumeList(), libvirtComputingResource.getVmActivityCheckPath(), command.getSuspectTimeInSeconds());
+            if (haPool == null) {
+                // e.g. the heartbeat of the pool can not be used on this host, so the pool is not monitored for HA: it is not known whether the host is alive
+                return new Answer(command, false, "CheckVMActivityOnStoragePoolCommand: the storage pool " + pool.getUuid() + " is not monitored for HA on this host");
+            }
+            final String vmActivityCheckPath = primaryPool.getVmActivityCheckPath(libvirtComputingResource.getVmActivityCheckPath());
+            if (vmActivityCheckPath == null) {
+                return new Answer(command, false, "CheckVMActivityOnStoragePoolCommand: unable to find the script which checks the VM activity on a storage pool of type " + pool.getType());
+            }
+            final KVMHAVMActivityChecker ha = new KVMHAVMActivityChecker(haPool, command.getHost(), command.getVolumeList(), vmActivityCheckPath, command.getSuspectTimeInSeconds());
             final Future<Boolean> future = executors.submit(ha);
             try {
                 final Boolean result = future.get();

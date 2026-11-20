@@ -37,6 +37,12 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
     /*
      * True means heart beating is on going, or we can't get it's status.
      * False means heart beating is stopped definitely.
+     *
+     * The answer comes from the heartbeats only: it is what VM HA uses (KVMInvestigator, CheckOnHostCommand), which needs no out-of-band management.
+     * The check of the activity of the VMs on their volumes (KVMHAVMActivityChecker) is only done by Host HA, which needs it.
+     *
+     * If the host is checked on more than one storage pool, it is dead if its heartbeat is stopped on one of them when
+     * reportIfHeartBeatFailedForOneStoragePool is set, or else only if its heartbeat is stopped on all of them.
      */
     @Override
     public Boolean hasHeartBeat() {
@@ -44,16 +50,25 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
                 storagePools.stream().map(pool -> pool.getPoolUUID()).collect(Collectors.joining(", ")));
         logger.debug("Checking heart beat with KVMHAChecker for {}", hostAndPools);
 
+        if (storagePools.isEmpty()) {
+            // this host monitors no storage pool, e.g. its agent is not upgraded yet and does not monitor the pools of the type
+            // which a newer version does: it has nothing to tell about the host, which is not a dead host
+            logger.debug("KVMHAChecker has no storage pool to check the heart beat for {}, so it can not tell whether the host is alive.", hostAndPools);
+            return true;
+        }
+
         boolean heartBeatCheckResult = false;
         for (HAStoragePool pool : storagePools) {
-            heartBeatCheckResult = pool.getPool().hasHeartBeat(pool, host);
-            if (reportIfHeartBeatFailedForOneStoragePool && !heartBeatCheckResult) {
+            if (pool.getPool().hasHeartBeat(pool, host)) {
+                heartBeatCheckResult = true;
+            } else if (reportIfHeartBeatFailedForOneStoragePool) {
+                heartBeatCheckResult = false;
                 break;
             }
         }
 
         if (!heartBeatCheckResult) {
-            logger.warn("All checks with KVMHAChecker for {} considered it as dead. It may cause a shutdown of the host.", hostAndPools);
+            logger.warn("All checks with KVMHAChecker for {} considered it as dead, which may trigger HA actions, such as fencing it and restarting its VMs on other hosts.", hostAndPools);
         }
 
         return heartBeatCheckResult;

@@ -23,9 +23,17 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.StoragePool;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import com.cloud.agent.api.to.HostTO;
+import com.cloud.agent.api.to.NetworkTO;
+import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.OutputInterpreter;
+import com.cloud.utils.script.Script;
 
 import junit.framework.TestCase;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -103,6 +111,140 @@ public class LibvirtStoragePoolTest extends TestCase {
     }
 
     @Test
+    public void testIsPoolSupportHA() {
+        String uuid = "0f7a58bd-1a85-4b1f-9f91-12f3d1ecf5a5";
+        String name = "myfirstpool";
+
+        StorageAdaptor adapter = Mockito.mock(LibvirtStorageAdaptor.class);
+        StoragePool storage = Mockito.mock(StoragePool.class);
+
+        // NetworkFilesystem, SharedMountPoint and RBD all support the KVM Host-HA
+        // heartbeat/VM-activity check mechanism.
+        assertTrue(new LibvirtStoragePool(uuid, name, StoragePoolType.NetworkFilesystem, adapter, storage).isPoolSupportHA());
+        assertTrue(new LibvirtStoragePool(uuid, name, StoragePoolType.SharedMountPoint, adapter, storage).isPoolSupportHA());
+        assertTrue(new LibvirtStoragePool(uuid, name, StoragePoolType.RBD, adapter, storage).isPoolSupportHA());
+
+        // Other pool types have no HA support.
+        assertFalse(new LibvirtStoragePool(uuid, name, StoragePoolType.CLVM, adapter, storage).isPoolSupportHA());
+        assertFalse(new LibvirtStoragePool(uuid, name, StoragePoolType.Filesystem, adapter, storage).isPoolSupportHA());
+    }
+
+    private LibvirtStoragePool getRbdPool(String authUsername, String authSecret) {
+        LibvirtStoragePool pool = new LibvirtStoragePool("0f7a58bd-1a85-4b1f-9f91-12f3d1ecf5a5", "myfirstpool", StoragePoolType.RBD,
+                Mockito.mock(LibvirtStorageAdaptor.class), Mockito.mock(StoragePool.class));
+        pool.setSourceHost("10.0.0.1,fd00::1");
+        pool.setSourcePort(6789);
+        pool.setSourceDir("rbdpool");
+        pool.setAuthUsername(authUsername);
+        pool.setAuthSecret(authSecret);
+        return pool;
+    }
+
+    @Test
+    public void testAddRbdConnectionArgsWithCephx() {
+        Script cmd = Mockito.mock(Script.class);
+        getRbdPool("cephuser", "cephkey").addRbdConnectionArgs(cmd);
+        Mockito.verify(cmd).add("-s", "10.0.0.1:6789,[fd00::1]:6789");
+        Mockito.verify(cmd).add("-o", "rbdpool");
+        Mockito.verify(cmd).add("-n", "cephuser");
+        // the key is not an argument of the script, it would be visible in the process list
+        Mockito.verifyNoMoreInteractions(cmd);
+    }
+
+    @Test
+    public void testAddRbdConnectionArgsWithoutCephx() {
+        for (String[] noAuth : new String[][] {{null, null}, {"", ""}, {" ", null}}) {
+            Script cmd = Mockito.mock(Script.class);
+            getRbdPool(noAuth[0], noAuth[1]).addRbdConnectionArgs(cmd);
+            Mockito.verify(cmd).add("-s", "10.0.0.1:6789,[fd00::1]:6789");
+            Mockito.verify(cmd).add("-o", "rbdpool");
+            Mockito.verifyNoMoreInteractions(cmd);
+        }
+    }
+
+    @Test
+    public void testAddRbdConnectionArgsWithCephUserOnlyOrKeyOnly() {
+        for (String[] partial : new String[][] {{"cephuser", null}, {"cephuser", " "}, {null, "cephkey"}, {"", "cephkey"}}) {
+            Script cmd = Mockito.mock(Script.class);
+            try {
+                getRbdPool(partial[0], partial[1]).addRbdConnectionArgs(cmd);
+                fail("Expected a CloudRuntimeException for user [" + partial[0] + "] and key [" + partial[1] + "]");
+            } catch (CloudRuntimeException expected) {
+                Mockito.verifyNoInteractions(cmd);
+            }
+        }
+    }
+
+    @Test
+    public void testHeartBeatScriptEnvironmentHasTheCephKey() {
+        assertEquals(java.util.Map.of("CEPH_KEY", "cephkey"), getRbdPool("cephuser", "cephkey").getHeartBeatScriptEnvironment());
+    }
+
+    @Test
+    public void testHeartBeatScriptEnvironmentWithoutCephx() {
+        assertNull(getRbdPool(null, null).getHeartBeatScriptEnvironment());
+        assertNull(getRbdPool("", " ").getHeartBeatScriptEnvironment());
+    }
+
+    @Test
+    public void testHeartBeatScriptEnvironmentNeedsTheUserAndTheKey() {
+        // as the connection arguments, the key is not given without its user, and the user is not given without a key
+        assertNull(getRbdPool(null, "cephkey").getHeartBeatScriptEnvironment());
+        assertNull(getRbdPool("", "cephkey").getHeartBeatScriptEnvironment());
+        assertNull(getRbdPool("cephuser", null).getHeartBeatScriptEnvironment());
+    }
+
+    @Test
+    public void testHeartBeatScriptEnvironmentOfOtherPoolTypes() {
+        LibvirtStoragePool pool = new LibvirtStoragePool("0f7a58bd-1a85-4b1f-9f91-12f3d1ecf5a5", "myfirstpool", StoragePoolType.NetworkFilesystem,
+                Mockito.mock(LibvirtStorageAdaptor.class), Mockito.mock(StoragePool.class));
+        pool.setAuthSecret("cephkey");
+        assertNull(pool.getHeartBeatScriptEnvironment());
+    }
+
+    @Test
+    public void testVolumeListOfRbdPoolIsGivenInAFile() throws java.io.IOException {
+        Script cmd = Mockito.mock(Script.class);
+        String volumes = "uuid-1,uuid-2,uuid-3";
+        java.io.File file = getRbdPool("cephuser", "cephkey").addVolumeListArgs(cmd, volumes);
+        try {
+            assertNotNull(file);
+            assertEquals(volumes, new String(java.nio.file.Files.readAllBytes(file.toPath()), java.nio.charset.StandardCharsets.UTF_8));
+            Mockito.verify(cmd).add("-U", file.getAbsolutePath());
+            Mockito.verifyNoMoreInteractions(cmd);
+        } finally {
+            if (file != null) {
+                file.delete();
+            }
+        }
+    }
+
+    @Test
+    public void testVolumeListOfRbdPoolCanBeVeryLong() throws java.io.IOException {
+        // more than what an argument of a command can have (128 KiB)
+        String volumes = String.join(",", java.util.Collections.nCopies(10000, "6d93a798-9fbe-41e2-8b69-fc6b5782f89a"));
+        java.io.File file = getRbdPool("cephuser", "cephkey").addVolumeListArgs(Mockito.mock(Script.class), volumes);
+        try {
+            assertNotNull(file);
+            assertEquals(volumes.length(), file.length());
+        } finally {
+            if (file != null) {
+                file.delete();
+            }
+        }
+    }
+
+    @Test
+    public void testVolumeListOfOtherPoolTypesIsAnArgument() {
+        Script cmd = Mockito.mock(Script.class);
+        LibvirtStoragePool pool = new LibvirtStoragePool("0f7a58bd-1a85-4b1f-9f91-12f3d1ecf5a5", "myfirstpool", StoragePoolType.NetworkFilesystem,
+                Mockito.mock(LibvirtStorageAdaptor.class), Mockito.mock(StoragePool.class));
+        assertNull(pool.addVolumeListArgs(cmd, "uuid-1,uuid-2"));
+        Mockito.verify(cmd).add("-u", "uuid-1,uuid-2");
+        Mockito.verifyNoMoreInteractions(cmd);
+    }
+
+    @Test
     public void testResolvePhysicalDiskFileUsesNestedRelativePathInsidePool() throws Exception {
         File poolPath = Files.createTempDirectory("libvirt-storage-pool").toFile();
         try {
@@ -153,5 +295,175 @@ public class LibvirtStoragePoolTest extends TestCase {
             }
         }
         file.delete();
+    }
+
+    private HostTO getHost(String ip, String guid) {
+        HostTO host = Mockito.mock(HostTO.class);
+        NetworkTO privateNetwork = new NetworkTO();
+        privateNetwork.setIp(ip);
+        Mockito.when(host.getGuid()).thenReturn(guid);
+        Mockito.when(host.getPrivateNetwork()).thenReturn(privateNetwork);
+        return host;
+    }
+
+    private LibvirtStoragePool getPool(StoragePoolType type) {
+        return new LibvirtStoragePool("0f7a58bd-1a85-4b1f-9f91-12f3d1ecf5a5", "myfirstpool", type,
+                Mockito.mock(LibvirtStorageAdaptor.class), Mockito.mock(StoragePool.class));
+    }
+
+    @Test
+    public void testHeartBeatHostIdOfRbdIsTheGuid() {
+        HostTO host = getHost("10.0.0.5", "5d3a7b0e-1c2f-4a8e-9b61-0c9e1f4d2a77-LibvirtComputingResource");
+        assertEquals("5d3a7b0e-1c2f-4a8e-9b61-0c9e1f4d2a77-LibvirtComputingResource", getPool(StoragePoolType.RBD).getHeartBeatHostId(host));
+    }
+
+    @Test
+    public void testHeartBeatHostIdOfOtherPoolsIsTheIp() {
+        HostTO host = getHost("10.0.0.5", "5d3a7b0e-1c2f-4a8e-9b61-0c9e1f4d2a77-LibvirtComputingResource");
+        assertEquals("10.0.0.5", getPool(StoragePoolType.NetworkFilesystem).getHeartBeatHostId(host));
+        assertEquals("10.0.0.5", getPool(StoragePoolType.SharedMountPoint).getHeartBeatHostId(host));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testHeartBeatHostIdOfRbdWithoutGuid() {
+        getPool(StoragePoolType.RBD).getHeartBeatHostId(getHost("10.0.0.5", " "));
+    }
+
+    @Test
+    public void testHeartBeatHostIdOfOtherPoolsDoesNotNeedAGuid() {
+        assertEquals("10.0.0.5", getPool(StoragePoolType.NetworkFilesystem).getHeartBeatHostId(getHost("10.0.0.5", null)));
+    }
+
+    @Test
+    public void testPoolNamesTheHeartBeatOfTheHostWithItsGuidOrItsIp() {
+        String guid = "5d3a7b0e-1c2f-4a8e-9b61-0c9e1f4d2a77-LibvirtComputingResource";
+        assertEquals(guid, getPool(StoragePoolType.RBD).getHeartBeatHostId("10.0.0.5", guid));
+        assertEquals("10.0.0.5", getPool(StoragePoolType.NetworkFilesystem).getHeartBeatHostId("10.0.0.5", guid));
+        assertEquals("10.0.0.5", getPool(StoragePoolType.SharedMountPoint).getHeartBeatHostId("10.0.0.5", null));
+    }
+
+    @Test
+    public void testPoolCanNotNameTheHeartBeatOfARbdHostWithoutGuid() {
+        for (String guid : new String[] {null, "", " "}) {
+            try {
+                getPool(StoragePoolType.RBD).getHeartBeatHostId("10.0.0.5", guid);
+                fail("Expected a CloudRuntimeException for the GUID [" + guid + "]");
+            } catch (CloudRuntimeException expected) {
+                assertTrue(expected.getMessage().contains("has no GUID"));
+            }
+        }
+    }
+
+    @Test
+    public void testVmActivityCheckPathOfOtherPoolsIsTheOneGiven() {
+        assertEquals("/scripts/kvmvmactivity.sh", getPool(StoragePoolType.NetworkFilesystem).getVmActivityCheckPath("/scripts/kvmvmactivity.sh"));
+        assertEquals("/scripts/kvmvmactivity.sh", getPool(StoragePoolType.SharedMountPoint).getVmActivityCheckPath("/scripts/kvmvmactivity.sh"));
+        assertNull(getPool(StoragePoolType.NetworkFilesystem).getVmActivityCheckPath(null));
+    }
+
+    @Test
+    public void testVmActivityCheckPathOfRbdIsItsOwnScript() {
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class)) {
+            script.when(() -> Script.findScript(Mockito.any(), Mockito.eq("kvmvmactivity_rbd.py"))).thenReturn("/scripts/kvmvmactivity_rbd.py");
+            assertEquals("/scripts/kvmvmactivity_rbd.py", getPool(StoragePoolType.RBD).getVmActivityCheckPath("/scripts/kvmvmactivity.sh"));
+        }
+    }
+
+    @Test
+    public void testVmActivityCheckPathOfRbdIsNullIfTheScriptIsMissing() {
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class)) {
+            script.when(() -> Script.findScript(Mockito.any(), Mockito.anyString())).thenReturn(null);
+            assertNull(getPool(StoragePoolType.RBD).getVmActivityCheckPath("/scripts/kvmvmactivity.sh"));
+        }
+    }
+
+    @Test
+    public void testHeartBeatOfOtherPoolsHasNoPrerequisites() {
+        assertNull(getPool(StoragePoolType.NetworkFilesystem).getHeartBeatPrerequisiteError());
+        assertNull(getPool(StoragePoolType.SharedMountPoint).getHeartBeatPrerequisiteError());
+    }
+
+    @Test
+    public void testHeartBeatPrerequisiteOfRbdIsMetIfTheScriptFindsTheBindings() {
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class);
+             MockedConstruction<Script> construction = Mockito.mockConstruction(Script.class,
+                     (cmd, context) -> Mockito.when(cmd.execute(Mockito.any(OutputInterpreter.class))).thenReturn(null))) {
+            script.when(() -> Script.findScript(Mockito.any(), Mockito.eq("kvmheartbeat_rbd.py"))).thenReturn("/scripts/kvmheartbeat_rbd.py");
+
+            assertNull(getPool(StoragePoolType.RBD).getHeartBeatPrerequisiteError());
+
+            Mockito.verify(construction.constructed().get(0)).add("--check-bindings");
+        }
+    }
+
+    @Test
+    public void testHeartBeatPrerequisiteOfRbdIsNotMetIfTheScriptDoesNotFindTheBindings() {
+        String error = "=====> The Python bindings of Ceph are missing, the package python3-rados is not installed <======";
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class);
+             MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class,
+                     (cmd, context) -> Mockito.when(cmd.execute(Mockito.any(OutputInterpreter.class))).thenReturn(error))) {
+            script.when(() -> Script.findScript(Mockito.any(), Mockito.eq("kvmheartbeat_rbd.py"))).thenReturn("/scripts/kvmheartbeat_rbd.py");
+
+            assertEquals(error, getPool(StoragePoolType.RBD).getHeartBeatPrerequisiteError());
+        }
+    }
+
+    @Test
+    public void testHeartBeatPrerequisiteOfRbdIsNotMetIfTheScriptIsMissing() {
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class)) {
+            script.when(() -> Script.findScript(Mockito.any(), Mockito.anyString())).thenReturn(null);
+
+            String error = getPool(StoragePoolType.RBD).getHeartBeatPrerequisiteError();
+
+            assertNotNull(error);
+            assertTrue(error.contains("kvmheartbeat_rbd.py"));
+        }
+    }
+
+    @Test
+    public void testAddRbdConnectionArgsWithoutMonitors() {
+        for (String monitors : new String[] {null, "", " ", " , "}) {
+            Script cmd = Mockito.mock(Script.class);
+            LibvirtStoragePool pool = getRbdPool("cephuser", "cephkey");
+            pool.setSourceHost(monitors);
+            try {
+                pool.addRbdConnectionArgs(cmd);
+                fail("Expected a CloudRuntimeException for the monitors [" + monitors + "]");
+            } catch (CloudRuntimeException expected) {
+                assertTrue(expected.getMessage().contains("no Ceph monitors"));
+                Mockito.verifyNoInteractions(cmd);
+            }
+        }
+    }
+
+    private Script heartBeatIsReadWith(LibvirtStoragePool pool, String scriptName) {
+        HostTO host = getHost("10.0.0.5", "5d3a7b0e-1c2f-4a8e-9b61-0c9e1f4d2a77-LibvirtComputingResource");
+        try (MockedStatic<Script> script = Mockito.mockStatic(Script.class);
+             MockedConstruction<Script> construction = Mockito.mockConstruction(Script.class,
+                     (cmd, context) -> Mockito.when(cmd.execute(Mockito.any(OutputInterpreter.OneLineParser.class), Mockito.any())).thenReturn("not a null"))) {
+            script.when(() -> Script.findScript(Mockito.any(), Mockito.eq(scriptName))).thenReturn("/scripts/" + scriptName);
+
+            pool.hasHeartBeat(Mockito.mock(HAStoragePool.class), host);
+
+            return construction.constructed().get(0);
+        }
+    }
+
+    @Test
+    public void testHeartBeatOfRbdIsReadWithTheTimeWhichTheAgentLetsAWriteTake() {
+        // the default of heartbeat.update.timeout is 60 seconds
+        Script cmd = heartBeatIsReadWith(getRbdPool("cephuser", "cephkey"), "kvmheartbeat_rbd.py");
+
+        Mockito.verify(cmd).add("-t", "60");
+        Mockito.verify(cmd).add("-w", "60");
+    }
+
+    @Test
+    public void testHeartBeatOfOtherPoolsIsReadWithoutTheTimeOfAWrite() {
+        // the scripts of these pools do not know the option
+        Script cmd = heartBeatIsReadWith(getPool(StoragePoolType.NetworkFilesystem), "kvmheartbeat.sh");
+
+        Mockito.verify(cmd).add("-t", "60");
+        Mockito.verify(cmd, Mockito.never()).add(Mockito.eq("-w"), Mockito.anyString());
     }
 }
