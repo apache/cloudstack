@@ -48,7 +48,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
@@ -127,20 +126,15 @@ public final class AddImageStoreS3CMD extends BaseCmd implements ClientOptions {
             dm.put(ApiConstants.S3_USE_TCP_KEEPALIVE, getUseTCPKeepAlive().toString());
         }
 
-        try{
-            ImageStore result = _storageService.discoverImageStore(null, null, "S3", null, dm);
-            ImageStoreResponse storeResponse;
-            if (result != null) {
-                storeResponse = _responseGenerator.createImageStoreResponse(result);
-                storeResponse.setResponseName(getCommandName());
-                storeResponse.setObjectName("imagestore");
-                setResponseObject(storeResponse);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add S3 Image Store.");
-            }
-        } catch (DiscoveryException ex) {
-            logger.warn("Exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
+        ImageStore result = _storageService.discoverImageStore(null, null, "S3", null, dm);
+        ImageStoreResponse storeResponse;
+        if (result != null) {
+            storeResponse = _responseGenerator.createImageStoreResponse(result);
+            storeResponse.setResponseName(getCommandName());
+            storeResponse.setObjectName("imagestore");
+            setResponseObject(storeResponse);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add S3 Image Store.");
         }
     }
 
