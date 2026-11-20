@@ -19,10 +19,20 @@ package com.cloud.hypervisor.vmware.mo;
 
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.vmware.vim25.VirtualCdrom;
+import com.vmware.vim25.VirtualDisk;
+import com.vmware.vim25.VirtualE1000;
+import com.vmware.vim25.VirtualIDEController;
+import com.vmware.vim25.VirtualLsiLogicController;
+import com.vmware.vim25.VirtualNVMEController;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.VirtualController;
 import com.vmware.vim25.VirtualDevice;
-import com.vmware.vim25.VirtualLsiLogicController;
+import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.VirtualLsiLogicSASController;
 import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualSCSISharing;
@@ -34,11 +44,14 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -53,6 +66,10 @@ public class VirtualMachineMOTest {
     VmwareClient client;
     @Mock
     ManagedObjectReference mor;
+    @Mock
+    VirtualController virtualControllerMock;
+    @Spy
+    VirtualMachineMO vmMoSpy;
 
     VirtualMachineMO vmMo;
 
@@ -81,6 +98,9 @@ public class VirtualMachineMOTest {
         closeable = MockitoAnnotations.openMocks(this);
         vmMo = new VirtualMachineMO(context, mor);
         when(context.getVimClient()).thenReturn(client);
+
+        vmMoSpy._context = context;
+        vmMoSpy._mor = mor;
     }
 
     @BeforeClass
@@ -108,18 +128,6 @@ public class VirtualMachineMOTest {
     }
 
     @Test
-    public void TestEnsureLsiLogicDeviceControllers() {
-        try {
-            when(client.getDynamicProperty(any(ManagedObjectReference.class), any(String.class))).thenReturn(getVirtualScSiDeviceList(VirtualLsiLogicController.class));
-            vmMo.ensureLsiLogicDeviceControllers(1, 0);
-        }
-        catch (Exception e) {
-            fail("Received exception when success expected: " + e.getMessage());
-        }
-
-    }
-
-    @Test
     public void testGetVmxFormattedVirtualHardwareVersionOneDigit() {
         String vmxHwVersion = VirtualMachineMO.getVmxFormattedVirtualHardwareVersion(8);
         Assert.assertEquals("vmx-08", vmxHwVersion);
@@ -134,5 +142,303 @@ public class VirtualMachineMOTest {
     @Test(expected = CloudRuntimeException.class)
     public void testGetVmxFormattedVirtualHardwareVersionInvalid() {
         VirtualMachineMO.getVmxFormattedVirtualHardwareVersion(-1);
+    }
+
+    @Test
+    public void getDeviceBusNameTestReturnsValue() throws Exception {
+        List<VirtualDevice> virtualDevices = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            VirtualLsiLogicController controller = new VirtualLsiLogicController();
+            controller.setKey(100 + i);
+            controller.setBusNumber(i);
+            virtualDevices.add(controller);
+        }
+        VirtualDisk disk = new VirtualDisk();
+        disk.setControllerKey(101);
+        disk.setUnitNumber(3);
+
+        String result = vmMoSpy.getDeviceBusName(virtualDevices, disk);
+
+        Assert.assertEquals("scsi1:3", result);
+    }
+
+    private List<VirtualDevice> configureDevicesForTests() throws Exception {
+        List<VirtualDevice> devices = new ArrayList<>();
+        devices.add(new VirtualE1000());
+        devices.add(new VirtualCdrom());
+        devices.add(new VirtualDisk());
+        devices.add(new VirtualIDEController());
+        devices.add(new VirtualIDEController());
+        VirtualNVMEController nvmeController = new VirtualNVMEController();
+        nvmeController.setKey(111);
+        nvmeController.setBusNumber(3);
+        devices.add(nvmeController);
+        Mockito.doReturn(devices).when(client).getDynamicProperty(mor, "config.hardware.device");
+        return devices;
+    }
+
+    @Test
+    public void getControllersTestReturnsValue() throws Exception {
+        List<VirtualDevice> devices = configureDevicesForTests();
+
+        List<VirtualController> result = vmMoSpy.getControllers();
+
+        for (VirtualDevice device : devices) {
+            if (!(device instanceof VirtualController)) {
+                continue;
+            }
+            Assert.assertTrue(result.contains(device));
+        }
+    }
+
+    @Test
+    public void getExistingDiskControllerTypesTestReturnsValue() throws Exception {
+        configureDevicesForTests();
+
+        Set<DiskControllerType> result = vmMoSpy.getExistingDiskControllerTypes();
+
+        DiskControllerType ideController = VmwareHelper.getDiskControllerType("ide", null);
+        DiskControllerType nvmeController = VmwareHelper.getDiskControllerType("nvme", null);
+        Assert.assertTrue(result.contains(ideController));
+        Assert.assertTrue(result.contains(nvmeController));
+    }
+
+    @Test
+    public void getDiskControllerTypeByBusNameTestReturnsTypeWhenControllerExists() throws Exception {
+        configureDevicesForTests();
+
+        DiskControllerType result = vmMoSpy.getDiskControllerTypeByBusName("nvme3:0");
+
+        Assert.assertEquals(VmwareHelper.getDiskControllerType("nvme", null), result);
+    }
+
+    @Test
+    public void getDiskControllerTypeByBusNameTestReturnsNullWhenControllerDoesNotExist() throws Exception {
+        configureDevicesForTests();
+
+        Assert.assertNull(vmMoSpy.getDiskControllerTypeByBusName("scsi0:0"));
+    }
+
+    @Test
+    public void getAnyExistingAvailableDiskControllerTestReturnsNonIdeControllerWhenNonIdeControllerIsAvailable() throws Exception {
+        DiskControllerType nvmeController = VmwareHelper.getDiskControllerType("nvme", null);
+        DiskControllerType ideController = VmwareHelper.getDiskControllerType("ide", null);
+        Mockito.doReturn(new Pair<>(1, 2)).when(vmMoSpy).getNextAvailableControllerKeyAndDeviceNumberForType(nvmeController);
+        Mockito.lenient().doReturn(new Pair<>(3, 4)).when(vmMoSpy).getNextAvailableControllerKeyAndDeviceNumberForType(ideController);
+        configureDevicesForTests();
+
+        DiskControllerType result = vmMoSpy.getAnyExistingAvailableDiskController();
+
+
+        Assert.assertEquals(nvmeController, result);
+    }
+
+    @Test
+    public void getAnyExistingAvailableDiskControllerTestReturnsIdeControllerWhenNonIdeControllerIsNotAvailable() throws Exception {
+        DiskControllerType nvmeController = VmwareHelper.getDiskControllerType("nvme", null);
+        DiskControllerType ideController = VmwareHelper.getDiskControllerType("ide", null);
+        Mockito.doReturn(null).when(vmMoSpy).getNextAvailableControllerKeyAndDeviceNumberForType(nvmeController);
+        Mockito.doReturn(new Pair<>(1, 2)).when(vmMoSpy).getNextAvailableControllerKeyAndDeviceNumberForType(ideController);
+        configureDevicesForTests();
+
+        DiskControllerType result = vmMoSpy.getAnyExistingAvailableDiskController();
+
+        Assert.assertEquals(ideController, result);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getAnyExistingAvailableDiskControllerTestThrowsExceptionWhenNoDiskControllerIsAvailable() throws Exception {
+        DiskControllerType nvmeController = VmwareHelper.getDiskControllerType("nvme", null);
+        DiskControllerType ideController = VmwareHelper.getDiskControllerType("ide", null);
+        Mockito.doReturn(null).when(vmMoSpy).getNextAvailableControllerKeyAndDeviceNumberForType(nvmeController);
+        Mockito.doReturn(null).when(vmMoSpy).getNextAvailableControllerKeyAndDeviceNumberForType(ideController);
+        configureDevicesForTests();
+
+        vmMoSpy.getAnyExistingAvailableDiskController();
+    }
+
+    @Test
+    public void getNextAvailableControllerKeyAndDeviceNumberForTypeTestReturnsValueWhenControllerIsAvailable() throws Exception {
+        Mockito.doReturn(0).when(vmMoSpy).getNextAvailableDeviceNumberForController(Mockito.any(VirtualNVMEController.class), Mockito.any());
+        configureDevicesForTests();
+
+        DiskControllerType nvmeController = VmwareHelper.getDiskControllerType("nvme", null);
+        Pair<Integer, Integer> result = vmMoSpy.getNextAvailableControllerKeyAndDeviceNumberForType(nvmeController);
+
+        Assert.assertEquals(111, (int) result.first());
+        Assert.assertEquals(0, (int) result.second());
+    }
+
+    @Test
+    public void getNextAvailableControllerKeyAndDeviceNumberForTypeTestReturnsNullWhenNoControllerIsAvailable() throws Exception {
+        Mockito.doReturn(-1).when(vmMoSpy).getNextAvailableDeviceNumberForController(Mockito.any(), Mockito.any());
+        configureDevicesForTests();
+
+        DiskControllerType nvmeController = VmwareHelper.getDiskControllerType("nvme", null);
+        Pair<Integer, Integer> result = vmMoSpy.getNextAvailableControllerKeyAndDeviceNumberForType(nvmeController);
+
+        Assert.assertNull(result);
+    }
+
+    private Pair<VirtualController, DiskControllerType> configureScsiControllersAndDisksForGetNextAvailableDeviceNumberForControllerTests(int numberOfDevices) throws Exception {
+        List<VirtualDevice> devices = new ArrayList<>();
+
+        devices.add(new VirtualIDEController());
+        devices.add(new VirtualIDEController());
+
+        int firstScsiKey = 1;
+        VirtualLsiLogicController firstScsiController = new VirtualLsiLogicController();
+        firstScsiController.setKey(firstScsiKey);
+        firstScsiController.setBusNumber(0);
+        VirtualLsiLogicController secondScsiController = new VirtualLsiLogicController();
+        secondScsiController.setKey(firstScsiKey + 1);
+        secondScsiController.setBusNumber(1);
+        devices.add(firstScsiController);
+        devices.add(secondScsiController);
+
+        int currentDeviceNumber = 0;
+        for (int i = 0; i < numberOfDevices; i++) {
+            VirtualDevice device = i == 0 ? new VirtualCdrom() : new VirtualDisk();
+            device.setControllerKey(firstScsiKey);
+            device.setUnitNumber(currentDeviceNumber);
+            devices.add(device);
+
+            currentDeviceNumber++;
+            if (VmwareHelper.isReservedScsiDeviceNumber(currentDeviceNumber)) {
+                currentDeviceNumber++;
+            }
+        }
+
+        Mockito.doReturn(devices).when(client).getDynamicProperty(mor, "config.hardware.device");
+
+        DiskControllerType lsilogicController = VmwareHelper.getDiskControllerType("lsilogic", null);
+        return new Pair<>(firstScsiController, lsilogicController);
+    }
+
+    @Test
+    public void getNextAvailableDeviceNumberForControllerTestValueWhenDeviceNumberIsAvailable() throws Exception {
+        int numberOfDevices = 14;
+        Pair<VirtualController, DiskControllerType> config = configureScsiControllersAndDisksForGetNextAvailableDeviceNumberForControllerTests(numberOfDevices);
+
+        int result = vmMoSpy.getNextAvailableDeviceNumberForController(config.first(), config.second());
+
+        Assert.assertEquals(numberOfDevices + 1, result);
+    }
+
+    @Test
+    public void getNextAvailableDeviceNumberForControllerTestValueWhenNoDeviceNumberIsAvailable() throws Exception {
+        Pair<VirtualController, DiskControllerType> config = configureScsiControllersAndDisksForGetNextAvailableDeviceNumberForControllerTests(15);
+
+        int result = vmMoSpy.getNextAvailableDeviceNumberForController(config.first(), config.second());
+
+        Assert.assertEquals(-1, result);
+    }
+
+    @Test
+    public void getNextAvailableDeviceNumberForTypeTestReturnsGlobalDeviceNumberWhenFirstControllerIsFull() throws Exception {
+        Pair<VirtualController, DiskControllerType> config = configureScsiControllersAndDisksForGetNextAvailableDeviceNumberForControllerTests(15);
+
+        Integer result = vmMoSpy.getNextAvailableDeviceNumberForType(config.second());
+
+        Assert.assertEquals(config.second().getMaxDeviceCount(), result);
+    }
+
+    @Test
+    public void getNextAvailableDeviceNumberForTypeTestSkipsUsedDeviceNumbersFromProvidedValue() throws Exception {
+        List<VirtualDevice> devices = new ArrayList<>();
+        VirtualLsiLogicController controller = new VirtualLsiLogicController();
+        controller.setKey(1);
+        controller.setBusNumber(0);
+        devices.add(controller);
+        for (int unitNumber : new int[]{0, 1, 3}) {
+            VirtualDisk disk = new VirtualDisk();
+            disk.setControllerKey(1);
+            disk.setUnitNumber(unitNumber);
+            devices.add(disk);
+        }
+        Mockito.doReturn(devices).when(client).getDynamicProperty(mor, "config.hardware.device");
+        DiskControllerType lsilogicController = VmwareHelper.getDiskControllerType("lsilogic", null);
+
+        Integer result = vmMoSpy.getNextAvailableDeviceNumberForType(lsilogicController, 3);
+
+        Assert.assertEquals(4, (int) result);
+    }
+
+    @Test
+    public void getDiskControllerKeyAndUnitNumberTestUsesScsiControllerWhenDiskControllerIsNull() throws Exception {
+        Mockito.doReturn(42).when(vmMoSpy).getScsiDeviceControllerKey();
+
+        Ternary<Integer, Integer, Boolean> result = vmMoSpy.getDiskControllerKeyAndUnitNumber(null);
+
+        Assert.assertEquals(42, (int) result.first());
+        Assert.assertEquals(-1, (int) result.second());
+        Assert.assertFalse(result.third());
+    }
+
+    @Test
+    public void getDiskControllerKeyAndUnitNumberTestReturnsNextAvailableController() throws Exception {
+        DiskControllerType nvmeController = VmwareHelper.getDiskControllerType("nvme", null);
+        Mockito.doReturn(new Pair<>(200, 3)).when(vmMoSpy).getNextAvailableControllerKeyAndDeviceNumberForType(nvmeController);
+
+        Ternary<Integer, Integer, Boolean> result = vmMoSpy.getDiskControllerKeyAndUnitNumber(nvmeController);
+
+        Assert.assertEquals(200, (int) result.first());
+        Assert.assertEquals(3, (int) result.second());
+        Assert.assertTrue(result.third());
+    }
+
+    @Test(expected = Exception.class)
+    public void getDiskControllerKeyAndUnitNumberTestThrowsExceptionWhenAddingIdeDiskToPoweredOnVm() throws Exception {
+        Mockito.doReturn(VirtualMachinePowerState.POWERED_ON).when(vmMoSpy).getPowerState();
+
+        vmMoSpy.getDiskControllerKeyAndUnitNumber(DiskControllerType.ide);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getDiskControllerKeyAndUnitNumberTestThrowsExceptionWhenNoControllerIsAvailable() throws Exception {
+        DiskControllerType nvmeController = VmwareHelper.getDiskControllerType("nvme", null);
+        Mockito.doReturn(null).when(vmMoSpy).getNextAvailableControllerKeyAndDeviceNumberForType(nvmeController);
+
+        vmMoSpy.getDiskControllerKeyAndUnitNumber(nvmeController);
+    }
+
+    @Test
+    public void getNthDeviceTestReturnsDeviceWhenDeviceExists() throws Exception {
+        configureDevicesForTests();
+
+        vmMoSpy.getNthDevice(VirtualIDEController.class.getName(), 1);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getNthDeviceTestThrowsExceptionWhenDeviceDoesNotExist() throws Exception {
+        configureDevicesForTests();
+
+        vmMoSpy.getNthDevice(VirtualIDEController.class.getName(), 2);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void validateDiskControllerIsAvailableTestThrowsExceptionWhenBusNumberIsInvalid() throws Exception {
+        DiskControllerType nvmeController = VmwareHelper.getDiskControllerType("nvme", null);
+        Mockito.when(virtualControllerMock.getBusNumber()).thenReturn(4);
+
+        vmMo.validateDiskControllerIsAvailable(virtualControllerMock, nvmeController);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void validateDiskControllerIsAvailableTestThrowsExceptionWhenNoAvailableDeviceNumberExists() throws Exception {
+        DiskControllerType nvmeController = VmwareHelper.getDiskControllerType("nvme", null);
+        Mockito.when(virtualControllerMock.getBusNumber()).thenReturn(3);
+        Mockito.doReturn(-1).when(vmMoSpy).getNextAvailableDeviceNumberForController(virtualControllerMock, nvmeController);
+
+        vmMoSpy.validateDiskControllerIsAvailable(virtualControllerMock, nvmeController);
+    }
+
+    @Test
+    public void validateDiskControllerIsAvailableTestDoesNothingWhenBusNumberIsValidAndAvailableDeviceNumberExists() throws Exception {
+        DiskControllerType nvmeController = VmwareHelper.getDiskControllerType("nvme", null);
+        Mockito.when(virtualControllerMock.getBusNumber()).thenReturn(3);
+        Mockito.doReturn(14).when(vmMoSpy).getNextAvailableDeviceNumberForController(virtualControllerMock, nvmeController);
+
+        vmMoSpy.validateDiskControllerIsAvailable(virtualControllerMock, nvmeController);
     }
 }
