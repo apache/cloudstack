@@ -180,6 +180,7 @@ import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.kubernetes.version.KubernetesSupportedVersionVO;
 import com.cloud.kubernetes.version.KubernetesVersionManagerImpl;
+import com.cloud.kubernetes.version.KubernetesVersionService;
 import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -325,6 +326,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     public KubernetesClusterAffinityGroupMapDao kubernetesClusterAffinityGroupMapDao;
     @Inject
     public KubernetesSupportedVersionDao kubernetesSupportedVersionDao;
+    @Inject
+    protected KubernetesVersionService kubernetesVersionService;
     @Inject
     protected SSHKeyPairDao sshKeyPairDao;
     @Inject
@@ -1094,6 +1097,29 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
+    /**
+     * Dedicated etcd nodes install etcd from the Kubernetes ISO, and not every ISO has it. Fail the request when
+     * the ISO is known not to have it. When the ISO could not be checked the request is let through, and a failed
+     * etcd setup is then caught while the cluster starts.
+     */
+    protected void validateEtcdNodesSupportedByKubernetesVersion(final long etcdNodes, final KubernetesSupportedVersion kubernetesVersion, final long zoneId) {
+        if (etcdNodes <= 0) {
+            return;
+        }
+        Boolean etcdIncluded = kubernetesVersionService.isEtcdIncludedInIso(kubernetesVersion, zoneId);
+        if (etcdIncluded == null) {
+            logger.warn("Unable to tell whether the ISO of Kubernetes version {} includes the etcd binaries, allowing the request for {} etcd node(s)",
+                    kubernetesVersion, etcdNodes);
+            return;
+        }
+        if (!etcdIncluded) {
+            throw new InvalidParameterValueException(String.format("Kubernetes version %s (ID: %s) cannot be used for a cluster with dedicated etcd nodes " +
+                    "as its ISO does not include the etcd binaries (%s). Use a Kubernetes version whose ISO was built with etcd, " +
+                    "or create the cluster without etcd nodes", kubernetesVersion.getName(), kubernetesVersion.getUuid(),
+                    KubernetesVersionService.ETCD_ARCHIVE_PATH_IN_ISO));
+        }
+    }
+
     private void validateManagedKubernetesClusterCreateParameters(final CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
         ApiServiceConfiguration.validateEndpointUrl();
         final String name = cmd.getName();
@@ -1167,6 +1193,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (CollectionUtils.isEmpty(templateJoinDao.newTemplateView(iso, zone.getId(), true))) {
             throw new InvalidParameterValueException(String.format("ISO associated with version ID: %s is not in Ready state for datacenter ID: %s",  clusterKubernetesVersion.getUuid(), zone.getUuid()));
         }
+
+        validateEtcdNodesSupportedByKubernetesVersion(cmd.getEtcdNodes(), clusterKubernetesVersion, zone.getId());
 
         validateServiceOfferingsForNodeTypes(serviceOfferingNodeTypeMap, defaultServiceOfferingId, cmd.getEtcdNodes(), clusterKubernetesVersion);
 
@@ -3089,7 +3117,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             KubernetesControlNodeInstallReattempts,
             KubernetesWorkerNodeInstallAttemptWait,
             KubernetesWorkerNodeInstallReattempts,
-            KubernetesEtcdNodeStartPort
+            KubernetesEtcdNodeStartPort,
+            KubernetesEtcdNodeSetupTimeout
         };
     }
 }

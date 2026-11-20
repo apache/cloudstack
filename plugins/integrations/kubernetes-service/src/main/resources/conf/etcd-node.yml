@@ -36,6 +36,16 @@ write_files:
         exit 0
       fi
 
+      # The management server reads this file to report why the etcd setup failed
+      SETUP_FAILED_FILE=/home/cloud/etcd-setup-failed
+      rm -f "${SETUP_FAILED_FILE}"
+      fail_setup() {
+        echo "Error: $1" >&2
+        echo "$1" > "${SETUP_FAILED_FILE}"
+        chmod 644 "${SETUP_FAILED_FILE}"
+        exit 1
+      }
+
       ISO_MOUNT_DIR=/mnt/etcddisk
       BINARIES_DIR=${ISO_MOUNT_DIR}/
       ATTEMPT_ONLINE_INSTALL=false
@@ -97,10 +107,18 @@ write_files:
       if [ -d "$BINARIES_DIR" ]; then
         ### Binaries available offline ###
         echo "Installing binaries from ${BINARIES_DIR}"
+        ETCD_ARCHIVE=${BINARIES_DIR}/etcd/etcd-linux-amd64.tar.gz
+        if [ ! -f "${ETCD_ARCHIVE}" ]; then
+          fail_setup "The Kubernetes ISO does not include the etcd binaries (etcd/etcd-linux-amd64.tar.gz), dedicated etcd nodes need an ISO built with etcd"
+        fi
         mkdir -p /opt/bin/
-        tar -zxf ${BINARIES_DIR}/etcd/etcd-linux-amd64.tar.gz -C /opt/bin/
+        if ! tar -zxf "${ETCD_ARCHIVE}" -C /opt/bin/; then
+          fail_setup "Unable to extract the etcd binaries from etcd/etcd-linux-amd64.tar.gz of the Kubernetes ISO"
+        fi
         mv /opt/bin/etcd*/etcd* /opt/bin/
         sudo rm -rf /opt/bin/etcd-*
+      else
+        fail_setup "The Kubernetes ISO with the etcd binaries did not become available on the etcd node"
       fi
 
   - path: /etc/systemd/system/etcd.service
@@ -129,6 +147,4 @@ write_files:
 
 runcmd:
   - chown -R cloud:cloud /home/cloud/.ssh
-  - /opt/bin/setup-etcd-node
-  - systemctl daemon-reload
-  - systemctl enable --now etcd
+  - [ sh, -c, "/opt/bin/setup-etcd-node && systemctl daemon-reload && systemctl enable --now etcd" ]

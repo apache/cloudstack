@@ -58,6 +58,8 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.command.BackupDeleteAnswer;
+import org.apache.cloudstack.storage.command.CheckFileInIsoAnswer;
+import org.apache.cloudstack.storage.command.CheckFileInIsoCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -342,9 +344,70 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((ListDataStoreObjectsCommand)cmd);
         } else if (cmd instanceof QuerySnapshotZoneCopyCommand) {
             return execute((QuerySnapshotZoneCopyCommand)cmd);
+        } else if (cmd instanceof CheckFileInIsoCommand) {
+            return execute((CheckFileInIsoCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
+    }
+
+    protected Answer execute(CheckFileInIsoCommand cmd) {
+        DataStoreTO store = cmd.getStore();
+        if (!(store instanceof NfsTO)) {
+            return new CheckFileInIsoAnswer(cmd, "Checking the content of an ISO is supported only on NFS image stores");
+        }
+        if (org.apache.commons.lang3.StringUtils.isAnyBlank(cmd.getIsoPath(), cmd.getFilePath())) {
+            return new CheckFileInIsoAnswer(cmd, "ISO path and file path are required to check the content of an ISO");
+        }
+        String rootDir = getRootDir(((NfsTO)store).getUrl(), _nfsVersion);
+        File iso = new File(rootDir, cmd.getIsoPath());
+        if (!iso.isFile()) {
+            return new CheckFileInIsoAnswer(cmd, String.format("ISO %s not found on the image store", cmd.getIsoPath()));
+        }
+        String listing;
+        try {
+            listing = listFilesInIso(iso);
+        } catch (CloudRuntimeException e) {
+            logger.warn("Unable to list the files in ISO {}: {}", iso.getAbsolutePath(), e.getMessage());
+            return new CheckFileInIsoAnswer(cmd, e.getMessage());
+        }
+        boolean filePresent = isFileInIsoListing(listing, cmd.getFilePath());
+        logger.debug("File {} is {} in ISO {}", cmd.getFilePath(), filePresent ? "present" : "not present", iso.getAbsolutePath());
+        return new CheckFileInIsoAnswer(cmd, filePresent);
+    }
+
+    /**
+     * Lists all the files in an ISO, one full path per line, without mounting it.
+     */
+    protected String listFilesInIso(File iso) {
+        Script command = new Script("isoinfo", _timeout, logger);
+        command.add("-R");
+        command.add("-f");
+        command.add("-i", iso.getAbsolutePath());
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String result = command.execute(parser);
+        if (result != null) {
+            throw new CloudRuntimeException(String.format("Unable to list the files in ISO %s: %s", iso.getName(), result));
+        }
+        return parser.getLines();
+    }
+
+    /**
+     * Looks for a file in the output of {@link #listFilesInIso(File)}. The comparison ignores the case and the
+     * ";1" version suffix, which are what an ISO without Rock Ridge names would give.
+     */
+    protected static boolean isFileInIsoListing(String listing, String filePath) {
+        if (org.apache.commons.lang3.StringUtils.isAnyBlank(listing, filePath)) {
+            return false;
+        }
+        String wanted = org.apache.commons.lang3.StringUtils.strip(filePath.trim(), "/");
+        for (String line : listing.split("\\R")) {
+            String entry = org.apache.commons.lang3.StringUtils.strip(line.trim().replaceFirst(";\\d+$", ""), "/");
+            if (entry.equalsIgnoreCase(wanted)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Answer execute(ListDataStoreObjectsCommand cmd) {

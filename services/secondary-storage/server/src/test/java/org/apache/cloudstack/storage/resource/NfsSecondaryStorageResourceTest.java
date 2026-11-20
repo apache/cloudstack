@@ -39,6 +39,8 @@ import java.util.stream.Stream;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.NfsTO;
 import org.apache.cloudstack.storage.command.BackupDeleteAnswer;
+import org.apache.cloudstack.storage.command.CheckFileInIsoAnswer;
+import org.apache.cloudstack.storage.command.CheckFileInIsoCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
@@ -59,6 +61,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.EncryptionUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -406,5 +409,94 @@ public class NfsSecondaryStorageResourceTest {
         resource.deleteScreenshot(deleteCommandMock, File.separator + "path/to/file", "/root/");
 
         verify(resource).deleteLocalFile("/root/" + "path/to/file");
+    }
+
+    private static final String ETCD_ARCHIVE = "etcd/etcd-linux-amd64.tar.gz";
+
+    @Test
+    public void testIsFileInIsoListingFindsFile() {
+        String listing = "/docker\n/docker/etcd:3.5.21-0.tar\n/etcd\n/etcd/etcd-linux-amd64.tar.gz\n/k8s/kubeadm\n";
+        assertTrue(NfsSecondaryStorageResource.isFileInIsoListing(listing, ETCD_ARCHIVE));
+        assertTrue(NfsSecondaryStorageResource.isFileInIsoListing(listing, "/" + ETCD_ARCHIVE));
+    }
+
+    @Test
+    public void testIsFileInIsoListingFileMissing() {
+        // What an ISO built without ETCD_VERSION has: only the etcd image that kubeadm runs on control nodes
+        String listing = "/docker\n/docker/etcd:3.5.21-0.tar\n/k8s/kubeadm\n";
+        assertFalse(NfsSecondaryStorageResource.isFileInIsoListing(listing, ETCD_ARCHIVE));
+        assertFalse(NfsSecondaryStorageResource.isFileInIsoListing("", ETCD_ARCHIVE));
+        assertFalse(NfsSecondaryStorageResource.isFileInIsoListing(null, ETCD_ARCHIVE));
+    }
+
+    @Test
+    public void testIsFileInIsoListingWithoutRockRidgeNames() {
+        String listing = "/ETCD\r\n/ETCD/ETCD-LINUX-AMD64.TAR.GZ;1\r\n";
+        assertTrue(NfsSecondaryStorageResource.isFileInIsoListing(listing, ETCD_ARCHIVE));
+    }
+
+    private CheckFileInIsoCommand prepareCheckFileInIsoCommand(Path root) throws Exception {
+        Path isoDir = Files.createDirectories(root.resolve("template/tmpl/1/200"));
+        Files.createFile(isoDir.resolve("200-1-uuid.iso"));
+        NfsTO store = Mockito.mock(NfsTO.class);
+        Mockito.when(store.getUrl()).thenReturn("nfs://host/export");
+        doReturn(root.toString()).when(resource).getRootDir(any(), any());
+        return new CheckFileInIsoCommand(store, "template/tmpl/1/200/200-1-uuid.iso", ETCD_ARCHIVE);
+    }
+
+    @Test
+    public void testExecuteCheckFileInIsoCommandFilePresent() throws Exception {
+        Path root = Files.createTempDirectory("checkiso");
+        CheckFileInIsoCommand cmd = prepareCheckFileInIsoCommand(root);
+        doReturn("/etcd\n/etcd/etcd-linux-amd64.tar.gz\n").when(resource).listFilesInIso(any());
+
+        Answer answer = resource.execute(cmd);
+
+        assertTrue(answer.getResult());
+        assertTrue(((CheckFileInIsoAnswer)answer).isFilePresent());
+    }
+
+    @Test
+    public void testExecuteCheckFileInIsoCommandFileNotPresent() throws Exception {
+        Path root = Files.createTempDirectory("checkiso");
+        CheckFileInIsoCommand cmd = prepareCheckFileInIsoCommand(root);
+        doReturn("/k8s\n/k8s/kubeadm\n").when(resource).listFilesInIso(any());
+
+        Answer answer = resource.execute(cmd);
+
+        assertTrue(answer.getResult());
+        assertFalse(((CheckFileInIsoAnswer)answer).isFilePresent());
+    }
+
+    @Test
+    public void testExecuteCheckFileInIsoCommandIsoCannotBeListed() throws Exception {
+        Path root = Files.createTempDirectory("checkiso");
+        CheckFileInIsoCommand cmd = prepareCheckFileInIsoCommand(root);
+        doThrow(new CloudRuntimeException("isoinfo: command not found")).when(resource).listFilesInIso(any());
+
+        Answer answer = resource.execute(cmd);
+
+        assertFalse(answer.getResult());
+        assertFalse(((CheckFileInIsoAnswer)answer).isFilePresent());
+    }
+
+    @Test
+    public void testExecuteCheckFileInIsoCommandIsoMissing() throws Exception {
+        Path root = Files.createTempDirectory("checkiso");
+        NfsTO store = Mockito.mock(NfsTO.class);
+        Mockito.when(store.getUrl()).thenReturn("nfs://host/export");
+        doReturn(root.toString()).when(resource).getRootDir(any(), any());
+
+        Answer answer = resource.execute(new CheckFileInIsoCommand(store, "template/tmpl/1/200/missing.iso", ETCD_ARCHIVE));
+
+        assertFalse(answer.getResult());
+        verify(resource, times(0)).listFilesInIso(any());
+    }
+
+    @Test
+    public void testExecuteCheckFileInIsoCommandNonNfsStore() {
+        Answer answer = resource.execute(new CheckFileInIsoCommand(Mockito.mock(DataStoreTO.class), "x.iso", ETCD_ARCHIVE));
+
+        assertFalse(answer.getResult());
     }
 }
