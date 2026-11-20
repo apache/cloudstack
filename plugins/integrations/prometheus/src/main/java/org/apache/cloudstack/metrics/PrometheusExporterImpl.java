@@ -518,9 +518,10 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             return;
         }
         // only running virtual routers; results of stopped or destroyed routers are stale
+        // a router on multiple networks (e.g. a VPC router with several tiers) is listed once per network
         Map<Long, DomainRouterVO> runningRouters = routers.stream()
                 .filter(router -> router.getRole() == VirtualRouter.Role.VIRTUAL_ROUTER && router.getState() == State.Running)
-                .collect(Collectors.toMap(DomainRouterVO::getId, router -> router));
+                .collect(Collectors.toMap(DomainRouterVO::getId, router -> router, (first, duplicate) -> first));
         if (runningRouters.isEmpty()) {
             return;
         }

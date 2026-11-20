@@ -111,6 +111,27 @@ public class PrometheusExporterImplVRHealthCheckTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    public void routerListedOncePerNetworkIsExportedOnce() {
+        // a VPC router with two tiers is returned twice by listByDataCenter
+        DomainRouterVO vpcRouter = router(25L, "r-25-VM", VirtualRouter.Role.VIRTUAL_ROUTER, State.Running);
+        DomainRouterVO vpcRouterSecondTier = router(25L, "r-25-VM", VirtualRouter.Role.VIRTUAL_ROUTER, State.Running);
+        Mockito.when(domainRouterDao.listByDataCenter(ZONE_ID)).thenReturn(List.of(vpcRouter, vpcRouterSecondTier));
+        List<RouterHealthCheckResultVO> checks = List.of(
+                check(25L, "dns_check.py", RouterHealthStatus.SUCCESS, null));
+        Mockito.when(routerHealthCheckResultDao.getHealthCheckResults(Mockito.anyList())).thenReturn(checks);
+
+        List<String> metrics = collectMetrics();
+
+        ArgumentCaptor<List<Long>> ids = ArgumentCaptor.forClass(List.class);
+        Mockito.verify(routerHealthCheckResultDao).getHealthCheckResults(ids.capture());
+        assertEquals(List.of(25L), ids.getValue());
+        assertEquals(List.of(
+                "cloudstack_virtualrouter_healthcheck_result{checkname=\"dns_check.py\",checktype=\"basic\",zone=\"zone1\",virtualrouter=\"r-25-VM\"} 1"),
+                metrics);
+    }
+
+    @Test
     public void noRunningRoutersSkipsHealthCheckQuery() {
         DomainRouterVO stopped = router(11L, "r-11-VM", VirtualRouter.Role.VIRTUAL_ROUTER, State.Stopped);
         Mockito.when(domainRouterDao.listByDataCenter(ZONE_ID)).thenReturn(List.of(stopped));
