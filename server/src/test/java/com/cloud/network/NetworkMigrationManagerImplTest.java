@@ -16,16 +16,24 @@
 // under the License.
 package com.cloud.network;
 
+import java.util.Arrays;
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.resourcedetail.VpcDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicNetworkMapDao;
@@ -35,12 +43,49 @@ import com.cloud.vm.dao.NicNetworkMapVO;
 public class NetworkMigrationManagerImplTest {
 
     @Mock
+    private VpcDetailsDao vpcDetailsDao;
+
+    @Mock
+    private NetworkDetailsDao networkDetailsDao;
+
+    @Mock
     private NicDao nicDao;
     @Mock
     private NicNetworkMapDao nicNetworkMapDao;
 
     @InjectMocks
     private NetworkMigrationManagerImpl manager = new NetworkMigrationManagerImpl();
+
+    @Test
+    public void testCopyVpcDetailsSkipsPublicNetworkRate() {
+        final long srcVpcId = 10L;
+        final long dstVpcId = 11L;
+        Mockito.when(vpcDetailsDao.listDetails(srcVpcId)).thenReturn(Arrays.asList(
+                new VpcDetailVO(srcVpcId, ApiConstants.PUBLIC_NETWORK_RATE, "200", true),
+                new VpcDetailVO(srcVpcId, "someKey", "someValue", false)));
+
+        manager.copyVpcDetails(srcVpcId, dstVpcId);
+
+        Mockito.verify(vpcDetailsDao, Mockito.never()).addDetail(Mockito.eq(dstVpcId), Mockito.eq(ApiConstants.PUBLIC_NETWORK_RATE),
+                Mockito.anyString(), Mockito.anyBoolean());
+        Mockito.verify(vpcDetailsDao).addDetail(dstVpcId, "someKey", "someValue", false);
+    }
+
+    @Test
+    public void testCopyNetworkDetailsSkipsNetworkRate() {
+        final long srcNetworkId = 20L;
+        final long dstNetworkId = 21L;
+        Mockito.when(networkDetailsDao.listDetails(srcNetworkId)).thenReturn(Arrays.asList(
+                new NetworkDetailVO(srcNetworkId, ApiConstants.NETWORKRATE, "100", true),
+                new NetworkDetailVO(srcNetworkId, "someKey", "someValue", false)));
+
+        manager.copyNetworkDetails(srcNetworkId, dstNetworkId);
+
+        ArgumentCaptor<NetworkDetailVO> captor = ArgumentCaptor.forClass(NetworkDetailVO.class);
+        Mockito.verify(networkDetailsDao, Mockito.times(1)).persist(captor.capture());
+        Assert.assertEquals("someKey", captor.getValue().getName());
+        Assert.assertEquals(dstNetworkId, captor.getValue().getResourceId());
+    }
 
     @Test
     public void moveTrunkAssociationsRepointsAssociationsAndFlagsNewNic() {

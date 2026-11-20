@@ -19,6 +19,10 @@
 -- Schema upgrade from 4.23.0.0 to 24.0.0
 --;
 
+ALTER TABLE `cloud`.`nics` ADD COLUMN `network_rate` int DEFAULT NULL COMMENT 'effective network rate in Mb/s for this NIC, -1 means unlimited';
+
+ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN `public_nw_rate` int DEFAULT NULL COMMENT 'public gateway (internet-facing) network rate throttle mbits/s';
+
 -- Widen the unique key on cloud_usage.usage_volume to include vm_id, so the cumulative and
 -- per-VM volume usage records introduced in 4.22.1 can coexist. See #13399.
 CALL `cloud_usage`.`IDEMPOTENT_DROP_INDEX`('id', 'cloud_usage.usage_volume');
@@ -158,6 +162,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`vmware_cbt_migration_cycle` (
     UNIQUE KEY `uc_vmware_cbt_migration_cycle__migration_id__cycle_number` (`migration_id`, `cycle_number`),
     INDEX `i_vmware_cbt_migration_cycle__migration_id` (`migration_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- InstanceBootGroup: ordered boot sequencing for VMs and InstanceGroups
 CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group` (
     `id`          bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,

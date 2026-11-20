@@ -198,6 +198,8 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
                 nicResponse.setIsDefault(router.isDefaultNic());
                 nicResponse.setEnabled(router.isNicEnabled());
                 nicResponse.setObjectName("nic");
+                Integer routerNicNetworkRate = router.getNicNetworkRate();
+                nicResponse.setNetworkRate(routerNicNetworkRate != null && routerNicNetworkRate > 0 ? routerNicNetworkRate : -1);
                 routerResponse.addNic(nicResponse);
             }
         }
@@ -292,6 +294,8 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             nicResponse.setIsDefault(vr.isDefaultNic());
             nicResponse.setEnabled(vr.isNicEnabled());
             nicResponse.setObjectName("nic");
+            Integer vrNicNetworkRate = vr.getNicNetworkRate();
+            nicResponse.setNetworkRate(vrNicNetworkRate != null && vrNicNetworkRate > 0 ? vrNicNetworkRate : -1);
             vrData.addNic(nicResponse);
         }
         return vrData;

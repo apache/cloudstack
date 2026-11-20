@@ -445,6 +445,12 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
         return null;
     }
 
+    @Override
+    public Integer getVpcOfferingNetworkRate(long vpcOfferingId, Long dataCenterId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationService#isOfferingForVpc(com.cloud.offering.NetworkOffering)
      */
