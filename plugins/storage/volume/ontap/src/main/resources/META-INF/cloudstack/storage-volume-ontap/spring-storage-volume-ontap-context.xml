@@ -27,6 +27,9 @@
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
 
+    <bean id="ontapDataMotionStrategy"
+        class="org.apache.cloudstack.storage.motion.OntapDataMotionStrategy" />
+
     <bean id="ontapPrimaryDataStoreProvider"
         class="org.apache.cloudstack.storage.provider.OntapPrimaryDatastoreProvider" />
 

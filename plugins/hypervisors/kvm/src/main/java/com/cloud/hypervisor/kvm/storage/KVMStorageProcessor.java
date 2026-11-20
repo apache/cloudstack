@@ -37,6 +37,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -3426,8 +3427,13 @@ public class KVMStorageProcessor implements StorageProcessor {
                     destFormat, destVolumePath, destPrimaryStore.getId(), destPrimaryStore.getUuid(),
                     destPrimaryStore.getName(), destPrimaryStore.getPoolType()));
 
+            Map<String, String> srcDetails = ObjectUtils.defaultIfNull(
+                    ObjectUtils.firstNonNull(srcPrimaryStore.getDetails(), cmd.getOptions()), Collections.emptyMap());
+            Map<String, String> destDetails = ObjectUtils.defaultIfNull(
+                    ObjectUtils.firstNonNull(destPrimaryStore.getDetails(), cmd.getOptions2()), Collections.emptyMap());
+
             if (srcPrimaryStore.isManaged()) {
-                if (!storagePoolMgr.connectPhysicalDisk(srcPrimaryStore.getPoolType(), srcPrimaryStore.getUuid(), srcVolumePath, srcPrimaryStore.getDetails())) {
+                if (!storagePoolMgr.connectPhysicalDisk(srcPrimaryStore.getPoolType(), srcPrimaryStore.getUuid(), srcVolumePath, srcDetails)) {
                     logger.warn(String.format("Failed to connect src volume %s, in storage pool %s", srcVol, srcPrimaryStore));
                 }
             }
@@ -3443,12 +3449,25 @@ public class KVMStorageProcessor implements StorageProcessor {
             volume.setVmName(srcVol.getVmName());
             KVMPhysicalDisk newVolume;
             String destVolumeName;
-            destPool = storagePoolMgr.getStoragePool(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid());
+            try {
+                destPool = storagePoolMgr.getStoragePool(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid());
+            } catch (CloudRuntimeException e) {
+                if (destPrimaryStore.isManaged() && e.getMessage().contains("not found")) {
+                    destPool = storagePoolMgr.createStoragePool(destPrimaryStore.getUuid(), destPrimaryStore.getHost(),
+                            destPrimaryStore.getPort(), destPrimaryStore.getPath(), null, destPrimaryStore.getPoolType(),
+                            destDetails);
+                } else {
+                    throw e;
+                }
+            }
             if (destPrimaryStore.isManaged()) {
-                if (!storagePoolMgr.connectPhysicalDisk(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid(), destVolumePath, destPrimaryStore.getDetails())) {
+                if (!storagePoolMgr.connectPhysicalDisk(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid(), destVolumePath, destDetails)) {
                     logger.warn("Failed to connect dest volume {}, in storage pool {}", destVol, destPrimaryStore);
                 }
-                destVolumeName = derivePath(destPrimaryStore, destData, destPrimaryStore.getDetails());
+            }
+            if (destPrimaryStore.isManaged()) {
+                destVolumeName = StringUtils.defaultIfBlank(
+                        derivePath(destPrimaryStore, destData, destDetails), destVolumePath);
             } else {
                 PhysicalDiskFormat destPoolDefaultFormat = destPool.getDefaultFormat();
                 destFormat = getFormat(destPoolDefaultFormat);

@@ -48,6 +48,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -240,12 +241,21 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         if (srcData instanceof VolumeInfo && destData instanceof VolumeInfo) {
             VolumeInfo srcVolumeInfo = (VolumeInfo)srcData;
+            VolumeInfo destVolumeInfo = (VolumeInfo)destData;
+
+            // OntapDataMotionStrategy also returns HIGHEST for these and a tie keeps the first strategy.
+            if (srcVolumeInfo.getState() == Volume.State.Migrating) {
+                StoragePoolVO srcPool = _storagePoolDao.findById(srcVolumeInfo.getDataStore().getId());
+                StoragePoolVO destPool = _storagePoolDao.findById(destVolumeInfo.getDataStore().getId());
+                if ((srcPool != null && DataStoreProvider.ONTAP_PLUGIN_NAME.equals(srcPool.getStorageProviderName()))
+                        || (destPool != null && DataStoreProvider.ONTAP_PLUGIN_NAME.equals(destPool.getStorageProviderName()))) {
+                    return StrategyPriority.CANT_HANDLE;
+                }
+            }
 
             if (isVolumeOnManagedStorage(srcVolumeInfo)) {
                 return StrategyPriority.HIGHEST;
             }
-
-            VolumeInfo destVolumeInfo = (VolumeInfo)destData;
 
             if (isVolumeOnManagedStorage(destVolumeInfo)) {
                 return StrategyPriority.HIGHEST;
@@ -327,6 +337,20 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      * Handles migrating volumes on managed Storage.
      */
     protected StrategyPriority internalCanHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+        // OntapDataMotionStrategy also returns HIGHEST for these and a tie keeps the first strategy.
+        for (VolumeInfo volumeInfo : volumeMap.keySet()) {
+            StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
+            if (storagePoolVO != null && DataStoreProvider.ONTAP_PLUGIN_NAME.equals(storagePoolVO.getStorageProviderName())) {
+                return StrategyPriority.CANT_HANDLE;
+            }
+        }
+        for (DataStore dataStore : volumeMap.values()) {
+            StoragePoolVO storagePoolVO = _storagePoolDao.findById(dataStore.getId());
+            if (storagePoolVO != null && DataStoreProvider.ONTAP_PLUGIN_NAME.equals(storagePoolVO.getStorageProviderName())) {
+                return StrategyPriority.CANT_HANDLE;
+            }
+        }
+
         Set<VolumeInfo> volumeInfoSet = volumeMap.keySet();
 
         for (VolumeInfo volumeInfo : volumeInfoSet) {
