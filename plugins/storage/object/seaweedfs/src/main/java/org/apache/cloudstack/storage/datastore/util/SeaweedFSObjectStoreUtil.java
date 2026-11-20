@@ -1,0 +1,715 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+// SPDX-License-Identifier: Apache-2.0
+package org.apache.cloudstack.storage.datastore.util;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+/**
+ * Utility class for the SeaweedFS object storage provider.
+ *
+ * SeaweedFS exposes both an S3-compatible API and an AWS IAM-compatible API,
+ * so this provider needs no proprietary admin client — only the AWS S3 and IAM
+ * SDKs, the same pair Cloudian HyperStore already uses in this tree.
+ */
+public class SeaweedFSObjectStoreUtil {
+
+    /** The name of our Object Store Provider */
+    public static final String OBJECT_STORE_PROVIDER_NAME = "SeaweedFS";
+
+    public static final String STORE_KEY_PROVIDER_NAME = "providerName";
+    public static final String STORE_KEY_URL           = "url";
+    public static final String STORE_KEY_NAME          = "name";
+    public static final String STORE_KEY_SIZE          = "size";
+    public static final String STORE_KEY_DETAILS       = "details";
+
+    // Store Details Map key names - managed outside of plugin
+    public static final String STORE_DETAILS_KEY_ACCESS_KEY = "accesskey";   // admin/root access key
+    public static final String STORE_DETAILS_KEY_SECRET_KEY = "secretkey";   // admin/root secret key
+    public static final String STORE_DETAILS_KEY_S3_URL     = "s3Url";        // S3 endpoint URL
+    public static final String STORE_DETAILS_KEY_IAM_URL     = "iamUrl";       // IAM endpoint URL
+    public static final String STORE_DETAILS_KEY_METRICS_URL = "metricsUrl";  // Prometheus metrics endpoint URL (optional, for scalable usage reporting)
+
+    // Account Detail Map key names - credentials created per CloudStack account.
+    // Namespaced by store ID so one account can use multiple SeaweedFS pools
+    // without the second pool overwriting the first pool's credentials.
+    public static final String KEY_ACCESS_KEY_PREFIX = "swfs_AccessKey_";
+    public static final String KEY_SECRET_KEY_PREFIX = "swfs_SecretKey_";
+
+    /**
+     * Build the account-detail key for the IAM access key of a given store.
+     */
+    public static String keyAccessKey(long storeId) {
+        return KEY_ACCESS_KEY_PREFIX + storeId;
+    }
+
+    /**
+     * Build the account-detail key for the IAM secret key of a given store.
+     */
+    public static String keySecretKey(long storeId) {
+        return KEY_SECRET_KEY_PREFIX + storeId;
+    }
+
+    /**
+     * Strip trailing slashes from a configured endpoint URL so callers can
+     * append a {@code "/" + path} suffix without producing a double slash.
+     * The S3 and IAM endpoint URLs are operator-supplied and are accepted with
+     * or without a trailing slash.
+     *
+     * @param url the URL to normalize, may be null
+     * @return the URL without trailing slashes, or the input if null/empty
+     */
+    public static String stripTrailingSlashes(String url) {
+        if (url == null) {
+            return null;
+        }
+        String normalized = url;
+        while (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        return normalized;
+    }
+
+    /**
+     * Returns true when the URL carries a non-empty path component beyond the
+     * authority (e.g. {@code http://host:8333/s3} has the path {@code /s3}).
+     *
+     * The CloudStack object-store browser builds its MinIO client from only the
+     * host and port of the stored bucket URL and drops any path prefix (see
+     * {@code ObjectStoreBrowser.vue#initMinioClient}). The MinIO JS client has
+     * no basePath option, so a SeaweedFS deployment behind a path-prefixed
+     * reverse proxy (e.g. {@code /s3}) works for server-side calls but the
+     * browser's list/upload requests target the wrong endpoint. Rejecting
+     * path-prefixed endpoints at registration prevents a configuration that
+     * would silently break the browser.
+     *
+     * @param url the endpoint URL to check, may be null
+     * @return true if the URL has a path component other than empty or "/"
+     */
+    public static boolean hasPathPrefix(String url) {
+        if (url == null) {
+            return false;
+        }
+        try {
+            java.net.URI uri = java.net.URI.create(url);
+            String path = uri.getPath();
+            return path != null && !path.isEmpty() && !"/".equals(path);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Connect timeout for the S3 extension HTTP client, in seconds.
+     */
+    public static final int S3_EXTENSION_CONNECT_TIMEOUT_SECONDS = 10;
+    /**
+     * Per-request timeout for the S3 extension HTTP request, in seconds.
+     */
+    public static final int S3_EXTENSION_REQUEST_TIMEOUT_SECONDS = 30;
+
+    /**
+     * IAM user policy name applied to each per-account IAM user.
+     */
+    public static final String IAM_USER_POLICY_NAME = "CloudStackPolicy";
+
+    /**
+     * Build an IAM user policy that grants full S3 access only to the given
+     * buckets (both the bucket and its contents), while denying bucket
+     * creation and deletion everywhere so CloudStack retains control of the
+     * bucket lifecycle. When no buckets are provided, all S3 access is denied.
+     *
+     * <p>This is the tenant boundary: each account's IAM credentials can only
+     * operate on that account's own buckets, not on every bucket in the
+     * SeaweedFS pool. The policy is refreshed whenever buckets are created or
+     * deleted (see
+     * {@code SeaweedFSObjectStoreDriverImpl.updateAccountIAMPolicy}).
+     *
+     * @param bucketNames the bucket names the account is allowed to access
+     * @return a JSON IAM policy document
+     */
+    public static String buildAccountIAMPolicy(java.util.List<String> bucketNames) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\n");
+        sb.append("  \"Version\": \"2012-10-17\",\n");
+        sb.append("  \"Statement\": [\n");
+        if (bucketNames == null || bucketNames.isEmpty()) {
+            // No buckets: deny all S3 access. A Resource cannot be empty in
+            // an IAM policy, so deny everything explicitly.
+            sb.append("    {\n");
+            sb.append("      \"Sid\": \"DenyAllS3\",\n");
+            sb.append("      \"Effect\": \"Deny\",\n");
+            sb.append("      \"Action\": [\"s3:*\"],\n");
+            sb.append("      \"Resource\": [\"arn:aws:s3:::*\", \"arn:aws:s3:::*/*\"]\n");
+            sb.append("    }\n");
+        } else {
+            sb.append("    {\n");
+            sb.append("      \"Sid\": \"AllowAccountBuckets\",\n");
+            sb.append("      \"Effect\": \"Allow\",\n");
+            sb.append("      \"Action\": [\"s3:*\"],\n");
+            sb.append("      \"Resource\": [\n");
+            for (int i = 0; i < bucketNames.size(); i++) {
+                String name = bucketNames.get(i);
+                sb.append("        \"arn:aws:s3:::").append(name).append("\",\n");
+                sb.append("        \"arn:aws:s3:::").append(name).append("/*\"");
+                if (i < bucketNames.size() - 1) {
+                    sb.append(",");
+                }
+                sb.append("\n");
+            }
+            sb.append("      ]\n");
+            sb.append("    }\n");
+        }
+        // Always deny bucket creation/deletion and quota mutation —
+        // CloudStack controls lifecycle and resource accounting. Denying
+        // s3:PutBucketQuota prevents a tenant from using the credentials
+        // returned in BucketResponse to call the SeaweedFS quota extension
+        // directly and bypass CloudStack's resource accounting.
+        sb.append("    ,{\n");
+        sb.append("      \"Sid\": \"DenyBucketLifecycleAndQuota\",\n");
+        sb.append("      \"Effect\": \"Deny\",\n");
+        sb.append("      \"Action\": [\"s3:CreateBucket\", \"s3:DeleteBucket\", \"s3:PutBucketQuota\"],\n");
+        sb.append("      \"Resource\": \"*\"\n");
+        sb.append("    }\n");
+        sb.append("  ]\n");
+        sb.append("}\n");
+        return sb.toString();
+    }
+
+    /**
+     * Returns an S3 connection for the given endpoint and credentials.
+     * Uses path-style access, which SeaweedFS requires.
+     *
+     * @param url the url of the S3 service
+     * @param accessKey the credentials to use for the S3 connection.
+     * @param secretKey the matching secret key.
+     * @return an S3 connection (never null)
+     * @throws CloudRuntimeException on failure.
+     */
+    public static AmazonS3 getS3Client(String url, String accessKey, String secretKey) {
+        AmazonS3 client = AmazonS3ClientBuilder.standard()
+                .enablePathStyleAccess()
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey)))
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(url, "us-east-1"))
+                .build();
+        if (client == null) {
+            throw new CloudRuntimeException("Error while creating SeaweedFS S3 client");
+        }
+        return client;
+    }
+
+    /**
+     * Returns an IAM connection for the given endpoint and credentials.
+     *
+     * @param url the url of the IAM service
+     * @param accessKey the credentials to use for the iam connection.
+     * @param secretKey the matching secret key.
+     * @return an IAM connection (never null)
+     * @throws CloudRuntimeException on failure.
+     */
+    public static AmazonIdentityManagement getIAMClient(String url, String accessKey, String secretKey) {
+        AmazonIdentityManagement iamClient = AmazonIdentityManagementClientBuilder.standard()
+            .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey)))
+            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(url, "us-east-1"))
+            .build();
+        if (iamClient == null) {
+            throw new CloudRuntimeException("Error while creating SeaweedFS IAM client");
+        }
+        return iamClient;
+    }
+
+    /**
+     * Test the S3Url to confirm it behaves like an S3 Service.
+     *
+     * Uses bad credentials and looks for the particular error from S3 that says
+     * InvalidAccessKeyId was used. Quietly returns if we connect and get the
+     * expected error back.
+     *
+     * @param s3Url the url to check
+     * @throws CloudRuntimeException if there is any unexpected issue.
+     */
+    public static void validateS3Url(String s3Url) {
+        try {
+            AmazonS3 s3Client = SeaweedFSObjectStoreUtil.getS3Client(s3Url, "unknown", "unknown");
+            s3Client.listBuckets();
+        } catch (AmazonServiceException e) {
+            if (StringUtils.compareIgnoreCase(e.getErrorCode(), "InvalidAccessKeyId") != 0
+                    && StringUtils.compareIgnoreCase(e.getErrorCode(), "SignatureDoesNotMatch") != 0) {
+                throw new CloudRuntimeException("Unexpected response from S3 Endpoint.", e);
+            }
+        }
+    }
+
+    /**
+     * Test the IAMUrl to confirm it behaves like an IAM Service.
+     *
+     * Uses bad credentials and looks for the particular error from IAM that says
+     * InvalidAccessKeyId or InvalidClientTokenId was used. Quietly returns if we
+     * connect and get the expected error back.
+     *
+     * @param iamUrl the url to check
+     * @throws CloudRuntimeException if there is any unexpected issue.
+     */
+    public static void validateIAMUrl(String iamUrl) {
+        try {
+            AmazonIdentityManagement iamClient = SeaweedFSObjectStoreUtil.getIAMClient(iamUrl, "unknown", "unknown");
+            iamClient.listAccessKeys();
+        } catch (AmazonServiceException e) {
+            if (! StringUtils.equalsAnyIgnoreCase(e.getErrorCode(), "InvalidAccessKeyId", "InvalidClientTokenId", "SignatureDoesNotMatch")) {
+                throw new CloudRuntimeException("Unexpected response from IAM Endpoint.", e);
+            }
+        }
+    }
+
+    /**
+     * Verify the configured admin credentials actually authenticate against
+     * both the S3 and IAM endpoints.
+     *
+     * {@link #validateS3Url} and {@link #validateIAMUrl} deliberately use bad
+     * credentials to probe that the endpoint behaves like the respective
+     * service, so on their own they accept a store whose admin credentials are
+     * wrong; that only surfaces later on the first bucket or IAM operation.
+     * This performs an authenticated call with the supplied credentials so the
+     * failure happens at registration time.
+     *
+     * @param s3Url     the S3 endpoint URL
+     * @param iamUrl    the IAM endpoint URL
+     * @param accessKey the admin access key
+     * @param secretKey the admin secret key
+     * @throws CloudRuntimeException if the credentials are rejected
+     */
+    public static void validateCredentials(String s3Url, String iamUrl, String accessKey, String secretKey) {
+        try {
+            getS3Client(s3Url, accessKey, secretKey).listBuckets();
+        } catch (AmazonServiceException e) {
+            if (StringUtils.equalsAnyIgnoreCase(e.getErrorCode(), "InvalidAccessKeyId", "SignatureDoesNotMatch",
+                    "AccessDenied", "InvalidClientTokenId")) {
+                throw new CloudRuntimeException("SeaweedFS rejected the supplied admin credentials on the S3 endpoint: "
+                        + e.getErrorCode(), e);
+            }
+            throw new CloudRuntimeException("Unexpected response validating admin credentials against the S3 endpoint.", e);
+        }
+        try {
+            getIAMClient(iamUrl, accessKey, secretKey).listUsers();
+        } catch (AmazonServiceException e) {
+            if (StringUtils.equalsAnyIgnoreCase(e.getErrorCode(), "InvalidAccessKeyId", "SignatureDoesNotMatch",
+                    "AccessDenied", "InvalidClientTokenId")) {
+                throw new CloudRuntimeException("SeaweedFS rejected the supplied admin credentials on the IAM endpoint: "
+                        + e.getErrorCode(), e);
+            }
+            throw new CloudRuntimeException("Unexpected response validating admin credentials against the IAM endpoint.", e);
+        }
+    }
+
+    /**
+     * Set bucket quota via the SeaweedFS S3 extension endpoint.
+     *
+     * SeaweedFS exposes a custom S3 subresource at
+     *   PUT /{bucket}?seaweedfs-quota
+     * authenticated via standard S3 SigV4 and authorized via the
+     * s3:PutBucketQuota IAM permission. This avoids the need for a
+     * separate admin API credential.
+     *
+     * The request body is JSON:
+     *   {"quota_size": <n>, "quota_unit": "GB", "quota_enabled": true}
+     *
+     * @param s3Url     the S3 endpoint URL (e.g. http://host:8333)
+     * @param accessKey the S3 access key (must have s3:PutBucketQuota permission)
+     * @param secretKey the S3 secret key
+     * @param bucketName the bucket name
+     * @param sizeGiB    the quota size in GiB (0 to disable quota)
+     * @param allowMissingExtension tolerate a 404/405 for quota 0 when the
+     *        optional quota extension is not deployed (initial create only)
+     * @throws CloudRuntimeException on any failure
+     */
+    public static void setBucketQuotaViaS3Extension(String s3Url, String accessKey, String secretKey, String bucketName,
+                                                     long sizeGiB, boolean allowMissingExtension) {
+        setBucketQuotaViaS3Extension(s3Url, accessKey, secretKey, bucketName, sizeGiB, newS3ExtensionHttpClient(),
+                allowMissingExtension);
+    }
+
+    /**
+     * Build a bounded HTTP client for SeaweedFS S3 extension requests with a
+     * connect timeout so a stalled endpoint cannot block the management-server
+     * API thread indefinitely.
+     */
+    public static java.net.http.HttpClient newS3ExtensionHttpClient() {
+        return java.net.http.HttpClient.newBuilder()
+                .connectTimeout(java.time.Duration.ofSeconds(S3_EXTENSION_CONNECT_TIMEOUT_SECONDS))
+                .build();
+    }
+
+    /**
+     * Set bucket quota via the SeaweedFS S3 extension endpoint using the
+     * supplied HTTP client. The client is injected so tests can assert the
+     * signed request without hitting the network.
+     *
+     * @param allowMissingExtension when true and {@code sizeGiB == 0}, a
+     *        404/405 response (indicating the optional SeaweedFS quota
+     *        extension is not deployed) is tolerated as a no-op. This is only
+     *        safe for the initial bucket create, where the bucket has no quota
+     *        to clear. It must be false when clearing an existing positive
+     *        quota, because reporting success would lower CloudStack's
+     *        accounting while SeaweedFS retains the old quota/read-only state.
+     */
+    public static void setBucketQuotaViaS3Extension(String s3Url, String accessKey, String secretKey,
+                                                     String bucketName, long sizeGiB, java.net.http.HttpClient httpClient,
+                                                     boolean allowMissingExtension) {
+        if (sizeGiB < 0) {
+            // Only zero disables a quota; a negative value would corrupt
+            // resource accounting (BucketApiServiceImpl persists the requested
+            // value and computes deltas from it), so reject it outright.
+            throw new CloudRuntimeException("Bucket quota cannot be negative: " + sizeGiB);
+        }
+        String body;
+        if (sizeGiB == 0) {
+            body = "{\"quota_size\":0,\"quota_unit\":\"B\",\"quota_enabled\":false}";
+        } else {
+            body = String.format("{\"quota_size\":%d,\"quota_unit\":\"GB\",\"quota_enabled\":true}", sizeGiB);
+        }
+        try {
+            executeSignedS3Request("PUT", s3Url, "/" + bucketName + "?seaweedfs-quota", accessKey, secretKey, body, httpClient);
+        } catch (CloudRuntimeException e) {
+            // CreateBucketCmd requires a quota parameter and
+            // BucketApiServiceImpl.createBucket invokes setQuota for every
+            // create, including quota 0. On deployments without the optional
+            // quota extension that call returns 404/405 and would abort the
+            // create. Tolerate it only for the initial create (quota 0 with
+            // allowMissingExtension), where there is no existing quota to
+            // clear, so basic bucket CRUD works without the extension.
+            //
+            // A quota clear on an existing positive quota must NOT be
+            // swallowed: reporting success would lower CloudStack's DB and
+            // resource accounting while SeaweedFS retains the old quota and
+            // read-only state, leaving the two systems inconsistent.
+            //
+            // Distinguish "extension not available" from "bucket not found":
+            // SeaweedFS returns a standard S3 NoSuchBucket error (with
+            // <Code>NoSuchBucket</Code> in the body) when the bucket does not
+            // exist, which must NOT be swallowed — it indicates CloudStack and
+            // S3 are out of sync.
+            if (allowMissingExtension && sizeGiB == 0 && e.getMessage() != null
+                    && (e.getMessage().contains("status 404") || e.getMessage().contains("status 405"))
+                    && !e.getMessage().contains("NoSuchBucket")) {
+                org.apache.logging.log4j.LogManager.getLogger(SeaweedFSObjectStoreUtil.class)
+                        .warn("SeaweedFS quota extension not available for bucket {}; skipping quota disable (quota is already off by default)", bucketName);
+                return;
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Execute a custom S3 request with SigV4 signing.
+     *
+     * Uses the AWS SDK v1 Aws4Signer to sign the request, then sends it via
+     * java.net.http.HttpClient. This allows calling SeaweedFS-specific S3
+     * extensions (like ?seaweedfs-quota) that the AWS SDK doesn't natively
+     * support.
+     *
+     * The query string portion of {@code resourcePath} (e.g.
+     * {@code /bucket?seaweedfs-quota}) is split off and added to the request
+     * via {@code addParameter(...)} before signing, so the signer includes it
+     * in the canonical query string. {@code DefaultRequest.setResourcePath}
+     * does not parse an embedded query string, so passing it verbatim would
+     * leave the subresource unsigned while the outgoing URI would still carry
+     * it, causing a signature mismatch on the server.
+     *
+     * @param method     HTTP method (PUT, GET, etc.)
+     * @param s3Url      the S3 endpoint base URL
+     * @param resourcePath the path + optional query string (e.g. /bucket?seaweedfs-quota)
+     * @param accessKey  S3 access key
+     * @param secretKey  S3 secret key
+     * @param body       the request body (null for GET)
+     * @param httpClient the HTTP client used to send the request
+     * @return the response body as a string
+     * @throws CloudRuntimeException on any failure
+     */
+    protected static String executeSignedS3Request(String method, String s3Url, String resourcePath,
+                                                   String accessKey, String secretKey, String body,
+                                                   java.net.http.HttpClient httpClient) {
+        try {
+            java.net.URI endpointUri = java.net.URI.create(s3Url);
+
+            // Split the resource path into a path and a query string so the
+            // query parameters are signed as canonical query parameters.
+            String path = resourcePath;
+            String queryString = "";
+            int q = resourcePath.indexOf('?');
+            if (q >= 0) {
+                path = resourcePath.substring(0, q);
+                queryString = resourcePath.substring(q + 1);
+            }
+
+            // The AWS SDK v1 AWS4Signer already combines the endpoint path
+            // (request.getEndpoint().getPath()) with the resource path
+            // (request.getResourcePath()) via SdkHttpUtils.appendUri when
+            // building the canonical URI. Set the resource path to just the
+            // bucket/key path (e.g. /bucket) and let the signer prepend the
+            // endpoint path prefix (e.g. /object-s3). The outgoing URI must
+            // also include the endpoint path so the server sees the same path
+            // the signer canonicalized.
+            String endpointPath = endpointUri.getPath();
+            if (endpointPath == null) {
+                endpointPath = "";
+            }
+            if (endpointPath.endsWith("/")) {
+                endpointPath = endpointPath.substring(0, endpointPath.length() - 1);
+            }
+
+            // Build AWS SDK v1 Request for SigV4 signing
+            com.amazonaws.DefaultRequest<?> request = new com.amazonaws.DefaultRequest<>("s3");
+            request.setEndpoint(endpointUri);
+            request.setHttpMethod(com.amazonaws.http.HttpMethodName.valueOf(method));
+            request.setResourcePath(path);
+            if (! queryString.isEmpty()) {
+                for (String pair : queryString.split("&")) {
+                    if (pair.isEmpty()) {
+                        continue;
+                    }
+                    int eq = pair.indexOf('=');
+                    if (eq >= 0) {
+                        request.addParameter(pair.substring(0, eq), pair.substring(eq + 1));
+                    } else {
+                        request.addParameter(pair, "");
+                    }
+                }
+            }
+            if (body != null) {
+                byte[] bodyBytes = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                request.setContent(new java.io.ByteArrayInputStream(bodyBytes));
+                request.getHeaders().put("Content-Length", String.valueOf(bodyBytes.length));
+                request.getHeaders().put("Content-Type", "application/json");
+            }
+
+            // Sign with SigV4 (AWSS3V4Signer, not the legacy S3Signer which is SigV2)
+            com.amazonaws.auth.AWSCredentials credentials = new com.amazonaws.auth.BasicAWSCredentials(accessKey, secretKey);
+            com.amazonaws.services.s3.internal.AWSS3V4Signer signer = new com.amazonaws.services.s3.internal.AWSS3V4Signer();
+            signer.setServiceName("s3");
+            signer.setRegionName("us-east-1");
+            signer.sign(request, credentials);
+
+            // Build and send the HTTP request with signed headers. The URI
+            // carries the original query string; the signed headers (including
+            // Authorization) are copied from the signed request. Restricted
+            // headers (e.g. Content-Length, Host) are set by the HTTP client /
+            // URI itself and cannot be added via HttpRequest.Builder.header(),
+            // so they are skipped here.
+            // Build the outgoing URI preserving the endpoint path prefix (e.g.
+            // https://host/object-s3) by concatenating it with the resource
+            // path. The signer internally combines the endpoint path with the
+            // resource path to form the same canonical URI, so SigV4 verifies.
+            java.net.URI fullUri = java.net.URI.create(
+                    endpointUri.getScheme() + "://" + endpointUri.getRawAuthority()
+                    + endpointPath + path);
+            if (! queryString.isEmpty()) {
+                fullUri = java.net.URI.create(fullUri.toString() + "?" + queryString);
+            }
+            java.net.http.HttpRequest.Builder reqBuilder = java.net.http.HttpRequest.newBuilder()
+                    .uri(fullUri)
+                    .timeout(java.time.Duration.ofSeconds(S3_EXTENSION_REQUEST_TIMEOUT_SECONDS));
+            for (java.util.Map.Entry<String, String> entry : request.getHeaders().entrySet()) {
+                String headerName = entry.getKey();
+                if (headerName == null || entry.getValue() == null) {
+                    continue;
+                }
+                if (isRestrictedHttpHeader(headerName)) {
+                    continue;
+                }
+                reqBuilder.header(headerName, entry.getValue());
+            }
+            if (body != null) {
+                reqBuilder.method(method, java.net.http.HttpRequest.BodyPublishers.ofString(body));
+            } else {
+                reqBuilder.method(method, java.net.http.HttpRequest.BodyPublishers.noBody());
+            }
+
+            java.net.http.HttpResponse<String> response = httpClient.send(reqBuilder.build(),
+                    java.net.http.HttpResponse.BodyHandlers.ofString());
+
+            int statusCode = response.statusCode();
+            if (statusCode < 200 || statusCode >= 300) {
+                throw new CloudRuntimeException(String.format(
+                        "S3 extension request %s %s failed with status %d: %s",
+                        method, fullUri, statusCode, response.body()));
+            }
+            return response.body();
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CloudRuntimeException("S3 extension request failed: " + method + " " + resourcePath, e);
+        }
+    }
+
+    /**
+     * Headers that {@code java.net.http.HttpRequest.Builder.header()} rejects
+     * because they are managed by the HTTP client itself (content length is
+     * derived from the body publisher, host from the URI, etc.). They must be
+     * skipped when copying the signed headers onto the outgoing request.
+     */
+    private static boolean isRestrictedHttpHeader(String headerName) {
+        if (headerName == null) {
+            return true;
+        }
+        switch (headerName.toLowerCase(java.util.Locale.ROOT)) {
+            case "content-length":
+            case "host":
+            case "connection":
+            case "expect":
+            case "upgrade":
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Prometheus metric name for per-bucket logical size. SeaweedFS publishes
+     * this gauge from the S3 API server's bucket-size metrics loop.
+     */
+    public static final String METRIC_BUCKET_SIZE_BYTES = "SeaweedFS_s3_bucket_size_bytes";
+
+    /**
+     * Scrape the SeaweedFS Prometheus {@code /metrics} endpoint and return a
+     * map of bucket name to logical size in bytes.
+     *
+     * <p>This is a single HTTP GET that returns all bucket sizes in O(buckets)
+     * time, replacing the O(total objects) {@code ListObjectsV2} scan used as a
+     * fallback.
+     *
+     * <p>{@code metricsUrl} must point at a single SeaweedFS S3 server's
+     * Prometheus exporter (the address configured with {@code -metricsPort}),
+     * NOT at a Prometheus server and NOT at a load-balanced S3 service:
+     * <ul>
+     *   <li>A Prometheus server's own {@code /metrics} endpoint exposes its
+     *       internal metrics, not the scraped SeaweedFS series.</li>
+     *   <li>SeaweedFS refreshes the bucket-size gauges only on the S3 instance
+     *       holding the distributed {@code s3.leader} lock, so a load-balanced
+     *       endpoint can route to a non-leader whose gauges are empty.</li>
+     * </ul>
+     * Both cases would return HTTP 200 with no usable samples. To detect them,
+     * this method requires a sample line for <em>every</em> managed bucket:
+     * SeaweedFS publishes a zero gauge for empty buckets, so the leader always
+     * exports one sample per bucket it knows about. A missing sample therefore
+     * indicates a wrong endpoint, a non-leader, or a bucket the metrics loop
+     * has not yet observed — all of which must raise a scrape failure so the
+     * caller falls back to the accurate S3 listing rather than reporting zero.
+     *
+     * @param metricsUrl  the base URL of the SeaweedFS Prometheus exporter
+     * @param bucketNames the set of bucket names CloudStack manages (used to
+     *                    filter the scraped metrics; buckets not in this set
+     *                    are ignored)
+     * @param httpClient  the HTTP client used to send the request
+     * @return a map of bucket name to size in bytes, containing exactly the
+     *         buckets in {@code bucketNames}
+     * @throws CloudRuntimeException on any HTTP failure, if a sample is missing
+     *         for any managed bucket, or if a sample value cannot be parsed.
+     *         All failures cause the caller to fall back to the S3 listing
+     *         rather than reporting incorrect (zero) usage.
+     */
+    public static java.util.Map<String, Long> parseBucketUsageFromMetrics(String metricsUrl,
+            java.util.Set<String> bucketNames, java.net.http.HttpClient httpClient) {
+        java.util.Map<String, Long> result = new java.util.HashMap<>();
+        try {
+            // Normalize trailing slashes so a configured URL ending in '/'
+            // does not request '//metrics', which can redirect or 404 (the
+            // HTTP client does not follow redirects here) and would silently
+            // force the O(total objects) S3 scan on every usage poll.
+            java.net.URI uri = java.net.URI.create(stripTrailingSlashes(metricsUrl) + "/metrics");
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(uri)
+                    .timeout(java.time.Duration.ofSeconds(S3_EXTENSION_REQUEST_TIMEOUT_SECONDS))
+                    .GET()
+                    .build();
+            java.net.http.HttpResponse<String> response = httpClient.send(request,
+                    java.net.http.HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                throw new CloudRuntimeException("Prometheus metrics scrape failed with status " + response.statusCode());
+            }
+            // Parse Prometheus text exposition format sample lines like:
+            //   SeaweedFS_s3_bucket_size_bytes{bucket="mybucket"} 12345678
+            // Comment lines (# HELP / # TYPE) are skipped: matching them would
+            // accept a response that declares the family but exports no
+            // samples, which happens on a non-leader S3 instance.
+            for (String line : response.body().split("\n")) {
+                if (line.startsWith("#") || !line.startsWith(METRIC_BUCKET_SIZE_BYTES + "{")) {
+                    continue;
+                }
+                int bucketLabelStart = line.indexOf("bucket=\"");
+                if (bucketLabelStart < 0) {
+                    continue;
+                }
+                int bucketLabelEnd = line.indexOf("\"", bucketLabelStart + 8);
+                if (bucketLabelEnd < 0) {
+                    continue;
+                }
+                String bucket = line.substring(bucketLabelStart + 8, bucketLabelEnd);
+                if (!bucketNames.contains(bucket)) {
+                    continue;
+                }
+                int valueStart = line.indexOf(' ', bucketLabelEnd + 2);
+                if (valueStart < 0) {
+                    continue;
+                }
+                String rawValue = line.substring(valueStart + 1).trim();
+                // Prometheus gauge values are floating point and may use
+                // scientific notation (e.g. 1.2345678e+07). Parse as double
+                // and round, and treat an unparseable value as a scrape
+                // failure so the caller falls back to the S3 listing rather
+                // than reporting this bucket as zero.
+                try {
+                    double value = Double.parseDouble(rawValue);
+                    if (Double.isNaN(value) || Double.isInfinite(value) || value < 0) {
+                        throw new CloudRuntimeException("Invalid " + METRIC_BUCKET_SIZE_BYTES
+                                + " value for bucket " + bucket + ": " + rawValue);
+                    }
+                    result.put(bucket, Math.round(value));
+                } catch (NumberFormatException e) {
+                    throw new CloudRuntimeException("Unparseable " + METRIC_BUCKET_SIZE_BYTES
+                            + " value for bucket " + bucket + ": " + rawValue, e);
+                }
+            }
+            // Require a sample for every managed bucket. A missing sample means
+            // the endpoint is not a SeaweedFS S3 leader exporter, or the
+            // metrics loop has not yet observed the bucket. Reporting the
+            // remaining buckets as zero would under-report store usage, so
+            // fail and let the caller fall back to the S3 listing.
+            if (!result.keySet().containsAll(bucketNames)) {
+                java.util.Set<String> missing = new java.util.HashSet<>(bucketNames);
+                missing.removeAll(result.keySet());
+                throw new CloudRuntimeException("Prometheus metrics response from " + metricsUrl
+                        + " is missing " + METRIC_BUCKET_SIZE_BYTES + " samples for buckets " + missing
+                        + "; metricsUrl must point at the SeaweedFS S3 leader's metrics port");
+            }
+            return result;
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to scrape Prometheus metrics from " + metricsUrl, e);
+        }
+    }
+}
