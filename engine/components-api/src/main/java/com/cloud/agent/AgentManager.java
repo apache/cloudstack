@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -178,4 +179,6 @@ public interface AgentManager {
     boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs, boolean excludeHostsInMaintenance);
 
     int getHostSshPort(HostVO host);
+
+    List<String> getAvoidMsList();
 }

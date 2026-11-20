@@ -23,12 +23,15 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.spi.SelectorProvider;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.cloudstack.framework.ca.CAService;
 
+/**
+ * NIO Server for the {@code com.cloud.agent.manager.AgentManagerImpl}.
+ */
 public class NioServer extends NioConnection {
 
     protected InetSocketAddress localAddress;
@@ -41,7 +44,6 @@ public class NioServer extends NioConnection {
         super(name, port, workers, factory);
         setCAService(caService);
         setSslHandshakeTimeout(sslHandShakeTimeout);
-        localAddress = null;
         links = new ConcurrentHashMap<>(1024);
     }
 
@@ -51,7 +53,7 @@ public class NioServer extends NioConnection {
 
     @Override
     protected void init() throws IOException {
-        _selector = SelectorProvider.provider().openSelector();
+        _selector = Selector.open();
 
         serverSocket = ServerSocketChannel.open();
         serverSocket.configureBlocking(false);
@@ -59,7 +61,7 @@ public class NioServer extends NioConnection {
         localAddress = new InetSocketAddress(_port);
         serverSocket.socket().bind(localAddress);
 
-        serverSocket.register(_selector, SelectionKey.OP_ACCEPT, null);
+        serverSocket.register(_selector, SelectionKey.OP_ACCEPT);
 
         logger.info("NioServer started and listening on {}", serverSocket.socket().getLocalSocketAddress());
     }

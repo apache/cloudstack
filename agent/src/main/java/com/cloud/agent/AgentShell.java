@@ -32,6 +32,7 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.backoff.BackoffFactory;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
@@ -52,7 +53,6 @@ import com.cloud.utils.LogUtils;
 import com.cloud.utils.ProcessUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
-import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class AgentShell implements IAgentShell, Daemon {
@@ -93,6 +93,16 @@ public class AgentShell implements IAgentShell, Daemon {
     @Override
     public BackoffAlgorithm getBackoffAlgorithm() {
         return _backoff;
+    }
+
+    @Override
+    public void setBackoffAlgorithm(BackoffAlgorithm backoffAlgorithm) {
+        this._backoff = backoffAlgorithm;
+        try {
+            backoffAlgorithm.getConfiguration().forEach((key, value) -> setPersistentProperty(null, key, value));
+        } catch (RuntimeException e) {
+            LOGGER.warn("Failed to persist backoff properties", e);
+        }
     }
 
     @Override
@@ -400,7 +410,7 @@ public class AgentShell implements IAgentShell, Daemon {
         final Class<?> c = this.getClass();
         _version = c.getPackage().getImplementationVersion();
         if (_version == null) {
-            throw new CloudRuntimeException("Unable to find the implementation version of this agent");
+            _version = "unknown";
         }
         LOGGER.info("Implementation Version is {}", _version);
 
@@ -424,11 +434,14 @@ public class AgentShell implements IAgentShell, Daemon {
             _properties.put(cmdLineProp.getKey(), cmdLineProp.getValue());
         }
 
-        LOGGER.info("Defaulting to the constant time backoff algorithm");
-        _backoff = new ConstantTimeBackoff();
-        Map<String, Object> map = new HashMap<>();
-        map.put("seconds", _properties.getProperty("backoff.seconds"));
-        _backoff.configure("ConstantTimeBackoff", map);
+        try {
+            LOGGER.info("Creating backoff delay algorithm implementation");
+            setBackoffAlgorithm(BackoffFactory.create(_properties));
+            LOGGER.info("Created {} delay algorithm implementation", getBackoffAlgorithm().getClass().getName());
+        } catch (RuntimeException e) {
+            LOGGER.warn("Failed to create backoff algorithm from the provided properties, falling back to default", e);
+            setBackoffAlgorithm(BackoffFactory.createDefault(_properties));
+        }
     }
 
     private void launchAgent() throws ConfigurationException {
@@ -546,7 +559,7 @@ public class AgentShell implements IAgentShell, Daemon {
             }
 
         } catch (final Exception e) {
-            LOGGER.error("Unable to start agent: ", e);
+            LOGGER.error("Unable to start agent: {}", e.getLocalizedMessage(), e);
             System.exit(ExitStatus.Error.value());
         }
     }
@@ -568,7 +581,7 @@ public class AgentShell implements IAgentShell, Daemon {
             shell.init(args);
             shell.start();
         } catch (ConfigurationException e) {
-            System.out.println(e.getMessage());
+            LOGGER.fatal(e.getMessage(), e);
         }
     }
 
