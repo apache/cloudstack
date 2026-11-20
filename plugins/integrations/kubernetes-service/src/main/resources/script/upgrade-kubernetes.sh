@@ -18,8 +18,8 @@
 
 # Version 1.14 and below needs extra flags with kubeadm upgrade node
 if [ $# -lt 4 ]; then
-    echo "Invalid input. Valid usage: ./upgrade-kubernetes.sh UPGRADE_VERSION IS_CONTROL_NODE IS_OLD_VERSION IS_EJECT_ISO IS_EXTERNAL_CNI"
-    echo "eg: ./upgrade-kubernetes.sh 1.16.3 true false false"
+    echo "Invalid input. Valid usage: ./upgrade-kubernetes.sh UPGRADE_VERSION IS_CONTROL_NODE IS_OLD_VERSION IS_EJECT_ISO [IS_EXTERNAL_CNI] [IMPORT_IMAGES_ONLY]"
+    echo "eg: ./upgrade-kubernetes.sh 1.16.3 true false false false false"
     exit 1
 fi
 UPGRADE_VERSION="${1}"
@@ -38,6 +38,10 @@ fi
 EXTERNAL_CNI=false
 if [ $# -gt 4 ]; then
   EXTERNAL_CNI="${5}"
+fi
+IMPORT_IMAGES_ONLY=false
+if [ $# -gt 5 ]; then
+  IMPORT_IMAGES_ONLY="${6}"
 fi
 
 export PATH=$PATH:/opt/bin
@@ -114,10 +118,19 @@ if [ -d "$BINARIES_DIR" ]; then
     cp "${BINARIES_DIR}/autoscaler.yaml" /opt/autoscaler/autoscaler_tmpl.yaml
   fi
 
-  PAUSE_IMAGE=`ctr -n k8s.io images ls -q | grep "pause" | sort | tail -n 1`
+  PAUSE_IMAGE=$(kubeadm config images list --kubernetes-version "${UPGRADE_VERSION}" 2>/dev/null | grep pause || true)
+  if [ -z "$PAUSE_IMAGE" ]; then
+    PAUSE_IMAGE=$(ctr -n k8s.io images ls -q | grep "pause" | sort | tail -n 1)
+  fi
   echo $PAUSE_IMAGE
   if [ -n "$PAUSE_IMAGE" ]; then
     sed -i "s|sandbox_image = .*|sandbox_image = \"$PAUSE_IMAGE\"|g" /etc/containerd/config.toml
+  fi
+
+  if [ "$IMPORT_IMAGES_ONLY" = true ]; then
+    echo "Image pre-staging complete, skipping upgrade"
+    umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
+    exit 0
   fi
 
   tar -f "${BINARIES_DIR}/cni/cni-plugins-"*64.tgz -C /opt/cni/bin -xz
