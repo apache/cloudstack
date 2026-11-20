@@ -1578,6 +1578,217 @@ public class UnmanagedVMsManagerImplTest {
     }
 
     @Test
+    public void testResolveImplicitConversionStoragePoolIdUsesSingleSuitablePoolWhenForceConvertToPool() {
+        ClusterVO cluster = getClusterForTests();
+        StoragePoolVO storagePool = mock(StoragePoolVO.class);
+        when(storagePool.getId()).thenReturn(42L);
+        when(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(cluster.getId(),
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem))
+                .thenReturn(List.of(storagePool));
+
+        Long storagePoolId = unmanagedVMsManager.resolveImplicitConversionStoragePoolId(cluster, null, true, true);
+
+        Assert.assertEquals(Long.valueOf(42L), storagePoolId);
+    }
+
+    @Test
+    public void testResolveImplicitConversionStoragePoolIdUsesSingleZoneRbdPoolForVddk() {
+        ClusterVO cluster = getClusterForTests();
+        StoragePoolVO storagePool = mock(StoragePoolVO.class);
+        when(storagePool.getId()).thenReturn(42L);
+        when(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(cluster.getDataCenterId(),
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.RBD))
+                .thenReturn(List.of(storagePool));
+
+        Long storagePoolId = unmanagedVMsManager.resolveImplicitConversionStoragePoolId(cluster, null, true, true);
+
+        Assert.assertEquals(Long.valueOf(42L), storagePoolId);
+    }
+
+    @Test
+    public void testResolveImplicitConversionStoragePoolIdUsesSingleClusterLinstorPoolForVddk() {
+        ClusterVO cluster = getClusterForTests();
+        StoragePoolVO storagePool = mock(StoragePoolVO.class);
+        when(storagePool.getId()).thenReturn(42L);
+        when(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(cluster.getId(),
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.Linstor))
+                .thenReturn(List.of(storagePool));
+
+        Long storagePoolId = unmanagedVMsManager.resolveImplicitConversionStoragePoolId(cluster, null, true, true);
+
+        Assert.assertEquals(Long.valueOf(42L), storagePoolId);
+    }
+
+    @Test
+    public void testResolveImplicitConversionStoragePoolIdKeepsExplicitPoolWhenForceConvertToPool() {
+        ClusterVO cluster = getClusterForTests();
+
+        Assert.assertEquals(Long.valueOf(42L), unmanagedVMsManager.resolveImplicitConversionStoragePoolId(cluster, 42L, true, true));
+        Assert.assertEquals(Long.valueOf(42L), unmanagedVMsManager.resolveImplicitConversionStoragePoolId(cluster, 42L, true, false));
+        Mockito.verifyNoInteractions(primaryDataStoreDao);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testResolveImplicitConversionStoragePoolIdFailsWhenMultiplePoolsFound() {
+        ClusterVO cluster = getClusterForTests();
+        when(cluster.getName()).thenReturn("cluster-1");
+        StoragePoolVO firstStoragePool = mock(StoragePoolVO.class);
+        StoragePoolVO secondStoragePool = mock(StoragePoolVO.class);
+        when(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(cluster.getId(),
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem))
+                .thenReturn(List.of(firstStoragePool));
+        when(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(cluster.getDataCenterId(),
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem))
+                .thenReturn(List.of(secondStoragePool));
+
+        unmanagedVMsManager.resolveImplicitConversionStoragePoolId(cluster, null, true, true);
+    }
+
+    @Test
+    public void testResolveImplicitConversionStoragePoolIdFailsWhenNfsAndRbdPoolsFoundForVddk() {
+        ClusterVO cluster = getClusterForTests();
+        StoragePoolVO nfsPool = mock(StoragePoolVO.class);
+        StoragePoolVO rbdPool = mock(StoragePoolVO.class);
+        when(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(cluster.getId(),
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem))
+                .thenReturn(List.of(nfsPool));
+        when(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(cluster.getDataCenterId(),
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.RBD))
+                .thenReturn(List.of(rbdPool));
+
+        CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
+                () -> unmanagedVMsManager.resolveImplicitConversionStoragePoolId(cluster, null, true, true));
+
+        Assert.assertTrue(exception.getMessage().contains("Please provide convertinstancepoolid"));
+    }
+
+    @Test
+    public void testResolveImplicitConversionStoragePoolIdFailsWhenNfsAndLinstorPoolsFoundForVddk() {
+        ClusterVO cluster = getClusterForTests();
+        StoragePoolVO nfsPool = mock(StoragePoolVO.class);
+        StoragePoolVO linstorPool = mock(StoragePoolVO.class);
+        when(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(cluster.getId(),
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem))
+                .thenReturn(List.of(nfsPool));
+        when(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(cluster.getDataCenterId(),
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.Linstor))
+                .thenReturn(List.of(linstorPool));
+
+        CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
+                () -> unmanagedVMsManager.resolveImplicitConversionStoragePoolId(cluster, null, true, true));
+
+        Assert.assertTrue(exception.getMessage().contains("Please provide convertinstancepoolid"));
+    }
+
+    @Test
+    public void testResolveImplicitConversionStoragePoolIdFailsWhenNoSuitablePoolsFound() {
+        ClusterVO cluster = getClusterForTests();
+
+        CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
+                () -> unmanagedVMsManager.resolveImplicitConversionStoragePoolId(cluster, null, true, true));
+
+        Assert.assertTrue(exception.getMessage().contains("no suitable primary storage pool"));
+    }
+
+    @Test
+    public void testResolveImplicitConversionStoragePoolIdSkipsInferenceForStagedConversion() {
+        ClusterVO cluster = mock(ClusterVO.class);
+
+        Assert.assertNull(unmanagedVMsManager.resolveImplicitConversionStoragePoolId(cluster, null, false, true));
+        Assert.assertNull(unmanagedVMsManager.resolveImplicitConversionStoragePoolId(cluster, null, false, false));
+
+        Mockito.verifyNoInteractions(primaryDataStoreDao);
+    }
+
+    @Test
+    public void testResolveImplicitConversionStoragePoolIdKeepsExplicitPoolForStagedConversion() {
+        ClusterVO cluster = mock(ClusterVO.class);
+
+        Assert.assertEquals(Long.valueOf(42L), unmanagedVMsManager.resolveImplicitConversionStoragePoolId(cluster, 42L, false, true));
+        Assert.assertEquals(Long.valueOf(42L), unmanagedVMsManager.resolveImplicitConversionStoragePoolId(cluster, 42L, false, false));
+
+        Mockito.verifyNoInteractions(primaryDataStoreDao);
+    }
+
+    @Test
+    public void testResolveImplicitConversionStoragePoolIdUsesNfsAndIgnoresBlockPoolsForOvf() {
+        ClusterVO cluster = getClusterForTests();
+        StoragePoolVO nfsPool = mock(StoragePoolVO.class);
+        when(nfsPool.getId()).thenReturn(42L);
+        when(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(cluster.getId(),
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem))
+                .thenReturn(List.of(nfsPool));
+        lenient().when(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(cluster.getDataCenterId(),
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.RBD))
+                .thenReturn(List.of(mock(StoragePoolVO.class)));
+        lenient().when(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(cluster.getId(),
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.Linstor))
+                .thenReturn(List.of(mock(StoragePoolVO.class)));
+
+        Long storagePoolId = unmanagedVMsManager.resolveImplicitConversionStoragePoolId(cluster, null, true, false);
+
+        Assert.assertEquals(Long.valueOf(42L), storagePoolId);
+    }
+
+    @Test
+    public void testResolveImplicitConversionStoragePoolIdFailsWhenOnlyBlockPoolsFoundForOvf() {
+        ClusterVO cluster = getClusterForTests();
+        lenient().when(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(cluster.getDataCenterId(),
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.RBD))
+                .thenReturn(List.of(mock(StoragePoolVO.class)));
+        lenient().when(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(cluster.getId(),
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.Linstor))
+                .thenReturn(List.of(mock(StoragePoolVO.class)));
+
+        CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
+                () -> unmanagedVMsManager.resolveImplicitConversionStoragePoolId(cluster, null, true, false));
+
+        Assert.assertTrue(exception.getMessage().contains("no suitable primary storage pool"));
+    }
+
+    @Test
+    public void testImportVmInfersRbdPoolBeforeDirectConversionHostSelection() throws ResourceAllocationException {
+        ClusterVO cluster = getClusterForTests();
+        StoragePoolVO rbdPool = mock(StoragePoolVO.class);
+        when(rbdPool.getId()).thenReturn(42L);
+        when(rbdPool.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        when(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(cluster.getDataCenterId(),
+                Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.RBD))
+                .thenReturn(List.of(rbdPool));
+        when(primaryDataStoreDao.findById(42L)).thenReturn(rbdPool);
+
+        ImportVmCmd cmd = mock(ImportVmCmd.class);
+        when(cmd.getExistingVcenterId()).thenReturn(null);
+        when(cmd.getVcenter()).thenReturn("vcenter.example.com");
+        when(cmd.getDatacenterName()).thenReturn("datacenter");
+        when(cmd.getUsername()).thenReturn("administrator@vsphere.local");
+        when(cmd.getPassword()).thenReturn("password");
+        when(cmd.getConvertInstanceHostId()).thenReturn(null);
+        when(cmd.getConvertStoragePoolId()).thenReturn(null);
+        when(cmd.getForceConvertToPool()).thenReturn(true);
+        when(cmd.getUseVddk()).thenReturn(true);
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        when(serviceOffering.getDiskOfferingId()).thenReturn(null);
+        Map<String, Long> dataDiskOfferingMap = Collections.emptyMap();
+
+        // Stop at host selection so the test exercises pool inference and validation without starting a migration.
+        IllegalStateException reachedDirectRbdHostSelection = new IllegalStateException("Direct RBD host selection reached");
+        Mockito.doThrow(reachedDirectRbdHostSelection).when(unmanagedVMsManager)
+                .selectKVMHostForConversionInCluster(cluster, null, true, true, null);
+
+        IllegalStateException exception = Assert.assertThrows(IllegalStateException.class,
+                () -> unmanagedVMsManager.importUnmanagedInstanceFromVmwareToKvm(
+                        mock(DataCenter.class), cluster, templateMock, "source-vm", "imported-vm", null,
+                        accountMock, accountMock, 1L, serviceOffering, dataDiskOfferingMap,
+                        Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), cmd, false));
+
+        Assert.assertSame(reachedDirectRbdHostSelection, exception);
+        verify(unmanagedVMsManager).checkConversionStoragePool(42L, true, true);
+        verify(unmanagedVMsManager).validateSelectedConversionStoragePoolForVddk(
+                true, true, 42L, serviceOffering, dataDiskOfferingMap);
+    }
+
+    @Test
     public void testCheckConversionStoragePoolPrimaryStagingPool() {
         StoragePoolVO destPool = mock(StoragePoolVO.class);
         long destPoolId = 1L;
