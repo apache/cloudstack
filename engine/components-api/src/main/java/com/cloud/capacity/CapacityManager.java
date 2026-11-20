@@ -147,9 +147,9 @@ public interface CapacityManager {
                     "'<vcpu />' element of domain XMLs. If it is set to a value less than or equal to '0', then the host's CPU cores capacity will be considered.",
             true, ConfigKey.Scope.Cluster);
 
-    public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
+    public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReserved, Long hostId);
 
-    void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);
+    void allocateVmCapacity(VirtualMachine vm);
 
     /**
      * @param hostId Id of the host to check capacity
