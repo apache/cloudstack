@@ -30,6 +30,7 @@ import com.cloud.agent.api.GetVmNetworkStatsAnswer;
 import com.cloud.agent.api.GetVmNetworkStatsCommand;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.UsageExemptCounters;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 
@@ -45,17 +46,22 @@ public final class LibvirtGetVmNetworkStatsCommandWrapper extends CommandWrapper
         try {
             final HashMap<String, List<VmNetworkStatsEntry>> vmNetworkStatsNameMap = new HashMap<String, List<VmNetworkStatsEntry>>();
             final Connect conn = libvirtUtilitiesHelper.getConnection();
-            for (final String vmName : vmNames) {
-                try {
-                    final List<VmNetworkStatsEntry> statEntry = libvirtComputingResource.getVmNetworkStat(conn, vmName);
-                    if (statEntry == null) {
-                        continue;
-                    }
+            final UsageExemptCounters usageExemptCounters = libvirtComputingResource.getUsageExemptCounters();
+            synchronized (usageExemptCounters) {
+                usageExemptCounters.readExemptCounts();
+                for (final String vmName : vmNames) {
+                    try {
+                        final List<VmNetworkStatsEntry> statEntry = libvirtComputingResource.getVmNetworkStat(conn, vmName);
+                        if (statEntry == null) {
+                            continue;
+                        }
 
-                    vmNetworkStatsNameMap.put(vmName, statEntry);
-                } catch (LibvirtException e) {
-                    logger.warn("Can't get vm network stats: " + e.toString() + ", continue");
+                        vmNetworkStatsNameMap.put(vmName, statEntry);
+                    } catch (LibvirtException e) {
+                        logger.warn("Can't get vm network stats: " + e.toString() + ", continue");
+                    }
                 }
+                usageExemptCounters.saveState();
             }
             return new GetVmNetworkStatsAnswer(command, "", command.getHostName(), vmNetworkStatsNameMap);
         } catch (final LibvirtException e) {

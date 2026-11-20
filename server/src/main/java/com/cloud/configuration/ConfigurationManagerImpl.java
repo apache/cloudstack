@@ -692,6 +692,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                     params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
                     _agentManager.propagateChangeToAgents(params);
+                } else if (settingNameUpdated.equals(NetworkOrchestrationService.NetworkUsageExemptCidrs.key())) {
+                    _agentManager.propagateUsageExemptCidrsToAgents(settingUpdated.second() == ConfigKey.Scope.Zone ? settingUpdated.third() : null);
                 } else if (settingNameUpdated.equals(IndirectAgentLBServiceImpl.IndirectAgentLBCheckInterval.key())) {
                     ConfigKey.Scope scope = settingUpdated.second();
                     if (scope == ConfigKey.Scope.Global) {
@@ -1348,6 +1350,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         _configDepot.invalidateConfigCache(name, scope, id);
 
+        // Resetting doesn't publish the change event that updateConfiguration does, so tell the hosts here.
+        if (NetworkOrchestrationService.NetworkUsageExemptCidrs.key().equals(name)) {
+            _agentManager.propagateUsageExemptCidrsToAgents(scope == ConfigKey.Scope.Zone ? id : null);
+        }
+
         CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : defaultValue == null ? "" : defaultValue));
         return new Pair<>(_configDao.findByName(name), newValue);
     }
@@ -1561,6 +1568,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
             }
+            if (NetworkOrchestrationService.NetworkUsageExemptCidrs.key().equalsIgnoreCase(name) && StringUtils.isNotBlank(value)) {
+                final String error = validateUsageExemptCidrs(name, value);
+                if (error != null) {
+                    return error;
+                }
+            }
         }
 
         validateIpAddressRelatedConfigValues(name, value);
@@ -1574,6 +1587,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return validateIfIntValueIsInRange(name, value, range[0]);
         }
         return validateIfStringValueIsInRange(name, value, range);
+    }
+
+    /**
+     * Checks that each entry is an IPv4 or IPv6 address or CIDR. We refuse /0 because it would exempt all traffic.
+     */
+    protected String validateUsageExemptCidrs(String name, String value) {
+        for (String entry : value.split(",")) {
+            entry = entry.trim();
+            if (entry.isEmpty()) {
+                continue;
+            }
+            final String cidr = NetworkOrchestrationService.normaliseUsageExemptCidr(entry);
+            if (cidr == null) {
+                return String.format("[%s] is not a valid IP address or CIDR for %s.", entry, name);
+            }
+            if (cidr.endsWith("/0")) {
+                return String.format("[%s] would exempt all traffic, so it can't be used for %s.", entry, name);
+            }
+        }
+        return null;
     }
 
     /**

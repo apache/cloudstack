@@ -624,6 +624,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected MemStat memStat = new MemStat(dom0MinMem, dom0OvercommitMem);
     private final LibvirtUtilitiesHelper libvirtUtilitiesHelper = new LibvirtUtilitiesHelper();
     private LibvirtDomainListener libvirtDomainListener;
+    private final UsageExemptCounters usageExemptCounters = new UsageExemptCounters();
 
     protected Boolean enableManuallySettingCpuTopologyOnKvmVm = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM);
 
@@ -1790,10 +1791,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             isTungstenEnabled = Boolean.parseBoolean(params.get(NetworkOrchestrationService.TUNGSTEN_ENABLED.key()));
         }
 
-        if (params.get(ReconcileCommandService.ReconcileCommandsEnabled.key()) != null) {
-            isReconcileCommandsEnabled = Boolean.parseBoolean(params.get(ReconcileCommandService.ReconcileCommandsEnabled.key()));
+        final String usageExemptCidrs = params.get(NetworkOrchestrationService.NetworkUsageExemptCidrs.key());
+        if (usageExemptCidrs != null && hypervisorType == HypervisorType.KVM) {
+            usageExemptCounters.setTapOwners(this::getTapOwners);
+            usageExemptCounters.setCidrs(NetworkOrchestrationService.parseUsageExemptCidrs(usageExemptCidrs));
         }
-        if (isReconcileCommandsEnabled) {
+
+        final String reconcileCommandsEnabled = params.get(ReconcileCommandService.ReconcileCommandsEnabled.key());
+        if (reconcileCommandsEnabled != null) {
+            isReconcileCommandsEnabled = Boolean.parseBoolean(reconcileCommandsEnabled);
+        }
+        // Only on connect, which is the only time the server sends this setting. Settings pushed while the agent is
+        // running must leave the logs of commands still in progress alone.
+        if (isReconcileCommandsEnabled && reconcileCommandsEnabled != null) {
             File commandsLogPath = new File(COMMANDS_LOG_PATH);
             if (!commandsLogPath.exists()) {
                 commandsLogPath.mkdirs();
@@ -5197,6 +5207,38 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return command.getExitValue();
     }
 
+    public UsageExemptCounters getUsageExemptCounters() {
+        return usageExemptCounters;
+    }
+
+    /**
+     * Maps each running VM's NIC device name to the VM's name, so the usage exemption counters can skip system VMs.
+     * Returns null if libvirt can't be asked.
+     */
+    protected Map<String, String> getTapOwners() {
+        try {
+            final Connect conn = LibvirtConnection.getConnection();
+            final Map<String, String> owners = new HashMap<>();
+            for (final int id : conn.listDomains()) {
+                final Domain dm = conn.domainLookupByID(id);
+                try {
+                    final String vmName = dm.getName();
+                    for (final InterfaceDef nic : getInterfaces(conn, vmName)) {
+                        if (nic.getDevName() != null) {
+                            owners.put(nic.getDevName(), vmName);
+                        }
+                    }
+                } finally {
+                    dm.free();
+                }
+            }
+            return owners;
+        } catch (final LibvirtException e) {
+            LOGGER.debug("Failed to list the running VMs' NICs for the usage exemption counters", e);
+            return null;
+        }
+    }
+
     public List<VmNetworkStatsEntry> getVmNetworkStat(Connect conn, String vmName) throws LibvirtException {
         Domain dm = null;
         try {
@@ -5209,7 +5251,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             for (InterfaceDef nic : nics) {
                 DomainInterfaceStats nicStats = dm.interfaceStats(nic.getDevName());
                 String macAddress = nic.getMacAddress();
-                VmNetworkStatsEntry stat = new VmNetworkStatsEntry(vmName, macAddress, nicStats.tx_bytes, nicStats.rx_bytes);
+                long[] usage = usageExemptCounters.subtractExempt(nic.getDevName(), nicStats.tx_bytes, nicStats.rx_bytes);
+                VmNetworkStatsEntry stat = new VmNetworkStatsEntry(vmName, macAddress, usage[0], usage[1]);
                 stats.add(stat);
             }
 
