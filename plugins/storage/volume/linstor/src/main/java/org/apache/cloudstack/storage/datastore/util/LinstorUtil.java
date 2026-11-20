@@ -548,15 +548,15 @@ public class LinstorUtil {
     }
 
     /**
-     * Try to get the device path for the given resource name.
-     * This could be made a bit more direct after java-linstor api is fixed for layer data subtypes.
+     * The device path of the given resource, empty if there is none.
+     * DRBD resources always have one (/dev/drbd/by-res/...). For all other layer stacks it is the
+     * path Linstor reports, and Linstor only reports one for active resources, so a shared storage
+     * pool resource that is INACTIVE on all its nodes has none.
      * @param api developer api object to use
      * @param rscName resource name to get the device path
-     * @return The device path of the resource.
      * @throws ApiException if Linstor API call failed.
-     * @throws CloudRuntimeException if no device path could be found.
      */
-    public static String getDevicePath(DevelopersApi api, String rscName) throws ApiException, CloudRuntimeException {
+    public static Optional<String> findDevicePath(DevelopersApi api, String rscName) throws ApiException {
         List<ResourceWithVolumes> resources = api.viewResources(
                 Collections.emptyList(),
                 Collections.singletonList(rscName),
@@ -565,20 +565,34 @@ public class LinstorUtil {
                 null,
                 null);
         for (ResourceWithVolumes rsc : resources) {
-            if (!rsc.getVolumes().isEmpty() && rsc.getVolumes().get(0).getDevicePath() != null) {
-                return LinstorUtil.getDevicePathFromResource(rsc);
+            if (rsc.getVolumes().isEmpty()) {
+                continue;
+            }
+            // DRBD devices are addressed by resource name and DRBD resources are never inactive, so
+            // they do not depend on the reported path (which the controller only knows once the
+            // satellite has reported it, e.g. not right after a controller restart).
+            final boolean drbd = rsc.getLayerObject() != null && rsc.getLayerObject().getDrbd() != null;
+            if (drbd || rsc.getVolumes().get(0).getDevicePath() != null) {
+                return Optional.of(LinstorUtil.getDevicePathFromResource(rsc));
             }
         }
+        return Optional.empty();
+    }
 
-        // Shared storage pool resources of stopped VMs are INACTIVE and report no device path.
-        // Callers like createVbd build the domain XML before connectPhysicalDisk activates the
-        // resource, so return the deterministic storage layer path here.
-        com.linbit.linstor.api.model.StoragePool sp = getDiskfulStoragePool(api, rscName);
-        if (sp != null && (sp.getProviderKind() == ProviderKind.LVM || sp.getProviderKind() == ProviderKind.LVM_THIN)) {
-            final String vg = sp.getProps().get("StorDriver/StorPoolName").split("/")[0];
-            final String path = String.format("/dev/%s/%s_00000", vg, rscName);
-            LOGGER.info("Linstor: no active device path for {}, using expected LVM path {}", rscName, path);
-            return path;
+    /**
+     * Get the device path Linstor reports for the given resource name.
+     * The resource has to be active on at least one node; a caller that may be asking for a resource
+     * that is inactive everywhere has to make it available first, see {@link #findDevicePath}.
+     * @param api developer api object to use
+     * @param rscName resource name to get the device path
+     * @return The device path of the resource.
+     * @throws ApiException if Linstor API call failed.
+     * @throws CloudRuntimeException if no device path could be found.
+     */
+    public static String getDevicePath(DevelopersApi api, String rscName) throws ApiException, CloudRuntimeException {
+        Optional<String> devicePath = findDevicePath(api, rscName);
+        if (devicePath.isPresent()) {
+            return devicePath.get();
         }
 
         final String errMsg = "viewResources didn't return resources or volumes for " + rscName + " with a device path";

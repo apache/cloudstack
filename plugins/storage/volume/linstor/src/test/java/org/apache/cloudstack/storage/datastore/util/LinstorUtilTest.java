@@ -16,15 +16,18 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.util;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.AutoSelectFilter;
 import com.linbit.linstor.api.model.ControllerVersion;
+import com.linbit.linstor.api.model.DrbdResource;
 import com.linbit.linstor.api.model.Node;
 import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.ResourceGroup;
+import com.linbit.linstor.api.model.ResourceLayer;
 import com.linbit.linstor.api.model.ResourceState;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
@@ -41,7 +44,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -291,6 +297,52 @@ public class LinstorUtilTest {
         when(unreachable.controllerVersion()).thenThrow(new ApiException(503, "unavailable"));
         // an unreachable controller must not look like an old one
         Assert.assertThrows(ApiException.class, () -> LinstorUtil.supportsLiveMigrateApi(unreachable));
+    }
+
+    private ResourceWithVolumes resourceWithDevicePath(String devicePath) {
+        Volume vlm = new Volume();
+        vlm.setVolumeNumber(0);
+        vlm.setDevicePath(devicePath);
+        ResourceWithVolumes rsc = new ResourceWithVolumes();
+        rsc.setName("cs-vol");
+        rsc.setLayerObject(new ResourceLayer());
+        rsc.setVolumes(Collections.singletonList(vlm));
+        return rsc;
+    }
+
+    @Test
+    public void testGetDevicePathUsesTheActiveResource() throws ApiException {
+        DevelopersApi ctrl = mock(DevelopersApi.class);
+        when(ctrl.viewResources(Collections.emptyList(), Collections.singletonList("cs-vol"),
+                Collections.emptyList(), null, null, null)).thenReturn(Arrays.asList(
+                        resourceWithDevicePath(null), resourceWithDevicePath("/dev/mapper/Linstor-Crypt-cs-vol_00000")));
+
+        Assert.assertEquals("/dev/mapper/Linstor-Crypt-cs-vol_00000", LinstorUtil.getDevicePath(ctrl, "cs-vol"));
+    }
+
+    @Test
+    public void testDrbdDevicePathDoesNotDependOnTheReportedPath() throws ApiException {
+        // e.g. right after a controller restart, before the satellites reported their devices
+        ResourceWithVolumes drbdRsc = resourceWithDevicePath(null);
+        drbdRsc.getLayerObject().setDrbd(new DrbdResource());
+        DevelopersApi ctrl = mock(DevelopersApi.class);
+        when(ctrl.viewResources(Collections.emptyList(), Collections.singletonList("cs-vol"),
+                Collections.emptyList(), null, null, null)).thenReturn(Collections.singletonList(drbdRsc));
+
+        Assert.assertEquals("/dev/drbd/by-res/cs-vol/0", LinstorUtil.getDevicePath(ctrl, "cs-vol"));
+    }
+
+    @Test
+    public void testNoDevicePathForAResourceThatIsInactiveEverywhere() throws ApiException {
+        DevelopersApi ctrl = mock(DevelopersApi.class);
+        when(ctrl.viewResources(Collections.emptyList(), Collections.singletonList("cs-vol"),
+                Collections.emptyList(), null, null, null)).thenReturn(Arrays.asList(
+                        resourceWithDevicePath(null), resourceWithDevicePath(null)));
+
+        // the path is never guessed: the caller has to make the resource available first
+        Assert.assertFalse(LinstorUtil.findDevicePath(ctrl, "cs-vol").isPresent());
+        Assert.assertThrows(CloudRuntimeException.class, () -> LinstorUtil.getDevicePath(ctrl, "cs-vol"));
+        verify(ctrl, never()).viewStoragePools(any(), any(), any(), any(), any(), any());
     }
 
     @Test

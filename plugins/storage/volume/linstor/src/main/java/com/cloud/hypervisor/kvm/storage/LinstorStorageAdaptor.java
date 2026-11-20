@@ -175,7 +175,15 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             List<VolumeDefinition> volumeDefs = api.volumeDefinitionList(rscName, null, null);
             final long size = volumeDefs.isEmpty() ? 0 : volumeDefs.get(0).getSizeKib() * 1024;
 
-            final String devicePath = LinstorUtil.getDevicePath(api, rscName);
+            String devicePath = LinstorUtil.findDevicePath(api, rscName).orElse(null);
+            if (devicePath == null) {
+                // Not active on any node, e.g. a shared storage pool resource that was deactivated
+                // everywhere. The VM start builds the domain XML from this disk before
+                // connectPhysicalDisk runs, so make it available here to get the device Linstor reports.
+                logger.info("Linstor: {} has no active device, making it available on {}", rscName, localNodeName);
+                makeResourceAvailable(api, rscName, false);
+                devicePath = LinstorUtil.getDevicePath(api, rscName);
+            }
             final KVMPhysicalDisk kvmDisk = new KVMPhysicalDisk(devicePath, name, pool);
             kvmDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
             kvmDisk.setSize(size);
