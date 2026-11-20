@@ -1109,7 +1109,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public Pair<NicProfile, Integer> importNic(String macAddress, int deviceId, Network network, Boolean isDefaultNic, VirtualMachine vm, IpAddresses ipAddresses, DataCenter dataCenter, boolean forced) {
+    public Pair<NicProfile, Integer> importNic(String macAddress, int deviceId, Network network, Boolean isDefaultNic, VirtualMachine vm, IpAddresses ipAddresses, DataCenter dataCenter, boolean forced, boolean allowDuplicateMacAddress) {
         return null;
     }
 
