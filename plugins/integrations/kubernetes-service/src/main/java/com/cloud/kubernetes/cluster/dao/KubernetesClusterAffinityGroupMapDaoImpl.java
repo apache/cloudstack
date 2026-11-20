@@ -69,4 +69,12 @@ public class KubernetesClusterAffinityGroupMapDaoImpl extends GenericDaoBase<Kub
         sc.setParameters("clusterId", clusterId);
         return remove(sc);
     }
+
+    @Override
+    public int removeByClusterIdAndNodeType(long clusterId, String nodeType) {
+        SearchCriteria<KubernetesClusterAffinityGroupMapVO> sc = clusterIdAndNodeTypeSearch.create();
+        sc.setParameters("clusterId", clusterId);
+        sc.setParameters("nodeType", nodeType);
+        return remove(sc);
+    }
 }

@@ -328,7 +328,10 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         if (logger.isInfoEnabled()) {
             logger.info("Destroying Kubernetes cluster : {}", kubernetesCluster);
         }
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.DestroyRequested);
+        // a cluster already being destroyed is having its destroy retried, which completes it
+        if (!transitToOperationState(KubernetesCluster.Event.DestroyRequested, KubernetesCluster.State.Destroying)) {
+            holdOperationState(KubernetesCluster.State.Destroying);
+        }
         boolean vmsDestroyed = destroyClusterVMs();
         // if there are VM's that were not expunged, we can not delete the network
         if (vmsDestroyed) {

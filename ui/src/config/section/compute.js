@@ -842,7 +842,7 @@ export default {
           message: 'message.kubernetes.cluster.upgrade',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#upgrading-kubernetes-cluster',
           dataView: true,
-          show: (record) => { return ['Created', 'Running'].includes(record.state) && record.clustertype === 'CloudManaged' },
+          show: (record) => { return ['Created', 'Running', 'Alert'].includes(record.state) && record.clustertype === 'CloudManaged' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/UpgradeKubernetesCluster.vue')))
         },

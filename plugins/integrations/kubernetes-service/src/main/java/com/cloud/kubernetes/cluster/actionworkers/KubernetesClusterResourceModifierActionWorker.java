@@ -80,6 +80,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
+import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -120,6 +121,9 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.logging.log4j.Level;
 
 public class KubernetesClusterResourceModifierActionWorker extends KubernetesClusterActionWorker {
+
+    private final KubernetesCluster.State initialState;
+    private boolean scalingStateEntered = false;
 
     @Inject
     protected CapacityManager capacityManager;
@@ -166,6 +170,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
     protected KubernetesClusterResourceModifierActionWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
+        this.initialState = kubernetesCluster.getState();
     }
 
     protected void init() {
@@ -337,15 +342,23 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return destinationMap;
     }
 
-    protected void resizeNodeVolume(final UserVm vm) throws ManagementServerException {
+    protected void resizeNodeVolume(final UserVm vm, final KubernetesClusterNodeType nodeType) throws ManagementServerException {
         try {
             if (vm.getHypervisorType() == Hypervisor.HypervisorType.VMware && templateDao.findById(vm.getTemplateId()).isDeployAsIs()) {
                 List<VolumeVO> vmVols = volumeDao.findByInstance(vm.getId());
                 for (VolumeVO volumeVO : vmVols) {
                     if (volumeVO.getVolumeType() == Volume.Type.ROOT) {
+                        // etcd nodes without a size of their own are resized to the cluster wide size here, as before
+                        long size = KubernetesClusterUtil.getNodeRootDiskSize(kubernetesCluster, nodeType);
+                        size = size > 0 ? size : kubernetesCluster.getNodeRootDiskSize();
+                        if (volumeVO.getSize() != null && volumeVO.getSize() > size * 1024L * 1024L * 1024L) {
+                            // the size of the node type may have been set lower than that of an existing node, which is not shrunk
+                            logger.debug("Not resizing the root volume {} of VM {} down to {} GB", volumeVO, vm, size);
+                            continue;
+                        }
                         ResizeVolumeCmd resizeVolumeCmd = new ResizeVolumeCmd();
                         resizeVolumeCmd = ComponentContext.inject(resizeVolumeCmd);
-                        resizeVolumeCmd.setSize(kubernetesCluster.getNodeRootDiskSize());
+                        resizeVolumeCmd.setSize(size);
                         resizeVolumeCmd.setId(volumeVO.getId());
 
                         volumeService.resizeVolume(resizeVolumeCmd);
@@ -408,8 +421,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 UserVm vm = createKubernetesNode(controlIpAddress, domainId, accountId);
                 vmContext.setEventResourceId(vm.getId());
                 addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), false, false, false, false);
-                if (kubernetesCluster.getNodeRootDiskSize() > 0) {
-                    resizeNodeVolume(vm);
+                if (KubernetesClusterUtil.getNodeRootDiskSize(kubernetesCluster, WORKER) > 0) {
+                    resizeNodeVolume(vm, WORKER);
                 }
                 startKubernetesVM(vm, domainId, accountId, WORKER);
                 vm = userVmDao.findById(vm.getId());
@@ -439,7 +452,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         networkIds.add(kubernetesCluster.getNetworkId());
         Account owner = accountDao.findById(kubernetesCluster.getAccountId());
         Network.IpAddresses addrs = new Network.IpAddresses(null, null);
-        long rootDiskSize = kubernetesCluster.getNodeRootDiskSize();
+        long rootDiskSize = KubernetesClusterUtil.getNodeRootDiskSize(kubernetesCluster, WORKER);
         Map<String, String> customParameterMap = new HashMap<String, String>();
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
@@ -953,10 +966,34 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return kubernetesClusterVO;
     }
 
-    protected boolean autoscaleCluster(boolean enable, Long minSize, Long maxSize) {
-        if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
-            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.AutoscaleRequested);
+    /**
+     * Moves the cluster into its scaling state the first time a scaling step needs it, failing if another operation
+     * moved the cluster first. Later steps of the same operation find the cluster already in that state.
+     */
+    protected void enterScalingState(KubernetesCluster.Event event) throws CloudRuntimeException {
+        if (scalingStateEntered) {
+            return;
         }
+        // a cluster which was never started has no scaling states: only its stored settings change. Created has no
+        // transition to compare and set, so this only checks that no start has taken the cluster since the request
+        // was accepted, which leaves a narrow window open.
+        if (KubernetesCluster.State.Created.equals(initialState)) {
+            KubernetesClusterVO cluster = kubernetesClusterDao.findById(kubernetesCluster.getId());
+            if (cluster == null || !KubernetesCluster.State.Created.equals(cluster.getState())) {
+                throw operationRaced(initialState, cluster == null ? null : cluster.getState(), event);
+            }
+            return;
+        }
+        transitToOperationState(event);
+        scalingStateEntered = true;
+    }
+
+    protected boolean isScalingStateEntered() {
+        return scalingStateEntered;
+    }
+
+    protected boolean autoscaleCluster(boolean enable, Long minSize, Long maxSize) {
+        enterScalingState(KubernetesCluster.Event.AutoscaleRequested);
 
         File pkFile = getManagementServerSshPublicKeyFile();
         Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
@@ -1001,10 +1038,13 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             return true;
         } catch (Exception e) {
             String msg = String.format("Failed to autoscale Kubernetes cluster: %s : %s", kubernetesCluster.getName(), e.getMessage());
+            // fail the scaling state this operation entered; a cluster never started holds none
+            if (isScalingStateEntered()) {
+                logTransitStateAndThrow(Level.ERROR, msg, kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            }
             logAndThrow(Level.ERROR, msg);
             return false;
         } finally {
-            // Deploying the autoscaler might fail but it can be deployed manually too, so no need to go to an alert state
             updateLoginUserDetails(null);
         }
     }
