@@ -39,6 +39,7 @@ public final class LibvirtCheckNetworkCommandWrapper extends CommandWrapper<Chec
         final List<PhysicalNetworkSetupInfo> phyNics = command.getPhysicalNetworkInfoList();
         String errMsg = null;
         String guestNetworkLabel = null;
+        String migrationIp = null;
 
         for (final PhysicalNetworkSetupInfo nic : phyNics) {
             if (StringUtils.isNotBlank(nic.getGuestNetworkName())) {
@@ -54,6 +55,9 @@ public final class LibvirtCheckNetworkCommandWrapper extends CommandWrapper<Chec
                 errMsg = "Can not find network: " + nic.getPublicNetworkName();
                 break;
             }
+            if (migrationIp == null) {
+                migrationIp = libvirtComputingResource.resolveMigrationNetworkIp(nic.getMigrationNetworkName());
+            }
         }
 
         libvirtComputingResource.setGuestTrafficLabel(guestNetworkLabel);
@@ -61,7 +65,9 @@ public final class LibvirtCheckNetworkCommandWrapper extends CommandWrapper<Chec
         if (errMsg != null) {
             return new CheckNetworkAnswer(command, false, errMsg);
         } else {
-            return new CheckNetworkAnswer(command, true, null);
+            final CheckNetworkAnswer answer = new CheckNetworkAnswer(command, true, null);
+            answer.setMigrationIp(migrationIp);
+            return answer;
         }
     }
 }

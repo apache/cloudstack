@@ -24,12 +24,15 @@ import static org.mockito.Mockito.verify;
 import java.util.Collections;
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.network.PhysicalNetworkSetupInfo;
@@ -94,5 +97,38 @@ public class LibvirtCheckNetworkCommandWrapperTest {
         wrapper.execute(command, libvirtComputingResource);
 
         verify(libvirtComputingResource).setGuestTrafficLabel("cloudbr1");
+    }
+
+    @Test
+    public void executeReportsTheMigrationIpResolvedFromTheLabel() {
+        LibvirtComputingResource resource = Mockito.mock(LibvirtComputingResource.class);
+        Mockito.when(resource.checkNetwork(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.when(resource.resolveMigrationNetworkIp("cloudbr5")).thenReturn("10.9.9.9");
+
+        PhysicalNetworkSetupInfo info = new PhysicalNetworkSetupInfo();
+        info.setMigrationNetworkName("cloudbr5");
+        CheckNetworkCommand command = new CheckNetworkCommand(Collections.singletonList(info));
+
+        CheckNetworkAnswer answer = (CheckNetworkAnswer) wrapper.execute(command, resource);
+
+        Assert.assertTrue(answer.getResult());
+        Assert.assertEquals("10.9.9.9", answer.getMigrationIp());
+    }
+
+    @Test
+    public void executeReportsNoMigrationIpWhenTheLabelDoesNotResolve() {
+        LibvirtComputingResource resource = Mockito.mock(LibvirtComputingResource.class);
+        Mockito.when(resource.checkNetwork(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.when(resource.resolveMigrationNetworkIp("cloudbr5")).thenReturn(null);
+
+        PhysicalNetworkSetupInfo info = new PhysicalNetworkSetupInfo();
+        info.setMigrationNetworkName("cloudbr5");
+        CheckNetworkCommand command = new CheckNetworkCommand(Collections.singletonList(info));
+
+        CheckNetworkAnswer answer = (CheckNetworkAnswer) wrapper.execute(command, resource);
+
+        Assert.assertTrue(answer.getResult());
+        Assert.assertNull(answer.getMigrationIp());
+        Mockito.verify(resource).resolveMigrationNetworkIp("cloudbr5");
     }
 }

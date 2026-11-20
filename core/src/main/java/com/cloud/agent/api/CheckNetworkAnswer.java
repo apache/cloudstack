@@ -22,6 +22,8 @@ package com.cloud.agent.api;
 public class CheckNetworkAnswer extends Answer {
     // indicate if agent reconnect is needed after setupNetworkNames command
     private boolean _reconnect;
+    // the local IP the host resolved on its dedicated migration network, if one is configured
+    private String migrationIp;
 
     public CheckNetworkAnswer() {
     }
@@ -37,6 +39,14 @@ public class CheckNetworkAnswer extends Answer {
 
     public boolean needReconnect() {
         return _reconnect;
+    }
+
+    public String getMigrationIp() {
+        return migrationIp;
+    }
+
+    public void setMigrationIp(String migrationIp) {
+        this.migrationIp = migrationIp;
     }
 
 }
