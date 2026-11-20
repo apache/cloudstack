@@ -19,12 +19,15 @@ package com.cloud.network.firewall;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkModelImpl;
 import com.cloud.network.NetworkRuleApplier;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -32,6 +35,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.FirewallServiceProvider;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.rules.FirewallRule;
@@ -43,8 +47,13 @@ import com.cloud.network.vpc.VpcManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
+import com.cloud.user.User;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.After;
@@ -55,10 +64,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -603,6 +614,215 @@ public class FirewallManagerTest {
         _firewallMgr.validateFirewallRuleForVpc(caller, ipAddress, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
 
         verify(_accountMgr, times(1)).checkAccess(caller, null, true, ipAddress);
+    }
+
+    @Test
+    public void testCreateIngressFirewallRuleRejectsReservedVpcIpUnderLock() throws NetworkRuleConflictException {
+        Account caller = mock(Account.class);
+        IPAddressVO sourceIp = createVpcIpAddress();
+        IPAddressVO lockedIp = createVpcIpAddress();
+        when(_ipAddressDao.findById(1L)).thenReturn(sourceIp);
+        when(_ipAddressDao.acquireInLockTable(1L)).thenReturn(lockedIp);
+        configureVpcFirewallCapabilities();
+        NetworkElement owningProvider = mock(NetworkElement.class);
+        NetworkModelImpl networkModel = useProviderReservation(owningProvider);
+        when(owningProvider.isIpAddressReserved(lockedIp)).thenReturn(true);
+
+        CallContext.register(mock(User.class), caller);
+        try (MockedStatic<Transaction> transactions = Mockito.mockStatic(Transaction.class)) {
+            InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                    () -> _firewallMgr.createIngressFirewallRule(createVpcIngressRule()));
+            Assert.assertTrue(exception.getMessage().contains("reserved by a network provider"));
+            transactions.verifyNoInteractions();
+        } finally {
+            CallContext.unregister();
+        }
+
+        org.mockito.InOrder order = Mockito.inOrder(_ipAddressDao, _accountMgr, owningProvider);
+        order.verify(_ipAddressDao).findById(1L);
+        order.verify(_ipAddressDao).acquireInLockTable(1L);
+        order.verify(_accountMgr).checkAccess(caller, null, true, lockedIp);
+        order.verify(owningProvider).isIpAddressReserved(lockedIp);
+        order.verify(_ipAddressDao).releaseFromLockTable(1L);
+        verify(owningProvider, never()).isIpAddressReserved(sourceIp);
+        verify(networkModel, never()).checkIpForService(any(), any(), any());
+        Mockito.verifyNoInteractions(_firewallDao);
+    }
+
+    @Test
+    public void testCreateIngressFirewallRuleAllowsUnreservedVpcIpWithoutTierAssociation() throws NetworkRuleConflictException {
+        Account caller = mock(Account.class);
+        IPAddressVO ipAddress = createVpcIpAddress();
+        Assert.assertNull(ipAddress.getAssociatedWithNetworkId());
+        when(_ipAddressDao.findById(1L)).thenReturn(ipAddress);
+        when(_ipAddressDao.acquireInLockTable(1L)).thenReturn(ipAddress);
+        configureVpcFirewallCapabilities();
+        NetworkElement owningProvider = mock(NetworkElement.class);
+        NetworkModelImpl networkModel = useProviderReservation(owningProvider);
+        List<FirewallRuleVO> persistedRules = mockFirewallRulePersistence();
+        when(_firewallDao.listByIpAndPurposeAndNotRevoked(1L, null)).thenReturn(persistedRules);
+
+        FirewallRule result;
+        CallContext.register(mock(User.class), caller);
+        try (MockedStatic<Transaction> transactions = mockFirewallRuleTransactions()) {
+            result = _firewallMgr.createIngressFirewallRule(createVpcIngressRule());
+            Assert.assertEquals(result.getId(), CallContext.current().getContextParameter(FirewallRule.class));
+        } finally {
+            CallContext.unregister();
+        }
+
+        Assert.assertSame(persistedRules.get(0), result);
+        Assert.assertEquals(Long.valueOf(10L), result.getVpcId());
+        Assert.assertNull(result.getNetworkId());
+        Assert.assertEquals(Long.valueOf(1L), result.getSourceIpAddressId());
+        Assert.assertEquals(3L, result.getAccountId());
+        Assert.assertEquals(4L, result.getDomainId());
+        Assert.assertEquals(FirewallRule.State.Add, result.getState());
+        org.mockito.InOrder order = Mockito.inOrder(_ipAddressDao, _accountMgr, owningProvider, _firewallDao);
+        order.verify(_ipAddressDao).acquireInLockTable(1L);
+        order.verify(_accountMgr).checkAccess(caller, null, true, ipAddress);
+        order.verify(owningProvider).isIpAddressReserved(ipAddress);
+        order.verify(_firewallDao).persist((FirewallRuleVO) result);
+        order.verify(_firewallDao).setStateToAdd((FirewallRuleVO) result);
+        order.verify(_ipAddressDao).releaseFromLockTable(1L);
+        verify(networkModel, never()).checkIpForService(any(), any(), any());
+    }
+
+    @Test
+    public void testCreateIngressFirewallRuleChecksVpcIpAccessBeforeReservation() throws NetworkRuleConflictException {
+        Account caller = mock(Account.class);
+        IPAddressVO ipAddress = createVpcIpAddress();
+        when(_ipAddressDao.findById(1L)).thenReturn(ipAddress);
+        when(_ipAddressDao.acquireInLockTable(1L)).thenReturn(ipAddress);
+        PermissionDeniedException denied = new PermissionDeniedException("No access to this IP address");
+        Mockito.doThrow(denied).when(_accountMgr).checkAccess(caller, null, true, ipAddress);
+
+        CallContext.register(mock(User.class), caller);
+        try (MockedStatic<Transaction> transactions = Mockito.mockStatic(Transaction.class)) {
+            Assert.assertSame(denied, Assert.assertThrows(PermissionDeniedException.class,
+                    () -> _firewallMgr.createIngressFirewallRule(createVpcIngressRule())));
+            transactions.verifyNoInteractions();
+        } finally {
+            CallContext.unregister();
+        }
+
+        org.mockito.InOrder order = Mockito.inOrder(_ipAddressDao, _accountMgr);
+        order.verify(_ipAddressDao).acquireInLockTable(1L);
+        order.verify(_accountMgr).checkAccess(caller, null, true, ipAddress);
+        order.verify(_ipAddressDao).releaseFromLockTable(1L);
+        Mockito.verifyNoInteractions(_networkModel, _vpcMgr, _firewallDao);
+    }
+
+    @Test
+    public void testCreateIngressFirewallRuleCannotUseVpcIpWithoutLock() throws NetworkRuleConflictException {
+        Account caller = mock(Account.class);
+        when(_ipAddressDao.findById(1L)).thenReturn(createVpcIpAddress());
+
+        CallContext.register(mock(User.class), caller);
+        try (MockedStatic<Transaction> transactions = Mockito.mockStatic(Transaction.class)) {
+            InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                    () -> _firewallMgr.createIngressFirewallRule(createVpcIngressRule()));
+            Assert.assertTrue(exception.getMessage().contains("couldn't locate IP address"));
+            transactions.verifyNoInteractions();
+        } finally {
+            CallContext.unregister();
+        }
+
+        org.mockito.InOrder order = Mockito.inOrder(_ipAddressDao);
+        order.verify(_ipAddressDao).acquireInLockTable(1L);
+        order.verify(_ipAddressDao).releaseFromLockTable(1L);
+        Mockito.verifyNoInteractions(_accountMgr, _networkModel, _vpcMgr, _firewallDao);
+    }
+
+    @Test
+    public void testCreateFirewallRuleAllowsVpcSystemRuleWithoutIp() throws NetworkRuleConflictException {
+        Account caller = mock(Account.class);
+        Vpc vpc = mock(Vpc.class);
+        when(_vpcMgr.getActiveVpc(10L)).thenReturn(vpc);
+        when(vpc.getAccountId()).thenReturn(3L);
+        when(vpc.getDomainId()).thenReturn(4L);
+        List<FirewallRuleVO> persistedRules = mockFirewallRulePersistence();
+
+        FirewallRule result;
+        CallContext.register(mock(User.class), caller);
+        try (MockedStatic<Transaction> transactions = mockFirewallRuleTransactions()) {
+            result = _firewallMgr.createFirewallRule(null, caller, "xid", 80, 80, "tcp",
+                    Collections.singletonList("0.0.0.0/0"), null, null, null, null,
+                    FirewallRuleType.System, null, 10L, FirewallRule.TrafficType.Egress, true);
+        } finally {
+            CallContext.unregister();
+        }
+
+        Assert.assertSame(persistedRules.get(0), result);
+        Assert.assertEquals(Long.valueOf(10L), result.getVpcId());
+        Assert.assertNull(result.getNetworkId());
+        Assert.assertNull(result.getSourceIpAddressId());
+        Assert.assertEquals(3L, result.getAccountId());
+        Assert.assertEquals(4L, result.getDomainId());
+        Assert.assertEquals(FirewallRuleType.System, result.getType());
+        Assert.assertEquals(FirewallRule.State.Add, result.getState());
+        verify(_firewallDao).setStateToAdd((FirewallRuleVO) result);
+        Mockito.verifyNoInteractions(_ipAddressDao, _accountMgr, _networkModel);
+    }
+
+    private IPAddressVO createVpcIpAddress() {
+        IPAddressVO ipAddress = new IPAddressVO(new Ip("198.51.100.10"), 1L, 0L, 1L, false);
+        ReflectionTestUtils.setField(ipAddress, "id", 1L);
+        ipAddress.setState(IpAddress.State.Allocated);
+        ipAddress.setVpcId(10L);
+        ipAddress.setAllocatedToAccountId(3L);
+        ipAddress.setAllocatedInDomainId(4L);
+        return ipAddress;
+    }
+
+    private FirewallRule createVpcIngressRule() {
+        return new FirewallRuleVO("xid", 1L, 80, 80, "tcp", null, 3L, 4L, Purpose.Firewall,
+                Collections.singletonList("0.0.0.0/0"), null, null, null, FirewallRule.TrafficType.Ingress);
+    }
+
+    private void configureVpcFirewallCapabilities() {
+        FirewallServiceProvider firewallProvider = mock(FirewallServiceProvider.class);
+        Map<Capability, String> firewallCaps = new HashMap<>();
+        firewallCaps.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+        firewallCaps.put(Capability.SupportedTrafficDirection, "ingress,egress");
+        when(_vpcMgr.getActiveVpc(10L)).thenReturn(mock(Vpc.class));
+        when(firewallProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
+        when(firewallProvider.getCapabilities()).thenReturn(Collections.singletonMap(Service.Firewall, firewallCaps));
+        when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+        _firewallMgr._firewallElements = Collections.singletonList(firewallProvider);
+    }
+
+    private NetworkModelImpl useProviderReservation(NetworkElement owningProvider) {
+        NetworkModelImpl networkModel = spy(new NetworkModelImpl());
+        networkModel.setNetworkElements(Collections.singletonList(owningProvider));
+        _firewallMgr._networkModel = networkModel;
+        return networkModel;
+    }
+
+    private List<FirewallRuleVO> mockFirewallRulePersistence() {
+        List<FirewallRuleVO> persistedRules = new ArrayList<>();
+        when(_firewallDao.persist(any(FirewallRuleVO.class))).thenAnswer(invocation -> {
+            FirewallRuleVO rule = invocation.getArgument(0);
+            ReflectionTestUtils.setField(rule, "id", 100L);
+            persistedRules.add(rule);
+            return rule;
+        });
+        when(_firewallDao.setStateToAdd(any(FirewallRuleVO.class))).thenAnswer(invocation -> {
+            FirewallRuleVO rule = invocation.getArgument(0);
+            rule.setState(FirewallRule.State.Add);
+            return true;
+        });
+        return persistedRules;
+    }
+
+    private MockedStatic<Transaction> mockFirewallRuleTransactions() {
+        MockedStatic<Transaction> transactions = Mockito.mockStatic(Transaction.class);
+        transactions.when(() -> Transaction.execute(Mockito.<TransactionCallbackWithException<FirewallRuleVO, NetworkRuleConflictException>>any()))
+                .thenAnswer(invocation -> {
+                    TransactionCallbackWithException<FirewallRuleVO, NetworkRuleConflictException> callback = invocation.getArgument(0);
+                    return callback.doInTransaction(null);
+                });
+        return transactions;
     }
 
     @Test

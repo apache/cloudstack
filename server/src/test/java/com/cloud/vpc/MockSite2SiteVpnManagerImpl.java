@@ -21,6 +21,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.Site2SiteVpnTunnelInterface;
 import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.utils.Pair;
@@ -47,6 +48,11 @@ import java.util.Set;
 
 @Component
 public class MockSite2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpnManager {
+
+    @Override
+    public Site2SiteVpnTunnelInterface getSite2SiteVpnTunnelInterface(Site2SiteVpnConnection connection) {
+        return null;
+    }
 
     /* (non-Javadoc)
      * @see com.cloud.network.vpn.Site2SiteVpnService#createVpnGateway(org.apache.cloudstack.api.commands.CreateVpnGatewayCmd)
