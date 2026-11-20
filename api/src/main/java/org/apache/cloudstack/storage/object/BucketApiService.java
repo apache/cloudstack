@@ -20,12 +20,26 @@ package org.apache.cloudstack.storage.object;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
+import org.apache.cloudstack.api.command.admin.storage.MigrateObjectStoreAccountCmd;
+import org.apache.cloudstack.api.command.admin.storage.RotateObjectStoreAccountKeyCmd;
 import org.apache.cloudstack.api.command.user.bucket.CreateBucketCmd;
+import org.apache.cloudstack.api.command.user.bucket.MigrateBucketCredentialCmd;
+import org.apache.cloudstack.api.command.user.bucket.RevokeBucketKeyCmd;
+import org.apache.cloudstack.api.command.user.bucket.RotateBucketKeyCmd;
 import org.apache.cloudstack.api.command.user.bucket.UpdateBucketCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
+import java.util.List;
+
 public interface BucketApiService {
 
+    ConfigKey<Boolean> PerBucketCredentials = new ConfigKey<Boolean>("Advanced", Boolean.class,
+            "object.storage.per.bucket.credentials",
+            "true",
+            "How an account is set up the first time it uses an object store that supports per-bucket credentials. When true, it is set up so that each of its buckets gets its own credential with rotatable keys. When false, it is set up to share one credential across its buckets, as in earlier releases, and an administrator can migrate it later. Accounts that have already been migrated always get per-bucket credentials, whatever this is set to.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
 
     ConfigKey<Long> DefaultMaxAccountBuckets = new ConfigKey<Long>("Account Defaults", Long.class,
             "max.account.buckets",
@@ -98,6 +112,45 @@ public interface BucketApiService {
     boolean deleteBucket(long bucketId, Account caller) throws ResourceAllocationException;
 
     boolean updateBucket(UpdateBucketCmd cmd, Account caller) throws ResourceAllocationException;
+
+    /**
+     * Create a new key pair in one slot of the bucket's dedicated credential, replacing
+     * whatever the slot held. The other slot is untouched.
+     */
+    BucketCredentialKey rotateBucketKey(RotateBucketKeyCmd cmd, Account caller);
+
+    /**
+     * Revoke the key pair in one slot. The last active key of a credential cannot be revoked.
+     */
+    boolean revokeBucketKey(RevokeBucketKeyCmd cmd, Account caller);
+
+    /**
+     * Give an existing bucket that still uses the account credential a dedicated credential.
+     */
+    Bucket migrateBucketCredential(MigrateBucketCredentialCmd cmd, Account caller);
+
+    /**
+     * Explicitly migrate an account's identity on an object store into the state its provider
+     * requires for per-bucket credentials. Irreversible on some providers.
+     */
+    boolean migrateObjectStoreAccount(MigrateObjectStoreAccountCmd cmd, Account caller);
+
+    /**
+     * Rotate the account-level key CloudStack holds for the account on the object store, once
+     * no bucket of that account on the store still uses it. Revokes the old key.
+     */
+    boolean rotateObjectStoreAccountKey(RotateObjectStoreAccountKeyCmd cmd, Account caller);
+
+    /**
+     * Number of buckets of the account on the store that still use the account-level key.
+     */
+    long countAccountScopedBuckets(long accountId, long objectStoreId);
+
+    /**
+     * The key slots of the bucket's dedicated credential, or null if the bucket uses the
+     * account credential.
+     */
+    List<? extends BucketCredentialKey> listBucketKeys(long bucketId);
 
     void getBucketUsage();
 }

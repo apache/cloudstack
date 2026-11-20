@@ -28,8 +28,15 @@ export default {
     var fields = ['name', 'url', 'providername']
     return fields
   },
-  details: () => {
+  details: (record) => {
     var fields = ['name', 'id', 'url', 'providername', 'storagetotal', 'storageallocated', 'storageused']
+    // only the platform's operators see these, and only they can act on them
+    if (record && record.perbucketcredentialsready !== undefined) {
+      fields.push('perbucketcredentialsready')
+      if (record.perbucketcredentialsissue) {
+        fields.push('perbucketcredentialsissue')
+      }
+    }
     return fields
   },
   resourceType: 'ObjectStorage',

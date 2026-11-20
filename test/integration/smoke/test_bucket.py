@@ -61,7 +61,8 @@ class TestObjectStore(cloudstackTestCase):
         bucket = Bucket.create(
             self.apiclient,
             "mybucket",
-            object_store.id
+            object_store.id,
+            quota=1
         )
 
         list_buckets_response = Bucket.list(
@@ -107,5 +108,61 @@ class TestObjectStore(cloudstackTestCase):
 
         self.cleanup.append(bucket)
         self.cleanup.append(object_store)
+
+    @attr(tags=["smoke"], required_hardware="false")
+    def test_02_bucket_key_rotation(self):
+        """Test per-bucket credentials and two-slot key rotation on the simulator object store
+
+        The simulator provider supports dedicated bucket credentials, so a new bucket gets
+        its own credential with a key in slot 1. Rotating fills slot 2 with a different key,
+        revoking slot 1 leaves slot 2 active, and the last active key cannot be revoked.
+        """
+
+        object_store = ObjectStoragePool.create(
+            self.apiclient,
+            "testOS-keys",
+            "http://192.168.0.2",
+            "Simulator",
+            None
+        )
+        bucket = Bucket.create(
+            self.apiclient,
+            "rotatebucket",
+            object_store.id,
+            quota=1
+        )
+        self.cleanup.append(bucket)
+        self.cleanup.append(object_store)
+
+        bucket_response = Bucket.list(self.apiclient, id=bucket.id)[0]
+        self.assertEqual("bucket", bucket_response.credentialscope, "New bucket should have a dedicated credential")
+        self.assertEqual(1, len(bucket_response.keys), "New bucket should have one key slot")
+        slot1 = bucket_response.keys[0]
+        self.assertEqual(1, slot1.keyslot)
+        self.assertEqual("Active", slot1.state)
+        self.assertEqual(slot1.accesskey, bucket_response.accesskey, "Bucket access key should mirror the active key")
+
+        rotated = bucket.rotate_key(self.apiclient)
+        self.assertEqual(2, rotated.keyslot, "Default rotation should fill the free slot")
+        self.assertNotEqual(slot1.accesskey, rotated.accesskey, "Rotated key must differ from the existing key")
+
+        bucket_response = Bucket.list(self.apiclient, id=bucket.id)[0]
+        self.assertEqual(2, len(bucket_response.keys), "Both slots should be populated after rotation")
+        self.assertEqual(rotated.accesskey, bucket_response.accesskey, "Bucket access key should follow the newest active key")
+
+        bucket.revoke_key(self.apiclient, keyslot=1)
+        bucket_response = Bucket.list(self.apiclient, id=bucket.id)[0]
+        states = {key.keyslot: key.state for key in bucket_response.keys}
+        self.assertEqual("Revoked", states[1], "Slot 1 should be revoked")
+        self.assertEqual("Active", states[2], "Slot 2 should stay active")
+
+        with self.assertRaises(Exception):
+            bucket.revoke_key(self.apiclient, keyslot=2)
+
+        rotated_again = bucket.rotate_key(self.apiclient)
+        self.assertEqual(1, rotated_again.keyslot, "Rotation should reuse the revoked slot")
+        bucket_response = Bucket.list(self.apiclient, id=bucket.id)[0]
+        states = {key.keyslot: key.state for key in bucket_response.keys}
+        self.assertEqual({1: "Active", 2: "Active"}, states, "Both slots should be active again")
 
         return
