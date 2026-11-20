@@ -42,6 +42,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
@@ -52,7 +53,9 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.commons.collections.MapUtils;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -169,6 +172,29 @@ public class StorageManagerImplTest {
 
     @Mock
     DataStoreManager dataStoreMgr;
+
+    private ConfigDepotImpl configKeyDepot;
+    private Object previousDepot;
+
+    private static final long ACCOUNT_ID = 2L;
+    private static final long DOMAIN_ID = 1L;
+    private static final long CLUSTER_ID = 3L;
+    private static final String ACCOUNT_POOL_UUID = "account-pool-uuid";
+    private static final String DOMAIN_POOL_UUID = "domain-pool-uuid";
+    private static final String CLUSTER_POOL_UUID = "cluster-pool-uuid";
+    private static final String GLOBAL_POOL_UUID = "global-pool-uuid";
+
+    @Before
+    public void setUp() {
+        previousDepot = ReflectionTestUtils.getField(ConfigKey.class, "s_depot");
+        configKeyDepot = Mockito.mock(ConfigDepotImpl.class);
+        ConfigKey.init(configKeyDepot);
+    }
+
+    @After
+    public void tearDown() {
+        ConfigKey.init((ConfigDepotImpl) previousDepot);
+    }
 
     @Test
     public void createLocalStoragePoolName() {
@@ -1726,5 +1752,73 @@ public class StorageManagerImplTest {
         Boolean result = ReflectionTestUtils.invokeMethod(storageManagerImpl, "checkUsagedSpace", pool);
 
         Assert.assertFalse(result);
+    }
+
+    private void mockPreferredStoragePool(ConfigKey.Scope scope, Long id, String uuid) {
+        Mockito.when(configKeyDepot.getConfigStringValue(StorageManager.PreferredStoragePool.key(), scope, id)).thenReturn(uuid);
+    }
+
+    @Test
+    public void testGetPreferredStoragePoolUuidNotSetAtAnyLevel() {
+        Assert.assertNull(StorageManagerImpl.getPreferredStoragePoolUuid(ACCOUNT_ID, DOMAIN_ID, CLUSTER_ID));
+    }
+
+    @Test
+    public void testGetPreferredStoragePoolUuidSetAtAccountLevel() {
+        mockPreferredStoragePool(ConfigKey.Scope.Account, ACCOUNT_ID, ACCOUNT_POOL_UUID);
+        mockPreferredStoragePool(ConfigKey.Scope.Domain, DOMAIN_ID, DOMAIN_POOL_UUID);
+        mockPreferredStoragePool(ConfigKey.Scope.Cluster, CLUSTER_ID, CLUSTER_POOL_UUID);
+        mockPreferredStoragePool(ConfigKey.Scope.Global, null, GLOBAL_POOL_UUID);
+
+        Pair<ConfigKey.Scope, String> result = StorageManagerImpl.getPreferredStoragePoolUuid(ACCOUNT_ID, DOMAIN_ID, CLUSTER_ID);
+
+        Assert.assertEquals(ConfigKey.Scope.Account, result.first());
+        Assert.assertEquals(ACCOUNT_POOL_UUID, result.second());
+    }
+
+    @Test
+    public void testGetPreferredStoragePoolUuidSetAtClusterLevel() {
+        mockPreferredStoragePool(ConfigKey.Scope.Cluster, CLUSTER_ID, CLUSTER_POOL_UUID);
+        mockPreferredStoragePool(ConfigKey.Scope.Global, null, GLOBAL_POOL_UUID);
+
+        Pair<ConfigKey.Scope, String> result = StorageManagerImpl.getPreferredStoragePoolUuid(ACCOUNT_ID, DOMAIN_ID, CLUSTER_ID);
+
+        Assert.assertEquals(ConfigKey.Scope.Cluster, result.first());
+        Assert.assertEquals(CLUSTER_POOL_UUID, result.second());
+    }
+
+    @Test
+    public void testGetPreferredStoragePoolUuidEmptyAccountValueFallsBackToCluster() {
+        mockPreferredStoragePool(ConfigKey.Scope.Account, ACCOUNT_ID, "");
+        mockPreferredStoragePool(ConfigKey.Scope.Account, DOMAIN_ID, "");
+        mockPreferredStoragePool(ConfigKey.Scope.Cluster, CLUSTER_ID, CLUSTER_POOL_UUID);
+
+        Pair<ConfigKey.Scope, String> result = StorageManagerImpl.getPreferredStoragePoolUuid(ACCOUNT_ID, DOMAIN_ID, CLUSTER_ID);
+
+        Assert.assertEquals(ConfigKey.Scope.Cluster, result.first());
+        Assert.assertEquals(CLUSTER_POOL_UUID, result.second());
+    }
+
+    @Test
+    public void testGetPreferredStoragePoolUuidSetAtGlobalLevel() {
+        mockPreferredStoragePool(ConfigKey.Scope.Global, null, GLOBAL_POOL_UUID);
+
+        Pair<ConfigKey.Scope, String> result = StorageManagerImpl.getPreferredStoragePoolUuid(ACCOUNT_ID, DOMAIN_ID, CLUSTER_ID);
+
+        Assert.assertEquals(ConfigKey.Scope.Global, result.first());
+        Assert.assertEquals(GLOBAL_POOL_UUID, result.second());
+    }
+
+    @Test
+    public void testGetPreferredStoragePoolUuidNullIdsUseGlobalLevel() {
+        mockPreferredStoragePool(ConfigKey.Scope.Global, null, GLOBAL_POOL_UUID);
+
+        Pair<ConfigKey.Scope, String> result = StorageManagerImpl.getPreferredStoragePoolUuid(null, null, null);
+
+        Assert.assertEquals(ConfigKey.Scope.Global, result.first());
+        Assert.assertEquals(GLOBAL_POOL_UUID, result.second());
+        Mockito.verify(configKeyDepot, Mockito.never()).getConfigStringValue(Mockito.anyString(), Mockito.eq(ConfigKey.Scope.Account), Mockito.any());
+        Mockito.verify(configKeyDepot, Mockito.never()).getConfigStringValue(Mockito.anyString(), Mockito.eq(ConfigKey.Scope.Domain), Mockito.any());
+        Mockito.verify(configKeyDepot, Mockito.never()).getConfigStringValue(Mockito.anyString(), Mockito.eq(ConfigKey.Scope.Cluster), Mockito.any());
     }
 }
