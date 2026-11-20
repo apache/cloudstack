@@ -26,7 +26,7 @@
 #   curl --header 'DomU_Request: save_password' http://localhost:8080/ -F ip=<IP> -F password=<passwd>
 
 import binascii
-import cgi
+import email.policy
 import os
 import socketserver
 import sys
@@ -34,6 +34,7 @@ import syslog
 import threading
 import urllib.parse
 
+from email.parser import BytesParser
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 
@@ -43,6 +44,26 @@ secureToken = None
 listeningAddress = '127.0.0.1'
 allowAddresses = ['localhost', '127.0.0.1']
 lock = threading.RLock()
+
+
+def parseForm(contentType, body):
+    """ Parse a POST body (multipart/form-data, as sent by curl -F, or
+    application/x-www-form-urlencoded) to a dict of field name -> value.
+    The cgi module, which was used before, is not available in Python 3.13 """
+    form = {}
+    contentType = contentType or ''
+    if contentType.lower().startswith('multipart/form-data'):
+        message = BytesParser(policy=email.policy.HTTP).parsebytes(
+            b'Content-Type: ' + contentType.encode() + b'\r\n\r\n' + body)
+        if message.is_multipart():
+            for part in message.iter_parts():
+                name = part.get_param('name', header='content-disposition')
+                if name:
+                    form[name] = part.get_payload(decode=True).decode('utf-8', 'replace')
+    else:
+        for name, values in urllib.parse.parse_qs(body.decode('utf-8', 'replace'), keep_blank_values=True).items():
+            form[name] = values[0]
+    return form
 
 def getTokenFile():
     return '/tmp/passwdsrvrtoken'
@@ -140,12 +161,8 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
         return
 
     def do_POST(self):
-        form = cgi.FieldStorage(
-                    fp=self.rfile,
-                    headers=self.headers,
-                    environ={'REQUEST_METHOD':'POST',
-                             'CONTENT_TYPE':self.headers['content-type'],
-                    })
+        form = parseForm(self.headers.get('content-type'),
+                         self.rfile.read(int(self.headers.get('content-length', 0))))
         self.send_response(200)
         self.end_headers()
         clientAddress = self.client_address[0]
@@ -157,13 +174,13 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
             syslog.syslog('serve_password: request trying to save password does not contain both ip and password')
             self.send_response(403)
             return
-        token = form['token'].value
+        token = form['token']
         if not checkToken(token):
             syslog.syslog('serve_password: invalid save_password token received from %s' % clientAddress)
             self.send_response(403)
             return
-        ip = form['ip'].value
-        password = form['password'].value
+        ip = form['ip']
+        password = form['password']
         if not ip or not password:
             syslog.syslog('serve_password: empty ip/password[%s/%s] received from savepassword' % (ip, password))
             return

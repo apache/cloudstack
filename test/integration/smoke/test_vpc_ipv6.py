@@ -761,9 +761,13 @@ class TestIpv6Vpc(cloudstackTestCase):
             acl_chain = nic + ACL_CHAINS_SUFFIX[rule["traffictype"]]
             routerCmd = "nft list chain ip6 %s %s" % (ACL_TABLE, acl_chain)
             res = self.getRouterProcessStatus(router, routerCmd)
-            parsed_rule_new = rule["parsedrule"].replace("{ ", "").replace(" }", "")
-            self.assertTrue(rule["parsedrule"] in res or parsed_rule_new in res,
-                "Listing firewall rule with nft list chain failure for rule: '%s' is not in '%s'" % (rule["parsedrule"], res))
+            accepted_rules = [rule["parsedrule"]] + rule.get("alternativerules", [])
+            found = False
+            for accepted_rule in accepted_rules:
+                if accepted_rule in res or accepted_rule.replace("{ ", "").replace(" }", "") in res:
+                    found = True
+            self.assertTrue(found,
+                "Listing firewall rule with nft list chain failure for rule: '%s' is not in '%s'" % (accepted_rules, res))
 
     def checkIpv6AclRule(self):
         router = self.getVpcRouter(self.vpc)
@@ -794,7 +798,9 @@ class TestIpv6Vpc(cloudstackTestCase):
         rule["icmptype"] = choice(list(ICMPV6_TYPE.keys()))
         rule["icmpcode"] = choice(list(ICMPV6_CODE_TYPE.keys()))
         parsedrule = "ip6 daddr %s %sv6 type %s %sv6 code %s accept" % (rule["cidrlist"], rule["protocol"], ICMPV6_TYPE[rule["icmptype"]], rule["protocol"], ICMPV6_CODE_TYPE[rule["icmpcode"]])
-        rules.append({"traffictype": rule["traffictype"], "parsedrule": parsedrule})
+        # nft prints the name of the code only for some ICMPv6 types (depending on its version), else the number
+        parsedrule_with_code_number = "ip6 daddr %s %sv6 type %s %sv6 code %d accept" % (rule["cidrlist"], rule["protocol"], ICMPV6_TYPE[rule["icmptype"]], rule["protocol"], rule["icmpcode"])
+        rules.append({"traffictype": rule["traffictype"], "parsedrule": parsedrule, "alternativerules": [parsedrule_with_code_number]})
         self.createNetworkAclRule(rule, tier1_acl.id)
 
         self.network.replaceACLList(self.apiclient, tier1_acl.id)
