@@ -76,6 +76,7 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.lb.LoadBalancingRule;
@@ -246,6 +247,10 @@ public class NetworkExtensionElement extends AdapterBase implements
     public static final String CMD_CUSTOM_ACTION = "custom-action";
     public static final String CMD_PREPARE_NIC = "prepare-nic";
     public static final String CMD_RELEASE_NIC = "release-nic";
+    public static final String CMD_CREATE_PRIVATE_GATEWAY = "create-private-gateway";
+    public static final String CMD_DELETE_PRIVATE_GATEWAY = "delete-private-gateway";
+    public static final String CMD_APPLY_STATIC_ROUTES = "apply-static-routes";
+    public static final String CMD_APPLY_PRIVATE_GW_ACL = "apply-private-gw-acl";
 
     // ---- Network detail key ----
 
@@ -2459,31 +2464,223 @@ public class NetworkExtensionElement extends AdapterBase implements
         return result;
     }
 
+    /**
+     * Resolves the {@link Vpc} a private gateway belongs to, so gateway operations can
+     * go through the VPC-level script path like every other VPC operation.
+     */
+    private Vpc getVpcForPrivateGateway(PrivateGateway gateway, String action) {
+        if (gateway == null || gateway.getVpcId() == null) {
+            logger.warn("{}: private gateway has no VPC", action);
+            return null;
+        }
+        Vpc vpc = vpcDao.findById(gateway.getVpcId());
+        if (vpc == null) {
+            logger.warn("{}: could not find VPC {} for private gateway {}", action, gateway.getVpcId(), gateway.getUuid());
+        }
+        return vpc;
+    }
+
+    /**
+     * Creates the private gateway on the external network system via the script's
+     * {@code create-private-gateway} command.
+     *
+     * <p>Script command: {@code create-private-gateway}</p>
+     */
     @Override
     public boolean createPrivateGateway(PrivateGateway gateway)
             throws ConcurrentOperationException, ResourceUnavailableException {
-        throw new UnsupportedOperationException("Private gateways are not supported by the network extension element.");
+        final Vpc vpc = getVpcForPrivateGateway(gateway, CMD_CREATE_PRIVATE_GATEWAY);
+        if (vpc == null) {
+            return false;
+        }
+
+        logger.info("Creating private gateway {} for VPC {}", gateway.getUuid(), vpc);
+
+        final JsonObject payload = new JsonObject();
+        addVpcToPayload(payload, vpc);
+        addPrivateGatewayToPayload(payload, gateway);
+
+        return executeVpcScript(vpc, CMD_CREATE_PRIVATE_GATEWAY, payload);
     }
 
-    /** Private gateways are not supported by the network extension element. */
+    /**
+     * Removes the private gateway via the script's {@code delete-private-gateway} command.
+     *
+     * <p>Script command: {@code delete-private-gateway}</p>
+     */
     @Override
     public boolean deletePrivateGateway(PrivateGateway gateway)
             throws ConcurrentOperationException, ResourceUnavailableException {
-        throw new UnsupportedOperationException("Private gateways are not supported by the network extension element.");
+        final Vpc vpc = getVpcForPrivateGateway(gateway, CMD_DELETE_PRIVATE_GATEWAY);
+        if (vpc == null) {
+            return false;
+        }
+
+        logger.info("Deleting private gateway {} for VPC {}", gateway.getUuid(), vpc);
+
+        final JsonObject payload = new JsonObject();
+        addVpcToPayload(payload, vpc);
+        addPrivateGatewayToPayload(payload, gateway);
+
+        return executeVpcScript(vpc, CMD_DELETE_PRIVATE_GATEWAY, payload);
     }
 
-    /** Static routes are not supported by the network extension element. */
+    /**
+     * Applies the VPC's static routes via the script's {@code apply-static-routes}
+     * command.
+     *
+     * <p>Like {@link #applyFWRules} and {@link #applyNetworkACLs}, this is a full
+     * rebuild: the complete set of non-revoked routes is sent on every call, so the
+     * script can reconcile rather than track individual additions and removals.</p>
+     *
+     * <p>Script command: {@code apply-static-routes}</p>
+     */
     @Override
     public boolean applyStaticRoutes(Vpc vpc, List<StaticRouteProfile> routes)
             throws ResourceUnavailableException {
-        throw new UnsupportedOperationException("Static routes are not supported by the network extension element.");
+        if (vpc == null) {
+            logger.warn("applyStaticRoutes: no VPC given");
+            return false;
+        }
+
+        final List<StaticRouteProfile> activeRoutes = routes == null ? List.of() :
+                routes.stream()
+                      .filter(r -> !StaticRoute.State.Revoke.equals(r.getState()))
+                      .collect(Collectors.toList());
+
+        logger.info("applyStaticRoutes: vpc={} activeRoutes={}", vpc, activeRoutes.size());
+
+        final JsonObject payload = new JsonObject();
+        addVpcToPayload(payload, vpc);
+        payload.add("static_routes", buildStaticRoutesArray(activeRoutes));
+
+        final boolean result = executeVpcScript(vpc, CMD_APPLY_STATIC_ROUTES, payload);
+        if (!result) {
+            throw new ResourceUnavailableException(
+                    "Failed to apply static routes for VPC " + vpc.getUuid(),
+                    Vpc.class, vpc.getId());
+        }
+        return true;
     }
 
-    /** ACL items on private gateways are not supported by the network extension element. */
+    /**
+     * Applies network ACL items to a private gateway via the script's
+     * {@code apply-private-gw-acl} command.
+     *
+     * <p>A full rebuild, matching {@link #applyNetworkACLs}.</p>
+     *
+     * <p>Script command: {@code apply-private-gw-acl}</p>
+     */
     @Override
     public boolean applyACLItemsToPrivateGw(PrivateGateway gateway, List<? extends NetworkACLItem> rules)
             throws ResourceUnavailableException {
-        throw new UnsupportedOperationException("ACL items on private gateways are not supported by the network extension element.");
+        final Vpc vpc = getVpcForPrivateGateway(gateway, CMD_APPLY_PRIVATE_GW_ACL);
+        if (vpc == null) {
+            return false;
+        }
+
+        final List<? extends NetworkACLItem> activeRules = rules == null ? List.of() :
+                rules.stream()
+                     .filter(r -> !NetworkACLItem.State.Revoke.equals(r.getState()))
+                     .collect(Collectors.toList());
+
+        logger.info("applyACLItemsToPrivateGw: gateway={} activeRules={}", gateway.getUuid(), activeRules.size());
+
+        final JsonObject payload = new JsonObject();
+        addVpcToPayload(payload, vpc);
+        addPrivateGatewayToPayload(payload, gateway);
+        payload.add("acl_rules", buildAclRulesArray(activeRules));
+
+        final boolean result = executeVpcScript(vpc, CMD_APPLY_PRIVATE_GW_ACL, payload);
+        if (!result) {
+            throw new ResourceUnavailableException(
+                    "Failed to apply ACL items to private gateway " + gateway.getUuid(),
+                    Vpc.class, vpc.getId());
+        }
+        return true;
+    }
+
+    /**
+     * Adds the private gateway fields to the payload.
+     * Always present: gateway_id, gateway_uuid, gateway_network_id, gateway_zone_id,
+     * gateway_physical_network_id, gateway_source_nat, gateway_network_acl_id.
+     * Conditional (only when non-blank): gateway_ip_address, gateway_gateway,
+     * gateway_netmask, gateway_broadcast_uri, gateway_vlan, gateway_state.
+     */
+    private void addPrivateGatewayToPayload(JsonObject payload, PrivateGateway gateway) {
+        if (payload == null || gateway == null) {
+            return;
+        }
+        payload.addProperty("gateway_id", String.valueOf(gateway.getId()));
+        payload.addProperty("gateway_uuid", safeStr(gateway.getUuid()));
+        payload.addProperty("gateway_network_id", String.valueOf(gateway.getNetworkId()));
+        payload.addProperty("gateway_zone_id", String.valueOf(gateway.getZoneId()));
+        payload.addProperty("gateway_physical_network_id", String.valueOf(gateway.getPhysicalNetworkId()));
+        payload.addProperty("gateway_source_nat", String.valueOf(gateway.getSourceNat()));
+        payload.addProperty("gateway_network_acl_id", String.valueOf(gateway.getNetworkACLId()));
+        if (StringUtils.isNotBlank(gateway.getIp4Address())) {
+            payload.addProperty("gateway_ip_address", safeStr(gateway.getIp4Address()));
+        }
+        if (StringUtils.isNotBlank(gateway.getGateway())) {
+            payload.addProperty("gateway_gateway", safeStr(gateway.getGateway()));
+        }
+        if (StringUtils.isNotBlank(gateway.getNetmask())) {
+            payload.addProperty("gateway_netmask", safeStr(gateway.getNetmask()));
+        }
+        if (StringUtils.isNotBlank(gateway.getBroadcastUri())) {
+            payload.addProperty("gateway_broadcast_uri", safeStr(gateway.getBroadcastUri()));
+            try {
+                String vlan = Networks.BroadcastDomainType.getValue(new URI(gateway.getBroadcastUri()));
+                if (StringUtils.isNotBlank(vlan)) {
+                    payload.addProperty("gateway_vlan", vlan);
+                }
+            } catch (Exception e) {
+                logger.debug("Could not derive a VLAN from broadcast URI {} of private gateway {}",
+                        gateway.getBroadcastUri(), gateway.getUuid());
+            }
+        }
+        if (gateway.getState() != null) {
+            payload.addProperty("gateway_state", gateway.getState().toString().toLowerCase());
+        }
+    }
+
+    /**
+     * Serialises static routes to a {@link JsonArray} for the
+     * {@code apply-static-routes} script command. Routes are sorted by CIDR so the
+     * payload is stable between calls that carry the same set.
+     */
+    private JsonArray buildStaticRoutesArray(List<StaticRouteProfile> routes) {
+        JsonArray array = new JsonArray();
+        List<StaticRouteProfile> sorted = routes.stream()
+                .sorted(java.util.Comparator.comparing(
+                        r -> StringUtils.defaultString(r.getCidr())))
+                .collect(Collectors.toList());
+        for (StaticRouteProfile route : sorted) {
+            JsonObject routeObj = new JsonObject();
+            routeObj.addProperty("id", route.getId());
+            routeObj.addProperty("cidr", safeStr(route.getCidr()));
+            routeObj.addProperty("next_hop", safeStr(route.getNextHop()));
+            if (route.getState() != null) {
+                routeObj.addProperty("state", route.getState().toString().toLowerCase());
+            }
+            if (route.getVpcGatewayId() != null) {
+                routeObj.addProperty("vpc_gateway_id", String.valueOf(route.getVpcGatewayId()));
+            }
+            if (StringUtils.isNotBlank(route.getIp4Address())) {
+                routeObj.addProperty("gateway_ip_address", safeStr(route.getIp4Address()));
+            }
+            if (StringUtils.isNotBlank(route.getGateway())) {
+                routeObj.addProperty("gateway", safeStr(route.getGateway()));
+            }
+            if (StringUtils.isNotBlank(route.getNetmask())) {
+                routeObj.addProperty("netmask", safeStr(route.getNetmask()));
+            }
+            if (StringUtils.isNotBlank(route.getVlanTag())) {
+                routeObj.addProperty("vlan", safeStr(route.getVlanTag()));
+            }
+            array.add(routeObj);
+        }
+        return array;
     }
 
     @Override
