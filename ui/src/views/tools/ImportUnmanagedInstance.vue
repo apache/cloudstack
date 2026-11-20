@@ -366,8 +366,8 @@
                     <a-form-item name="forced" ref="forced">
                       <template #label>
                         <tooltip-label
-                          :title="$t('label.allow.duplicate.macaddresses')"
-                          :tooltip="apiParams.forced.description"/>
+                          :title="$t('label.generate.new.mac.if.in.use')"
+                          :tooltip="$t('message.generate.new.mac.if.in.use')"/>
                       </template>
                       <a-switch v-model:checked="form.forced" @change="val => { switches.forced = val }" />
                     </a-form-item>
@@ -423,12 +423,12 @@
                     <a-switch v-model:checked="form.migrateallowed" @change="val => { switches.migrateAllowed = val }" />
                   </a-form-item>
                 </a-col>
-                <a-col>
+                <a-col v-if="!isExternalImport && !isDiskImport">
                   <a-form-item name="forced" ref="forced">
                     <template #label>
                       <tooltip-label
-                        :title="$t('label.forced')"
-                        :tooltip="apiParams.forced.description"/>
+                        :title="$t('label.generate.new.mac.if.in.use')"
+                        :tooltip="$t('message.generate.new.mac.if.in.use')"/>
                     </template>
                     <a-switch v-model:checked="form.forced" @change="val => { switches.forced = val }" />
                   </a-form-item>
