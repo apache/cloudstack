@@ -345,6 +345,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
     private static final Object allocatedLock = new Object();
+    // How many times fetchNewPublicIp re-selects a free IP when its candidate is taken by a concurrent
+    // allocation before giving up. A handful is ample: only a few system VMs ever allocate at once.
+    protected static final int MAX_PUBLIC_IP_ALLOCATION_ATTEMPTS = 5;
 
     static Boolean rulesContinueOnErrFlag = true;
 
@@ -369,7 +372,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     @DB
-    private IPAddressVO assignAndAllocateIpAddressEntry(final Account owner, final VlanType vlanUse, final Long guestNetworkId,
+    protected IPAddressVO assignAndAllocateIpAddressEntry(final Account owner, final VlanType vlanUse, final Long guestNetworkId,
                                                         final boolean sourceNat, final boolean allocate, final boolean isSystem,
                                                         final Long vpcId, final Boolean displayIp,
                                                         final List<IPAddressVO> addressVOS) throws CloudRuntimeException {
@@ -402,8 +405,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             }
 
             if (finalAddress == null) {
-                logger.error("Failed to fetch any free public IP address");
-                throw new CloudRuntimeException("Failed to fetch any free public IP address");
+                // Every candidate in this batch was taken by a concurrent allocation before we could lock it.
+                // Return null so the caller can re-select a different free IP and retry, rather than failing
+                // when free addresses still exist.
+                logger.debug("No free public IP address could be locked among the candidates; the caller may retry");
+                return null;
             }
 
             if (allocate) {
@@ -420,22 +426,21 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     private IPAddressVO assignIpAddressWithLock(IPAddressVO possibleAddr) {
-        IPAddressVO finalAddress = null;
-        IPAddressVO userIp = _ipAddressDao.acquireInLockTable(possibleAddr.getId());
-        if (userIp != null) {
-            logger.debug("locked row for ip address {} (id: {})", possibleAddr.getAddress(), possibleAddr.getUuid());
-            if (userIp.getState() == State.Free) {
-                possibleAddr.setState(State.Allocating);
-                if (_ipAddressDao.update(possibleAddr.getId(), possibleAddr)) {
-                    logger.info("successfully allocated ip address {}", possibleAddr.getAddress());
-                    finalAddress = possibleAddr;
-                }
-            } else {
-                logger.debug("locked ip address {} is not free {}", possibleAddr.getAddress(), userIp.getState());
-            }
-            _ipAddressDao.releaseFromLockTable(possibleAddr.getId());
+        IPAddressVO userIp = _ipAddressDao.lockRow(possibleAddr.getId(), true);
+        if (userIp == null) {
+            return null;
         }
-        return finalAddress;
+        logger.debug("locked row for ip address {} (id: {})", possibleAddr.getAddress(), possibleAddr.getUuid());
+        if (userIp.getState() != State.Free) {
+            logger.debug("locked ip address {} is not free {}", possibleAddr.getAddress(), userIp.getState());
+            return null;
+        }
+        possibleAddr.setState(State.Allocating);
+        if (_ipAddressDao.update(possibleAddr.getId(), possibleAddr)) {
+            logger.info("successfully allocated ip address {}", possibleAddr.getAddress());
+            return possibleAddr;
+        }
+        return null;
     }
 
     @Override
@@ -950,16 +955,39 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     public PublicIp fetchNewPublicIp(final long dcId, final Long podId, final List<Long> vlanDbIds, final Account owner, final VlanType vlanUse, final Long guestNetworkId,
             final boolean sourceNat, final boolean assign, final boolean allocate, final String requestedIp, final String requestedGateway, final boolean isSystem, final Long vpcId, final Boolean displayIp, final boolean forSystemVms)
                     throws InsufficientAddressCapacityException {
-        List<IPAddressVO> addrs = listAvailablePublicIps(dcId, podId, vlanDbIds, owner, vlanUse, guestNetworkId, sourceNat, assign, allocate, requestedIp, requestedGateway, isSystem, vpcId, displayIp, forSystemVms, true);
-        IPAddressVO addr = addrs.get(0);
-        if (assign) {
+        // Two allocations (for example the console proxy and secondary storage system VMs started at the same
+        // time) can be handed the same free address because listAvailablePublicIps selects a candidate in a
+        // separate transaction from the one that marks it Allocating. assignIpAddressWithLock now locks the row
+        // and re-checks it is still Free, so the loser gets back null; re-select a different free IP and retry
+        // rather than failing with no-free-IP while free addresses still exist.
+        IPAddressVO addr = null;
+        for (int attempt = 1; attempt <= MAX_PUBLIC_IP_ALLOCATION_ATTEMPTS; attempt++) {
+            List<IPAddressVO> addrs = listAvailablePublicIps(dcId, podId, vlanDbIds, owner, vlanUse, guestNetworkId, sourceNat, assign, allocate, requestedIp, requestedGateway, isSystem, vpcId, displayIp, forSystemVms, true);
+            if (!assign) {
+                addr = addrs.get(0);
+                break;
+            }
             addr = assignAndAllocateIpAddressEntry(owner, vlanUse, guestNetworkId, sourceNat, allocate,
-                    isSystem,vpcId, displayIp, addrs);
+                    isSystem, vpcId, displayIp, addrs);
+            if (addr != null) {
+                break;
+            }
+            logger.debug("Public IP candidate was allocated concurrently; retrying with another free IP (attempt {} of {})",
+                    attempt, MAX_PUBLIC_IP_ALLOCATION_ATTEMPTS);
+        }
+        if (addr == null) {
+            throw new InsufficientAddressCapacityException(
+                    "Unable to allocate a free public IP after " + MAX_PUBLIC_IP_ALLOCATION_ATTEMPTS + " attempts due to concurrent allocations",
+                    DataCenter.class, dcId);
         }
         if (vlanUse == VlanType.VirtualNetwork) {
             _firewallMgr.addSystemFirewallRules(addr, owner);
         }
 
+        return buildPublicIp(addr);
+    }
+
+    protected PublicIp buildPublicIp(IPAddressVO addr) {
         return PublicIp.createFromAddrAndVlan(addr, _vlanDao.findById(addr.getVlanId()));
     }
 
