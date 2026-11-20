@@ -139,6 +139,7 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
+import com.cloud.vm.dao.VmIsoMapDao;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.ETCD;
@@ -195,6 +196,8 @@ public class KubernetesClusterActionWorker {
     protected TemplateApiService templateService;
     @Inject
     protected UserVmDao userVmDao;
+    @Inject
+    protected VmIsoMapDao vmIsoMapDao;
     @Inject
     protected VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
@@ -699,6 +702,18 @@ public class KubernetesClusterActionWorker {
             CallContext vmContext  = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
             vmContext.putContextParameter(VirtualMachine.class, vm.getUuid());
             try {
+                // A node can still hold an ISO from an operation that did not finish. An Instance can not have the
+                // same ISO attached twice, nor more ISOs than it has CD-ROMs.
+                UserVmVO userVm = userVmDao.findById(vm.getId());
+                Long attachedIsoId = userVm != null ? userVm.getIsoId() : null;
+                if (Long.valueOf(iso.getId()).equals(attachedIsoId) || vmIsoMapDao.findByVmIdIsoId(vm.getId(), iso.getId()) != null) {
+                    logger.info("Binaries ISO is already attached to VM: {} in cluster: {}", vm, kubernetesCluster);
+                    continue;
+                }
+                if (attachedIsoId != null) {
+                    logger.info("Detaching ISO {} from VM: {} in cluster: {} to attach the binaries ISO", attachedIsoId, vm, kubernetesCluster);
+                    templateService.detachIso(vm.getId(), attachedIsoId, true);
+                }
                 templateService.attachIso(iso.getId(), vm.getId(), true);
                 if (logger.isInfoEnabled()) {
                     logger.info("Attached binaries ISO for VM: {} in cluster: {}", vm, kubernetesCluster);
