@@ -37,6 +37,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ListClustersMetricsCmd;
 import org.apache.cloudstack.api.ListDbMetricsCmd;
 import org.apache.cloudstack.api.ListHostsMetricsCmd;
+import org.apache.cloudstack.api.ListHostsUsageHistoryCmd;
 import org.apache.cloudstack.api.ListInfrastructureCmd;
 import org.apache.cloudstack.api.ListMgmtsMetricsCmd;
 import org.apache.cloudstack.api.ListStoragePoolsMetricsCmd;
@@ -67,6 +68,7 @@ import org.apache.cloudstack.management.ManagementServerHost.State;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
 import org.apache.cloudstack.response.DbMetricsResponse;
 import org.apache.cloudstack.response.HostMetricsResponse;
+import org.apache.cloudstack.response.HostMetricsStatsResponse;
 import org.apache.cloudstack.response.HostMetricsSummary;
 import org.apache.cloudstack.response.InfrastructureResponse;
 import org.apache.cloudstack.response.ManagementServerMetricsResponse;
@@ -88,6 +90,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+import com.cloud.agent.api.HostStatsEntryBase;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntryBase;
 import com.cloud.alert.AlertManager;
@@ -110,8 +113,11 @@ import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
+import com.cloud.host.HostStatsVO;
+import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostStatsDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.org.Cluster;
 import com.cloud.projects.Project;
@@ -184,6 +190,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     private VolumeDao volumeDao;
     @Inject
     private VolumeStatsDao volumeStatsDao;
+    @Inject
+    protected HostStatsDao hostStatsDao;
 
     @Inject
     private ObjectStoreDao objectStoreDao;
@@ -246,6 +254,144 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         Pair<List<VolumeVO>, Integer> volumeList = searchForVolumesInternal(cmd);
         Map<Long, List<VolumeStatsVO>> volumeStatsList = searchForVolumeMetricsStatsInternal(cmd, volumeList.first());
         return createVolumeMetricsStatsResponse(volumeList, volumeStatsList);
+    }
+
+    /**
+     * Searches for host stats based on the {@code ListHostsUsageHistoryCmd} parameters.
+     *
+     * @param cmd the {@link ListHostsUsageHistoryCmd} specifying what should be searched.
+     * @return the list of host metrics stats found.
+     */
+    @Override
+    public ListResponse<HostMetricsStatsResponse> searchForHostMetricsStats(ListHostsUsageHistoryCmd cmd) {
+        Pair<List<HostVO>, Integer> hostList = searchForHostsInternal(cmd);
+        Map<Long, List<HostStatsVO>> hostStatsList = searchForHostMetricsStatsInternal(cmd.getStartDate(), cmd.getEndDate(), hostList.first());
+        return createHostMetricsStatsResponse(hostList, hostStatsList);
+    }
+
+    /**
+     * Searches routing hosts based on {@code ListHostsUsageHistoryCmd} parameters.
+     *
+     * @param cmd the {@link ListHostsUsageHistoryCmd} specifying the parameters.
+     * @return the list of hosts and the total count.
+     */
+    protected Pair<List<HostVO>, Integer> searchForHostsInternal(ListHostsUsageHistoryCmd cmd) {
+        Filter searchFilter = new Filter(HostVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+        String name = cmd.getName();
+        String keyword = cmd.getKeyword();
+
+        SearchBuilder<HostVO> sb = hostDao.createSearchBuilder();
+        sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<HostVO> sc = sb.create();
+        sc.setParameters("type", Host.Type.Routing);
+        if (CollectionUtils.isNotEmpty(ids)) {
+            sc.setParameters("idIN", ids.toArray());
+        }
+        if (StringUtils.isNotBlank(name)) {
+            sc.setParameters("name", "%" + name + "%");
+        }
+        if (StringUtils.isNotBlank(keyword)) {
+            SearchCriteria<HostVO> ssc = hostDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        return hostDao.searchAndCount(sc, searchFilter);
+    }
+
+    /**
+     * Searches stats for a list of hosts, based on date filtering parameters.
+     *
+     * @param startDate the start date for which stats should be searched.
+     * @param endDate the end date for which stats should be searched.
+     * @param hostList the list of hosts for which stats should be searched.
+     * @return the key-value map in which keys are host IDs and values are lists of host stats.
+     */
+    protected Map<Long, List<HostStatsVO>> searchForHostMetricsStatsInternal(Date startDate, Date endDate, List<HostVO> hostList) {
+        Map<Long, List<HostStatsVO>> hostStatsVOList = new HashMap<>();
+        validateDateParams(startDate, endDate);
+
+        for (HostVO hostVO : hostList) {
+            Long hostId = hostVO.getId();
+            hostStatsVOList.put(hostId, findHostStatsAccordingToDateParams(hostId, startDate, endDate));
+        }
+
+        return hostStatsVOList;
+    }
+
+    /**
+     * Finds stats for a specific host based on date parameters.
+     *
+     * @param hostId the specific host.
+     * @param startDate the start date to filtering.
+     * @param endDate the end date to filtering.
+     * @return the list of stats for the specified host.
+     */
+    protected List<HostStatsVO> findHostStatsAccordingToDateParams(Long hostId, Date startDate, Date endDate) {
+        if (startDate != null && endDate != null) {
+            return hostStatsDao.findByHostIdAndTimestampBetween(hostId, startDate, endDate);
+        }
+        if (startDate != null) {
+            return hostStatsDao.findByHostIdAndTimestampGreaterThanEqual(hostId, startDate);
+        }
+        if (endDate != null) {
+            return hostStatsDao.findByHostIdAndTimestampLessThanEqual(hostId, endDate);
+        }
+        return hostStatsDao.findByHostId(hostId);
+    }
+
+    /**
+     * Creates a {@code ListResponse<HostMetricsStatsResponse>}. For each host, this joins essential host info
+     * with its respective list of stats.
+     *
+     * @param hostList the list of hosts and the total count.
+     * @param hostStatsList the respective list of stats.
+     * @return the list of responses that was created.
+     */
+    protected ListResponse<HostMetricsStatsResponse> createHostMetricsStatsResponse(Pair<List<HostVO>, Integer> hostList,
+            Map<Long, List<HostStatsVO>> hostStatsList) {
+        List<HostMetricsStatsResponse> responses = new ArrayList<>();
+        for (HostVO hostVO : hostList.first()) {
+            HostMetricsStatsResponse hostMetricsStatsResponse = new HostMetricsStatsResponse();
+            hostMetricsStatsResponse.setObjectName("host");
+            hostMetricsStatsResponse.setId(hostVO.getUuid());
+            hostMetricsStatsResponse.setName(hostVO.getName());
+            hostMetricsStatsResponse.setStats(createHostStatsResponse(hostStatsList.get(hostVO.getId())));
+            responses.add(hostMetricsStatsResponse);
+        }
+
+        ListResponse<HostMetricsStatsResponse> response = new ListResponse<>();
+        response.setResponses(responses, hostList.second());
+        return response;
+    }
+
+    /**
+     * Creates a {@code List<StatsResponse>} from a given {@code List<HostStatsVO>}.
+     *
+     * @param hostStatsList the list of host stats.
+     * @return the list of responses that was created.
+     */
+    protected List<StatsResponse> createHostStatsResponse(List<HostStatsVO> hostStatsList) {
+        List<StatsResponse> statsResponseList = new ArrayList<>();
+        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        for (HostStatsVO hostStats : hostStatsList) {
+            StatsResponse response = new StatsResponse();
+            response.setTimestamp(hostStats.getTimestamp());
+
+            HostStatsEntryBase statsEntry = gson.fromJson(hostStats.getHostStatsData(), HostStatsEntryBase.class);
+            response.setCpuUsed(decimalFormat.format(statsEntry.getCpuUtilization()) + "%");
+            response.setNetworkKbsRead((long) statsEntry.getNetworkReadKBs());
+            response.setNetworkKbsWrite((long) statsEntry.getNetworkWriteKBs());
+            response.setMemoryKBs((long) statsEntry.getTotalMemoryKBs());
+            response.setMemoryIntFreeKBs((long) statsEntry.getFreeMemoryKBs());
+
+            statsResponseList.add(response);
+        }
+        return statsResponseList;
     }
 
     /**
@@ -1194,6 +1340,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         cmdList.add(ListVMsUsageHistoryCmd.class);
         cmdList.add(ListSystemVMsUsageHistoryCmd.class);
         cmdList.add(ListVolumesUsageHistoryCmd.class);
+        cmdList.add(ListHostsUsageHistoryCmd.class);
         // separate Admin commands
         cmdList.add(ListVMsMetricsCmdByAdmin.class);
         return cmdList;

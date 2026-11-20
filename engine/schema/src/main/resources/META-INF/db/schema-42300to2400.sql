@@ -271,3 +271,14 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VAR
 
 -- Rename persisted FlashArray provider name (plugin getName() changed from 'Flash Array' to 'FlashArray')
 UPDATE `cloud`.`storage_pool` SET `storage_provider_name` = 'FlashArray' WHERE `storage_provider_name` = 'Flash Array';
+-- Add host_stats table for the host usage history
+CREATE TABLE IF NOT EXISTS `cloud`.`host_stats` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `host_id` bigint unsigned NOT NULL,
+  `mgmt_server_id` bigint unsigned NOT NULL,
+  `timestamp` datetime NOT NULL,
+  `host_stats_data` text NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `i_host_stats__host_id` (`host_id`),
+  KEY `i_host_stats__timestamp` (`timestamp`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='historical per-host stats samples';
