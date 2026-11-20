@@ -67,6 +67,14 @@ public class RemoveNicFromVMCmd extends BaseAsyncCmd implements UserCmd {
         return nicId;
     }
 
+    public void setVmId(Long vmId) {
+        this.vmId = vmId;
+    }
+
+    public void setNicId(Long nicId) {
+        this.nicId = nicId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

@@ -61,6 +61,12 @@ public interface VeeamControlService extends PluggableService, Configurable {
             "", "Comma-separated list of CIDR blocks representing clients allowed to access the API. " +
                     "If empty, all clients will be allowed. Example: '192.168.1.1/24,192.168.2.100/32", true);
 
+    ConfigKey<Integer> JobWaitTimeout = new ConfigKey<>("Advanced", Integer.class,
+            "integration.veeam.control.job.wait.timeout",
+            "3600", "Time in seconds that synchronous (non-async) requests wait for the underlying CloudStack " +
+            "job to complete. When it elapses the request fails, but the job keeps running in the background and " +
+            "may still complete. Values of 0 or less fall back to the default.", true);
+
     ConfigKey<Boolean> DeveloperLogs = new ConfigKey<>("Developer", Boolean.class, "integration.veeam.control.developer.logs",
             "false", "Enable verbose logging for development and troubleshooting purposes. " +
             "Logs will include detailed information about API requests, responses, and internal operations.", false);

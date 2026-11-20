@@ -20,6 +20,7 @@ package org.apache.cloudstack.veeam.api.dto;
 public class ResourceAction extends BaseDto {
     private Ref job;
     private String status;
+    private Fault fault;
 
     public Ref getJob() {
         return job;
@@ -35,5 +36,13 @@ public class ResourceAction extends BaseDto {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Fault getFault() {
+        return fault;
+    }
+
+    public void setFault(Fault fault) {
+        this.fault = fault;
     }
 }

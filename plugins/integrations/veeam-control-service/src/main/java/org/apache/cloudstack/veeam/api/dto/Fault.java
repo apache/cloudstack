@@ -21,6 +21,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class Fault {
+    // oVirt's fault reason for a failed backend operation
+    public static final String OPERATION_FAILED = "Operation Failed";
+
     private String reason; // "Not Found", "Bad Request", "Unauthorized"
     private String detail; // full message
 

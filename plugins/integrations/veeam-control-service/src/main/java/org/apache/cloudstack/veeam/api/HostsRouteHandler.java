@@ -19,6 +19,7 @@ package org.apache.cloudstack.veeam.api;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -27,8 +28,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
 import org.apache.cloudstack.veeam.adapter.ServerAdapter;
+import org.apache.cloudstack.veeam.api.converter.HostJoinVOToHostConverter;
 import org.apache.cloudstack.veeam.api.dto.Host;
 import org.apache.cloudstack.veeam.api.dto.NamedList;
+import org.apache.cloudstack.veeam.api.dto.Statistic;
 import org.apache.cloudstack.veeam.api.request.ListQuery;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
@@ -76,8 +79,18 @@ public class HostsRouteHandler extends ManagerBase implements RouteHandler {
         if (CollectionUtils.isNotEmpty(idAndSubPath)) {
             String id = idAndSubPath.get(0);
             if (idAndSubPath.size() == 1) {
-                handleGetById(id, resp, outFormat, io);
+                handleGetById(id, req, resp, outFormat, io);
                 return;
+            }
+            if (HostJoinVOToHostConverter.STATISTICS.equals(idAndSubPath.get(1))) {
+                if (idAndSubPath.size() == 2) {
+                    handleGetStatisticsById(id, resp, outFormat, io);
+                    return;
+                }
+                if (idAndSubPath.size() == 3) {
+                    handleGetStatisticById(id, idAndSubPath.get(2), resp, outFormat, io);
+                    return;
+                }
             }
         }
 
@@ -88,7 +101,8 @@ public class HostsRouteHandler extends ManagerBase implements RouteHandler {
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         try {
             ListQuery query = ListQuery.fromRequest(req);
-            final List<Host> result = serverAdapter.listAllHosts(query.getOffset(), query.getLimit());
+            final List<Host> result = serverAdapter.listAllHosts(query.followContains(HostJoinVOToHostConverter.STATISTICS),
+                    query.getOffset(), query.getLimit());
             NamedList<Host> response = NamedList.of("host", result);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (PermissionDeniedException e) {
@@ -96,11 +110,43 @@ public class HostsRouteHandler extends ManagerBase implements RouteHandler {
         }
     }
 
-    protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
-                              final VeeamControlServlet io) throws IOException {
+    protected void handleGetById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
+                              final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
         try {
-            Host response = serverAdapter.getHost(id);
+            ListQuery query = ListQuery.fromRequest(req);
+            Host response = serverAdapter.getHost(id, query.followContains(HostJoinVOToHostConverter.STATISTICS));
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.notFound(resp, e.getMessage(), outFormat);
+        } catch (PermissionDeniedException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handleGetStatisticsById(final String id, final HttpServletResponse resp,
+                              final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        try {
+            List<Statistic> result = serverAdapter.listHostStatistics(id);
+            NamedList<Statistic> response = NamedList.of("statistic", result);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.notFound(resp, e.getMessage(), outFormat);
+        } catch (PermissionDeniedException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handleGetStatisticById(final String id, final String statisticId, final HttpServletResponse resp,
+                              final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        try {
+            Optional<Statistic> response = serverAdapter.listHostStatistics(id).stream()
+                    .filter(statistic -> statisticId.equals(statistic.getId()))
+                    .findFirst();
+            if (response.isEmpty()) {
+                io.notFound(resp, "Statistic with ID " + statisticId + " not found", outFormat);
+                return;
+            }
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response.get(), outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
         } catch (PermissionDeniedException e) {

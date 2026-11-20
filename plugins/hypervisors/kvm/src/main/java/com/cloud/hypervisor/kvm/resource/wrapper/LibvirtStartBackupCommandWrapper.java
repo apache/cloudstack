@@ -20,6 +20,8 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,6 +34,7 @@ import org.apache.logging.log4j.LogManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.libvirt.Domain;
+import org.libvirt.DomainJobInfo;
 import org.libvirt.LibvirtException;
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
@@ -43,6 +46,9 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles = StartBackupCommand.class)
 public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackupCommand, Answer, LibvirtComputingResource> {
     protected Logger logger = LogManager.getLogger(getClass());
+
+    /** virDomainJobType VIR_DOMAIN_JOB_NONE. */
+    static final int NO_JOB = 0;
 
     @Override
     public Answer execute(StartBackupCommand cmd, LibvirtComputingResource resource) {
@@ -72,8 +78,15 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
                 dir.mkdirs();
             }
 
+            Map<String, String> diskPathLabelMap = resource.getDiskPathLabelMap(vmName);
+            Map<String, String> diskPathScratchFileMap = getScratchFiles(cmd.getDiskPathUuidMap(), diskPathLabelMap);
+            String scratchError = prepareScratchFiles(vmName, diskPathScratchFileMap, resource);
+            if (scratchError != null) {
+                return new StartBackupAnswer(cmd, false, scratchError);
+            }
+
             // Create backup XML
-            String backupXml = createBackupXml(cmd, fromCheckpointId, socket, resource);
+            String backupXml = createBackupXml(cmd, fromCheckpointId, socket, diskPathLabelMap, diskPathScratchFileMap, resource);
             String checkpointXml = createCheckpointXml(toCheckpointId);
 
             // Write XMLs to temp files
@@ -158,7 +171,8 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
         return xml.toString();
     }
 
-    private String createBackupXml(StartBackupCommand cmd, String fromCheckpointId, String socket, LibvirtComputingResource resource) throws LibvirtException {
+    private String createBackupXml(StartBackupCommand cmd, String fromCheckpointId, String socket, Map<String, String> diskPathLabelMap,
+                                   Map<String, String> diskPathScratchFileMap, LibvirtComputingResource resource) throws LibvirtException {
         StringBuilder xml = new StringBuilder();
         xml.append("<domainbackup mode=\"pull\">\n");
 
@@ -167,7 +181,6 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
         xml.append("  <disks>\n");
 
         Map<String, String> diskPathUuidMap = cmd.getDiskPathUuidMap();
-        Map<String, String> diskPathLabelMap = resource.getDiskPathLabelMap(cmd.getVmName());
         Map<String, Boolean> diskPathHasFromCheckpointMap = new HashMap<>();
         if (StringUtils.isNotBlank(fromCheckpointId)) {
             Domain vm = null;
@@ -193,7 +206,7 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
             }
             String diskName = entry.getValue();
             String export = diskPathUuidMap.get(diskPath);
-            String scratchFile = "/var/tmp/scratch-" + export + ".qcow2";
+            String scratchFile = diskPathScratchFileMap.get(diskPath);
             xml.append("    <disk name=\"").append(diskName).append("\" type=\"file\" exportname=\"").append(export);
             if (StringUtils.isNotBlank(fromCheckpointId) && Boolean.TRUE.equals(diskPathHasFromCheckpointMap.get(diskPath))) {
                 xml.append("\" backupmode=\"incremental\"")
@@ -209,6 +222,79 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
         xml.append("</domainbackup>");
 
         return xml.toString();
+    }
+
+     // Scratch file of each disk in the backup next to the disk on its primary storage
+    static Map<String, String> getScratchFiles(Map<String, String> diskPathUuidMap, Map<String, String> diskPathLabelMap) {
+        Map<String, String> scratchFiles = new HashMap<>();
+        for (Map.Entry<String, String> entry : diskPathUuidMap.entrySet()) {
+            if (!diskPathLabelMap.containsKey(entry.getKey())) {
+                continue;
+            }
+            String directory = new File(entry.getKey()).getParent();
+            scratchFiles.put(entry.getKey(), new File(directory, "backup-scratch-" + entry.getValue() + ".qcow2").getPath());
+        }
+        return scratchFiles;
+    }
+
+    String prepareScratchFiles(String vmName, Map<String, String> diskPathScratchFileMap, LibvirtComputingResource resource) {
+        Domain dm = null;
+        try {
+            dm = resource.getDomain(resource.getLibvirtUtilitiesHelper().getConnection(), vmName);
+            return prepareScratchFiles(dm, diskPathScratchFileMap);
+        } catch (LibvirtException e) {
+            return "Failed to prepare the backup scratch files: " + e.getMessage();
+        } finally {
+            if (dm != null) {
+                try {
+                    dm.free();
+                } catch (LibvirtException e) {
+                    logger.debug("Failed to free domain {}", vmName, e);
+                }
+            }
+        }
+    }
+
+    String prepareScratchFiles(Domain dm, Map<String, String> diskPathScratchFileMap) throws LibvirtException {
+        DomainJobInfo job = dm.getJobInfo();
+        if (job != null && job.getType() != NO_JOB) {
+            // libvirt refuses a backup anyway; never touch the scratch files of a running one.
+            return "The VM has an active job, a backup cannot start";
+        }
+        Map<String, Long> requiredSpace = new HashMap<>();
+        for (Map.Entry<String, String> entry : diskPathScratchFileMap.entrySet()) {
+            String scratchFile = entry.getValue();
+            if (!deleteStaleScratchFile(scratchFile)) {
+                return "Failed to remove the stale backup scratch file " + scratchFile;
+            }
+            long capacity = dm.blockInfo(entry.getKey()).getCapacity();
+            // 1% on top of the virtual size covers the qcow2 metadata of the scratch file.
+            requiredSpace.merge(new File(scratchFile).getParent(), capacity + capacity / 100, Long::sum);
+        }
+        for (Map.Entry<String, Long> entry : requiredSpace.entrySet()) {
+            long usable = getUsableSpace(entry.getKey());
+            if (usable < entry.getValue()) {
+                return String.format("Not enough free space for the backup scratch files in %s: %d bytes needed, %d available",
+                        entry.getKey(), entry.getValue(), usable);
+            }
+        }
+        return null;
+    }
+
+    boolean deleteStaleScratchFile(String scratchFile) {
+        try {
+            if (Files.deleteIfExists(Paths.get(scratchFile))) {
+                logger.warn("Removed the stale backup scratch file {}", scratchFile);
+            }
+            return true;
+        } catch (IOException e) {
+            logger.error("Failed to remove the stale backup scratch file {}", scratchFile, e);
+            return false;
+        }
+    }
+
+    long getUsableSpace(String directory) {
+        return new File(directory).getUsableSpace();
     }
 
     private String createCheckpointXml(String checkpointId) {

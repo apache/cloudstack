@@ -52,6 +52,9 @@ public interface UserVmJoinDao extends GenericDao<UserVmJoinVO, Long> {
 
     List<UserVmJoinVO> listLeaseInstancesExpiringInDays(int days);
 
+    /**
+     * Lists VMs matching the criteria, one entry per VM. The filter's paging applies to VMs, not to view rows.
+     */
     List<UserVmJoinVO> listByZonesHypervisorNotTypesAndOwners(List<Long> zoneIds, Hypervisor.HypervisorType hypervisorType,
                                                               List<String> excludeTypes, List<Long> accountIds,
                                                               String domainPath, Filter filter);

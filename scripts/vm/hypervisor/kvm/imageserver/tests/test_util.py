@@ -17,6 +17,7 @@
 
 """Unit tests for imageserver.util extent coalescing helpers."""
 
+import time
 import unittest
 
 from imageserver.util import (
@@ -116,6 +117,71 @@ class TestMergeDirtyZeroExtentsCoalescing(unittest.TestCase):
             merged,
             [{"start": 0, "length": 200, "dirty": False, "zero": False}],
         )
+
+
+class TestMergeDirtyZeroExtents(unittest.TestCase):
+    def test_unified_boundaries(self):
+        allocation = [(0, 100, False), (100, 100, True)]
+        dirty = [(0, 50, False), (50, 100, True), (150, 50, False)]
+        self.assertEqual(
+            merge_dirty_zero_extents(allocation, dirty, 200),
+            [
+                {"start": 0, "length": 50, "dirty": False, "zero": False},
+                {"start": 50, "length": 50, "dirty": True, "zero": False},
+                {"start": 100, "length": 50, "dirty": True, "zero": True},
+                {"start": 150, "length": 50, "dirty": False, "zero": True},
+            ],
+        )
+
+    def test_range_without_dirty_extent_is_reported_dirty(self):
+        """A short dirty-bitmap reply must never hide changed data."""
+        allocation = [(0, 128, False)]
+        dirty = [(0, 64, False)]
+        self.assertEqual(
+            merge_dirty_zero_extents(allocation, dirty, 128),
+            [
+                {"start": 0, "length": 64, "dirty": False, "zero": False},
+                {"start": 64, "length": 64, "dirty": True, "zero": False},
+            ],
+        )
+
+    def test_range_without_allocation_extent_is_reported_as_data(self):
+        allocation = [(0, 64, True)]
+        dirty = [(0, 128, True)]
+        self.assertEqual(
+            merge_dirty_zero_extents(allocation, dirty, 128),
+            [
+                {"start": 0, "length": 64, "dirty": True, "zero": True},
+                {"start": 64, "length": 64, "dirty": True, "zero": False},
+            ],
+        )
+
+    def test_unsorted_overlapping_and_overshooting_extents(self):
+        allocation = [(64, 100, True), (0, 80, False)]
+        dirty = [(0, 300, False)]
+        self.assertEqual(
+            merge_dirty_zero_extents(allocation, dirty, 128),
+            [
+                {"start": 0, "length": 80, "dirty": False, "zero": False},
+                {"start": 80, "length": 48, "dirty": False, "zero": True},
+            ],
+        )
+
+    def test_unchanged_fully_allocated_disk(self):
+        self.assertEqual(
+            merge_dirty_zero_extents([(0, 4096, False)], [(0, 4096, False)], 4096),
+            [{"start": 0, "length": 4096, "dirty": False, "zero": False}],
+        )
+
+    def test_many_extents_are_merged_in_linear_time(self):
+        n = 200000
+        allocation = [(i * 64, 64, i % 2 == 0) for i in range(n)]
+        dirty = [(i * 64, 64, i % 3 == 0) for i in range(n)]
+        start = time.monotonic()
+        merged = merge_dirty_zero_extents(allocation, dirty, n * 64)
+        elapsed = time.monotonic() - start
+        self.assertEqual(sum(e["length"] for e in merged), n * 64)
+        self.assertLess(elapsed, 10)
 
 
 if __name__ == "__main__":
