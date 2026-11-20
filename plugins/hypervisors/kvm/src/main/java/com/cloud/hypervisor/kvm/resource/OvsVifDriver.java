@@ -250,6 +250,7 @@ public class OvsVifDriver extends VifDriverBase {
         if (!isExistingBridge(privBrName)) {
             Script.runSimpleBashScript("ovs-vsctl add-br " + privBrName + "; ip link set " + privBrName + " up; ip address add " + NetUtils.getLinkLocalAddressFromCIDR(_controlCidr) + " dev " + privBrName, _timeout);
         }
+        enableBridgeIpv6LinkLocal(privBrName);
     }
 
     @Override
