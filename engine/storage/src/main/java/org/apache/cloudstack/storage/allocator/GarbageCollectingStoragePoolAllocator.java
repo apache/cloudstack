@@ -53,7 +53,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
         }
 
         // Clean up all storage pools
-        storageMgr.cleanupStorage(false);
+        storageMgr.cleanupStorage();
         // Determine what allocator to use
         StoragePoolAllocator allocator;
         if (dskCh.useLocalStorage()) {
