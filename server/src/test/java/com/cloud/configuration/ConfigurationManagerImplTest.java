@@ -57,6 +57,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -1409,5 +1410,48 @@ public class ConfigurationManagerImplTest {
         Map<Network.Service, Set<Network.Provider>> mapWithEmptySet = new HashMap<>();
         mapWithEmptySet.put(Network.Service.Firewall, Collections.emptySet());
         Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, mapWithEmptySet));
+    }
+
+    private void validateOverCommitRatio(String value) {
+        configurationManagerImplSpy.validateOverCommitRatioInServiceOfferingDetail(
+                VmDetailConstants.CPU_OVER_COMMIT_RATIO, value);
+    }
+
+    @Test
+    public void validateOverCommitRatioInServiceOfferingDetailTestRatiosAreAccepted() {
+        validateOverCommitRatio("1");
+        validateOverCommitRatio("1.0");
+        validateOverCommitRatio("4");
+        validateOverCommitRatio("10.5");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateOverCommitRatioInServiceOfferingDetailTestUndercommitIsRejected() {
+        validateOverCommitRatio("0.1");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateOverCommitRatioInServiceOfferingDetailTestJustBelowOneIsRejected() {
+        validateOverCommitRatio("0.99");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateOverCommitRatioInServiceOfferingDetailTestZeroIsRejected() {
+        validateOverCommitRatio("0");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateOverCommitRatioInServiceOfferingDetailTestNegativeIsRejected() {
+        validateOverCommitRatio("-1");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateOverCommitRatioInServiceOfferingDetailTestNonNumericIsRejected() {
+        validateOverCommitRatio("none");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateOverCommitRatioInServiceOfferingDetailTestNullIsRejected() {
+        validateOverCommitRatio(null);
     }
 }

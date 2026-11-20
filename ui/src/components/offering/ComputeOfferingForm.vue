@@ -134,6 +134,35 @@
       </a-col>
     </a-row>
 
+    <a-row :gutter="12" v-if="isAdmin()">
+      <a-col :md="12" :lg="12">
+        <a-form-item name="cpuovercommitratio" ref="cpuovercommitratio">
+          <template #label>
+            <tooltip-label :title="$t('label.cpuovercommitratio')" :tooltip="$t('label.cpuovercommitratio.tooltip')"/>
+          </template>
+          <a-input
+            v-model:value="form.cpuovercommitratio"
+            type="number"
+            min="1"
+            step="0.1"
+            :placeholder="$t('message.overcommit.ratio.inherit.cluster')"/>
+        </a-form-item>
+      </a-col>
+      <a-col :md="12" :lg="12">
+        <a-form-item name="memoryovercommitratio" ref="memoryovercommitratio">
+          <template #label>
+            <tooltip-label :title="$t('label.memoryovercommitratio')" :tooltip="$t('label.memoryovercommitratio.tooltip')"/>
+          </template>
+          <a-input
+            v-model:value="form.memoryovercommitratio"
+            type="number"
+            min="1"
+            step="0.1"
+            :placeholder="$t('message.overcommit.ratio.inherit.cluster')"/>
+        </a-form-item>
+      </a-col>
+    </a-row>
+
     <a-row :gutter="12">
       <a-col :md="12" :lg="12">
         <a-form-item v-if="isAdmin() || isDomainAdminAllowedToInformTags" name="hosttags" ref="hosttags">
