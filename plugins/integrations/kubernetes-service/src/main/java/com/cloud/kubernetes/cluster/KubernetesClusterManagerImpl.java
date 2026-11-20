@@ -39,8 +39,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -86,6 +89,7 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.GetKubernetesCl
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ListKubernetesClustersCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveNodesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.RotateKubernetesClusterCertificatesCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ScaleKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StartKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesClusterCmd;
@@ -124,6 +128,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
@@ -152,6 +157,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.event.ActionEvent;
+import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -167,12 +173,16 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterActionWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterAddWorker;
+import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterCertificateWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterDestroyWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterRemoveWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterScaleWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterStartWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterStopWorker;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterUpgradeWorker;
+import com.cloud.kubernetes.cluster.utils.KubernetesClusterCertificateUtil;
+import com.cloud.kubernetes.cluster.utils.KubernetesClusterCertificateUtil.CertificateExpiry;
+import com.cloud.kubernetes.cluster.utils.KubernetesClusterCertificateUtil.CertificateExpiryReport;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
@@ -312,8 +322,16 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     protected final static List<String> CLUSTER_NODES_TYPES_LIST = Arrays.asList(WORKER.name(), CONTROL.name(), ETCD.name());
 
+    protected static final long CERTIFICATE_SCANNER_INTERVAL_SECONDS = 15 * 60;
+    protected static final int CERTIFICATE_ROTATION_THREADS = 4;
+    /** Automatic renewal is not retried within this long of a failed rotation; the failure already raised an alert. */
+    protected static final long CERTIFICATE_AUTO_RENEW_RETRY_BACKOFF_MS = TimeUnit.HOURS.toMillis(24);
+
     ScheduledExecutorService _gcExecutor;
     ScheduledExecutorService _stateScanner;
+    ScheduledExecutorService _certificateScanner;
+    ExecutorService _certificateRotationExecutor;
+    private final Set<Long> queuedCertificateRotations = ConcurrentHashMap.newKeySet();
 
     @Inject
     public KubernetesClusterDao kubernetesClusterDao;
@@ -1078,6 +1096,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         BaseCmd.getCommandNameByClass(StartKubernetesClusterCmd.class),
                         BaseCmd.getCommandNameByClass(StopKubernetesClusterCmd.class),
                         BaseCmd.getCommandNameByClass(UpgradeKubernetesClusterCmd.class),
+                        BaseCmd.getCommandNameByClass(RotateKubernetesClusterCertificatesCmd.class),
                         BaseCmd.getCommandNameByClass(AddNodesToKubernetesClusterCmd.class),
                         BaseCmd.getCommandNameByClass(RemoveNodesFromKubernetesClusterCmd.class)
                 ).contains(cmdName);
@@ -1955,6 +1974,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 logger.debug("Kubernetes cluster {} is already in starting state", kubernetesCluster);
             return true;
         }
+        if (KubernetesCluster.State.RotatingCertificates.equals(kubernetesCluster.getState())) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster %s is renewing its certificates", kubernetesCluster.getName()));
+        }
         final DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
         if (zone == null) {
             logAndThrow(Level.WARN, String.format("Unable to find zone for Kubernetes cluster %s", kubernetesCluster));
@@ -2113,6 +2135,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
             return true;
         }
+        // the rotation has the control plane manifests moved aside while it restarts the static pods
+        if (KubernetesCluster.State.RotatingCertificates.equals(kubernetesCluster.getState())) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster %s is renewing its certificates, stop it once that is done",
+                    kubernetesCluster.getName()));
+        }
         KubernetesClusterStopWorker stopWorker = new KubernetesClusterStopWorker(kubernetesCluster, this);
         stopWorker = ComponentContext.inject(stopWorker);
         return stopWorker.stop();
@@ -2260,7 +2287,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setId(kubernetesCluster.getUuid());
         response.setName(kubernetesCluster.getName());
         String configData = "";
-        KubernetesClusterDetailsVO clusterDetailsVO = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), "kubeConfigData");
+        KubernetesClusterDetailsVO clusterDetailsVO = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), KubernetesClusterActionWorker.KUBE_CONFIG_DATA_DETAIL);
         if (clusterDetailsVO != null && StringUtils.isNotEmpty(clusterDetailsVO.getValue())) {
             configData = new String(Base64.decodeBase64(clusterDetailsVO.getValue()));
         } else {
@@ -2339,6 +2366,43 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 kubernetesSupportedVersionDao.findById(cmd.getKubernetesVersionId()), this, keys);
         upgradeWorker = ComponentContext.inject(upgradeWorker);
         return upgradeWorker.upgradeCluster();
+    }
+
+    @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CERTIFICATES_ROTATE,
+            eventDescription = "rotating Kubernetes cluster certificates", async = true)
+    public boolean rotateKubernetesClusterCertificates(RotateKubernetesClusterCertificatesCmd cmd) throws CloudRuntimeException {
+        if (!KubernetesServiceEnabled.value()) {
+            logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
+        }
+        KubernetesClusterVO kubernetesCluster = validateKubernetesClusterCertificateRotationParameters(cmd);
+        return createCertificateWorker(kubernetesCluster).rotateCertificates();
+    }
+
+    protected KubernetesClusterVO validateKubernetesClusterCertificateRotationParameters(RotateKubernetesClusterCertificatesCmd cmd) {
+        final Long kubernetesClusterId = cmd.getId();
+        KubernetesClusterVO kubernetesCluster = kubernetesClusterId == null ? null : kubernetesClusterDao.findById(kubernetesClusterId);
+        if (kubernetesCluster == null || kubernetesCluster.getRemoved() != null) {
+            throw new InvalidParameterValueException("Invalid Kubernetes cluster ID");
+        }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
+        if (!isCommandSupported(kubernetesCluster, cmd.getActualCommandName())) {
+            throw new InvalidParameterValueException(String.format("Certificate rotation is not supported for an externally managed Kubernetes cluster (%s)", kubernetesCluster.getName()));
+        }
+        // Alert lets a failed rotation be retried and a cluster whose certificates already expired be rescued
+        if (!Arrays.asList(KubernetesCluster.State.Running, KubernetesCluster.State.Alert).contains(kubernetesCluster.getState())) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster %s is not in Running or Alert state", kubernetesCluster.getName()));
+        }
+        KubernetesSupportedVersionVO clusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
+        if (!KubernetesClusterCertificateWorker.isCertificateManagementSupported(clusterVersion)) {
+            throw new InvalidParameterValueException(String.format("Certificate rotation of Kubernetes cluster %s needs Kubernetes %s or later",
+                    kubernetesCluster.getName(), KubernetesClusterCertificateUtil.MIN_KUBERNETES_VERSION_CERTIFICATES_SUPPORT));
+        }
+        return kubernetesCluster;
+    }
+
+    protected KubernetesClusterCertificateWorker createCertificateWorker(KubernetesCluster kubernetesCluster) {
+        return ComponentContext.inject(new KubernetesClusterCertificateWorker(kubernetesCluster, this));
     }
 
     @Override
@@ -2780,6 +2844,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         cmdList.add(GetKubernetesClusterConfigCmd.class);
         cmdList.add(ScaleKubernetesClusterCmd.class);
         cmdList.add(UpgradeKubernetesClusterCmd.class);
+        cmdList.add(RotateKubernetesClusterCertificatesCmd.class);
         cmdList.add(AddVirtualMachinesToKubernetesClusterCmd.class);
         cmdList.add(RemoveVirtualMachinesFromKubernetesClusterCmd.class);
         cmdList.add(AddNodesToKubernetesClusterCmd.class);
@@ -2909,8 +2974,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                             startWorker = ComponentContext.inject(startWorker);
                             startWorker.reconcileAlertCluster();
                         } else if (isClusterVMsInDesiredState(kubernetesCluster, VirtualMachine.State.Stopped)) {
-                            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StopRequested);
-                            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
+                            // unless another operation (e.g. a certificate rotation) took the cluster meanwhile
+                            if (stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StopRequested)) {
+                                stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
+                            }
                         }
                     } catch (Exception e) {
                         logger.warn("Failed to run Kubernetes cluster Alert state scanner on Kubernetes cluster: {} status scanner", kubernetesCluster, e);
@@ -2955,6 +3022,295 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
             firstRun = false;
         }
+    }
+
+    /* Checks the control plane certificate expiry of running clusters every few hours, raises alerts and events as
+       configured thresholds are reached and renews the certificates automatically shortly before they expire. Runs on
+       its own thread, as a renewal restarts the control plane one node at a time and can take minutes.
+     */
+    public class KubernetesClusterCertificateScanner extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            GlobalLock lock = GlobalLock.getInternLock("KubernetesCluster.Certificate.Scanner.Lock");
+            try {
+                if (lock.lock(3)) {
+                    try {
+                        reallyRun();
+                    } finally {
+                        lock.unlock();
+                    }
+                }
+            } finally {
+                lock.releaseRef();
+            }
+        }
+
+        public void reallyRun() {
+            if (!KubernetesServiceEnabled.value()) {
+                return;
+            }
+            try {
+                recoverInterruptedCertificateRotations(new Date());
+                // Alert too: a cluster can sit in Alert for long (e.g. a stopped worker) and its certificates still expire
+                List<KubernetesClusterVO> clusters = new ArrayList<>(kubernetesClusterDao.findManagedKubernetesClustersInState(KubernetesCluster.State.Running));
+                clusters.addAll(kubernetesClusterDao.findManagedKubernetesClustersInState(KubernetesCluster.State.Alert));
+                for (KubernetesClusterVO listed : clusters) {
+                    // a pass can take minutes; skip a cluster stopped or otherwise taken since it was listed
+                    KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(listed.getId());
+                    if (kubernetesCluster == null || !Arrays.asList(KubernetesCluster.State.Running, KubernetesCluster.State.Alert).contains(kubernetesCluster.getState())) {
+                        continue;
+                    }
+                    try {
+                        processKubernetesClusterCertificates(kubernetesCluster, new Date());
+                    } catch (Exception e) {
+                        logger.warn("Failed to process the certificates of Kubernetes cluster: {}", kubernetesCluster, e);
+                    }
+                }
+            } catch (Exception e) {
+                logger.warn("Caught exception while running the Kubernetes cluster certificate scanner", e);
+            }
+        }
+    }
+
+    private Long getLongDetail(long kubernetesClusterId, String name) {
+        KubernetesClusterDetailsVO detail = kubernetesClusterDetailsDao.findDetail(kubernetesClusterId, name);
+        if (detail == null || StringUtils.isBlank(detail.getValue())) {
+            return null;
+        }
+        try {
+            return Long.parseLong(detail.getValue().trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * A cluster stays RotatingCertificates if the management server running the rotation went away. Move it to Alert,
+     * so the status scanner can reconcile it and the operator is told: right away when the rotation belonged to this
+     * management server and is no longer running here (it restarted), otherwise once the rotation is well past its
+     * timeout.
+     */
+    protected void recoverInterruptedCertificateRotations(Date now) {
+        long staleAfterMs = 2 * KubernetesClusterCertificateRotationTimeout.value() * 1000L + TimeUnit.MINUTES.toMillis(10);
+        for (KubernetesClusterVO kubernetesCluster : kubernetesClusterDao.findManagedKubernetesClustersInState(KubernetesCluster.State.RotatingCertificates)) {
+            if (KubernetesClusterCertificateWorker.isRotationActive(kubernetesCluster.getId())) {
+                continue;
+            }
+            Long started = getLongDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.ROTATION_STARTED_DETAIL);
+            if (started == null) {
+                // a rotation writes its start just after entering the state; never write that detail here, it would
+                // race with it. Note when it was first seen instead, to time a rotation that died in between.
+                started = getLongDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.ROTATION_SEEN_DETAIL);
+            }
+            if (started == null) {
+                // the rotation may have only just entered the state, or just finished; time it from now if still running
+                KubernetesClusterVO current = kubernetesClusterDao.findById(kubernetesCluster.getId());
+                if (current == null || !KubernetesCluster.State.RotatingCertificates.equals(current.getState())
+                        || KubernetesClusterCertificateWorker.isRotationActive(kubernetesCluster.getId())) {
+                    continue;
+                }
+                kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.ROTATION_SEEN_DETAIL, String.valueOf(now.getTime()), false);
+                continue;
+            }
+            Long owner = getLongDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.ROTATION_OWNER_DETAIL);
+            boolean ownedHere = owner != null && owner == ManagementServerNode.getManagementServerId();
+            if (!ownedHere && now.getTime() - started < staleAfterMs) {
+                continue;
+            }
+            logger.warn("Certificate rotation of Kubernetes cluster {} did not finish, moving it to Alert", kubernetesCluster);
+            if (stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed)) {
+                kubernetesClusterDetailsDao.removeDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.ROTATION_STARTED_DETAIL);
+                kubernetesClusterDetailsDao.removeDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.ROTATION_OWNER_DETAIL);
+                kubernetesClusterDetailsDao.removeDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.ROTATION_SEEN_DETAIL);
+                kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.ROTATION_FAILED_DETAIL, String.valueOf(now.getTime()), false);
+                createCertificateWorker(kubernetesCluster).sendAlert(
+                        String.format("Certificate rotation of Kubernetes cluster %s did not finish", kubernetesCluster.getName()),
+                        String.format("The certificate rotation of Kubernetes cluster %s was interrupted, possibly by a management server restart. " +
+                                "Check the cluster and run rotateKubernetesClusterCertificates again", kubernetesCluster.getName()));
+            }
+        }
+    }
+
+    protected void processKubernetesClusterCertificates(KubernetesCluster kubernetesCluster, Date now) {
+        Integer checkIntervalHours = KubernetesClusterCertificateCheckInterval.value();
+        if (checkIntervalHours == null || checkIntervalHours <= 0) {
+            return;
+        }
+        Long lastCheck = getLongDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.CERTIFICATE_CHECK_DETAIL);
+        if (lastCheck != null && now.getTime() - lastCheck < TimeUnit.HOURS.toMillis(checkIntervalHours)) {
+            return;
+        }
+        KubernetesSupportedVersion version = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
+        if (!KubernetesClusterCertificateWorker.isCertificateManagementSupported(version)) {
+            logger.debug("Skipping the certificate expiry check of Kubernetes cluster {}, its Kubernetes version is older than {}",
+                    kubernetesCluster, KubernetesClusterCertificateUtil.MIN_KUBERNETES_VERSION_CERTIFICATES_SUPPORT);
+            return;
+        }
+        // Recorded before checking, so an unreachable cluster is retried at the next interval, not on every pass
+        kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.CERTIFICATE_CHECK_DETAIL, String.valueOf(now.getTime()), false);
+
+        KubernetesClusterCertificateWorker worker = createCertificateWorker(kubernetesCluster);
+        CertificateExpiryReport report;
+        try {
+            report = worker.checkCertificateExpiry();
+        } catch (CloudRuntimeException e) {
+            // e.g. no address to reach the cluster on: as unwatched as when every node fails
+            logger.warn("Unable to check the certificate expiry of Kubernetes cluster {}", kubernetesCluster, e);
+            report = new CertificateExpiryReport();
+            report.addUncheckedNode("all control nodes");
+        }
+        boolean allNodesChecked = report.getUncheckedNodes().isEmpty();
+        if (!allNodesChecked) {
+            logger.warn("Unable to check the certificate expiry on control nodes {} of Kubernetes cluster {}", report.getUncheckedNodes(), kubernetesCluster);
+        }
+        if (report.isEmpty()) {
+            alertOnFailedCertificateCheck(kubernetesCluster, worker, report, now);
+            return;
+        }
+        kubernetesClusterDetailsDao.removeDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.CERTIFICATE_CHECK_FAILED_ALERT_DETAIL);
+        CertificateExpiry firstLeaf = report.getFirstLeafExpiry();
+        CertificateExpiry firstAuthority = report.getFirstAuthorityExpiry();
+        logger.info("Kubernetes cluster {}: first control plane certificate to expire is {}, first certificate authority is {}",
+                kubernetesCluster, firstLeaf, firstAuthority);
+
+        int autoRenewDays = Math.min(Objects.requireNonNullElse(KubernetesClusterCertificateAutoRenewDays.valueIn(kubernetesCluster.getAccountId()), 0),
+                KubernetesClusterCertificateUtil.MAX_AUTO_RENEW_DAYS);
+        boolean autoRenew = autoRenewDays > 0 && Boolean.TRUE.equals(KubernetesClusterCertificateAutoRenewEnabled.valueIn(kubernetesCluster.getAccountId()));
+        List<Integer> thresholds = KubernetesClusterCertificateUtil.parseAlertThresholds(KubernetesClusterCertificateExpiryAlertDays.value());
+        String leafAdvice;
+        if (firstLeaf != null && firstLeaf.isExternallyManaged()) {
+            leafAdvice = "It is externally managed, so it has to be renewed outside CloudStack.";
+        } else if (autoRenew && !allNodesChecked) {
+            leafAdvice = String.format("Automatic renewal is on hold until control nodes %s can be checked; fix their access or run rotateKubernetesClusterCertificates.",
+                    report.getUncheckedNodes());
+        } else if (autoRenew) {
+            leafAdvice = String.format("They are renewed automatically %d days before they expire while the cluster is Running, or run rotateKubernetesClusterCertificates.",
+                    autoRenewDays);
+        } else {
+            leafAdvice = "Run rotateKubernetesClusterCertificates to renew them.";
+        }
+        alertOnCertificateExpiry(kubernetesCluster, worker, firstLeaf, thresholds, KubernetesClusterCertificateWorker.CERTIFICATE_ALERT_DETAIL, now,
+                "control plane certificate", leafAdvice);
+        alertOnCertificateExpiry(kubernetesCluster, worker, firstAuthority, thresholds, KubernetesClusterCertificateWorker.CA_CERTIFICATE_ALERT_DETAIL, now,
+                "certificate authority", "CloudStack does not rotate certificate authorities; it has to be done by hand.");
+
+        // Externally managed certificates can't be renewed by kubeadm and would make every check renew again
+        CertificateExpiry firstRenewable = report.getFirstRenewableLeafExpiry();
+        // a cluster in Alert may have nodes down; renewing it is left to the operator
+        if (firstRenewable == null || !autoRenew || !KubernetesCluster.State.Running.equals(kubernetesCluster.getState()) ||
+                !KubernetesClusterCertificateUtil.isAutoRenewDue(KubernetesClusterCertificateUtil.daysUntil(firstRenewable.getExpires(), now), autoRenewDays)) {
+            return;
+        }
+        Long lastFailure = getLongDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.ROTATION_FAILED_DETAIL);
+        if (!allNodesChecked) {
+            // the rotation would renew the reachable nodes and then fail on the others, leaving the cluster in Alert
+            logger.warn("Not renewing the certificates of Kubernetes cluster {} automatically while control nodes {} can't be reached",
+                    kubernetesCluster, report.getUncheckedNodes());
+            return;
+        }
+        if (lastFailure != null && now.getTime() - lastFailure < CERTIFICATE_AUTO_RENEW_RETRY_BACKOFF_MS) {
+            logger.info("Not renewing the certificates of Kubernetes cluster {} automatically, the last rotation failed less than {} hours ago",
+                    kubernetesCluster, TimeUnit.MILLISECONDS.toHours(CERTIFICATE_AUTO_RENEW_RETRY_BACKOFF_MS));
+            return;
+        }
+        logger.info("Renewing the certificates of Kubernetes cluster {} automatically, {} expires on {}", kubernetesCluster, firstRenewable.getName(), firstRenewable.getExpires());
+        scheduleAutomaticRotation(kubernetesCluster);
+    }
+
+    /**
+     * Runs the rotation on its own thread, so a renewal that takes minutes holds up neither the expiry checks of the
+     * other clusters nor the scanner lock. The state transition keeps a second rotation of the same cluster out.
+     */
+    protected void scheduleAutomaticRotation(KubernetesCluster kubernetesCluster) {
+        if (_certificateRotationExecutor == null) {
+            runAutomaticRotation(kubernetesCluster);
+            return;
+        }
+        // a renewal still waiting for a thread must not be queued again by a later scan
+        if (!queuedCertificateRotations.add(kubernetesCluster.getId())) {
+            return;
+        }
+        final long queuedAt = System.currentTimeMillis();
+        try {
+            _certificateRotationExecutor.execute(new ManagedContextRunnable() {
+                @Override
+                protected void runInContext() {
+                    try {
+                        runQueuedAutomaticRotation(kubernetesCluster.getId(), queuedAt);
+                    } finally {
+                        queuedCertificateRotations.remove(kubernetesCluster.getId());
+                    }
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            queuedCertificateRotations.remove(kubernetesCluster.getId());
+            logger.warn("Unable to queue the automatic certificate renewal of Kubernetes cluster {}", kubernetesCluster, e);
+        }
+    }
+
+    /** The cluster may have changed while the renewal waited for a thread, e.g. been renewed through the API. */
+    protected void runQueuedAutomaticRotation(long kubernetesClusterId, long queuedAt) {
+        KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(kubernetesClusterId);
+        if (kubernetesCluster == null || !KubernetesCluster.State.Running.equals(kubernetesCluster.getState())) {
+            logger.info("Skipping the queued automatic certificate renewal of Kubernetes cluster {}, it is no longer Running", kubernetesClusterId);
+            return;
+        }
+        Long lastSuccess = getLongDetail(kubernetesClusterId, KubernetesClusterCertificateWorker.ROTATION_SUCCEEDED_DETAIL);
+        Long lastFailure = getLongDetail(kubernetesClusterId, KubernetesClusterCertificateWorker.ROTATION_FAILED_DETAIL);
+        if ((lastSuccess != null && lastSuccess >= queuedAt) || (lastFailure != null && lastFailure >= queuedAt)) {
+            logger.info("Skipping the queued automatic certificate renewal of Kubernetes cluster {}, it was rotated meanwhile", kubernetesCluster);
+            return;
+        }
+        runAutomaticRotation(kubernetesCluster);
+    }
+
+    protected void runAutomaticRotation(KubernetesCluster kubernetesCluster) {
+        KubernetesClusterCertificateWorker rotationWorker = createCertificateWorker(kubernetesCluster);
+        rotationWorker.setAutomatic(true);
+        try {
+            rotationWorker.rotateCertificates();
+        } catch (Exception e) {
+            logger.warn("Automatic certificate renewal of Kubernetes cluster {} failed", kubernetesCluster, e);
+        }
+    }
+
+    /** Alerts, at most once a day, when the expiry of no control node could be checked, so expiry can't go unnoticed */
+    protected void alertOnFailedCertificateCheck(KubernetesCluster kubernetesCluster, KubernetesClusterCertificateWorker worker,
+                                                 CertificateExpiryReport report, Date now) {
+        if (report.getUncheckedNodes().isEmpty()) {
+            return;
+        }
+        Long lastAlert = getLongDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.CERTIFICATE_CHECK_FAILED_ALERT_DETAIL);
+        if (lastAlert != null && now.getTime() - lastAlert < TimeUnit.DAYS.toMillis(1)) {
+            return;
+        }
+        String subject = String.format("Unable to check the certificate expiry of Kubernetes cluster %s", kubernetesCluster.getName());
+        worker.sendAlert(subject, String.format("%s: none of its control nodes %s could be checked over SSH. Its certificates are not watched " +
+                "or renewed automatically until they can.", subject, report.getUncheckedNodes()));
+        kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.CERTIFICATE_CHECK_FAILED_ALERT_DETAIL,
+                String.valueOf(now.getTime()), false);
+    }
+
+    protected void alertOnCertificateExpiry(KubernetesCluster kubernetesCluster, KubernetesClusterCertificateWorker worker, CertificateExpiry expiry,
+                                            List<Integer> thresholds, String alertDetail, Date now, String what, String advice) {
+        if (expiry == null) {
+            return;
+        }
+        long daysLeft = KubernetesClusterCertificateUtil.daysUntil(expiry.getExpires(), now);
+        KubernetesClusterDetailsVO alertState = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), alertDetail);
+        Integer lastAlerted = KubernetesClusterCertificateUtil.getLastAlertedThreshold(alertState == null ? null : alertState.getValue(), expiry.getExpires());
+        Integer threshold = KubernetesClusterCertificateUtil.getThresholdToAlert(daysLeft, thresholds, lastAlerted);
+        if (threshold == null) {
+            return;
+        }
+        String subject = daysLeft < 0 ?
+                String.format("A %s of Kubernetes cluster %s has expired", what, kubernetesCluster.getName()) :
+                String.format("A %s of Kubernetes cluster %s expires in %d days", what, kubernetesCluster.getName(), daysLeft);
+        String body = String.format("%s: %s expires on %s. %s", subject, expiry.getName(), expiry.getExpires(), advice);
+        worker.sendAlert(subject, body);
+        worker.recordEvent(KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CERTIFICATES_EXPIRY, EventVO.LEVEL_WARN, body);
+        kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), alertDetail,
+                KubernetesClusterCertificateUtil.buildAlertState(expiry.getExpires(), threshold), false);
     }
 
     // checks if Kubernetes cluster is in desired state
@@ -3003,8 +3359,27 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         _gcExecutor.scheduleWithFixedDelay(new KubernetesClusterGarbageCollector(), 300, 300, TimeUnit.SECONDS);
         _stateScanner.scheduleWithFixedDelay(new KubernetesClusterStatusScanner(), 300, 30, TimeUnit.SECONDS);
+        // Separate from the status scanner: SSH checks of many clusters take a while and must not hold up its 30s passes
+        _certificateScanner.scheduleWithFixedDelay(new KubernetesClusterCertificateScanner(), 600, CERTIFICATE_SCANNER_INTERVAL_SECONDS, TimeUnit.SECONDS);
 
         return true;
+    }
+
+    @Override
+    public boolean stop() {
+        // running rotations are left to finish; one cut short is recovered by the scanner after a restart
+        if (_certificateScanner != null) {
+            _certificateScanner.shutdown();
+        }
+        if (_certificateRotationExecutor != null) {
+            // renewals still waiting for a thread must not start now; they are scheduled again after the restart
+            if (_certificateRotationExecutor instanceof ThreadPoolExecutor) {
+                ((ThreadPoolExecutor) _certificateRotationExecutor).getQueue().clear();
+            }
+            queuedCertificateRotations.clear();
+            _certificateRotationExecutor.shutdown();
+        }
+        return super.stop();
     }
 
     private void createNetworkOfferingForKubernetes(String offeringName, String offeringDesc, Network.Provider extNetProvider, boolean forVpc) {
@@ -3063,6 +3438,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         _configParams = params;
         _gcExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Kubernetes-Cluster-Scavenger"));
         _stateScanner = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Kubernetes-Cluster-State-Scanner"));
+        _certificateScanner = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Kubernetes-Cluster-Certificate-Scanner"));
+        _certificateRotationExecutor = Executors.newFixedThreadPool(CERTIFICATE_ROTATION_THREADS, new NamedThreadFactory("Kubernetes-Cluster-Certificate-Rotation"));
 
         return true;
     }
@@ -3089,7 +3466,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             KubernetesControlNodeInstallReattempts,
             KubernetesWorkerNodeInstallAttemptWait,
             KubernetesWorkerNodeInstallReattempts,
-            KubernetesEtcdNodeStartPort
+            KubernetesEtcdNodeStartPort,
+            KubernetesClusterCertificateCheckInterval,
+            KubernetesClusterCertificateExpiryAlertDays,
+            KubernetesClusterCertificateAutoRenewEnabled,
+            KubernetesClusterCertificateAutoRenewDays,
+            KubernetesClusterCertificateRotationTimeout
         };
     }
 }
