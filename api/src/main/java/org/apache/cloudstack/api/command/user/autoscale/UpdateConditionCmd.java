@@ -49,7 +49,18 @@ public class UpdateConditionCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ConditionResponse.class, required = true, description = "The ID of the condition.")
     private Long id;
 
-    @Parameter(name = ApiConstants.RELATIONAL_OPERATOR, type = CommandType.STRING, required = true, description = "Relational Operator to be used with threshold. Valid values are EQ, GT, LT, GE, LE.")
+    @Parameter(
+        name = ApiConstants.RELATIONAL_OPERATOR,
+        type = CommandType.STRING,
+        required = true,
+        description = "Relational Operator to be used with threshold. Valid values are EQ, GT, LT, GE, LE.",
+        allowedValues = {
+                "EQ",
+                "GT",
+                "LT",
+                "GE",
+                "LE"
+        })
     private String relationalOperator;
 
     @Parameter(name = ApiConstants.THRESHOLD, type = CommandType.LONG, required = true, description = "Value for which the Counter will be evaluated with the Operator selected.")
