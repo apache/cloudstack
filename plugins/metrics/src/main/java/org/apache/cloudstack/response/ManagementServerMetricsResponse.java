@@ -20,6 +20,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.MetricConstants;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
+import org.apache.cloudstack.utils.NumberFormatUtils;
 
 import java.util.Date;
 
@@ -206,6 +207,6 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     }
 
     public void setCpuLoad(double cpuLoad) {
-        this.cpuLoad = String.format("%.2f %%",cpuLoad);
+        this.cpuLoad = NumberFormatUtils.format("%.2f %%",cpuLoad);
     }
 }

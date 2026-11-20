@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.text.DecimalFormat;
+import java.util.Locale;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,8 +30,6 @@ public class StatsResponseTest {
 
     @Spy
     StatsResponse statsResponseMock;
-
-    final char decimalSeparator = ((DecimalFormat) DecimalFormat.getInstance()).getDecimalFormatSymbols().getDecimalSeparator();
 
     @Test
     public void setDiskIOReadTestWithAnyInput() {
@@ -106,7 +104,7 @@ public class StatsResponseTest {
     @Test
     public void setNetworkKbsReadTestWithInputNotNull() {
         Long expectedNetworkKbsRead = Long.valueOf("100");
-        String expectedNetworkRead = String.format("0%s10 MiB", decimalSeparator); // the actual result is 0.097 but the value is rounded to 0.10
+        String expectedNetworkRead = "0.10 MiB"; // the actual result is 0.097 but the value is rounded to 0.10
 
         statsResponseMock.setNetworkKbsRead(expectedNetworkKbsRead);
 
@@ -125,11 +123,26 @@ public class StatsResponseTest {
     @Test
     public void setNetworkKbsWriteTestWithInputNotNull() {
         Long expectedNetworkKbsWrite = Long.valueOf("100");
-        String expectedNetworkWrite = String.format("0%s10 MiB", decimalSeparator); // the actual result is 0.097 but the value is rounded to 0.10
+        String expectedNetworkWrite = "0.10 MiB"; // the actual result is 0.097 but the value is rounded to 0.10
 
         statsResponseMock.setNetworkKbsWrite(expectedNetworkKbsWrite);
 
         Assert.assertEquals(expectedNetworkKbsWrite, statsResponseMock.networkKbsWrite);
         Assert.assertEquals(expectedNetworkWrite, statsResponseMock.networkWrite);
+    }
+
+    @Test
+    public void setNetworkKbsUsesDotAsDecimalSeparatorRegardlessOfDefaultLocale() {
+        Locale originalLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.GERMANY);
+            statsResponseMock.setNetworkKbsRead(100L);
+            statsResponseMock.setNetworkKbsWrite(100L);
+
+            Assert.assertEquals("0.10 MiB", statsResponseMock.networkRead);
+            Assert.assertEquals("0.10 MiB", statsResponseMock.networkWrite);
+        } finally {
+            Locale.setDefault(originalLocale);
+        }
     }
 }

@@ -19,6 +19,7 @@ package org.apache.cloudstack.response;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.utils.NumberFormatUtils;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -56,37 +57,37 @@ public class VmMetricsResponse extends UserVmResponse {
 
     public void setCpuTotal(final Integer cpuNumber, final Integer cpuSpeed) {
         if (cpuNumber != null && cpuSpeed != null) {
-            this.cpuTotal = String.format("%.1f Ghz", cpuNumber * cpuSpeed / 1000.0);
+            this.cpuTotal = NumberFormatUtils.format("%.1f Ghz", cpuNumber * cpuSpeed / 1000.0);
         }
     }
 
     public void setMemTotal(final Integer memory) {
         if (memory != null) {
-            this.memTotal = String.format("%.2f GiB", memory / 1024.0);
+            this.memTotal = NumberFormatUtils.format("%.2f GiB", memory / 1024.0);
         }
     }
 
     public void setNetworkRead(final Long networkReadKbs) {
         if (networkReadKbs != null) {
-            this.networkRead = String.format("%.2f MiB", networkReadKbs / 1024.0);
+            this.networkRead = NumberFormatUtils.format("%.2f MiB", networkReadKbs / 1024.0);
         }
     }
 
     public void setNetworkWrite(final Long networkWriteKbs) {
         if (networkWriteKbs != null) {
-            this.networkWrite = String.format("%.2f MiB", networkWriteKbs / 1024.0);
+            this.networkWrite = NumberFormatUtils.format("%.2f MiB", networkWriteKbs / 1024.0);
         }
     }
 
     public void setDiskRead(final Long diskReadKbs) {
         if (diskReadKbs != null) {
-            this.diskRead = String.format("%.2f MiB", diskReadKbs / 1024.0);
+            this.diskRead = NumberFormatUtils.format("%.2f MiB", diskReadKbs / 1024.0);
         }
     }
 
     public void setDiskWrite(final Long diskWriteKbs) {
         if (diskWriteKbs != null) {
-            this.diskWrite = String.format("%.2f MiB", diskWriteKbs / 1024.0);
+            this.diskWrite = NumberFormatUtils.format("%.2f MiB", diskWriteKbs / 1024.0);
         }
     }
 

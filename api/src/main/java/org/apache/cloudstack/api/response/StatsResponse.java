@@ -20,6 +20,7 @@ import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.utils.NumberFormatUtils;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -90,6 +91,10 @@ public class StatsResponse extends BaseResponse {
         this.cpuUsed = cpuUsed;
     }
 
+    public String getCpuUsed() {
+        return cpuUsed;
+    }
+
     public void setDiskIORead(Long diskIORead) {
         this.diskIORead = diskIORead;
         accumulateDiskIopsTotal(diskIORead);
@@ -123,14 +128,14 @@ public class StatsResponse extends BaseResponse {
     public void setNetworkKbsRead(Long networkKbsRead) {
         this.networkKbsRead = networkKbsRead;
         if (networkKbsRead != null) {
-            this.networkRead = String.format("%.2f MiB", networkKbsRead / 1024.0);
+            this.networkRead = NumberFormatUtils.format("%.2f MiB", networkKbsRead / 1024.0);
         }
     }
 
     public void setNetworkKbsWrite(Long networkKbsWrite) {
         this.networkKbsWrite = networkKbsWrite;
         if (networkKbsWrite != null) {
-            this.networkWrite = String.format("%.2f MiB", networkKbsWrite / 1024.0);
+            this.networkWrite = NumberFormatUtils.format("%.2f MiB", networkKbsWrite / 1024.0);
         }
     }
 

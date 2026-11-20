@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -81,6 +82,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.NumberFormatUtils;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -540,14 +542,14 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
 
 
     /**
-     * Creates a {@code Set<StatsResponse>} from a given {@code List<VmStatsVO>}.
+     * Creates a {@code List<StatsResponse>} from a given {@code List<VmStatsVO>}.
      *
      * @param vmStatsList the list of VM stats.
-     * @return the set of responses that was created.
+     * @return the list of responses that was created.
      */
     protected List<StatsResponse> createStatsResponse(List<VmStatsVO> vmStatsList) {
-        List<StatsResponse> statsResponseList = new ArrayList<StatsResponse>();
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        List<StatsResponse> statsResponseList = new ArrayList<>();
+        DecimalFormat decimalFormat = NumberFormatUtils.decimalFormat("#.##");
         for (VmStatsVO vmStats : vmStatsList) {
             StatsResponse response = new StatsResponse();
             response.setTimestamp(vmStats.getTimestamp());
@@ -995,10 +997,10 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         metricsResponse.setThreadsTerminatedCount(status.getThreadsTerminatedCount());
         metricsResponse.setThreadsTotalCount(status.getThreadsTotalCount());
         metricsResponse.setThreadsWaitingCount(status.getThreadsWaitingCount());
-        metricsResponse.setSystemMemoryTotal(toReadableSize(status.getSystemMemoryTotal()));
-        metricsResponse.setSystemMemoryFree(toReadableSize(status.getSystemMemoryFree()));
+        metricsResponse.setSystemMemoryTotal(toReadableSize(status.getSystemMemoryTotal(), Locale.ROOT));
+        metricsResponse.setSystemMemoryFree(toReadableSize(status.getSystemMemoryFree(), Locale.ROOT));
 // we are not adding metricsResponse.setSystemMemoryUsed(toReadableSize(status.getSystemMemoryUsed())); as the value is confusing and arguably wrong
-        metricsResponse.setSystemMemoryVirtualSize(toReadableSize(status.getSystemMemoryVirtualSize()));
+        metricsResponse.setSystemMemoryVirtualSize(toReadableSize(status.getSystemMemoryVirtualSize(), Locale.ROOT));
         metricsResponse.setLogInfo(status.getLogInfo());
         metricsResponse.setSystemTotalCpuCycles(status.getSystemTotalCpuCycles());
         metricsResponse.setSystemLoadAverages(status.getSystemLoadAverages());

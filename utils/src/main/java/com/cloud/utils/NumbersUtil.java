@@ -79,6 +79,10 @@ public class NumbersUtil {
     protected static final long TB = 1024 * GB;
 
     public static String toReadableSize(Long bytes) {
+        return toReadableSize(bytes, Locale.getDefault());
+    }
+
+    public static String toReadableSize(Long bytes, Locale locale) {
 
         if (bytes == null){
             return "null";
@@ -88,7 +92,7 @@ public class NumbersUtil {
             return Long.toString(bytes) + " bytes";
         }
         StringBuilder builder = new StringBuilder();
-        Formatter format = new Formatter(builder, Locale.getDefault());
+        Formatter format = new Formatter(builder, locale);
         if (bytes < MB) {
             format.format("%.2f KB", (float)bytes / (float)KB);
         } else if (bytes < GB) {

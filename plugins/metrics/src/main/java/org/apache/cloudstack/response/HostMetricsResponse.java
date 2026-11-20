@@ -22,6 +22,7 @@ import java.text.ParseException;
 
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
+import org.apache.cloudstack.utils.NumberFormatUtils;
 
 import com.cloud.serializer.Param;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -118,19 +119,19 @@ public class HostMetricsResponse extends HostResponse {
 
     public void setCpuTotal(final Integer cpuNumber, final Long cpuSpeed) {
         if (cpuNumber != null && cpuSpeed != null) {
-            this.cpuTotal = String.format("%.2f Ghz", cpuNumber * cpuSpeed / 1000.0);
+            this.cpuTotal = NumberFormatUtils.format("%.2f Ghz", cpuNumber * cpuSpeed / 1000.0);
         }
     }
 
     public void setCpuUsed(final String cpuUsed, final Integer cpuNumber, final Long cpuSpeed) {
         if (cpuUsed != null && cpuNumber != null && cpuSpeed != null) {
-            this.cpuUsed = String.format("%.2f Ghz", parseCPU(cpuUsed) * cpuNumber * cpuSpeed / (100.0 * 1000.0));
+            this.cpuUsed = NumberFormatUtils.format("%.2f Ghz", parseCPU(cpuUsed) * cpuNumber * cpuSpeed / (100.0 * 1000.0));
         }
     }
 
     public void setCpuAllocated(final String cpuAllocated, final Integer cpuNumber, final Long cpuSpeed) {
         if (cpuAllocated != null && cpuNumber != null && cpuSpeed != null) {
-            this.cpuAllocated = String.format("%.2f Ghz", parseCPU(cpuAllocated) * cpuNumber * cpuSpeed / (100.0 * 1000.0));
+            this.cpuAllocated = NumberFormatUtils.format("%.2f Ghz", parseCPU(cpuAllocated) * cpuNumber * cpuSpeed / (100.0 * 1000.0));
         }
     }
 
@@ -140,31 +141,31 @@ public class HostMetricsResponse extends HostResponse {
 
     public void setMemTotal(final Long memTotal) {
         if (memTotal != null) {
-            this.memTotal = String.format("%.2f GB", memTotal / (1024.0 * 1024.0 * 1024.0));
+            this.memTotal = NumberFormatUtils.format("%.2f GB", memTotal / (1024.0 * 1024.0 * 1024.0));
         }
     }
 
     public void setMemUsed(final Long memUsed) {
         if (memUsed != null) {
-            this.memUsed = String.format("%.2f GB", memUsed / (1024.0 * 1024.0 * 1024.0));
+            this.memUsed = NumberFormatUtils.format("%.2f GB", memUsed / (1024.0 * 1024.0 * 1024.0));
         }
     }
 
     public void setMemAllocated(final Long memAllocated) {
         if (memAllocated != null) {
-            this.memAllocated = String.format("%.2f GB", memAllocated / (1024.0 * 1024.0 * 1024.0));
+            this.memAllocated = NumberFormatUtils.format("%.2f GB", memAllocated / (1024.0 * 1024.0 * 1024.0));
         }
     }
 
     public void setNetworkRead(final Long networkReadKbs) {
         if (networkReadKbs != null) {
-            this.networkRead = String.format("%.2f GB", networkReadKbs / (1024.0 * 1024.0));
+            this.networkRead = NumberFormatUtils.format("%.2f GB", networkReadKbs / (1024.0 * 1024.0));
         }
     }
 
     public void setNetworkWrite(final Long networkWriteKbs) {
         if (networkWriteKbs != null) {
-            this.networkWrite = String.format("%.2f GB", networkWriteKbs / (1024.0 * 1024.0));
+            this.networkWrite = NumberFormatUtils.format("%.2f GB", networkWriteKbs / (1024.0 * 1024.0));
         }
     }
 
@@ -217,7 +218,7 @@ public class HostMetricsResponse extends HostResponse {
     }
 
     private Double parseCPU(String cpu) {
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        DecimalFormat decimalFormat = NumberFormatUtils.decimalFormat("#.##");
         try {
             return decimalFormat.parse(cpu).doubleValue();
         } catch (ParseException e) {
