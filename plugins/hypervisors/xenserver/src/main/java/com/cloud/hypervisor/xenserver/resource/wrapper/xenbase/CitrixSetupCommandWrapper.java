@@ -104,7 +104,7 @@ public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand
                 for (final PIF pif : hostPifs) {
                     final PIF.Record rec = pif.getRecord(conn);
                     if (rec.management) {
-                        if (rec.VLAN != null && rec.VLAN != -1) {
+                        if (!citrixResourceBase.isVlanAllowedForManagementPif(rec)) {
                             final String msg =
                                     new StringBuilder("Unsupported configuration.  Management network is on a VLAN.  host=").append(citrixResourceBase.getHost().getUuid())
                                     .append("; pif=")
@@ -143,7 +143,7 @@ public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand
                                 if (logger.isDebugEnabled()) {
                                     logger.debug("Found a network called cloud-private. host=" + citrixResourceBase.getHost().getUuid() + ";  Network=" + network.uuid + "; pif=" + pr.uuid);
                                 }
-                                if (pr.VLAN != null && pr.VLAN != -1) {
+                                if (!citrixResourceBase.isVlanAllowedForManagementPif(pr)) {
                                     final String msg =
                                             new StringBuilder("Unsupported configuration.  Network cloud-private is on a VLAN.  Network=").append(network.uuid)
                                             .append(" ; pif=")
