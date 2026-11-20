@@ -82,7 +82,6 @@ import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
-import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.lb.LoadBalancingRulesService;
@@ -129,8 +128,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected ClusterDetailsDao clusterDetailsDao;
     @Inject
     protected HostDao hostDao;
-    @Inject
-    protected FirewallRulesDao firewallRulesDao;
     @Inject
     protected NetworkACLService networkACLService;
     @Inject
@@ -831,6 +828,14 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds, vmIdPortMap);
         } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+
+        // The VPC firewall drops traffic to the public IP unless a firewall rule allows it, open the
+        // API and SSH ports as for isolated networks. Create them after the load balancing and port
+        // forwarding rules: applying firewall rules on a VPC public IP does not associate the IP with
+        // the VPC virtual router, the first load balancing or port forwarding rule does.
+        if (isVpcFirewallEnabled(network)) {
+            createFirewallRules(publicIp, clusterVMIds, true);
         }
     }
 

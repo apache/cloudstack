@@ -173,6 +173,14 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         if (publicIp == null) {
             throw new ManagementServerException(String.format("No public IP addresses found for VPC tier : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
         }
+        boolean vpcFirewallEnabled = isVpcFirewallEnabled(network);
+        if (vpcFirewallEnabled) {
+            // Remove the existing SSH firewall rule, it is recreated below for the new node count
+            FirewallRule firewallRule = removeSshFirewallRule(publicIp, network.getId());
+            if (firewallRule == null) {
+                logger.warn("SSH firewall rule not found for Kubernetes cluster: {}. It may have been manually deleted or modified.", kubernetesCluster.getName());
+            }
+        }
         try {
             removePortForwardingRules(publicIp, network, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMIds.size() - 1);
         } catch (ResourceUnavailableException e) {
@@ -183,6 +191,10 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds, vmIdPortMap);
         } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+        if (vpcFirewallEnabled) {
+            // After the port forwarding rules, as when the cluster is created
+            addFirewallRulesForNodes(publicIp, clusterVMIds.size());
         }
     }
 
