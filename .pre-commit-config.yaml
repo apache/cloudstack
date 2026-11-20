@@ -43,7 +43,7 @@ repos:
         files: (?i)\.zip$
         exclude: ^core/src/test/resources/vhds/test\.vhd\.zip$
   - repo: https://github.com/oxipng/oxipng
-    rev: 340cd9878d8d8289f09fa101b48a8f5f0b7783f4 # frozen: v10.2.0
+    rev: 36f3ef8aac65ecf1761739ea2f2e530281f1312b # frozen: v10.2.1
     hooks:
       - id: oxipng
         name: run oxipng
@@ -193,12 +193,12 @@ repos:
         name: run codespell
         description: Check spelling with codespell
   - repo: https://github.com/pycqa/flake8
-    rev: c48217e1fc006c2dddd14df54e83b67da15de5cd  # frozen: 7.3.0
+    rev: 1c7fec1973ed3a7c192dbe1e96906fbbd1dbe49e  # frozen: 7.5.0
     hooks:
       - id: flake8
         args: [--config, .github/linters/.flake8]
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: 5b5dddc4fb0f83c3ea1fc5616fa63e115dce83e0 # frozen: v0.49.1
+    rev: cbcdc463be5464e25e3e955a511599a67b9b987f # frozen: v0.50.0
     hooks:
       - id: markdownlint
         name: run markdownlint
@@ -217,7 +217,7 @@ repos:
         files: \.ya?ml$
         exclude: ^.*k8s-.*\.ya?ml$|^.github/workflows/.*\.lock\.ya?ml$
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 12e63946db2c5cfcc9030fac21c3883ba88c6ed8 # frozen: 0.38.0
+    rev: a76b92851fc9eede9f9bc4073eb55202f34eb0df # frozen: 0.39.0
     hooks:
       - id: check-dependabot
         name: validate dependabot config
