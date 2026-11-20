@@ -17,6 +17,7 @@
 package com.cloud.offering;
 
 import java.util.Date;
+import java.util.Set;
 
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
@@ -40,8 +41,26 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     }
 
     public enum Detail {
-        InternalLbProvider, PublicLbProvider, servicepackageuuid, servicepackagedescription, PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RelatedNetworkOffering, domainid, zoneid, pvlanType, internetProtocol
+        InternalLbProvider,
+        PublicLbProvider,
+        servicepackageuuid,
+        servicepackagedescription,
+        PromiscuousMode,
+        MacAddressChanges,
+        ForgedTransmits,
+        MacLearning,
+        NsxIpDiscoveryProfileId,
+        NsxMacDiscoveryProfileId,
+        NsxSegmentSecurityProfileId,
+        RelatedNetworkOffering,
+        domainid,
+        zoneid,
+        pvlanType,
+        internetProtocol
     }
+
+    Set<Detail> NSX_SEGMENT_PROFILE_DETAILS = Set.of(Detail.NsxIpDiscoveryProfileId,
+            Detail.NsxMacDiscoveryProfileId, Detail.NsxSegmentSecurityProfileId);
 
     public enum NetworkMode {
         NATTED,
