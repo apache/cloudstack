@@ -22,7 +22,7 @@ import math
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (VirtualMachine, Volume, DiskOffering, ServiceOffering, Template)
-from marvin.lib.common import (get_zone, get_domain, list_storage_pools)
+from marvin.lib.common import (get_zone, get_domain, get_test_template, list_storage_pools)
 from nose.plugins.attrib import attr
 
 _multiprocess_shared_ = True
@@ -51,11 +51,8 @@ class TestRestoreVM(cloudstackTestCase):
         cls.disk_offering = DiskOffering.create(cls.apiclient, cls.services["disk_offering"], disksize='8')
         cls._cleanup.append(cls.disk_offering)
 
-        template_t1 = Template.register(cls.apiclient, cls.services["test_templates"][
-            cls.hypervisor.lower() if cls.hypervisor.lower() != 'simulator' else 'xenserver'],
-                                        zoneid=cls.zone.id, hypervisor=cls.hypervisor.lower())
-        cls._cleanup.append(template_t1)
-        template_t1.download(cls.apiclient)
+        # the first template is the shared public test template, the restore needs another one
+        template_t1 = get_test_template(cls.apiclient, cls.zone.id, cls.hypervisor)
         cls.template_t1 = Template.list(cls.apiclient, templatefilter='all', id=template_t1.id)[0]
 
         template_t2 = Template.register(cls.apiclient, cls.services["test_templates"][

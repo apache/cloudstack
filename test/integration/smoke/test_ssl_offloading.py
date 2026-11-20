@@ -22,7 +22,6 @@ from marvin.lib.base import (Account,
                              Project,
                              UserData,
                              SslCertificate,
-                             Template,
                              NetworkOffering,
                              ServiceOffering,
                              VirtualMachine,
@@ -31,7 +30,7 @@ from marvin.lib.base import (Account,
                              VpcOffering,
                              PublicIPAddress,
                              LoadBalancerRule)
-from marvin.lib.common import (get_domain, get_zone, get_test_template)
+from marvin.lib.common import (get_domain, get_zone, get_template, get_test_template)
 from nose.plugins.attrib import attr
 
 import os
@@ -212,17 +211,14 @@ class TestSslOffloading(cloudstackTestCase):
                 cls.zone.id,
                 cls.hypervisor)
         else:
-            cls.template = Template.register(
+            # the built-in template is a Debian 13 cloud image with cloud-init
+            cls.template = get_template(
                 cls.apiclient,
-                cls.services["test_templates_cloud_init"][cls.hypervisor.lower()],
-                zoneid=cls.zone.id,
-                hypervisor=cls.hypervisor,
-            )
-            cls.template.download(cls.apiclient)
-            cls._cleanup.append(cls.template)
+                cls.zone.id,
+                hypervisor=cls.hypervisor)
 
         if cls.template == FAILED:
-            assert False, "get_test_template() failed to return template"
+            assert False, "failed to get the template"
 
         # Create service offering
         cls.service_offering = ServiceOffering.create(

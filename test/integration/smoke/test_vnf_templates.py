@@ -28,7 +28,7 @@ from marvin.lib.base import (Account,
                              VnfAppliance,
                              VnfTemplate,
                              Zone)
-from marvin.lib.common import get_zone, get_template
+from marvin.lib.common import get_zone, get_suitable_test_template
 from nose.plugins.attrib import attr
 
 import time
@@ -55,7 +55,7 @@ class TestVnfTemplates(cloudstackTestCase):
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.zone = Zone(zone.__dict__)
-        cls.template = get_template(cls.apiclient, cls.zone.id)
+        cls.template = get_suitable_test_template(cls.apiclient, cls.zone.id)
 
         cls.domain = Domain.create(
             cls.apiclient,

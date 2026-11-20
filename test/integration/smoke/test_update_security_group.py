@@ -41,7 +41,7 @@ from marvin.lib.base import (PhysicalNetwork,
                              SecurityGroup)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
+                               get_suitable_test_template,
                                list_virtual_machines,
                                list_routers,
                                list_hosts,
@@ -63,7 +63,7 @@ class TestUpdateSecurityGroup(cloudstackTestCase):
 
         zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.zone = Zone(zone.__dict__)
-        cls.template = get_template(cls.apiclient, cls.zone.id)
+        cls.template = get_suitable_test_template(cls.apiclient, cls.zone.id)
         cls._cleanup = []
 
         if str(cls.zone.securitygroupsenabled) != "True":
