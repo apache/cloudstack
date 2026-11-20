@@ -216,7 +216,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
                     "Example: cniconfigdetails[0].key=accesskey&cniconfigdetails[0].value=s389ddssaa&" +
                     "cniconfigdetails[1].key=secretkey&cniconfigdetails[1].value=8dshfsss",
             since = "4.21.0")
-    private Map cniConfigDetails;
+    private Map<Integer, Map<String, String>> cniConfigDetails;
 
     @Parameter(name = ApiConstants.ENABLE_CSI, type = CommandType.BOOLEAN, description = "if true, setups up CloudStack CSI driver", since = "4.22.0")
     private Boolean enableCsi;
@@ -381,7 +381,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
         return asNumber;
     }
 
-    public Map getCniConfigDetails() {
+    public Map<String, String> getCniConfigDetails() {
         return convertDetailsToMap(cniConfigDetails);
     }
 

@@ -121,7 +121,7 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
 
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "Additional key/value details tied with network offering", since = "4.2.0")
-    private Map details;
+    private Map<NetworkOffering.Detail, String> details;
 
     @SerializedName(ApiConstants.EGRESS_DEFAULT_POLICY)
     @Param(description = "True if guest network default egress policy is allow; false if default egress policy is deny")
@@ -255,7 +255,7 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
         this.isPersistent = isPersistent;
     }
 
-    public void setDetails(Map details) {
+    public void setDetails(Map<NetworkOffering.Detail, String> details) {
         this.details = details;
     }
 

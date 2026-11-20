@@ -168,7 +168,7 @@ public abstract class NetworkOfferingBaseCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.2.0", description = "Network offering details in key/value pairs."
             + " Supported keys are internallbprovider/publiclbprovider with service provider as a value, and"
             + " promiscuousmode/macaddresschanges/forgedtransmits with true/false as value to accept/reject the security settings if available for a nic/portgroup")
-    protected Map details;
+    protected Map<Integer, Map<String, String>> details;
 
     @Parameter(name = ApiConstants.EGRESS_DEFAULT_POLICY,
             type = CommandType.BOOLEAN,

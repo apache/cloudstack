@@ -70,7 +70,7 @@ public class ResetVMUserDataCmd extends BaseCmd implements UserCmd {
     private Long userdataId;
 
     @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "Used to specify the parameters values for the variables in userdata.")
-    private Map userdataDetails;
+    private Map<Integer, Map<String, String>> userdataDetails;
 
     //Owner information
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional Account for the Instance. Must be used with domainId.")

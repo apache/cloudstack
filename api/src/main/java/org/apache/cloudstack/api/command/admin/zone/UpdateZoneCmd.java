@@ -76,7 +76,7 @@ public class UpdateZoneCmd extends BaseCmd {
     private String allocationState;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "The details for the Zone")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     @Parameter(name = ApiConstants.DHCP_PROVIDER, type = CommandType.STRING, description = "The DHCP Provider for the Zone")
     private String dhcpProvider;
@@ -143,7 +143,7 @@ public class UpdateZoneCmd extends BaseCmd {
         return allocationState;
     }
 
-    public Map getDetails() {
+    public Map<Integer, Map<String, String>> getDetails() {
         return details;
     }
 

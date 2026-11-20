@@ -51,7 +51,7 @@ public class AddObjectStoragePoolCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DETAILS,
                type = CommandType.MAP,
                description = "the details for the object store. Example: details[0].key=accesskey&details[0].value=s389ddssaa&details[1].key=secretkey&details[1].value=8dshfsss")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "the tags for the storage pool")
     private String tags;
@@ -103,7 +103,7 @@ public class AddObjectStoragePoolCmd extends BaseCmd {
         this.providerName = providerName;
     }
 
-    public void setDetails(Map<String, String> details) {
+    public void setDetails(Map<Integer, Map<String, String>> details) {
         this.details = details;
     }
 

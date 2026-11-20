@@ -23,6 +23,7 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 
 public final class HostResponseTest extends TestCase {
@@ -77,6 +78,24 @@ public final class HostResponseTest extends TestCase {
 
         assertTrue(details != actualDetails);
         assertEquals(expectedDetails, actualDetails);
+
+    }
+
+    @Test
+    public void testSetDetailsExtractsCapabilityFlags() {
+
+        final HostResponse hostResponse = new HostResponse();
+        final Map<String, String> details = new HashMap<>();
+
+        details.put(VALID_KEY, VALID_VALUE);
+        details.put(Host.HOST_VOLUME_ENCRYPTION, "true");
+        details.put(Host.HOST_INSTANCE_CONVERSION, "true");
+
+        hostResponse.setDetails(details, Hypervisor.HypervisorType.KVM);
+
+        assertEquals(Boolean.TRUE, hostResponse.getEncryptionSupported());
+        assertEquals(Boolean.TRUE, hostResponse.getInstanceConversionSupported());
+        assertEquals(Map.of(VALID_KEY, VALID_VALUE), hostResponse.getDetails());
 
     }
 }

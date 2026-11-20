@@ -54,7 +54,7 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
     private String osDisplayName;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = false, description = "Map of (key/value pairs)")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     @Parameter(name="forDisplay", type=CommandType.BOOLEAN, description="whether this guest OS is available for end users", authorized = {RoleType.Admin})
     private Boolean display;

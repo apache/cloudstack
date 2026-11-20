@@ -75,7 +75,7 @@ public class UpdateHostCmd extends BaseCmd {
     private String annotation;
 
     @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue", since = "4.21.0")
-    protected Map externalDetails;
+    protected Map<Integer, Map<String, String>> externalDetails;
 
     @Parameter(name = ApiConstants.CLEAN_UP_EXTERNAL_DETAILS,
             type = CommandType.BOOLEAN,

@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,8 +58,8 @@ public final class VolumeForImportResponseTest {
         response.setStoragePoolName(storagePoolName);
         response.setStoragePoolId(storagePoolId);
         response.setChainInfo(chainInfo);
-        Map<String, String> details = new HashMap<>();
-        details.put("key", "value");
+        Map<VolumeOnStorageTO.Detail, String> details = new HashMap<>();
+        details.put(VolumeOnStorageTO.Detail.FILE_FORMAT, "value");
         response.setDetails(details);
 
         Assert.assertEquals(path, response.getPath());

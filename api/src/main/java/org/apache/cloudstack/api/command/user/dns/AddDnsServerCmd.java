@@ -88,7 +88,7 @@ public class AddDnsServerCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using " +
             "format details[i].keyname=keyvalue. Example: details[0].pdnsServerId=localhost")
-    protected Map details;
+    protected Map<Integer, Map<String, String>> details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

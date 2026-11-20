@@ -154,7 +154,7 @@ public class StartVmwareCbtMigrationCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
             description = "optional migration details, including VDDK settings such as vddk.lib.dir, vddk.transports and vddk.thumbprint")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     @Parameter(name = ApiConstants.NIC_NETWORK_LIST, type = CommandType.MAP,
             description = "VM NIC to network id mapping using keys NIC and network")

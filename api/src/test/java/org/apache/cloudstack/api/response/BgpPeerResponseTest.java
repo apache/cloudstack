@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import org.apache.cloudstack.network.BgpPeer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -59,8 +60,8 @@ public final class BgpPeerResponseTest {
         response.setZoneId(zoneId);
         response.setZoneName(zoneName);
         response.setCreated(created);
-        Map<String, String> details = new HashMap<>();
-        details.put("key", "value");
+        Map<BgpPeer.Detail, String> details = new HashMap<>();
+        details.put(BgpPeer.Detail.EBGP_MultiHop, "value");
         response.setDetails(details);
 
         Assert.assertEquals(uuid, response.getId());

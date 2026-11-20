@@ -170,7 +170,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     private Boolean encrypt;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Details to specify disk offering parameters", since = "4.16")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
 
 
