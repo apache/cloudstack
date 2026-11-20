@@ -1109,7 +1109,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Protocol is required");
         }
         String action = (String) ruleMap.getOrDefault(ApiConstants.ACTION, "deny");
-        String trafficType = (String) ruleMap.getOrDefault(ApiConstants.TRAFFIC_TYPE, NetworkACLItem.TrafficType.Ingress);
+        String trafficType = (String) ruleMap.getOrDefault(ApiConstants.TRAFFIC_TYPE, NetworkACLItem.TrafficType.Ingress.toString());
         String forDisplay = (String) ruleMap.getOrDefault(ApiConstants.FOR_DISPLAY, "true");
 
         // Create ACL rule using the service
