@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
@@ -49,6 +50,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.storage.Storage;
@@ -759,6 +761,17 @@ public class LibvirtRestoreBackupCommandWrapperTest {
     }
 
     @Test
+    public void testAttachVolumeOmitsQcow2SubdriverForStorPool() throws Exception {
+        String[] cmd = captureAttachCommand(Storage.StoragePoolType.StorPool);
+        List<String> args = Arrays.asList(cmd);
+
+        // StorPoolStorageAdaptor#createPhysicalDisk always provisions RAW block devices,
+        // declaring qcow2 makes libvirt try to parse the raw data as a qcow2 image.
+        Assert.assertTrue(args.contains("attach-disk"));
+        Assert.assertFalse(args.contains("--subdriver"));
+    }
+
+    @Test
     public void testAttachVolumePassesRbdXmlThroughAFile() throws Exception {
         String[] cmd = captureAttachCommand(Storage.StoragePoolType.RBD);
         List<String> args = Arrays.asList(cmd);
@@ -893,16 +906,19 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         KVMStoragePool linstorPool = Mockito.mock(KVMStoragePool.class);
         lenient().when(linstorPool.newVolumeReadsAsZero("volume-123")).thenReturn(newVolumeReadsAsZero);
+        lenient().when(linstorPool.createPhysicalDisk(eq("volume-123"), any(QemuImg.PhysicalDiskFormat.class),
+                any(Storage.ProvisioningType.class), anyLong(), any())).thenReturn(Mockito.mock(KVMPhysicalDisk.class));
         when(storagePoolMgr.getStoragePool(Storage.StoragePoolType.Linstor, "pool-uuid")).thenReturn(linstorPool);
 
         final List<?>[] ctorArgs = new List<?>[1];
         try (MockedConstruction<QemuImg> qemuMock = mockConstruction(QemuImg.class,
                 (mock, context) -> ctorArgs[0] = context.arguments())) {
-            boolean result = (boolean) method.invoke(wrapper, storagePoolMgr, volumePool,
+            @SuppressWarnings("unchecked")
+            Pair<Boolean, String> result = (Pair<Boolean, String>) method.invoke(wrapper, storagePoolMgr, volumePool,
                     "/dev/drbd/by-res/cs-volume-123/0", "/mnt/backup/root.volume-123.qcow2", 60,
                     createTargetVolume, 1024L);
 
-            Assert.assertTrue(result);
+            Assert.assertTrue(result.first());
             Assert.assertEquals(1, qemuMock.constructed().size());
             QemuImg qemu = qemuMock.constructed().get(0);
             Mockito.verify(qemu).convert(any(QemuImgFile.class), any(QemuImgFile.class));
