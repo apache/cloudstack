@@ -25,6 +25,7 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import com.cloud.upgrade.NetworkRateBackfill;
@@ -66,7 +67,8 @@ public class Upgrade42300to2400Test {
         final Connection conn = Mockito.mock(Connection.class);
 
         final List<Object> constructorArgs = new ArrayList<>();
-        try (MockedConstruction<NetworkRateBackfill> backfills = Mockito.mockConstruction(NetworkRateBackfill.class,
+        try (MockedStatic<DbUpgradeUtils> ignored = Mockito.mockStatic(DbUpgradeUtils.class);
+             MockedConstruction<NetworkRateBackfill> backfills = Mockito.mockConstruction(NetworkRateBackfill.class,
                 (mock, context) -> constructorArgs.addAll(context.arguments()))) {
             upgrade.performDataMigration(conn);
 
