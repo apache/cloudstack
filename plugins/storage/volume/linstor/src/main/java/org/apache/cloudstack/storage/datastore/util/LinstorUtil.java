@@ -46,10 +46,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
@@ -60,6 +62,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -101,6 +104,46 @@ public class LinstorUtil {
         }
         client.discoverHttps();
         return new DevelopersApi(client);
+    }
+
+    /**
+     * The REST API version of the connected controller, e.g. "1.29.1".
+     * @throws ApiException if the controller could not be queried.
+     */
+    public static String getRestApiVersion(DevelopersApi api) throws ApiException {
+        return api.controllerVersion().getRestApiVersion();
+    }
+
+    /**
+     * Check if the connected controller supports the live-migration attach/detach API:
+     * make-available with auto_manage_dual_primary and unmake-available, added with REST API 1.29.0.
+     * @throws ApiException if the controller version could not be queried; callers must not guess
+     *                      an API level then, a later call would pick a different one.
+     */
+    public static boolean supportsLiveMigrateApi(DevelopersApi api) throws ApiException {
+        return isVersionAtLeast(getRestApiVersion(api), 1, 29, 0);
+    }
+
+    static boolean isVersionAtLeast(String version, int major, int minor, int patch) {
+        if (version == null || version.isEmpty()) {
+            return false;
+        }
+        String[] parts = version.split("\\.");
+        try {
+            int maj = Integer.parseInt(parts[0]);
+            int min = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+            int pat = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
+            if (maj != major) {
+                return maj > major;
+            }
+            if (min != minor) {
+                return min > minor;
+            }
+            return pat >= patch;
+        } catch (NumberFormatException nfExc) {
+            LOGGER.warn("Unable to parse controller API version '{}'", version);
+            return false;
+        }
     }
 
     public static String getBestErrorMessage(ApiCallRcList answers) {
@@ -230,6 +273,7 @@ public class LinstorUtil {
         final String backingPool = sp.getProps().get("StorDriver/StorPoolName");
         final String path;
         switch (sp.getProviderKind()) {
+            case LVM:  // thick LVM snapshot LVs use the same naming scheme as thin
             case LVM_THIN:
                 // device-mapper doubles every dash in the VG and LV name, so the VG part needs escaping too
                 final String vgName = backingPool.split("/")[0];
@@ -271,15 +315,89 @@ public class LinstorUtil {
         );
     }
 
+    /**
+     * Diskful storage pools that contribute capacity, counting storage shared by multiple
+     * nodes only once. Nodes accessing the same shared space (e.g. a LUN with a shared LVM
+     * volume group) all report the full capacity of that space, so summing them as-is
+     * multiplies the real capacity by the number of nodes.
+     *
+     * Deduplication uses the free space manager name: node local storage pools get a
+     * per-node name ("node;pool"), pools sharing a space all report the shared space name.
+     */
+    public static List<StoragePool> getCapacityStoragePools(
+            @Nonnull DevelopersApi api, String rscGroupName) throws ApiException {
+        List<StoragePool> storagePools = getRscGroupStoragePools(api, rscGroupName);
+        List<StoragePool> distinct = new ArrayList<>();
+        Set<String> seenSpaces = new HashSet<>();
+        for (StoragePool sp : storagePools) {
+            if (sp.getProviderKind() == ProviderKind.DISKLESS) {
+                continue;
+            }
+            if (StringUtils.isEmpty(sp.getFreeSpaceMgrName()) || seenSpaces.add(sp.getFreeSpaceMgrName())) {
+                distinct.add(sp);
+            }
+        }
+        return distinct;
+    }
+
+    /**
+     * Storage provider kinds that allocate the full volume size up front. Such pools cannot be
+     * over-provisioned: their capacity is the real limit.
+     */
+    private static final Collection<ProviderKind> THICK_PROVIDER_KINDS = Arrays.asList(
+            ProviderKind.LVM, ProviderKind.ZFS, ProviderKind.FILE);
+
+    /**
+     * Check if all storage pools backing the resource group are thickly provisioned.
+     * Unknown/mixed setups are reported as thin, keeping the over-provisioning default.
+     */
+    public static boolean isThicklyProvisioned(String linstorUrl, String rscGroupName, String apiToken,
+                                               boolean insecureSsl) {
+        DevelopersApi api = getLinstorAPI(linstorUrl, apiToken, insecureSsl);
+        try {
+            return isThicklyProvisionedPools(getCapacityStoragePools(api, rscGroupName));
+        } catch (ApiException apiEx) {
+            LOGGER.warn("Unable to query storage pool provider kinds: {}", apiEx.getBestMessage());
+            return false;
+        }
+    }
+
+    static boolean isThicklyProvisionedPools(List<StoragePool> storagePools) {
+        return !storagePools.isEmpty() && storagePools.stream()
+                .allMatch(sp -> THICK_PROVIDER_KINDS.contains(sp.getProviderKind()));
+    }
+
+    private static long sumTotalCapacity(List<StoragePool> storagePools) {
+        return storagePools.stream()
+                .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0L)
+                .sum() * 1024;  // linstor uses KiB
+    }
+
+    private static long sumUsedCapacity(List<StoragePool> storagePools) {
+        return storagePools.stream()
+                .mapToLong(sp -> sp.getTotalCapacity() != null && sp.getFreeCapacity() != null ?
+                        sp.getTotalCapacity() - sp.getFreeCapacity() : 0L)
+                .sum() * 1024;  // linstor uses KiB
+    }
+
+    private static long sumFreeCapacity(List<StoragePool> storagePools) {
+        return storagePools.stream()
+                .mapToLong(sp -> sp.getFreeCapacity() != null ? sp.getFreeCapacity() : 0L)
+                .sum() * 1024;  // linstor uses KiB
+    }
+
+    public static long getFreeCapacityBytes(@Nonnull DevelopersApi api, String rscGroupName) throws ApiException {
+        return sumFreeCapacity(getCapacityStoragePools(api, rscGroupName));
+    }
+
+    public static long getUsedCapacityBytes(@Nonnull DevelopersApi api, String rscGroupName) throws ApiException {
+        return sumUsedCapacity(getCapacityStoragePools(api, rscGroupName));
+    }
+
     public static long getCapacityBytes(String linstorUrl, String rscGroupName, String apiToken, boolean insecureSsl) {
         DevelopersApi linstorApi = getLinstorAPI(linstorUrl, apiToken, insecureSsl);
         try {
-            List<StoragePool> storagePools = getRscGroupStoragePools(linstorApi, rscGroupName);
-
-            return storagePools.stream()
-                .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0L)
-                .sum() * 1024;  // linstor uses kiB
+            return sumTotalCapacity(getCapacityStoragePools(linstorApi, rscGroupName));
         } catch (ApiException apiEx) {
             LOGGER.error(apiEx.getMessage());
             throw new CloudRuntimeException(apiEx);
@@ -289,18 +407,10 @@ public class LinstorUtil {
     public static Pair<Long, Long> getStorageStats(String linstorUrl, String rscGroupName, String apiToken, boolean insecureSsl) {
         DevelopersApi linstorApi = getLinstorAPI(linstorUrl, apiToken, insecureSsl);
         try {
-            List<StoragePool> storagePools = LinstorUtil.getRscGroupStoragePools(linstorApi, rscGroupName);
+            List<StoragePool> storagePools = getCapacityStoragePools(linstorApi, rscGroupName);
 
-            long capacity = storagePools.stream()
-                    .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                    .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0L)
-                    .sum() * 1024;  // linstor uses kiB
-
-            long used = storagePools.stream()
-                    .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                    .mapToLong(sp -> sp.getTotalCapacity() != null && sp.getFreeCapacity() != null ?
-                            sp.getTotalCapacity() - sp.getFreeCapacity() : 0L)
-                    .sum() * 1024; // linstor uses Kib
+            long capacity = sumTotalCapacity(storagePools);
+            long used = sumUsedCapacity(storagePools);
             LOGGER.debug(
                     String.format("Linstor(%s;%s): storageStats -> %d/%d", linstorUrl, rscGroupName, capacity, used));
             return new Pair<>(capacity, used);
@@ -366,6 +476,46 @@ public class LinstorUtil {
     }
 
     /**
+     * If the resource has no active diskful deployment, return a node with an inactive
+     * diskful resource that could be activated (e.g. an unused template on a shared
+     * storage pool). Returns null if an active diskful resource exists or none is deployed.
+     */
+    public static String getDiskfulNodeToActivate(DevelopersApi api, String rscName) throws ApiException {
+        List<Resource> rscs = api.resourceList(rscName, null, null);
+        if (rscs == null) {
+            return null;
+        }
+        String inactiveDiskfulNode = null;
+        for (Resource rsc : rscs) {
+            List<String> flags = rsc.getFlags();
+            boolean diskless = flags != null &&
+                    (flags.contains(ApiConsts.FLAG_DISKLESS) || flags.contains(ApiConsts.FLAG_DRBD_DISKLESS));
+            if (diskless) {
+                continue;
+            }
+            if (flags == null || !flags.contains(ApiConsts.FLAG_RSC_INACTIVE)) {
+                return null; // active diskful resource exists
+            }
+            inactiveDiskfulNode = rsc.getNodeName();
+        }
+        return inactiveDiskfulNode;
+    }
+
+    /**
+     * Check if the resource is deployed but inactive on the given node (e.g. a shared
+     * storage pool resource of a stopped VM).
+     */
+    public static boolean isResourceInactiveOnNode(DevelopersApi api, String rscName, String nodeName)
+            throws ApiException {
+        List<Resource> rscs = api.resourceList(rscName, null, null);
+        if (rscs == null) {
+            return false;
+        }
+        return rscs.stream().anyMatch(rsc -> nodeName.equalsIgnoreCase(rsc.getNodeName()) &&
+                rsc.getFlags() != null && rsc.getFlags().contains(ApiConsts.FLAG_RSC_INACTIVE));
+    }
+
+    /**
      * Check if the given resources are diskless.
      *
      * @param api developer api object to use
@@ -398,15 +548,15 @@ public class LinstorUtil {
     }
 
     /**
-     * Try to get the device path for the given resource name.
-     * This could be made a bit more direct after java-linstor api is fixed for layer data subtypes.
+     * The device path of the given resource, empty if there is none.
+     * DRBD resources always have one (/dev/drbd/by-res/...). For all other layer stacks it is the
+     * path Linstor reports, and Linstor only reports one for active resources, so a shared storage
+     * pool resource that is INACTIVE on all its nodes has none.
      * @param api developer api object to use
      * @param rscName resource name to get the device path
-     * @return The device path of the resource.
      * @throws ApiException if Linstor API call failed.
-     * @throws CloudRuntimeException if no device path could be found.
      */
-    public static String getDevicePath(DevelopersApi api, String rscName) throws ApiException, CloudRuntimeException {
+    public static Optional<String> findDevicePath(DevelopersApi api, String rscName) throws ApiException {
         List<ResourceWithVolumes> resources = api.viewResources(
                 Collections.emptyList(),
                 Collections.singletonList(rscName),
@@ -415,12 +565,37 @@ public class LinstorUtil {
                 null,
                 null);
         for (ResourceWithVolumes rsc : resources) {
-            if (!rsc.getVolumes().isEmpty()) {
-                return LinstorUtil.getDevicePathFromResource(rsc);
+            if (rsc.getVolumes().isEmpty()) {
+                continue;
+            }
+            // DRBD devices are addressed by resource name and DRBD resources are never inactive, so
+            // they do not depend on the reported path (which the controller only knows once the
+            // satellite has reported it, e.g. not right after a controller restart).
+            final boolean drbd = rsc.getLayerObject() != null && rsc.getLayerObject().getDrbd() != null;
+            if (drbd || rsc.getVolumes().get(0).getDevicePath() != null) {
+                return Optional.of(LinstorUtil.getDevicePathFromResource(rsc));
             }
         }
+        return Optional.empty();
+    }
 
-        final String errMsg = "viewResources didn't return resources or volumes for " + rscName;
+    /**
+     * Get the device path Linstor reports for the given resource name.
+     * The resource has to be active on at least one node; a caller that may be asking for a resource
+     * that is inactive everywhere has to make it available first, see {@link #findDevicePath}.
+     * @param api developer api object to use
+     * @param rscName resource name to get the device path
+     * @return The device path of the resource.
+     * @throws ApiException if Linstor API call failed.
+     * @throws CloudRuntimeException if no device path could be found.
+     */
+    public static String getDevicePath(DevelopersApi api, String rscName) throws ApiException, CloudRuntimeException {
+        Optional<String> devicePath = findDevicePath(api, rscName);
+        if (devicePath.isPresent()) {
+            return devicePath.get();
+        }
+
+        final String errMsg = "viewResources didn't return resources or volumes for " + rscName + " with a device path";
         LOGGER.error(errMsg);
         throw new CloudRuntimeException("Linstor: " + errMsg);
     }
@@ -772,6 +947,30 @@ public class LinstorUtil {
      * @param resourceGroup Resource group to get the encryption layer list
      * @return layer list with LUKS added
      */
+    /**
+     * The layer stack configured on the resource group, empty if none is set.
+     */
+    public static List<LayerType> getRscGrpLayerList(DevelopersApi api, String resourceGroup) {
+        try {
+            List<ResourceGroup> rscGrps = api.resourceGroupList(
+                    Collections.singletonList(resourceGroup), Collections.emptyList(), null, null);
+
+            if (CollectionUtils.isEmpty(rscGrps)) {
+                throw new CloudRuntimeException(
+                        String.format("Resource Group %s not found on Linstor cluster.", resourceGroup));
+            }
+
+            List<String> layerStack = rscGrps.get(0).getSelectFilter() != null ?
+                    rscGrps.get(0).getSelectFilter().getLayerStack() : Collections.emptyList();
+            return CollectionUtils.isNotEmpty(layerStack) ?
+                    layerStack.stream().map(LayerType::valueOf).collect(Collectors.toList()) :
+                    Collections.emptyList();
+        } catch (ApiException apiEx) {
+            LOGGER.error(apiEx.getBestMessage());
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+    }
+
     public static List<LayerType> getEncryptedLayerList(DevelopersApi api, String resourceGroup) {
         try {
             List<ResourceGroup> rscGrps = api.resourceGroupList(
@@ -827,6 +1026,16 @@ public class LinstorUtil {
                 String utf8Passphrase = new String(passPhrase, StandardCharsets.UTF_8);
                 rscGrpSpawn.setVolumePassphrases(Collections.singletonList(utf8Passphrase));
             }
+        } else {
+            // spell out the resource group's layer stack instead of relying on the implicit
+            // default: a template spawned with a DRBD stack cannot be cloned into a
+            // STORAGE/LUKS resource of a shared storage pool later on
+            List<LayerType> rgLayers = getRscGrpLayerList(api, rscGrpName);
+            if (!rgLayers.isEmpty()) {
+                AutoSelectFilter asf = new AutoSelectFilter();
+                asf.setLayerStack(rgLayers.stream().map(LayerType::toString).collect(Collectors.toList()));
+                rscGrpSpawn.setSelectFilter(asf);
+            }
         }
 
         Properties props = new Properties();
@@ -858,7 +1067,7 @@ public class LinstorUtil {
      * @param isTemplate indicates if the resource is a template
      * @return true if a new resource was created, false if it already existed or was reused.
      */
-    public static boolean createResourceBase(
+    public static Pair<String, Boolean> createResourceBase(
             String rscName, long sizeInBytes, String volName, String vmName,
             @Nullable Long passPhraseId, @Nullable byte[] passPhrase, DevelopersApi api,
             String rscGrp, long poolId, boolean isTemplate, boolean exactSize)
@@ -874,14 +1083,14 @@ public class LinstorUtil {
                     existingRDs.stream().anyMatch(p -> p.first().getProps().containsKey(LinstorUtil.getTemplateForAuxPropKey(rscGrp)));
             if (!alreadyCreated) {
                 boolean createNewRsc = !foundShareableTemplate(api, rscName, rscGrp, existingRDs);
+                String newRscName = existingRDs.isEmpty() ? rscName : fullRscName;
                 if (createNewRsc) {
-                    String newRscName = existingRDs.isEmpty() ? rscName : fullRscName;
                     spawnResource(api, newRscName, sizeInBytes, isTemplate, rscGrp,
                             volName, vmName, passPhraseId, passPhrase, exactSize);
                 }
-                return createNewRsc;
+                return new Pair<>(newRscName, createNewRsc);
             }
-            return false;
+            return new Pair<>(rscName, false);
         } catch (ApiException apiEx)
         {
             LOGGER.error("Linstor: ApiEx - {}", apiEx.getMessage());
