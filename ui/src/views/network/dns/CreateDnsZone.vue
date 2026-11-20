@@ -68,6 +68,50 @@
             :placeholder="apiParams.description.description"/>
         </a-form-item>
 
+        <a-form-item v-if="isAdmin" name="domainid" ref="domainid">
+          <template #label>
+            <tooltip-label :title="$t('label.domain')" :tooltip="apiParams.domainid?.description" />
+          </template>
+          <a-select
+            v-model:value="form.domainid"
+            :placeholder="apiParams.domainid?.description"
+            :loading="fetchingDomains"
+            allowClear
+            showSearch
+            optionFilterProp="label"
+            @change="handleDomainChange">
+            <a-select-option
+              v-for="domain in domains"
+              :key="domain.id"
+              :value="domain.id"
+              :label="domain.path || domain.name">
+              {{ domain.path || domain.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+
+        <a-form-item v-if="isAdmin" name="account" ref="account">
+          <template #label>
+            <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account?.description" />
+          </template>
+          <a-select
+            v-model:value="form.account"
+            :placeholder="apiParams.account?.description"
+            :loading="fetchingAccounts"
+            :disabled="!form.domainid"
+            allowClear
+            showSearch
+            optionFilterProp="label">
+            <a-select-option
+              v-for="account in accounts"
+              :key="account.id"
+              :value="account.name"
+              :label="account.name">
+              {{ account.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+
         <a-form-item name="existing" ref="existing">
           <template #label>
             <tooltip-label :title="$t('label.existing')" :tooltip="apiParams.existing?.description" />
@@ -94,6 +138,7 @@
 <script>
 import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { isAdmin } from '@/role'
 
 export default {
   name: 'CreateDnsZone',
@@ -108,11 +153,22 @@ export default {
         name: '',
         dnsserverid: undefined,
         description: '',
-        existing: false
+        existing: false,
+        domainid: undefined,
+        account: undefined
       },
       rules: {},
       fetchingServers: false,
-      dnsServers: []
+      dnsServers: [],
+      fetchingDomains: false,
+      domains: [],
+      fetchingAccounts: false,
+      accounts: []
+    }
+  },
+  computed: {
+    isAdmin () {
+      return isAdmin()
     }
   },
   created () {
@@ -122,6 +178,9 @@ export default {
       dnsserverid: [{ required: true, message: this.$t('message.error.required.input') }]
     }
     this.fetchDnsServers()
+    if (this.isAdmin) {
+      this.fetchDomains()
+    }
   },
   methods: {
     async handleSubmit () {
@@ -145,6 +204,10 @@ export default {
           dnsserverid: this.form.dnsserverid,
           description: this.form.description?.trim(),
           existing: this.form.existing
+        }
+        if (this.isAdmin && this.form.domainid && this.form.account) {
+          params.domainid = this.form.domainid
+          params.account = this.form.account
         }
 
         const response = await postAPI('createDnsZone', params)
@@ -183,6 +246,33 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    async fetchDomains () {
+      this.fetchingDomains = true
+      try {
+        const response = await getAPI('listDomains', { listall: true, details: 'min' })
+        this.domains = response?.listdomainsresponse?.domain || []
+      } catch (error) {
+        this.$notifyError(error)
+      } finally {
+        this.fetchingDomains = false
+      }
+    },
+    async handleDomainChange (domainid) {
+      this.form.account = undefined
+      this.accounts = []
+      if (!domainid) {
+        return
+      }
+      this.fetchingAccounts = true
+      try {
+        const response = await getAPI('listAccounts', { domainid: domainid, state: 'enabled', listall: true })
+        this.accounts = response?.listaccountsresponse?.account || []
+      } catch (error) {
+        this.$notifyError(error)
+      } finally {
+        this.fetchingAccounts = false
+      }
     },
     async fetchDnsServers () {
       this.fetchingServers = true

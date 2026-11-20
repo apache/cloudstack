@@ -619,8 +619,21 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             throw new InvalidParameterValueException(String.format("DNS server not found for the given ID: %s", cmd.getDnsServerId()));
         }
         Account caller = CallContext.current().getCallingAccount();
-        boolean isOwner = (server.getAccountId() == caller.getId());
-        if (!isOwner) {
+        boolean isServerOwner = (server.getAccountId() == caller.getId());
+        Account dnsZoneOwner = caller;
+        boolean onBehalf = StringUtils.isNotBlank(cmd.getAccountName());
+        if (onBehalf) {
+            if (!accountMgr.isRootAdmin(caller.getId())) {
+                throw new PermissionDeniedException("Only root admin can create a DNS zone on behalf of another account.");
+            }
+            if (!isServerOwner) {
+                throw new PermissionDeniedException("A DNS zone can be created on behalf of another account only on a DNS server owned by the caller.");
+            }
+            dnsZoneOwner = accountMgr.getActiveAccountByName(cmd.getAccountName(), cmd.getDomainId());
+            if (dnsZoneOwner == null || dnsZoneOwner.getState() != Account.State.ENABLED) {
+                throw new InvalidParameterValueException(String.format("Unable to find an enabled account %s in the specified domain.", cmd.getAccountName()));
+            }
+        } else if (!isServerOwner) {
             if (!server.getPublicServer()) {
                 throw new PermissionDeniedException("You do not have permission to use this DNS server.");
             }
@@ -632,7 +645,8 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         if (existing != null) {
             throw new InvalidParameterValueException("DNS zone already exists on this server.");
         }
-        DnsZoneVO dnsZoneVO = new DnsZoneVO(dnsZoneName, type, server.getId(), caller.getId(), caller.getDomainId(), cmd.getDescription());
+        DnsZoneVO dnsZoneVO = new DnsZoneVO(dnsZoneName, type, server.getId(), dnsZoneOwner.getId(),
+                dnsZoneOwner.getDomainId(), cmd.getDescription());
         return dnsZoneDao.persist(dnsZoneVO);
     }
 
