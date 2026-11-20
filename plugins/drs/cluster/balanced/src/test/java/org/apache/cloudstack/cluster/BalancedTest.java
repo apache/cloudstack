@@ -110,6 +110,13 @@ public class BalancedTest {
         hostMemoryFreeMap.put(2L, new Ternary<>(2048L * 1024L * 1024L, 0L, 8192L * 1024L * 1024L));
     }
 
+    @Test
+    public void combineBothMetricsTakesTheHigher() {
+        // balanced counts a cluster as imbalanced while either resource is imbalanced, so "both" takes the higher
+        assertEquals(0.7, balanced.combineBothMetrics(0.2, 0.7), 0.0);
+        assertEquals(0.9, balanced.combineBothMetrics(0.9, 0.3), 0.0);
+    }
+
     private void overrideDefaultConfigValue(final ConfigKey configKey, final String name,
             final Object o) throws IllegalAccessException, NoSuchFieldException {
         Field f = ConfigKey.class.getDeclaredField(name);
