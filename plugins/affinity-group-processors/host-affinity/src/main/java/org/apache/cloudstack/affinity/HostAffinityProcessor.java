@@ -17,7 +17,6 @@
 package org.apache.cloudstack.affinity;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -119,14 +118,6 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
             }
         }
         return hostIds;
-    }
-
-    protected Map<Long, VirtualMachine> getVmIdVmMap(List<VirtualMachine> vmList) {
-        Map<Long, VirtualMachine> vmIdVmMap = new HashMap<>();
-        for (VirtualMachine vm : vmList) {
-            vmIdVmMap.put(vm.getId(), vm);
-        }
-        return vmIdVmMap;
     }
 
     /**

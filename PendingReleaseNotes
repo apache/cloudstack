@@ -120,6 +120,33 @@ example.ver.1 > example.ver.2:
     host.load.half.life. Until a management server has collected samples, ranking falls back to
     allocation figures alone.
 
+  * New DRS algorithm 'weighted' for drs.algorithm, alongside 'balanced' and 'condensed'. The
+    default is unchanged; the new one is opt-in per cluster.
+
+    The existing algorithms balance a single metric chosen by drs.metric, so choosing one leaves
+    the other unwatched: a cluster can be even on memory while its CPU load varies several fold and
+    nothing moves. Allocation is also a poor stand-in for load under overprovisioning, where a
+    saturated host can still report a small percentage allocated.
+
+    'weighted' blends CPU and memory allocated with CPU and memory in use, and balances the result.
+    Imbalance keeps its existing shape - standard deviation over the mean - but it is computed over
+    a blend rather than over one metric, so drs.imbalance is not calibrated the same way and is
+    worth re-checking after switching. drs.metric, drs.metric.type and drs.metric.use.ratio choose
+    and shape the single metric the other algorithms balance; they do not apply to 'weighted' and
+    are ignored.
+
+    Utilisation is only used when every host in the cluster has been sampled. Comparing a host
+    measured on utilisation against one measured on allocation alone would report a difference that
+    is an artefact of the monitoring rather than of the load, so the cluster falls back to
+    allocation figures until every host can be measured.
+
+    Tuned with the drs.weighted.* settings, all cluster scoped.
+
+  * DRS plan generation is considerably faster on large clusters. Working out where a VM could go
+    is now done once for each group of VMs that would get the same answer rather than once per VM,
+    and affinity is re-evaluated only for VMs affected by the migration just planned rather than
+    for every VM on every iteration.
+
 KVM console:
   * Added the global setting `consoleproxy.kvm.multiple.viewers.enabled` to allow
     multiple users to simultaneously access the console of the same KVM user VM.
