@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "hosts": {
+    "type": {
+      "Routing": 3,
+      "SecondaryStorage": 1
+    },
+    "hypervisor_type": {
+      "KVM": 2,
+      "None": 1
+    },
+    "version": {
+      "4.23.0.0": 2
+    }
+  },
+  "clusters": {
+    "type": {
+      "CloudManaged": 2
+    },
+    "hypervisor_type": {
+      "KVM": 1,
+      "VMware": 1
+    }
+  },
+  "primaryStorage": {
+    "type": {
+      "NetworkFilesystem": 1,
+      "Filesystem": 1
+    },
+    "provider": {
+      "DefaultPrimary": 2
+    },
+    "scope": {
+      "ZONE": 1,
+      "HOST": 1
+    }
+  },
+  "zones": {
+    "network_type": {
+      "Advanced": 1,
+      "Basic": 1
+    },
+    "dns_provider": {
+      "VirtualRouter": 1
+    },
+    "dhcp_provider": {
+      "VirtualRouter": 1
+    },
+    "lb_provider": {
+      "VirtualRouter": 1
+    },
+    "firewall_provider": {
+      "VirtualRouter": 1
+    },
+    "gateway_provider": {
+      "VirtualRouter": 1
+    },
+    "userdata_provider": {
+      "VirtualRouter": 1
+    },
+    "vpn_provider": {
+      "VirtualRouter": 1
+    }
+  },
+  "instances": {
+    "current": {
+      "hypervisor_type": {
+        "KVM": 4
+      },
+      "state": {
+        "Running": 2,
+        "Stopped": 1,
+        "Destroyed": 1
+      },
+      "type": {
+        "User": 3,
+        "DomainRouter": 1
+      },
+      "ha_enabled": {
+        "true": 2,
+        "false": 2
+      },
+      "dynamically_scalable": {
+        "true": 2,
+        "false": 2
+      }
+    },
+    "lifetime": {
+      "total": 5,
+      "removed": 1,
+      "hypervisor_type": {
+        "KVM": 5
+      },
+      "type": {
+        "User": 4,
+        "DomainRouter": 1
+      }
+    }
+  },
+  "diskOffering": {
+    "provisioning_type": {
+      "thin": 2,
+      "fat": 1
+    },
+    "compute_only": {
+      "true": 1,
+      "false": 2
+    },
+    "use_local_storage": {
+      "true": 1,
+      "false": 2
+    },
+    "avg_disk_size": 5368709120
+  },
+  "versions": {
+    "4.19.0.0": "2024-01-15T10:30:00Z",
+    "4.23.0.0": "2026-08-27T08:00:00Z"
+  },
+  "current_version": "4.23.0.0"
+}
