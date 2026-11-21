@@ -145,6 +145,15 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     protected static ConfigKey<Boolean> VmHaAlertsEnabled = new ConfigKey<>("Advanced", Boolean.class, "vm.ha.alerts.enabled", "true",
             "Enable/Disable alerts for the VM HA operations, it is enabled by default.", true, Zone);
 
+    protected static ConfigKey<Boolean> VmHaRestartConsiderLastHost = new ConfigKey<>("Advanced", Boolean.class,
+            "vm.ha.restart.consider.last.host", "true",
+            "Whether the HA restart of a VM first tries the host the VM last ran on, when that host is Up and has capacity. "
+                    + "When false, the last host is not preferred: the deployment planner and vm.allocation.algorithm choose the host, "
+                    + "and may still choose the last host. Useful when a host stops VMs itself, for example killed for lack of memory. "
+                    + "The value of the cluster of the host the VM ran on applies. Has no effect when ha.tag is set, as the last host "
+                    + "is then never preferred.",
+            true, ConfigKey.Scope.Cluster);
+
     protected static final List<ReasonType> CancellableWorkReasonTypes =
             Arrays.asList(ReasonType.HostMaintenance, ReasonType.HostDown, ReasonType.HostDegraded);
 
@@ -616,6 +625,24 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         }
     }
 
+    /**
+     * Parameters for starting a VM in an HA restart. The last host is skipped when
+     * vm.ha.restart.consider.last.host is false in the cluster of the host the VM ran on.
+     */
+    protected Map<VirtualMachineProfile.Param, Object> getRestartParams(final WorkType workType, final Long clusterId) {
+        Map<VirtualMachineProfile.Param, Object> params = new HashMap<>();
+        if (_haTag != null) {
+            params.put(VirtualMachineProfile.Param.HaTag, _haTag);
+        }
+        if (WorkType.HA.equals(workType)) {
+            params.put(VirtualMachineProfile.Param.HaOperation, true);
+        }
+        if (!VmHaRestartConsiderLastHost.valueIn(clusterId)) {
+            params.put(VirtualMachineProfile.Param.ConsiderLastHost, Boolean.FALSE.toString());
+        }
+        return params;
+    }
+
     protected Long restart(final HaWorkVO work) {
         logger.debug("RESTART with HA WORK");
         List<HaWorkVO> items = _haDao.listFutureHaWorkForVm(work.getInstanceId(), work.getId());
@@ -791,14 +818,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         }
 
         try {
-            HashMap<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>();
-            if (_haTag != null) {
-                params.put(VirtualMachineProfile.Param.HaTag, _haTag);
-            }
-            WorkType wt = work.getWorkType();
-            if (wt.equals(WorkType.HA)) {
-                params.put(VirtualMachineProfile.Param.HaOperation, true);
-            }
+            Map<VirtualMachineProfile.Param, Object> params = getRestartParams(work.getWorkType(), host.getClusterId());
 
             try{
                 if (HypervisorType.KVM == host.getHypervisorType()) {
@@ -1430,7 +1450,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[] {TimeBetweenCleanup, MigrationMaxRetries, TimeToSleep, TimeBetweenFailures,
             StopRetryInterval, RestartRetryInterval, MigrateRetryInterval, InvestigateRetryInterval,
-            HAWorkers, ForceHA, VmHaEnabled, VmHaAlertsEnabled, KvmHAFenceHostIfHeartbeatFailsOnStorage};
+            HAWorkers, ForceHA, VmHaEnabled, VmHaAlertsEnabled, KvmHAFenceHostIfHeartbeatFailsOnStorage,
+            VmHaRestartConsiderLastHost};
     }
 
     @Override

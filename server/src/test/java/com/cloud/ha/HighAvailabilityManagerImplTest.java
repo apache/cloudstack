@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.ha;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -28,6 +29,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -77,6 +79,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -483,5 +486,37 @@ public class HighAvailabilityManagerImplTest {
         boolean result = highAvailabilityManagerSpy.checkAndCancelWorkIfNeeded(mockWork);
         assertFalse(result);
         Mockito.verify(mockWork, Mockito.never()).setStep(Mockito.any());
+    }
+
+    private Map<VirtualMachineProfile.Param, Object> getRestartParams(boolean considerLastHost, WorkType workType) {
+        ConfigKey<Boolean> original = HighAvailabilityManagerImpl.VmHaRestartConsiderLastHost;
+        ConfigKey<Boolean> considerLastHostKey = Mockito.mock(ConfigKey.class);
+        Mockito.when(considerLastHostKey.valueIn(7L)).thenReturn(considerLastHost);
+        HighAvailabilityManagerImpl.VmHaRestartConsiderLastHost = considerLastHostKey;
+        try {
+            return highAvailabilityManager.getRestartParams(workType, 7L);
+        } finally {
+            HighAvailabilityManagerImpl.VmHaRestartConsiderLastHost = original;
+        }
+    }
+
+    @Test
+    public void getRestartParamsKeepsTheLastHostByDefault() {
+        Map<VirtualMachineProfile.Param, Object> params = getRestartParams(true, WorkType.HA);
+        assertFalse(params.containsKey(VirtualMachineProfile.Param.ConsiderLastHost));
+        assertEquals(true, params.get(VirtualMachineProfile.Param.HaOperation));
+    }
+
+    @Test
+    public void getRestartParamsSkipsTheLastHostWhenTurnedOff() {
+        Map<VirtualMachineProfile.Param, Object> params = getRestartParams(false, WorkType.HA);
+        assertEquals(Boolean.FALSE.toString(), params.get(VirtualMachineProfile.Param.ConsiderLastHost));
+        assertEquals(true, params.get(VirtualMachineProfile.Param.HaOperation));
+    }
+
+    @Test
+    public void getRestartParamsSetsHaOperationOnlyForHaWork() {
+        Map<VirtualMachineProfile.Param, Object> params = getRestartParams(true, WorkType.Migration);
+        assertFalse(params.containsKey(VirtualMachineProfile.Param.HaOperation));
     }
 }
