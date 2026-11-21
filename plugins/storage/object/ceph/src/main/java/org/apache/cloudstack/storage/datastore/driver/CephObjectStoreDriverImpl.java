@@ -219,7 +219,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         logger.debug("Attempting to create Ceph RGW user for account {} with UUID {}", account, username);
         User user;
         try {
-            user = rgwAdmin.getUserInfo(username).orElseGet(() -> rgwAdmin.createUser(username));
+            user = rgwAdmin.getUserInfo(username).orElseGet(() -> rgwAdmin.createUser(username, Map.of("display-name", account.getAccountName())));
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to get or create Ceph RGW user " + username, e);
         }
