@@ -1281,4 +1281,31 @@ public class DeploymentPlanningManagerImplTest {
         Assert.assertEquals(allClusters.size() - 1, avoidedClusters.size());
         Assert.assertFalse(avoidedClusters.contains(allClusters.get(0)));
     }
+
+    private boolean shouldConsiderLastHost(Long lastHostId, boolean migrationPlan, Map<VirtualMachineProfile.Param, Object> params) {
+        VMInstanceVO lastHostVm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(lastHostVm.getLastHostId()).thenReturn(lastHostId);
+        Mockito.lenient().when(lastHostVm.getType()).thenReturn(Type.User);
+        DataCenterDeployment deployment = new DataCenterDeployment(1L, 1L, 1L, null, null, null);
+        deployment.setMigrationPlan(migrationPlan);
+        return _dpm.shouldConsiderLastHost(new VirtualMachineProfileImpl(lastHostVm, null, null, null, params), deployment, lastHostVm);
+    }
+
+    @Test
+    public void shouldConsiderLastHostForAStart() {
+        Assert.assertTrue(shouldConsiderLastHost(5L, false, null));
+    }
+
+    @Test
+    public void shouldNotConsiderLastHostForAMigrationPlan() {
+        Assert.assertFalse(shouldConsiderLastHost(5L, true, null));
+        Assert.assertFalse(shouldConsiderLastHost(5L, true, new HashMap<>(Map.of(VirtualMachineProfile.Param.ConsiderLastHost, Boolean.TRUE.toString()))));
+    }
+
+    @Test
+    public void shouldNotConsiderLastHostWithoutOneOrWhenTurnedOff() {
+        Assert.assertFalse(shouldConsiderLastHost(null, false, null));
+        Assert.assertFalse(shouldConsiderLastHost(5L, false, new HashMap<>(Map.of(VirtualMachineProfile.Param.ConsiderLastHost, Boolean.FALSE.toString()))));
+        Assert.assertFalse(shouldConsiderLastHost(5L, false, new HashMap<>(Map.of(VirtualMachineProfile.Param.HaTag, "ha"))));
+    }
 }
