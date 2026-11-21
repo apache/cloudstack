@@ -27,7 +27,13 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.BucketPolicy;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
+import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.DeleteBucketPolicyRequest;
+import com.amazonaws.services.s3.model.SSEAlgorithm;
+import com.amazonaws.services.s3.model.ServerSideEncryptionByDefault;
+import com.amazonaws.services.s3.model.ServerSideEncryptionConfiguration;
+import com.amazonaws.services.s3.model.ServerSideEncryptionRule;
+import com.amazonaws.services.s3.model.SetBucketEncryptionRequest;
 import com.amazonaws.services.s3.model.SetBucketPolicyRequest;
 import com.amazonaws.services.s3.model.GetBucketPolicyRequest;
 import com.amazonaws.services.s3.model.SetBucketVersioningConfigurationRequest;
@@ -108,7 +114,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             throw new CloudRuntimeException(e);
         }
         try {
-            s3client.createBucket(bucketName);
+            s3client.createBucket(new CreateBucketRequest(bucketName).withObjectLockEnabledForBucket(objectLock));
             String accessKey = getAccountKey(accountId, storeId, CEPH_ACCESS_KEY);
             String secretKey = getAccountKey(accountId, storeId, CEPH_SECRET_KEY);
             ObjectStoreVO store = _storeDao.findById(storeId);
@@ -247,12 +253,18 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     @Override
     public boolean setBucketEncryption(BucketTO bucket, long storeId) {
-        return false;
+        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey());
+        client.setBucketEncryption(new SetBucketEncryptionRequest().withBucketName(bucket.getName())
+                .withServerSideEncryptionConfiguration(new ServerSideEncryptionConfiguration().withRules(
+                        new ServerSideEncryptionRule().withApplyServerSideEncryptionByDefault(
+                                new ServerSideEncryptionByDefault().withSSEAlgorithm(SSEAlgorithm.AES256)))));
+        return true;
     }
 
     @Override
     public boolean deleteBucketEncryption(BucketTO bucket, long storeId) {
-        return false;
+        getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey()).deleteBucketEncryption(bucket.getName());
+        return true;
     }
 
     @Override

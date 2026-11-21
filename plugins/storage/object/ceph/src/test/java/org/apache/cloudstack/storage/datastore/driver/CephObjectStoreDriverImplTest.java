@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.cloud.agent.api.to.BucketTO;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.dao.BucketDao;
@@ -97,7 +98,7 @@ public class CephObjectStoreDriverImplTest {
         Bucket bucketRet = cephObjectStoreDriverImpl.createBucket(bucket, false);
         assertEquals(bucketRet.getName(), bucket.getName());
         verify(rgwClient, times(1)).doesBucketExistV2(anyString());
-        verify(rgwClient, times(1)).createBucket(anyString());
+        verify(rgwClient, times(1)).createBucket(any(CreateBucketRequest.class));
     }
 
     @Test
