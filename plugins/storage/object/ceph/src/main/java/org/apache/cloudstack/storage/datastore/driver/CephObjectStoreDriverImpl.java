@@ -39,6 +39,7 @@ import com.amazonaws.services.s3.model.GetBucketPolicyRequest;
 import com.amazonaws.services.s3.model.SetBucketVersioningConfigurationRequest;
 import com.cloud.agent.api.to.BucketTO;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.storage.object.Bucket;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.dao.BucketDao;
@@ -171,15 +172,6 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             builder.append("{\n");
             builder.append("    \"Statement\": [\n");
             builder.append("        {\n");
-            builder.append("            \"Action\": [\n");
-            builder.append("                \"s3:GetBucketLocation\",\n");
-            builder.append("                \"s3:ListBucket\"\n");
-            builder.append("            ],\n");
-            builder.append("            \"Effect\": \"Allow\",\n");
-            builder.append("            \"Principal\": \"*\",\n");
-            builder.append("            \"Resource\": \"arn:aws:s3:::" + bucket.getName() + "\"\n");
-            builder.append("        },\n");
-            builder.append("        {\n");
             builder.append("            \"Action\": \"s3:GetObject\",\n");
             builder.append("            \"Effect\": \"Allow\",\n");
             builder.append("            \"Principal\": \"*\",\n");
@@ -189,6 +181,8 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             builder.append("    \"Version\": \"2012-10-17\"\n");
             builder.append("}\n");
             policyConfig = builder.toString();
+        } else if (!policy.equalsIgnoreCase("private")) {
+            throw new InvalidParameterValueException("Unsupported bucket policy: " + policy);
         } else {
             logger.debug("Setting private policy on bucket " + bucket.getName());
             policyConfig = "{\"Version\":\"2012-10-17\",\"Statement\":[]}";
