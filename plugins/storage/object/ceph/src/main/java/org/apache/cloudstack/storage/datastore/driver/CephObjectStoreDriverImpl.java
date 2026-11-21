@@ -236,7 +236,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             Map<String, String> details = new HashMap<>();
             details.put(CEPH_ACCESS_KEY, credentials.getAccessKey());
             details.put(CEPH_SECRET_KEY, credentials.getSecretKey());
-            _accountDetailsDao.persist(accountId, details);
+            _accountDetailsDao.update(accountId, details);
             return true;
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
