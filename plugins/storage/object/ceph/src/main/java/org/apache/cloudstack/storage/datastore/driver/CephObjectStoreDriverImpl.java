@@ -37,8 +37,10 @@ import org.apache.cloudstack.storage.object.Bucket;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountDetailVO;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
@@ -107,8 +109,8 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         }
         try {
             s3client.createBucket(bucketName);
-            String accessKey = _accountDetailsDao.findDetail(accountId, CEPH_ACCESS_KEY).getValue();
-            String secretKey = _accountDetailsDao.findDetail(accountId, CEPH_SECRET_KEY).getValue();
+            String accessKey = getAccountKey(accountId, storeId, CEPH_ACCESS_KEY);
+            String secretKey = getAccountKey(accountId, storeId, CEPH_SECRET_KEY);
             ObjectStoreVO store = _storeDao.findById(storeId);
             BucketVO bucketVO = _bucketDao.findById(bucket.getId());
             bucketVO.setAccessKey(accessKey);
@@ -234,8 +236,8 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             S3Credential credentials = newUser.getS3Credentials().get(0);
 
             Map<String, String> details = new HashMap<>();
-            details.put(CEPH_ACCESS_KEY, credentials.getAccessKey());
-            details.put(CEPH_SECRET_KEY, credentials.getSecretKey());
+            details.put(CEPH_ACCESS_KEY + "-" + storeId, DBEncryptionUtil.encrypt(credentials.getAccessKey()));
+            details.put(CEPH_SECRET_KEY + "-" + storeId, DBEncryptionUtil.encrypt(credentials.getSecretKey()));
             _accountDetailsDao.update(accountId, details);
             return true;
         } catch (Exception e) {
@@ -346,9 +348,23 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     protected AmazonS3 getS3Client(long storeId, long accountId) {
         String url = getStoreURL(storeId);
-        String accessKey = _accountDetailsDao.findDetail(accountId, CEPH_ACCESS_KEY).getValue();
-        String secretKey = _accountDetailsDao.findDetail(accountId, CEPH_SECRET_KEY).getValue();
-        return this.getS3Client(url, accessKey, secretKey);
+        return this.getS3Client(url, getAccountKey(accountId, storeId, CEPH_ACCESS_KEY), getAccountKey(accountId, storeId, CEPH_SECRET_KEY));
+    }
+
+    /**
+     * Returns the RGW key of the account on the given store. Keys stored before they were kept per store
+     * have no store ID in their name and are not encrypted.
+     */
+    protected String getAccountKey(long accountId, long storeId, String name) {
+        AccountDetailVO detail = _accountDetailsDao.findDetail(accountId, name + "-" + storeId);
+        if (detail != null) {
+            return DBEncryptionUtil.decrypt(detail.getValue());
+        }
+        detail = _accountDetailsDao.findDetail(accountId, name);
+        if (detail == null) {
+            throw new CloudRuntimeException("No Ceph RGW " + name + " found for account " + accountId);
+        }
+        return detail.getValue();
     }
     protected AmazonS3 getS3Client(String url, String accessKey, String secretKey) {
         AmazonS3 client = AmazonS3ClientBuilder.standard()
