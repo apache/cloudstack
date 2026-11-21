@@ -65,6 +65,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
@@ -88,6 +89,9 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     private static final String CEPH_ACCESS_KEY = "ceph-rgw-accesskey";
     private static final String CEPH_SECRET_KEY = "ceph-rgw-secretkey";
+
+    private final Map<String, AmazonS3> s3Clients = new ConcurrentHashMap<>();
+    private final Map<String, RgwAdmin> rgwAdminClients = new ConcurrentHashMap<>();
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
@@ -321,15 +325,11 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         String url = store.getUrl();
         String accessKey = storeDetails.get(ACCESS_KEY);
         String secretKey = storeDetails.get(SECRET_KEY);
-        RgwAdmin admin = new RgwAdminBuilder()
+        return rgwAdminClients.computeIfAbsent(url + accessKey + secretKey, key -> new RgwAdminBuilder()
                 .accessKey(accessKey)
                 .secretKey(secretKey)
                 .endpoint(url + "/admin")
-                .build();
-        if (admin == null) {
-            throw new CloudRuntimeException("Error while creating Ceph RGW client");
-        }
-        return admin;
+                .build());
     }
 
     private String getStoreURL(long storeId) {
@@ -359,18 +359,13 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         return detail.getValue();
     }
     protected AmazonS3 getS3Client(String url, String accessKey, String secretKey) {
-        AmazonS3 client = AmazonS3ClientBuilder.standard()
+        return s3Clients.computeIfAbsent(url + accessKey + secretKey, key -> AmazonS3ClientBuilder.standard()
                 .enablePathStyleAccess()
                 .withCredentials(
                         new AWSStaticCredentialsProvider(
                                 new BasicAWSCredentials(accessKey, secretKey)))
                 .withEndpointConfiguration(
                         new AwsClientBuilder.EndpointConfiguration(url, "us-east-1"))
-                .build();
-
-        if (client == null) {
-            throw new CloudRuntimeException("Error while creating Ceph RGW S3 client");
-        }
-        return client;
+                .build());
     }
 }
