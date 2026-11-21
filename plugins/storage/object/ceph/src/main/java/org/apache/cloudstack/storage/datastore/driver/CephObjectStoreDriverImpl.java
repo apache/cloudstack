@@ -27,18 +27,27 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.BucketPolicy;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
+import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.DeleteBucketPolicyRequest;
+import com.amazonaws.services.s3.model.SSEAlgorithm;
+import com.amazonaws.services.s3.model.ServerSideEncryptionByDefault;
+import com.amazonaws.services.s3.model.ServerSideEncryptionConfiguration;
+import com.amazonaws.services.s3.model.ServerSideEncryptionRule;
+import com.amazonaws.services.s3.model.SetBucketEncryptionRequest;
 import com.amazonaws.services.s3.model.SetBucketPolicyRequest;
 import com.amazonaws.services.s3.model.GetBucketPolicyRequest;
 import com.amazonaws.services.s3.model.SetBucketVersioningConfigurationRequest;
 import com.cloud.agent.api.to.BucketTO;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.storage.object.Bucket;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountDetailVO;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
@@ -55,9 +64,9 @@ import org.twonote.rgwadmin4j.model.User;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Optional;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
@@ -82,6 +91,9 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     private static final String CEPH_ACCESS_KEY = "ceph-rgw-accesskey";
     private static final String CEPH_SECRET_KEY = "ceph-rgw-secretkey";
 
+    private final Map<String, AmazonS3> s3Clients = new ConcurrentHashMap<>();
+    private final Map<String, RgwAdmin> rgwAdminClients = new ConcurrentHashMap<>();
+
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
         return null;
@@ -94,21 +106,13 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         long accountId = bucket.getAccountId();
         AmazonS3 s3client = getS3Client(storeId, accountId);
 
-        try {
-            if (s3client.doesBucketExistV2(bucketName)) {
-                throw new CloudRuntimeException("Bucket already exists with the name: " + bucketName);
-            }
-        } catch (AmazonS3Exception e) {
-            if (e.getStatusCode() != 404) {
-                throw new CloudRuntimeException(e);
-            }
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e);
+        if (s3client.doesBucketExistV2(bucketName)) {
+            throw new CloudRuntimeException("Bucket already exists with the name: " + bucketName);
         }
         try {
-            s3client.createBucket(bucketName);
-            String accessKey = _accountDetailsDao.findDetail(accountId, CEPH_ACCESS_KEY).getValue();
-            String secretKey = _accountDetailsDao.findDetail(accountId, CEPH_SECRET_KEY).getValue();
+            s3client.createBucket(new CreateBucketRequest(bucketName).withObjectLockEnabledForBucket(objectLock));
+            String accessKey = getAccountKey(accountId, storeId, CEPH_ACCESS_KEY);
+            String secretKey = getAccountKey(accountId, storeId, CEPH_SECRET_KEY);
             ObjectStoreVO store = _storeDao.findById(storeId);
             BucketVO bucketVO = _bucketDao.findById(bucket.getId());
             bucketVO.setAccessKey(accessKey);
@@ -140,10 +144,8 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     @Override
     public boolean deleteBucket(BucketTO bucket, long storeId) {
-        RgwAdmin rgwAdmin = getRgwAdminClient(storeId);
-
         try {
-            rgwAdmin.removeBucket(bucket.getName());
+            getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey()).deleteBucket(bucket.getName());
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
@@ -170,15 +172,6 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             builder.append("{\n");
             builder.append("    \"Statement\": [\n");
             builder.append("        {\n");
-            builder.append("            \"Action\": [\n");
-            builder.append("                \"s3:GetBucketLocation\",\n");
-            builder.append("                \"s3:ListBucket\"\n");
-            builder.append("            ],\n");
-            builder.append("            \"Effect\": \"Allow\",\n");
-            builder.append("            \"Principal\": \"*\",\n");
-            builder.append("            \"Resource\": \"arn:aws:s3:::" + bucket.getName() + "\"\n");
-            builder.append("        },\n");
-            builder.append("        {\n");
             builder.append("            \"Action\": \"s3:GetObject\",\n");
             builder.append("            \"Effect\": \"Allow\",\n");
             builder.append("            \"Principal\": \"*\",\n");
@@ -188,6 +181,8 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             builder.append("    \"Version\": \"2012-10-17\"\n");
             builder.append("}\n");
             policyConfig = builder.toString();
+        } else if (!policy.equalsIgnoreCase("private")) {
+            throw new InvalidParameterValueException("Unsupported bucket policy: " + policy);
         } else {
             logger.debug("Setting private policy on bucket " + bucket.getName());
             policyConfig = "{\"Version\":\"2012-10-17\",\"Statement\":[]}";
@@ -216,41 +211,38 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         String username = account.getUuid();
 
         logger.debug("Attempting to create Ceph RGW user for account {} with UUID {}", account, username);
+        User user;
         try {
-            Optional<User> user = rgwAdmin.getUserInfo(username);
-            if (user.isPresent()) {
-                logger.info("User already exists in Ceph RGW: " + username);
-                return true;
-            } else {
-                logger.debug("User does not exist. Creating user in Ceph RGW: " + username);
-            }
+            user = rgwAdmin.getUserInfo(username).orElseGet(() -> rgwAdmin.createUser(username, Map.of("display-name", account.getAccountName())));
         } catch (Exception e) {
-            logger.debug("Get user info failed for user {} with exception {}. Proceeding with user creation.",  username, e.getMessage());
+            throw new CloudRuntimeException("Failed to get or create Ceph RGW user " + username, e);
         }
-
-        try {
-            rgwAdmin.createUser(username);
-            User newUser = rgwAdmin.getUserInfo(username).get();
-            S3Credential credentials = newUser.getS3Credentials().get(0);
-
-            Map<String, String> details = new HashMap<>();
-            details.put(CEPH_ACCESS_KEY, credentials.getAccessKey());
-            details.put(CEPH_SECRET_KEY, credentials.getSecretKey());
-            _accountDetailsDao.persist(accountId, details);
-            return true;
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e);
+        if (user.getS3Credentials().isEmpty()) {
+            throw new CloudRuntimeException("Ceph RGW user " + username + " has no S3 credentials");
         }
+        S3Credential credentials = user.getS3Credentials().get(0);
+
+        Map<String, String> details = new HashMap<>();
+        details.put(CEPH_ACCESS_KEY + "-" + storeId, DBEncryptionUtil.encrypt(credentials.getAccessKey()));
+        details.put(CEPH_SECRET_KEY + "-" + storeId, DBEncryptionUtil.encrypt(credentials.getSecretKey()));
+        _accountDetailsDao.update(accountId, details);
+        return true;
     }
 
     @Override
     public boolean setBucketEncryption(BucketTO bucket, long storeId) {
-        return false;
+        AmazonS3 client = getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey());
+        client.setBucketEncryption(new SetBucketEncryptionRequest().withBucketName(bucket.getName())
+                .withServerSideEncryptionConfiguration(new ServerSideEncryptionConfiguration().withRules(
+                        new ServerSideEncryptionRule().withApplyServerSideEncryptionByDefault(
+                                new ServerSideEncryptionByDefault().withSSEAlgorithm(SSEAlgorithm.AES256)))));
+        return true;
     }
 
     @Override
     public boolean deleteBucketEncryption(BucketTO bucket, long storeId) {
-        return false;
+        getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey()).deleteBucketEncryption(bucket.getName());
+        return true;
     }
 
     @Override
@@ -327,15 +319,11 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         String url = store.getUrl();
         String accessKey = storeDetails.get(ACCESS_KEY);
         String secretKey = storeDetails.get(SECRET_KEY);
-        RgwAdmin admin = new RgwAdminBuilder()
+        return rgwAdminClients.computeIfAbsent(url + accessKey + secretKey, key -> new RgwAdminBuilder()
                 .accessKey(accessKey)
                 .secretKey(secretKey)
                 .endpoint(url + "/admin")
-                .build();
-        if (admin == null) {
-            throw new CloudRuntimeException("Error while creating Ceph RGW client");
-        }
-        return admin;
+                .build());
     }
 
     private String getStoreURL(long storeId) {
@@ -346,23 +334,32 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     protected AmazonS3 getS3Client(long storeId, long accountId) {
         String url = getStoreURL(storeId);
-        String accessKey = _accountDetailsDao.findDetail(accountId, CEPH_ACCESS_KEY).getValue();
-        String secretKey = _accountDetailsDao.findDetail(accountId, CEPH_SECRET_KEY).getValue();
-        return this.getS3Client(url, accessKey, secretKey);
+        return this.getS3Client(url, getAccountKey(accountId, storeId, CEPH_ACCESS_KEY), getAccountKey(accountId, storeId, CEPH_SECRET_KEY));
+    }
+
+    /**
+     * Returns the RGW key of the account on the given store. Keys stored before they were kept per store
+     * have no store ID in their name and are not encrypted.
+     */
+    protected String getAccountKey(long accountId, long storeId, String name) {
+        AccountDetailVO detail = _accountDetailsDao.findDetail(accountId, name + "-" + storeId);
+        if (detail != null) {
+            return DBEncryptionUtil.decrypt(detail.getValue());
+        }
+        detail = _accountDetailsDao.findDetail(accountId, name);
+        if (detail == null) {
+            throw new CloudRuntimeException("No Ceph RGW " + name + " found for account " + accountId);
+        }
+        return detail.getValue();
     }
     protected AmazonS3 getS3Client(String url, String accessKey, String secretKey) {
-        AmazonS3 client = AmazonS3ClientBuilder.standard()
+        return s3Clients.computeIfAbsent(url + accessKey + secretKey, key -> AmazonS3ClientBuilder.standard()
                 .enablePathStyleAccess()
                 .withCredentials(
                         new AWSStaticCredentialsProvider(
                                 new BasicAWSCredentials(accessKey, secretKey)))
                 .withEndpointConfiguration(
                         new AwsClientBuilder.EndpointConfiguration(url, "us-east-1"))
-                .build();
-
-        if (client == null) {
-            throw new CloudRuntimeException("Error while creating Ceph RGW S3 client");
-        }
-        return client;
+                .build());
     }
 }

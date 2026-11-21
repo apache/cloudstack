@@ -27,6 +27,7 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreHelper;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
 import org.apache.cloudstack.storage.object.store.lifecycle.ObjectStoreLifeCycle;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.twonote.rgwadmin4j.RgwAdmin;
@@ -34,7 +35,6 @@ import org.twonote.rgwadmin4j.RgwAdminBuilder;
 
 import javax.inject.Inject;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class CephObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
@@ -52,7 +52,7 @@ public class CephObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
     @SuppressWarnings("unchecked")
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
-        String url = (String)dsInfos.get("url");
+        String url = StringUtils.stripEnd((String)dsInfos.get("url"), "/");
         String name = (String)dsInfos.get("name");
         Long size = (Long)dsInfos.get("size");
         String providerName = (String)dsInfos.get("providerName");
@@ -63,7 +63,9 @@ public class CephObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
 
         String accessKey = details.get("accesskey");
         String secretKey = details.get("secretkey");
-
+        if (StringUtils.isAnyBlank(accessKey, secretKey)) {
+            throw new CloudRuntimeException("Ceph RGW Admin credentials are missing");
+        }
 
         Map<String, Object> objectStoreParameters = new HashMap();
         objectStoreParameters.put("name", name);
@@ -74,7 +76,9 @@ public class CephObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         objectStoreParameters.put("accesskey", accessKey);
         objectStoreParameters.put("secretkey", secretKey);
 
-        logger.info("Attempting to connect to Ceph RGW at " + url + " with access key " + accessKey);
+        if (!url.startsWith("https://")) {
+            logger.warn("Ceph RGW at {} is not using HTTPS, requests to it are not protected in transit", url);
+        }
 
         RgwAdmin rgwAdmin = new RgwAdminBuilder()
                 .accessKey(accessKey)
@@ -82,12 +86,10 @@ public class CephObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
                 .endpoint(url + "/admin")
                 .build();
         try {
-            List<String> buckets = rgwAdmin.listBucket();
-            logger.debug("Found " + buckets + " buckets at Ceph RGW: " + url);
+            rgwAdmin.listBucket();
             logger.info("Successfully connected to Ceph RGW: " + url);
         } catch (Exception e) {
-            logger.debug("Error while initializing Ceph RGW Object Store: " + e.getMessage());
-            throw new RuntimeException("Error while initializing Ceph RGW Object Store. Invalid credentials or URL");
+            throw new CloudRuntimeException("Error while initializing Ceph RGW Object Store. Invalid credentials or URL", e);
         }
 
         ObjectStoreVO objectStore = objectStoreHelper.createObjectStore(objectStoreParameters, details);
