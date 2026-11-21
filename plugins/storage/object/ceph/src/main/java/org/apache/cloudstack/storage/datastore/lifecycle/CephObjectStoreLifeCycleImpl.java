@@ -27,6 +27,7 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreHelper;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
 import org.apache.cloudstack.storage.object.store.lifecycle.ObjectStoreLifeCycle;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.twonote.rgwadmin4j.RgwAdmin;
@@ -63,7 +64,9 @@ public class CephObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
 
         String accessKey = details.get("accesskey");
         String secretKey = details.get("secretkey");
-
+        if (StringUtils.isAnyBlank(accessKey, secretKey)) {
+            throw new CloudRuntimeException("Ceph RGW Admin credentials are missing");
+        }
 
         Map<String, Object> objectStoreParameters = new HashMap();
         objectStoreParameters.put("name", name);
@@ -86,8 +89,7 @@ public class CephObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
             logger.debug("Found " + buckets + " buckets at Ceph RGW: " + url);
             logger.info("Successfully connected to Ceph RGW: " + url);
         } catch (Exception e) {
-            logger.debug("Error while initializing Ceph RGW Object Store: " + e.getMessage());
-            throw new RuntimeException("Error while initializing Ceph RGW Object Store. Invalid credentials or URL");
+            throw new CloudRuntimeException("Error while initializing Ceph RGW Object Store. Invalid credentials or URL", e);
         }
 
         ObjectStoreVO objectStore = objectStoreHelper.createObjectStore(objectStoreParameters, details);

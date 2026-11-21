@@ -63,7 +63,6 @@ import org.twonote.rgwadmin4j.model.User;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Optional;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -102,16 +101,8 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         long accountId = bucket.getAccountId();
         AmazonS3 s3client = getS3Client(storeId, accountId);
 
-        try {
-            if (s3client.doesBucketExistV2(bucketName)) {
-                throw new CloudRuntimeException("Bucket already exists with the name: " + bucketName);
-            }
-        } catch (AmazonS3Exception e) {
-            if (e.getStatusCode() != 404) {
-                throw new CloudRuntimeException(e);
-            }
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e);
+        if (s3client.doesBucketExistV2(bucketName)) {
+            throw new CloudRuntimeException("Bucket already exists with the name: " + bucketName);
         }
         try {
             s3client.createBucket(new CreateBucketRequest(bucketName).withObjectLockEnabledForBucket(objectLock));
@@ -222,31 +213,22 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         String username = account.getUuid();
 
         logger.debug("Attempting to create Ceph RGW user for account {} with UUID {}", account, username);
+        User user;
         try {
-            Optional<User> user = rgwAdmin.getUserInfo(username);
-            if (user.isPresent()) {
-                logger.info("User already exists in Ceph RGW: " + username);
-                return true;
-            } else {
-                logger.debug("User does not exist. Creating user in Ceph RGW: " + username);
-            }
+            user = rgwAdmin.getUserInfo(username).orElseGet(() -> rgwAdmin.createUser(username));
         } catch (Exception e) {
-            logger.debug("Get user info failed for user {} with exception {}. Proceeding with user creation.",  username, e.getMessage());
+            throw new CloudRuntimeException("Failed to get or create Ceph RGW user " + username, e);
         }
-
-        try {
-            rgwAdmin.createUser(username);
-            User newUser = rgwAdmin.getUserInfo(username).get();
-            S3Credential credentials = newUser.getS3Credentials().get(0);
-
-            Map<String, String> details = new HashMap<>();
-            details.put(CEPH_ACCESS_KEY + "-" + storeId, DBEncryptionUtil.encrypt(credentials.getAccessKey()));
-            details.put(CEPH_SECRET_KEY + "-" + storeId, DBEncryptionUtil.encrypt(credentials.getSecretKey()));
-            _accountDetailsDao.update(accountId, details);
-            return true;
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e);
+        if (user.getS3Credentials().isEmpty()) {
+            throw new CloudRuntimeException("Ceph RGW user " + username + " has no S3 credentials");
         }
+        S3Credential credentials = user.getS3Credentials().get(0);
+
+        Map<String, String> details = new HashMap<>();
+        details.put(CEPH_ACCESS_KEY + "-" + storeId, DBEncryptionUtil.encrypt(credentials.getAccessKey()));
+        details.put(CEPH_SECRET_KEY + "-" + storeId, DBEncryptionUtil.encrypt(credentials.getSecretKey()));
+        _accountDetailsDao.update(accountId, details);
+        return true;
     }
 
     @Override
