@@ -148,10 +148,8 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     @Override
     public boolean deleteBucket(BucketTO bucket, long storeId) {
-        RgwAdmin rgwAdmin = getRgwAdminClient(storeId);
-
         try {
-            rgwAdmin.removeBucket(bucket.getName());
+            getS3Client(getStoreURL(storeId), bucket.getAccessKey(), bucket.getSecretKey()).deleteBucket(bucket.getName());
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
