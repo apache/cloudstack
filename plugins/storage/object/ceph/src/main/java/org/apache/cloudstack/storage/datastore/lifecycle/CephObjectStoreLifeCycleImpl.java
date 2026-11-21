@@ -35,7 +35,6 @@ import org.twonote.rgwadmin4j.RgwAdminBuilder;
 
 import javax.inject.Inject;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class CephObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
@@ -53,7 +52,7 @@ public class CephObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
     @SuppressWarnings("unchecked")
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
-        String url = (String)dsInfos.get("url");
+        String url = StringUtils.stripEnd((String)dsInfos.get("url"), "/");
         String name = (String)dsInfos.get("name");
         Long size = (Long)dsInfos.get("size");
         String providerName = (String)dsInfos.get("providerName");
@@ -77,7 +76,9 @@ public class CephObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         objectStoreParameters.put("accesskey", accessKey);
         objectStoreParameters.put("secretkey", secretKey);
 
-        logger.info("Attempting to connect to Ceph RGW at " + url + " with access key " + accessKey);
+        if (!url.startsWith("https://")) {
+            logger.warn("Ceph RGW at {} is not using HTTPS, requests to it are not protected in transit", url);
+        }
 
         RgwAdmin rgwAdmin = new RgwAdminBuilder()
                 .accessKey(accessKey)
@@ -85,8 +86,7 @@ public class CephObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
                 .endpoint(url + "/admin")
                 .build();
         try {
-            List<String> buckets = rgwAdmin.listBucket();
-            logger.debug("Found " + buckets + " buckets at Ceph RGW: " + url);
+            rgwAdmin.listBucket();
             logger.info("Successfully connected to Ceph RGW: " + url);
         } catch (Exception e) {
             throw new CloudRuntimeException("Error while initializing Ceph RGW Object Store. Invalid credentials or URL", e);
