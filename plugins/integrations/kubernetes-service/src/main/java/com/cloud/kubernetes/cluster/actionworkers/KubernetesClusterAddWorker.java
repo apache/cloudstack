@@ -284,8 +284,8 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             Pair<Boolean, String> result = SshHelper.sshExecute(publicIp.getAddress().addr(), nodeSshPort, getControlNodeLoginUser(),
                     pkFile, null, command, 10000, 10000, 10 * 60 * 1000);
             if (Boolean.FALSE.equals(result.first())) {
-                logger.error(String.format("Node with ID: %s cannot be added as a worker node as it does not have " +
-                        "the following dependencies: %s ", nodeId, result.second()));
+                logger.error(String.format("Node with ID: %s cannot be added as a worker node, it failed validation: %s",
+                        nodeId, result.second()));
                 return false;
             }
         } catch (Exception e) {
