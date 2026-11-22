@@ -106,29 +106,59 @@ write_files:
         export PATH=$PATH:/opt/bin
       fi
 
+      K8S_VERSION="{{ k8s.version }}"
+      PREBUILT_BIN_DIR=""
+      kubeadm_path=$(command -v kubeadm || true)
+      dir="${kubeadm_path%/kubeadm}"
+      if [ -n "$K8S_VERSION" ] && [ -n "$kubeadm_path" ] &&
+          [ "$("$dir/kubeadm" version -o short 2>/dev/null)" = "v$K8S_VERSION" ] &&
+          [ "$("$dir/kubelet" --version 2>/dev/null)" = "Kubernetes v$K8S_VERSION" ] &&
+          "$dir/kubectl" version --client -o yaml 2>/dev/null | grep -qxF "  gitVersion: v$K8S_VERSION" &&
+          systemctl show -p ExecStart --value kubelet.service 2>/dev/null | grep -qF "path=$dir/kubelet ;" &&
+          systemctl show -p ExecStart --value kubelet.service 2>/dev/null | grep -qF 'KUBELET_KUBEADM_ARGS' &&
+          [ -x /opt/cni/bin/loopback ] && command -v crictl > /dev/null; then
+        PREBUILT_BIN_DIR="$dir"
+      fi
+      if [ -n "$PREBUILT_BIN_DIR" ] && [ ! "$PREBUILT_BIN_DIR" -ef /opt/bin ]; then
+        mkdir -p /opt/bin
+        ln -sf "$PREBUILT_BIN_DIR/kubeadm" "$PREBUILT_BIN_DIR/kubelet" "$PREBUILT_BIN_DIR/kubectl" /opt/bin/
+      fi
+
       if [ -d "$BINARIES_DIR" ]; then
         ### Binaries available offline ###
-        echo "Installing binaries from ${BINARIES_DIR}"
-        mkdir -p /opt/cni/bin
-        tar -f "${BINARIES_DIR}/cni/cni-plugins-"*64.tgz -C /opt/cni/bin -xz
+        if [ -n "$PREBUILT_BIN_DIR" ]; then
+          echo "Kubernetes v${K8S_VERSION} is already installed in ${PREBUILT_BIN_DIR}, not installing binaries from ${BINARIES_DIR}"
+          setup_complete=true
+        else
+          echo "Installing binaries from ${BINARIES_DIR}"
+          mkdir -p /opt/cni/bin
+          tar -f "${BINARIES_DIR}/cni/cni-plugins-"*64.tgz -C /opt/cni/bin -xz
 
-        mkdir -p /opt/bin
-        tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-"*64.tar.gz -C /opt/bin -xz
+          mkdir -p /opt/bin
+          tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-"*64.tar.gz -C /opt/bin -xz
 
-        mkdir -p /opt/bin
-        cd /opt/bin
-        cp -a ${BINARIES_DIR}/k8s/{kubeadm,kubelet,kubectl} .
-        chmod +x {kubeadm,kubelet,kubectl}
+          mkdir -p /opt/bin
+          cd /opt/bin
+          cp -a ${BINARIES_DIR}/k8s/{kubeadm,kubelet,kubectl} .
+          chmod +x {kubeadm,kubelet,kubectl}
 
-        sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/kubelet.service > /etc/systemd/system/kubelet.service
-        mkdir -p /etc/systemd/system/kubelet.service.d
-        sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/10-kubeadm.conf > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+          sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/kubelet.service > /etc/systemd/system/kubelet.service
+          mkdir -p /etc/systemd/system/kubelet.service.d
+          sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/10-kubeadm.conf > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+        fi
 
         echo "KUBELET_EXTRA_ARGS=--cgroup-driver=systemd" > /etc/default/kubelet
 
         output=`ls ${BINARIES_DIR}/docker/`
         if [ "$output" != "" ]; then
+          present_images=""
+          if [ -n "$PREBUILT_BIN_DIR" ]; then
+            present_images=$(ctr -n k8s.io images ls -q 2>/dev/null | grep -xF -f <("$PREBUILT_BIN_DIR/kubeadm" config images list --kubernetes-version "v$K8S_VERSION" 2>/dev/null) || true)
+          fi
           while read -r line; do
+            if [[ $'\n'"$present_images"$'\n' == *"/${line%.tar}"$'\n'* ]]; then
+              continue
+            fi
             crucial_cmd_attempts=1
             while true; do
               if (( "$crucial_cmd_attempts" > "$MAX_SETUP_CRUCIAL_CMD_ATTEMPTS" )); then
@@ -233,8 +263,8 @@ write_files:
       modprobe ip_vs_wrr
       modprobe ip_vs_sh
       modprobe nf_conntrack
-      if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
-        export PATH=$PATH:/opt/bin
+      if [[ "$PATH" != /opt/bin:* ]]; then
+        export PATH=/opt/bin:$PATH
       fi
       kubeadm join {{ k8s_control_node.join_ip }}:6443 --token {{ k8s_control_node.cluster.token }} --control-plane --certificate-key {{ k8s_control_node.cluster.ha.certificate.key }} --discovery-token-unsafe-skip-ca-verification
 
