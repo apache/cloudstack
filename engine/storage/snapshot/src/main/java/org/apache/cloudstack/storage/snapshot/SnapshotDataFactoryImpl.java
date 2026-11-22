@@ -171,7 +171,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         List<SnapshotDataStoreVO> snapshotStores = snapshotStoreDao.listReadyBySnapshot(snapshotId, role);
         SnapshotDataStoreVO snapshotStore = null;
         for (SnapshotDataStoreVO ref : snapshotStores) {
-            if (zoneId == storeMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())) {
+            if (Long.valueOf(zoneId).equals(storeMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole()))) {
                 snapshotStore = ref;
                 break;
             }
@@ -182,7 +182,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
             }
             snapshotStores = snapshotStoreDao.findByVolume(snapshotId, snapshot.getVolumeId(), role);
             for (SnapshotDataStoreVO ref : snapshotStores) {
-                if (zoneId == storeMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())); {
+                if (Long.valueOf(zoneId).equals(storeMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole()))) {
                     snapshotStore = ref;
                     break;
                 }

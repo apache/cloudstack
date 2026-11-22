@@ -123,6 +123,28 @@ public class SnapshotHelperTest {
     }
 
     @Test
+    public void validateExpungeTemporarySnapshotNullSnapshotInfoDoesNothing() {
+        snapshotHelperSpy.expungeTemporarySnapshot(true, null);
+        Mockito.verifyNoInteractions(snapshotServiceMock, snapshotDataStoreDaoMock, snapshotJoinDao, dataStoreManager);
+    }
+
+    @Test
+    public void validateExpungeTemporarySnapshotNoImageStoreCopyInZoneDoesNotExpungeReference() {
+        DataStore store = Mockito.mock(DataStore.class);
+        Mockito.when(store.getRole()).thenReturn(DataStoreRole.Primary);
+        Mockito.when(store.getId()).thenReturn(1L);
+        Mockito.when(snapshotInfoMock.getDataStore()).thenReturn(store);
+        Mockito.when(dataStoreManager.getStoreZoneId(1L, DataStoreRole.Primary)).thenReturn(1L);
+        Mockito.doReturn(false).when(snapshotHelperSpy).isStorageSupportSnapshotToTemplate(snapshotInfoMock);
+        Mockito.when(snapshotJoinDao.listBySnapshotIdAndZoneId(Mockito.anyLong(), Mockito.anyLong())).thenReturn(Arrays.asList(null, null));
+        Mockito.when(snapshotDataFactoryMock.getSnapshotWithRoleAndZone(Mockito.anyLong(), Mockito.eq(DataStoreRole.Image), Mockito.eq(1L))).thenReturn(null);
+
+        snapshotHelperSpy.expungeTemporarySnapshot(true, snapshotInfoMock);
+
+        Mockito.verify(snapshotDataStoreDaoMock, Mockito.never()).expungeReferenceBySnapshotIdAndDataStoreRole(Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
     public void validateIsKvmSnapshotOnlyInPrimaryStorageBackupToSecondaryTrue() {
         List<Hypervisor.HypervisorType> hypervisorTypes = Arrays.asList(Hypervisor.HypervisorType.values());
         hypervisorTypes.forEach(type -> {

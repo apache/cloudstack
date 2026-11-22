@@ -104,6 +104,10 @@ public class SnapshotHelper {
      * @param snapInfo the snapshot info to delete.
      */
     public void expungeTemporarySnapshot(boolean kvmSnapshotOnlyInPrimaryStorage, SnapshotInfo snapInfo) {
+        if (snapInfo == null) {
+            logger.debug("Unable to expunge snapshot due to its info is null.");
+            return;
+        }
         long storeId = snapInfo.getDataStore().getId();
         long zoneId = dataStorageManager.getStoreZoneId(storeId, snapInfo.getDataStore().getRole());
 
@@ -114,14 +118,7 @@ public class SnapshotHelper {
 
         List<SnapshotJoinVO> snapshots = snapshotJoinDao.listBySnapshotIdAndZoneId(zoneId, snapInfo.getSnapshotId());
         if (snapshots.size() <= 1) {
-            if (snapInfo != null) {
-                logger.trace(String.format("Snapshot [{}] is not a temporary backup to create a volume from snapshot. Not expunging it.", snapInfo.getId()));
-            }
-            return;
-        }
-
-        if (snapInfo == null) {
-            logger.warn("Unable to expunge snapshot due to its info is null.");
+            logger.trace("Snapshot [{}] is not a temporary backup to create a volume from snapshot. Not expunging it.", snapInfo.getId());
             return;
         }
 
@@ -148,6 +145,10 @@ public class SnapshotHelper {
 
         if (!DataStoreRole.Image.equals(snapInfo.getDataStore().getRole())) {
             SnapshotInfo imageStoreSnapInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapInfo.getId(), DataStoreRole.Image, zoneId);
+            if (imageStoreSnapInfo == null) {
+                logger.debug("Snapshot [{}] has no image store copy in zone [{}]; nothing to expunge.", snapInfo.getSnapshotVO(), zoneId);
+                return;
+            }
             storeId = imageStoreSnapInfo.getDataStore().getId();
         }
         snapshotDataStoreDao.expungeReferenceBySnapshotIdAndDataStoreRole(snapInfo.getId(), storeId, DataStoreRole.Image);

@@ -586,14 +586,22 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
         DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot, zoneId);
         SnapshotInfo snapInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapshot.getId(), dataStoreRole, zoneId);
+        if (snapInfo == null) {
+            throw new CloudRuntimeException(String.format("Snapshot [%s] has no copy in zone [%s].", snapshot.getUuid(), dc.getUuid()));
+        }
         boolean kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole, zoneId);
         logger.debug("Creating volume from snapshot, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
 
         boolean storageSupportSnapshotToTemplateEnabled = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo); // storageSupportSnapshotToTemplateEnabled is true only for StorPool now [TODO: Update to check storage supports snapshot to volume (DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT) - may impact other storages, or StorPool storage type only]
         try {
             if (!storageSupportSnapshotToTemplateEnabled) {
-                dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
-                snapInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapshot.getId(), dataStoreRole, zoneId);
+                DataStoreRole snapshotRole = snapshotHelper.getDataStoreRole(snapshot);
+                SnapshotInfo snapInfoInRole = snapshotFactory.getSnapshotWithRoleAndZone(snapshot.getId(), snapshotRole, zoneId);
+                // A missing Image copy is backed up below; a missing Primary copy is in another zone, so keep the one found in this zone
+                if (snapInfoInRole != null || DataStoreRole.Image.equals(snapshotRole)) {
+                    dataStoreRole = snapshotRole;
+                    snapInfo = snapInfoInRole;
+                }
                 kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole);
                 logger.debug("Creating volume from snapshot, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
                 snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
