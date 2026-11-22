@@ -143,6 +143,15 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "Start port for Port forwarding rules for etcd nodes",
             true,
             KubernetesServiceEnabled.key());
+    static final ConfigKey<Boolean> KubernetesClusterNodeOutOfServiceTaintEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
+            "cloud.kubernetes.cluster.node.out.of.service.taint.enabled",
+            "false",
+            "When enabled, a node of a running Kubernetes cluster (version 1.26 or later) whose VM is stopped or destroyed outside of a cluster operation gets the " +
+                    "node.kubernetes.io/out-of-service=nodeshutdown:NoExecute taint, so Kubernetes force-detaches its volumes and reschedules its pods. " +
+                    "The taint is removed once the VM is running again. Only enable it where a VM marked stopped is reliably powered off, " +
+                    "for example with host HA fencing, as Kubernetes then attaches its volumes elsewhere.",
+            true,
+            KubernetesServiceEnabled.key());
 
     KubernetesCluster findById(final Long id);
 
