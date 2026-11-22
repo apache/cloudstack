@@ -1410,16 +1410,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             if (volumeMigrateRequired) {
-                MigrateVolumeCmd migrateVolumeCmd = new MigrateVolumeCmd(volume.getId(), suitableStoragePoolsWithEnoughSpace.get(0).getId(), newDiskOfferingId, true);
-                try {
-                    Volume result = migrateVolume(migrateVolumeCmd);
-                    volume = (result != null) ? _volsDao.findById(result.getId()) : null;
-                    if (volume == null) {
-                        throw new CloudRuntimeException(String.format("Volume resize operation failed for volume ID: %s as migration failed to storage pool %s accommodating new size", volume.getUuid(), suitableStoragePoolsWithEnoughSpace.get(0).getId()));
-                    }
-                } catch (Exception e) {
-                    throw new CloudRuntimeException(String.format("Volume resize operation failed for volume ID: %s as migration failed to storage pool %s accommodating new size", volume.getUuid(), suitableStoragePoolsWithEnoughSpace.get(0).getId()));
-                }
+                StoragePool destPool = suitableStoragePoolsWithEnoughSpace.get(0);
+                volume = migrateVolumeToPool(volume, destPool, newDiskOfferingId,
+                        String.format("Volume resize operation failed for volume ID: %s as migration failed to storage pool %s accommodating new size", volume.getUuid(), destPool));
             }
 
             UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
@@ -2251,16 +2244,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume change offering operation failed for volume: %s as no suitable pool(s) with enough space found for volume migration.", volume));
                 }
                 Collections.shuffle(suitableStoragePoolsWithEnoughSpace);
-                MigrateVolumeCmd migrateVolumeCmd = new MigrateVolumeCmd(volume.getId(), suitableStoragePoolsWithEnoughSpace.get(0).getId(), newDiskOffering.getId(), true);
-                try {
-                    Volume result = migrateVolume(migrateVolumeCmd);
-                    volume = (result != null) ? _volsDao.findById(result.getId()) : null;
-                    if (volume == null) {
-                        throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume: %s migration failed to storage pool %s", volume, suitableStoragePools.get(0)));
-                    }
-                } catch (Exception e) {
-                    throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume: %s migration failed to storage pool %s due to %s", volume, suitableStoragePools.get(0), e.getMessage()));
-                }
+                StoragePool destPool = suitableStoragePoolsWithEnoughSpace.get(0);
+                volume = migrateVolumeToPool(volume, destPool, newDiskOffering.getId(),
+                        String.format("Volume change offering operation failed for volume: %s migration failed to storage pool %s", volume, destPool));
             }
 
             if (volumeResizeRequired) {
@@ -2282,6 +2268,20 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } finally {
             ReservationHelper.closeAll(reservations);
         }
+    }
+
+    private VolumeVO migrateVolumeToPool(VolumeVO volume, StoragePool destPool, Long newDiskOfferingId, String failureMessage) {
+        Volume result;
+        try {
+            result = migrateVolume(new MigrateVolumeCmd(volume.getId(), destPool.getId(), newDiskOfferingId, true));
+        } catch (Exception e) {
+            throw new CloudRuntimeException(String.format("%s due to %s", failureMessage, ObjectUtils.defaultIfNull(e.getMessage(), e.getClass().getSimpleName())), e);
+        }
+        VolumeVO migratedVolume = result != null ? _volsDao.findById(result.getId()) : null;
+        if (migratedVolume == null) {
+            throw new CloudRuntimeException(String.format("%s: the migration did not return the migrated volume", failureMessage));
+        }
+        return migratedVolume;
     }
 
     private void updateStorageWithTheNewDiskOffering(VolumeVO volume, DiskOfferingVO newDiskOffering) {
