@@ -88,6 +88,8 @@ public class McpServletTest {
 
     @Before
     public void setUp() throws Exception {
+        // Other tests may leave a context registered in this thread
+        CallContext.unregister();
         servlet = Mockito.spy(new McpServlet());
         servlet.apiServer = apiServer;
         servlet.accountService = accountService;
@@ -256,7 +258,7 @@ public class McpServletTest {
     public void initializeAnswersWithTheNewestSupportedVersionWhenTheRequestedIsNot() throws Exception {
         JsonObject result = post("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"1999-01-01\"}}").getAsJsonObject("result");
 
-        Assert.assertEquals(McpServlet.SUPPORTED_PROTOCOL_VERSIONS.get(0), result.get("protocolVersion").getAsString());
+        Assert.assertEquals(McpServlet.HANDSHAKE_PROTOCOL_VERSIONS.get(0), result.get("protocolVersion").getAsString());
     }
 
     @Test
@@ -330,10 +332,10 @@ public class McpServletTest {
     @Test
     public void unsupportedProtocolVersionInRequestMetadataIsRejected() throws Exception {
         JsonObject error = post("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{\"_meta\":" +
-                "{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\"}}}").getAsJsonObject("error");
+                "{\"io.modelcontextprotocol/protocolVersion\":\"2099-01-01\"}}}").getAsJsonObject("error");
 
         Assert.assertEquals(McpServlet.UNSUPPORTED_PROTOCOL_VERSION, error.get("code").getAsInt());
-        Assert.assertEquals("2026-07-28", error.getAsJsonObject("data").get("requested").getAsString());
+        Assert.assertEquals("2099-01-01", error.getAsJsonObject("data").get("requested").getAsString());
         verifyStatus(HttpServletResponse.SC_BAD_REQUEST);
     }
 
@@ -512,5 +514,117 @@ public class McpServletTest {
         mockApiResponses("{\"listapisresponse\":{}}");
 
         Assert.assertTrue(callTool(McpServlet.TOOL_DESCRIBE_API, "{\"name\":\"doesNotExist\"}").get("isError").getAsBoolean());
+    }
+
+    private static final String STATELESS_META = "\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\"," +
+            "\"io.modelcontextprotocol/clientInfo\":{\"name\":\"test\",\"version\":\"1\"},\"io.modelcontextprotocol/clientCapabilities\":{}}";
+
+    /**
+     * Sends a request of the protocol revision without handshake, with the headers that match its body.
+     */
+    private JsonObject postStateless(String method, String extraParams) throws Exception {
+        Mockito.when(request.getHeader("MCP-Protocol-Version")).thenReturn("2026-07-28");
+        Mockito.when(request.getHeader("Mcp-Method")).thenReturn(method);
+        return post(String.format("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"%s\",\"params\":{%s%s}}", method, extraParams, STATELESS_META));
+    }
+
+    @Test
+    public void statelessDiscoverReturnsTheSupportedVersionsAndCapabilities() throws Exception {
+        JsonObject result = postStateless("server/discover", "").getAsJsonObject("result");
+
+        Assert.assertEquals("complete", result.get("resultType").getAsString());
+        Assert.assertEquals(McpServlet.SUPPORTED_PROTOCOL_VERSIONS.size(), result.getAsJsonArray("supportedVersions").size());
+        Assert.assertTrue(result.getAsJsonObject("capabilities").has("tools"));
+        Assert.assertTrue(result.has("instructions"));
+        Assert.assertTrue(result.get("ttlMs").getAsLong() > 0);
+        Assert.assertEquals("public", result.get("cacheScope").getAsString());
+        Assert.assertEquals("24.0.0", result.getAsJsonObject("_meta").getAsJsonObject("io.modelcontextprotocol/serverInfo").get("version").getAsString());
+        verifyStatus(HttpServletResponse.SC_OK);
+    }
+
+    @Test
+    public void statelessToolsListReturnsTheToolsWithCacheHints() throws Exception {
+        JsonObject result = postStateless("tools/list", "").getAsJsonObject("result");
+
+        Assert.assertEquals(4, result.getAsJsonArray("tools").size());
+        Assert.assertEquals("complete", result.get("resultType").getAsString());
+        Assert.assertTrue(result.has("ttlMs"));
+        Assert.assertTrue(result.has("cacheScope"));
+    }
+
+    @Test
+    public void statelessToolsCallExecutesTheTool() throws Exception {
+        Mockito.when(request.getHeader("Mcp-Name")).thenReturn(McpServlet.TOOL_EXECUTE_API);
+        mockApiResponses("{\"listzonesresponse\":{\"count\":0}}");
+
+        JsonObject result = postStateless("tools/call", "\"name\":\"" + McpServlet.TOOL_EXECUTE_API + "\",\"arguments\":{\"command\":\"listZones\"},")
+                .getAsJsonObject("result");
+
+        Assert.assertEquals("complete", result.get("resultType").getAsString());
+        Assert.assertFalse(result.get("isError").getAsBoolean());
+        Assert.assertEquals("listZones", getParam(executedRequests.get(0), "command"));
+    }
+
+    @Test
+    public void statelessToolsCallAcceptsTheNameHeaderEncodedInBase64() throws Exception {
+        Mockito.when(request.getHeader("Mcp-Name")).thenReturn("=?base64?" +
+                java.util.Base64.getEncoder().encodeToString(McpServlet.TOOL_SEARCH_APIS.getBytes()) + "?=");
+        mockApiResponses("{\"listapisresponse\":{}}");
+
+        JsonObject answer = postStateless("tools/call", "\"name\":\"" + McpServlet.TOOL_SEARCH_APIS + "\",\"arguments\":{\"keyword\":\"zone\"},");
+
+        Assert.assertTrue(answer.has("result"));
+    }
+
+    @Test
+    public void statelessRequestWithoutTheMethodHeaderIsAHeaderMismatch() throws Exception {
+        Mockito.when(request.getHeader("MCP-Protocol-Version")).thenReturn("2026-07-28");
+
+        JsonObject answer = post("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{" + STATELESS_META + "}}");
+
+        Assert.assertEquals(McpServlet.HEADER_MISMATCH, answer.getAsJsonObject("error").get("code").getAsInt());
+        verifyStatus(HttpServletResponse.SC_BAD_REQUEST);
+    }
+
+    @Test
+    public void statelessRequestWithAnotherVersionInTheHeaderIsAHeaderMismatch() throws Exception {
+        Mockito.when(request.getHeader("MCP-Protocol-Version")).thenReturn("2025-11-25");
+        Mockito.when(request.getHeader("Mcp-Method")).thenReturn("tools/list");
+
+        JsonObject answer = post("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{" + STATELESS_META + "}}");
+
+        Assert.assertEquals(McpServlet.HEADER_MISMATCH, answer.getAsJsonObject("error").get("code").getAsInt());
+        verifyStatus(HttpServletResponse.SC_BAD_REQUEST);
+    }
+
+    @Test
+    public void statelessToolsCallWithAnotherToolInTheNameHeaderIsAHeaderMismatchAndIsNotExecuted() throws Exception {
+        Mockito.when(request.getHeader("Mcp-Name")).thenReturn(McpServlet.TOOL_SEARCH_APIS);
+
+        JsonObject answer = postStateless("tools/call", "\"name\":\"" + McpServlet.TOOL_EXECUTE_API + "\",\"arguments\":{\"command\":\"listZones\"},");
+
+        Assert.assertEquals(McpServlet.HEADER_MISMATCH, answer.getAsJsonObject("error").get("code").getAsInt());
+        verifyStatus(HttpServletResponse.SC_BAD_REQUEST);
+        Mockito.verify(apiServer, Mockito.never()).handleRequest(Mockito.anyMap(), Mockito.anyString(), Mockito.any(StringBuilder.class));
+    }
+
+    @Test
+    public void statelessRequestWithoutClientCapabilitiesIsInvalid() throws Exception {
+        Mockito.when(request.getHeader("MCP-Protocol-Version")).thenReturn("2026-07-28");
+        Mockito.when(request.getHeader("Mcp-Method")).thenReturn("tools/list");
+
+        JsonObject answer = post("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{\"_meta\":" +
+                "{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\"}}}");
+
+        Assert.assertEquals(McpServlet.INVALID_PARAMS, answer.getAsJsonObject("error").get("code").getAsInt());
+        verifyStatus(HttpServletResponse.SC_BAD_REQUEST);
+    }
+
+    @Test
+    public void statelessUnknownMethodIsNotFound() throws Exception {
+        JsonObject answer = postStateless("resources/list", "");
+
+        Assert.assertEquals(McpServlet.METHOD_NOT_FOUND, answer.getAsJsonObject("error").get("code").getAsInt());
+        verifyStatus(HttpServletResponse.SC_NOT_FOUND);
     }
 }

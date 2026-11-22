@@ -20,8 +20,10 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +64,8 @@ import com.google.gson.JsonParser;
 
 /**
  * MCP (Model Context Protocol) server of the management server, using the Streamable HTTP transport without streaming and without sessions:
- * each POST carries one JSON-RPC message and is answered with one JSON body. Requests are authenticated with an MCP token
+ * each POST carries one JSON-RPC message and is answered with one JSON body. Both the protocol revisions that start with the initialize
+ * handshake and the revision without handshake are served, the latter being recognized by the protocol version in the request metadata. Requests are authenticated with an MCP token
  * (see {@link McpTokenService}) and every API is executed through {@link ApiServerService}, as the calling user.
  * <p>
  * Instead of one tool per API, the server exposes a few tools to search, describe and execute any API the user has access to.
@@ -72,16 +75,26 @@ public class McpServlet extends HttpServlet {
     private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + McpServlet.class.getName());
 
     // Protocol revisions based on the initialize handshake, newest first
-    static final List<String> SUPPORTED_PROTOCOL_VERSIONS = List.of("2025-11-25", "2025-06-18");
+    static final List<String> HANDSHAKE_PROTOCOL_VERSIONS = List.of("2025-11-25", "2025-06-18");
+    // Protocol revision without handshake: each request informs the version, in the metadata of its parameters, and is served on its own
+    static final String STATELESS_PROTOCOL_VERSION = "2026-07-28";
+    static final List<String> SUPPORTED_PROTOCOL_VERSIONS = List.of(STATELESS_PROTOCOL_VERSION, "2025-11-25", "2025-06-18");
+
     private static final String PROTOCOL_VERSION_HEADER = "MCP-Protocol-Version";
-    // Revisions without handshake inform the version on each request, in the metadata of its parameters
+    private static final String METHOD_HEADER = "Mcp-Method";
+    private static final String NAME_HEADER = "Mcp-Name";
     private static final String PROTOCOL_VERSION_META = "io.modelcontextprotocol/protocolVersion";
+    private static final String CLIENT_CAPABILITIES_META = "io.modelcontextprotocol/clientCapabilities";
+    private static final String SERVER_INFO_META = "io.modelcontextprotocol/serverInfo";
+    // The tools and the server description only change when the management server is upgraded
+    private static final long CACHE_TTL_IN_MILLIS = 3600000;
 
     static final int PARSE_ERROR = -32700;
     static final int INVALID_REQUEST = -32600;
     static final int METHOD_NOT_FOUND = -32601;
     static final int INVALID_PARAMS = -32602;
     static final int INTERNAL_ERROR = -32603;
+    static final int HEADER_MISMATCH = -32020;
     static final int UNSUPPORTED_PROTOCOL_VERSION = -32022;
 
     static final String TOOL_SEARCH_APIS = "cloudstack_search_apis";
@@ -218,8 +231,11 @@ public class McpServlet extends HttpServlet {
         }
 
         JsonObject params = message.get("params") instanceof JsonObject ? message.getAsJsonObject("params") : new JsonObject();
-        String protocolVersion = getRequestProtocolVersion(req, params);
-        if (protocolVersion != null && !SUPPORTED_PROTOCOL_VERSIONS.contains(protocolVersion)) {
+        JsonObject meta = params.get("_meta") instanceof JsonObject ? params.getAsJsonObject("_meta") : new JsonObject();
+        String metaProtocolVersion = getString(meta, PROTOCOL_VERSION_META);
+        boolean isStateless = metaProtocolVersion != null;
+        String protocolVersion = isStateless ? metaProtocolVersion : req.getHeader(PROTOCOL_VERSION_HEADER);
+        if (isStateless ? !STATELESS_PROTOCOL_VERSION.equals(protocolVersion) : protocolVersion != null && !SUPPORTED_PROTOCOL_VERSIONS.contains(protocolVersion)) {
             JsonObject data = new JsonObject();
             JsonArray supported = new JsonArray();
             SUPPORTED_PROTOCOL_VERSIONS.forEach(supported::add);
@@ -234,28 +250,28 @@ public class McpServlet extends HttpServlet {
             return;
         }
 
+        int status = HttpServletResponse.SC_OK;
         JsonObject response;
         try {
-            response = createResult(id, processMethod(method, params, userId, remoteAddress));
+            if (isStateless) {
+                validateStatelessRequest(req, method, params, meta);
+                response = createResult(id, processStatelessMethod(method, params, userId, remoteAddress));
+            } else {
+                response = createResult(id, processMethod(method, params, userId, remoteAddress));
+            }
         } catch (McpException e) {
+            status = e.status;
             response = createError(id, e.code, e.getMessage(), null);
         } catch (RuntimeException e) {
             LOGGER.error("Unexpected error while processing the MCP method [{}]", method, e);
             response = createError(id, INTERNAL_ERROR, "Internal error", null);
         }
-        writeResponse(resp, HttpServletResponse.SC_OK, response);
+        writeResponse(resp, status, response);
     }
 
-    private String getRequestProtocolVersion(HttpServletRequest req, JsonObject params) {
-        if (params.get("_meta") instanceof JsonObject) {
-            String version = getString(params.getAsJsonObject("_meta"), PROTOCOL_VERSION_META);
-            if (version != null) {
-                return version;
-            }
-        }
-        return req.getHeader(PROTOCOL_VERSION_HEADER);
-    }
-
+    /**
+     * Methods of the protocol revisions based on the initialize handshake.
+     */
     private JsonObject processMethod(String method, JsonObject params, long userId, InetAddress remoteAddress) throws McpException {
         switch (method) {
             case "initialize":
@@ -269,26 +285,99 @@ public class McpServlet extends HttpServlet {
             case "tools/call":
                 return callTool(params, userId, remoteAddress);
             default:
-                throw new McpException(METHOD_NOT_FOUND, "Method not found: " + method);
+                throw new McpException(HttpServletResponse.SC_OK, METHOD_NOT_FOUND, "Method not found: " + method);
         }
     }
 
     private JsonObject initialize(JsonObject params) {
         String requestedVersion = getString(params, "protocolVersion");
 
+        JsonObject result = new JsonObject();
+        result.addProperty("protocolVersion", HANDSHAKE_PROTOCOL_VERSIONS.contains(requestedVersion) ? requestedVersion : HANDSHAKE_PROTOCOL_VERSIONS.get(0));
+        result.add("capabilities", createCapabilities());
+        result.add("serverInfo", createServerInfo());
+        result.addProperty("instructions", INSTRUCTIONS);
+        return result;
+    }
+
+    /**
+     * In the protocol revision without handshake, the routing headers of the request must be present and match its body.
+     */
+    private void validateStatelessRequest(HttpServletRequest req, String method, JsonObject params, JsonObject meta) throws McpException {
+        validateHeader(req, PROTOCOL_VERSION_HEADER, STATELESS_PROTOCOL_VERSION);
+        validateHeader(req, METHOD_HEADER, method);
+        if ("tools/call".equals(method)) {
+            validateHeader(req, NAME_HEADER, getString(params, "name"));
+        }
+        if (!(meta.get(CLIENT_CAPABILITIES_META) instanceof JsonObject)) {
+            throw new McpException(HttpServletResponse.SC_BAD_REQUEST, INVALID_PARAMS, "Missing required metadata: " + CLIENT_CAPABILITIES_META);
+        }
+    }
+
+    private void validateHeader(HttpServletRequest req, String header, String bodyValue) throws McpException {
+        String value = req.getHeader(header);
+        // Values that are not plain ASCII are sent encoded in Base64
+        if (value != null && value.startsWith("=?base64?") && value.endsWith("?=")) {
+            value = new String(Base64.getDecoder().decode(value.substring("=?base64?".length(), value.length() - "?=".length())), StandardCharsets.UTF_8);
+        }
+        if (value == null || !value.equals(bodyValue)) {
+            throw new McpException(HttpServletResponse.SC_BAD_REQUEST, HEADER_MISMATCH,
+                    String.format("Header mismatch: %s header value '%s' does not match body value '%s'", header, value, bodyValue));
+        }
+    }
+
+    /**
+     * Methods of the protocol revision without handshake.
+     */
+    private JsonObject processStatelessMethod(String method, JsonObject params, long userId, InetAddress remoteAddress) throws McpException {
+        JsonObject result;
+        switch (method) {
+            case "server/discover":
+                JsonArray supportedVersions = new JsonArray();
+                SUPPORTED_PROTOCOL_VERSIONS.forEach(supportedVersions::add);
+                result = new JsonObject();
+                result.add("supportedVersions", supportedVersions);
+                result.add("capabilities", createCapabilities());
+                result.addProperty("instructions", INSTRUCTIONS);
+                addCacheHints(result);
+                break;
+            case "tools/list":
+                result = new JsonObject();
+                result.add("tools", createTools());
+                addCacheHints(result);
+                break;
+            case "tools/call":
+                result = callTool(params, userId, remoteAddress);
+                break;
+            default:
+                throw new McpException(HttpServletResponse.SC_NOT_FOUND, METHOD_NOT_FOUND, "Method not found: " + method);
+        }
+
+        JsonObject meta = new JsonObject();
+        meta.add(SERVER_INFO_META, createServerInfo());
+        result.add("_meta", meta);
+        result.addProperty("resultType", "complete");
+        return result;
+    }
+
+    private void addCacheHints(JsonObject result) {
+        result.addProperty("ttlMs", CACHE_TTL_IN_MILLIS);
+        // The same for every user
+        result.addProperty("cacheScope", "public");
+    }
+
+    private JsonObject createCapabilities() {
         JsonObject capabilities = new JsonObject();
         capabilities.add("tools", new JsonObject());
+        return capabilities;
+    }
+
+    private JsonObject createServerInfo() {
         JsonObject serverInfo = new JsonObject();
         serverInfo.addProperty("name", "cloudstack");
         serverInfo.addProperty("title", "Apache CloudStack");
         serverInfo.addProperty("version", managementService.getVersion());
-
-        JsonObject result = new JsonObject();
-        result.addProperty("protocolVersion", SUPPORTED_PROTOCOL_VERSIONS.contains(requestedVersion) ? requestedVersion : SUPPORTED_PROTOCOL_VERSIONS.get(0));
-        result.add("capabilities", capabilities);
-        result.add("serverInfo", serverInfo);
-        result.addProperty("instructions", INSTRUCTIONS);
-        return result;
+        return serverInfo;
     }
 
     private JsonArray createTools() {
@@ -372,7 +461,7 @@ public class McpServlet extends HttpServlet {
                 case TOOL_QUERY_ASYNC_JOB:
                     return createJobResult(waitForJob(getRequiredArgument(arguments, "jobid"), userId, remoteAddress, true));
                 default:
-                    throw new McpException(INVALID_PARAMS, "Unknown tool: " + name);
+                    throw new McpException(HttpServletResponse.SC_OK, INVALID_PARAMS, "Unknown tool: " + name);
             }
         } catch (ServerApiException e) {
             JsonObject error = new JsonObject();
@@ -609,10 +698,12 @@ public class McpServlet extends HttpServlet {
     }
 
     private static class McpException extends Exception {
+        private final int status;
         private final int code;
 
-        McpException(int code, String message) {
+        McpException(int status, int code, String message) {
             super(message);
+            this.status = status;
             this.code = code;
         }
     }
