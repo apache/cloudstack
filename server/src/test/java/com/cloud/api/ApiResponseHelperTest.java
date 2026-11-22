@@ -58,6 +58,12 @@ import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
@@ -84,7 +90,9 @@ import com.cloud.resource.icon.ResourceIconVO;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceIconManager;
 import com.cloud.server.ResourceTag;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOsCategory;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.usage.UsageVO;
 import com.cloud.user.Account;
@@ -849,5 +857,32 @@ public class ApiResponseHelperTest {
             verify(ipResponse).setIsSystem(true);
             verify(ipResponse, Mockito.never()).setVirtualMachineId(Mockito.anyString());
         }
+    }
+
+    private DataStoreRole getDataStoreRoleForStorageSystemSnapshotCapability(String capability) {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        when(snapshot.getId()).thenReturn(1L);
+        SnapshotDataStoreVO snapshotStore = Mockito.mock(SnapshotDataStoreVO.class);
+        when(snapshotStore.getDataStoreId()).thenReturn(2L);
+        SnapshotDataStoreDao snapshotStoreDao = Mockito.mock(SnapshotDataStoreDao.class);
+        when(snapshotStoreDao.findOneBySnapshotAndDatastoreRole(1L, DataStoreRole.Primary)).thenReturn(snapshotStore);
+        DataStoreDriver driver = Mockito.mock(DataStoreDriver.class);
+        when(driver.getCapabilities()).thenReturn(Map.of(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString(), capability));
+        DataStore dataStore = Mockito.mock(DataStore.class);
+        when(dataStore.getDriver()).thenReturn(driver);
+        DataStoreManager dataStoreMgr = Mockito.mock(DataStoreManager.class);
+        when(dataStoreMgr.getDataStore(2L, DataStoreRole.Primary)).thenReturn(dataStore);
+
+        return ApiResponseHelper.getDataStoreRole(snapshot, snapshotStoreDao, dataStoreMgr);
+    }
+
+    @Test
+    public void getDataStoreRoleTestStorageSystemSnapshotSupported() {
+        assertEquals(DataStoreRole.Primary, getDataStoreRoleForStorageSystemSnapshotCapability("true"));
+    }
+
+    @Test
+    public void getDataStoreRoleTestStorageSystemSnapshotNotSupported() {
+        assertEquals(DataStoreRole.Image, getDataStoreRoleForStorageSystemSnapshotCapability("false"));
     }
 }
