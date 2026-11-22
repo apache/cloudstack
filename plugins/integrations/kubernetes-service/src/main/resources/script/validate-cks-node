@@ -24,7 +24,7 @@ if [[ $OS == *"Ubuntu"* || $OS == *"Debian"* ]]; then
   for package in ${REQUIRED_PACKAGES[@]}; do
     dpkg -s $package >/dev/null 2>&1
     if [ $? -eq 1 ]; then
-      MISSING_PACKAGES+="$package"
+      MISSING_PACKAGES+=("$package")
     fi
   done
 else
