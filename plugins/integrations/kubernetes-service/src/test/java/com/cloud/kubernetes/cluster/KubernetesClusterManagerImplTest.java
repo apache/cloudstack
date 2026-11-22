@@ -46,6 +46,11 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.acl.RolePermissionEntity;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
@@ -57,6 +62,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -70,6 +76,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.DEFAULT;
@@ -102,6 +109,9 @@ public class KubernetesClusterManagerImplTest {
 
     @Mock
     private ServiceOfferingDao serviceOfferingDao;
+
+    @Mock
+    private RoleService roleService;
 
     @Spy
     @InjectMocks
@@ -440,5 +450,112 @@ public class KubernetesClusterManagerImplTest {
         Mockito.when(cksIso.getArch()).thenReturn(CPU.CPUArch.amd64);
         String cksClusterPreferredArch = kubernetesClusterManager.getCksClusterPreferredArch(systemVMArch, cksIso);
         Assert.assertEquals(CPU.CPUArch.amd64.getType(), cksClusterPreferredArch);
+    }
+
+    private RolePermission mockRolePermission(String rule) {
+        RolePermission permission = Mockito.mock(RolePermission.class);
+        Mockito.when(permission.getRule()).thenReturn(new Rule(rule));
+        return permission;
+    }
+
+    private Role mockProjectKubernetesAccountRole(String description) {
+        Role role = Mockito.mock(Role.class);
+        Mockito.when(role.getDescription()).thenReturn(description);
+        return role;
+    }
+
+    @Test
+    public void addMissingProjectKubernetesAccountRolePermissionsAddsMissingApisBeforeDenyAll() {
+        Role role = mockProjectKubernetesAccountRole(KubernetesClusterService.PROJECT_KUBEADMIN_ACCOUNT_ROLE_NAME);
+        Mockito.when(role.getId()).thenReturn(1L);
+        Mockito.when(roleService.isEnabled()).thenReturn(true);
+        RolePermission listClusters = mockRolePermission("listKubernetesClusters");
+        RolePermission adminDeny = mockRolePermission("createVolume");
+        RolePermission denyAll = mockRolePermission("*");
+        Mockito.when(roleService.findAllPermissionsBy(1L)).thenReturn(Arrays.asList(listClusters, adminDeny, denyAll));
+        Mockito.when(roleService.updateRolePermission(Mockito.eq(role), Mockito.anyList())).thenReturn(true);
+        Mockito.when(roleService.createRolePermission(Mockito.eq(role), Mockito.any(Rule.class),
+                Mockito.eq(RolePermissionEntity.Permission.ALLOW), Mockito.anyString()))
+                .thenAnswer(invocation -> mockRolePermission(invocation.getArgument(1, Rule.class).toString()));
+
+        kubernetesClusterManager.addMissingProjectKubernetesAccountRolePermissions(role);
+
+        List<String> created = Mockito.mockingDetails(roleService).getInvocations().stream()
+                .filter(i -> i.getMethod().getName().equals("createRolePermission"))
+                .map(i -> i.getArgument(1).toString())
+                .collect(Collectors.toList());
+        Assert.assertTrue(created.contains("attachVolume"));
+        Assert.assertTrue(created.contains("createSnapshot"));
+        Assert.assertFalse(created.contains("listKubernetesClusters"));
+        Assert.assertFalse(created.contains("createVolume"));
+        Assert.assertFalse(created.contains("*"));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<RolePermission>> order = ArgumentCaptor.forClass(List.class);
+        Mockito.verify(roleService).updateRolePermission(Mockito.eq(role), order.capture());
+        Assert.assertSame(adminDeny, order.getValue().get(1));
+        List<String> rules = order.getValue().stream().map(p -> p.getRule().toString()).collect(Collectors.toList());
+        Assert.assertEquals(3 + created.size(), rules.size());
+        Assert.assertEquals("listKubernetesClusters", rules.get(0));
+        Assert.assertEquals("createVolume", rules.get(1));
+        Assert.assertEquals(created, rules.subList(2, rules.size() - 1));
+        Assert.assertEquals("*", rules.get(rules.size() - 1));
+    }
+
+    @Test
+    public void addMissingProjectKubernetesAccountRolePermissionsNothingMissing() {
+        Role role = mockProjectKubernetesAccountRole(KubernetesClusterService.PROJECT_KUBEADMIN_ACCOUNT_ROLE_NAME);
+        Mockito.when(role.getId()).thenReturn(1L);
+        Mockito.when(roleService.isEnabled()).thenReturn(true);
+        RolePermission denyAll = mockRolePermission("*");
+        List<RolePermission> permissions = new ArrayList<>();
+        for (Class<?> api : KubernetesClusterManagerImpl.PROJECT_KUBERNETES_ACCOUNT_ROLE_ALLOWED_APIS) {
+            permissions.add(mockRolePermission(BaseCmd.getCommandNameByClass(api)));
+        }
+        permissions.add(denyAll);
+        Mockito.when(roleService.findAllPermissionsBy(1L)).thenReturn(permissions);
+
+        kubernetesClusterManager.addMissingProjectKubernetesAccountRolePermissions(role);
+
+        Mockito.verify(roleService, Mockito.never()).createRolePermission(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(roleService, Mockito.never()).updateRolePermission(Mockito.any(), Mockito.anyList());
+    }
+
+    @Test
+    public void addMissingProjectKubernetesAccountRolePermissionsNoDenyAllRule() {
+        Role role = mockProjectKubernetesAccountRole(KubernetesClusterService.PROJECT_KUBEADMIN_ACCOUNT_ROLE_NAME);
+        Mockito.when(role.getId()).thenReturn(1L);
+        Mockito.when(roleService.isEnabled()).thenReturn(true);
+        RolePermission listClusters = mockRolePermission("LISTKUBERNETESCLUSTERS");
+        Mockito.when(roleService.findAllPermissionsBy(1L)).thenReturn(Collections.singletonList(listClusters));
+        Mockito.when(roleService.createRolePermission(Mockito.eq(role), Mockito.any(Rule.class),
+                Mockito.eq(RolePermissionEntity.Permission.ALLOW), Mockito.anyString()))
+                .thenAnswer(invocation -> mockRolePermission(invocation.getArgument(1, Rule.class).toString()));
+
+        kubernetesClusterManager.addMissingProjectKubernetesAccountRolePermissions(role);
+
+        Mockito.verify(roleService, Mockito.times(KubernetesClusterManagerImpl.PROJECT_KUBERNETES_ACCOUNT_ROLE_ALLOWED_APIS.size() - 1))
+                .createRolePermission(Mockito.eq(role), Mockito.any(Rule.class), Mockito.any(), Mockito.anyString());
+        Mockito.verify(roleService, Mockito.never()).updateRolePermission(Mockito.any(), Mockito.anyList());
+    }
+
+    @Test
+    public void addMissingProjectKubernetesAccountRolePermissionsSkipsRoleNotCreatedByCks() {
+        Role role = mockProjectKubernetesAccountRole("Role made by an admin");
+        Mockito.when(roleService.isEnabled()).thenReturn(true);
+
+        kubernetesClusterManager.addMissingProjectKubernetesAccountRolePermissions(role);
+
+        Mockito.verify(roleService, Mockito.never()).findAllPermissionsBy(Mockito.anyLong());
+    }
+
+    @Test
+    public void addMissingProjectKubernetesAccountRolePermissionsSkipsWhenRolesDisabled() {
+        Role role = Mockito.mock(Role.class);
+        Mockito.when(roleService.isEnabled()).thenReturn(false);
+
+        kubernetesClusterManager.addMissingProjectKubernetesAccountRolePermissions(role);
+
+        Mockito.verify(roleService, Mockito.never()).findAllPermissionsBy(Mockito.anyLong());
     }
 }

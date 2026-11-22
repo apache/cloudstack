@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -51,6 +52,7 @@ import com.cloud.configuration.Resource;
 import com.cloud.user.ResourceLimitService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
 import org.apache.cloudstack.acl.RolePermissionEntity;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
@@ -260,7 +262,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class KubernetesClusterManagerImpl extends ManagerBase implements KubernetesClusterService {
 
     private static final String DEFAULT_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME = "DefaultNetworkOfferingforKubernetesService";
-    private static final List<Class<?>> PROJECT_KUBERNETES_ACCOUNT_ROLE_ALLOWED_APIS = Arrays.asList(
+    protected static final List<Class<?>> PROJECT_KUBERNETES_ACCOUNT_ROLE_ALLOWED_APIS = Collections.unmodifiableList(Arrays.asList(
             QueryAsyncJobResultCmd.class,
             ListVMsCmd.class,
             ListVolumesCmd.class,
@@ -292,7 +294,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             DeleteNetworkACLCmd.class,
             ListKubernetesClustersCmd.class,
             ScaleKubernetesClusterCmd.class
-    );
+    ));
     private static final String PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME = "Kubernetes";
     private static final String PROJECT_KUBERNETES_ACCOUNT_LAST_NAME = "Service User";
     private static final String DEFAULT_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT = "Network Offering used for CloudStack Kubernetes service";
@@ -1925,14 +1927,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         Role role = roleService.createRole(PROJECT_KUBEADMIN_ACCOUNT_ROLE_NAME, RoleType.User,
                 PROJECT_KUBEADMIN_ACCOUNT_ROLE_NAME, false);
         for (Class<?> allowedApi : PROJECT_KUBERNETES_ACCOUNT_ROLE_ALLOWED_APIS) {
-            final String apiName = BaseCmd.getCommandNameByClass(allowedApi);
-            roleService.createRolePermission(role, new Rule(apiName), RolePermissionEntity.Permission.ALLOW,
-                    String.format("Allow %s", apiName));
+            createAllowedApiPermission(role, BaseCmd.getCommandNameByClass(allowedApi));
         }
         roleService.createRolePermission(role, new Rule("*"), RolePermissionEntity.Permission.DENY,
                 "Deny all");
         logger.debug(String.format("Created default role for Kubernetes service account in projects: %s", role));
         return role;
+    }
+
+    private RolePermission createAllowedApiPermission(Role role, String apiName) {
+        return roleService.createRolePermission(role, new Rule(apiName), RolePermissionEntity.Permission.ALLOW,
+                String.format("Allow %s", apiName));
     }
 
     public Role getProjectKubernetesAccountRole() {
@@ -1943,6 +1948,48 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             return role;
         }
         return createProjectKubernetesAccountRole();
+    }
+
+    /**
+     * Adds the allowed APIs that a role created by an older version lacks, in front of its "*" rule.
+     * Rules already present, whatever their permission, are left alone, so an explicit DENY keeps an API out.
+     */
+    protected void addMissingProjectKubernetesAccountRolePermissions(Role role) {
+        if (role == null || !roleService.isEnabled()) {
+            return;
+        }
+        if (!PROJECT_KUBEADMIN_ACCOUNT_ROLE_NAME.equals(role.getDescription())) {
+            logger.warn("Not adding missing APIs to role {}: its description is not \"{}\", as the Kubernetes service sets it",
+                    role, PROJECT_KUBEADMIN_ACCOUNT_ROLE_NAME);
+            return;
+        }
+        List<RolePermission> permissions = roleService.findAllPermissionsBy(role.getId());
+        Set<String> existingRules = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        permissions.forEach(p -> existingRules.add(p.getRule().toString()));
+        List<RolePermission> added = new ArrayList<>();
+        for (Class<?> allowedApi : PROJECT_KUBERNETES_ACCOUNT_ROLE_ALLOWED_APIS) {
+            final String apiName = BaseCmd.getCommandNameByClass(allowedApi);
+            if (existingRules.add(apiName)) {
+                added.add(createAllowedApiPermission(role, apiName));
+            }
+        }
+        if (added.isEmpty()) {
+            return;
+        }
+        List<RolePermission> newOrder = new ArrayList<>();
+        boolean inserted = false;
+        for (RolePermission permission : permissions) {
+            if (!inserted && "*".equals(permission.getRule().toString())) {
+                newOrder.addAll(added);
+                inserted = true;
+            }
+            newOrder.add(permission);
+        }
+        if (inserted && !roleService.updateRolePermission(role, newOrder)) {
+            throw new CloudRuntimeException(String.format("Unable to move the added APIs in front of the \"*\" rule of role %s", role));
+        }
+        logger.info("Added missing APIs {} to role for Kubernetes service account in projects: {}",
+                added.stream().map(p -> p.getRule().toString()).collect(Collectors.toList()), role);
     }
 
     protected Account createProjectKubernetesAccount(final Project project, final String accountName) {
@@ -2726,7 +2773,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         createNetworkOfferingForKubernetes(DEFAULT_NETRIS_VPC_TIER_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_NAME,
                 DEFAULT_NETRIS_VPC_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT , Network.Provider.Netris, true);
 
-        getProjectKubernetesAccountRole();
+        Role projectKubernetesAccountRole = getProjectKubernetesAccountRole();
+        try {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    addMissingProjectKubernetesAccountRolePermissions(projectKubernetesAccountRole);
+                }
+            });
+        } catch (RuntimeException e) {
+            logger.warn("Unable to add missing APIs to role for Kubernetes service account in projects: {}", projectKubernetesAccountRole, e);
+        }
 
         _gcExecutor.scheduleWithFixedDelay(new KubernetesClusterGarbageCollector(), 300, 300, TimeUnit.SECONDS);
         _stateScanner.scheduleWithFixedDelay(new KubernetesClusterStatusScanner(), 300, 30, TimeUnit.SECONDS);
