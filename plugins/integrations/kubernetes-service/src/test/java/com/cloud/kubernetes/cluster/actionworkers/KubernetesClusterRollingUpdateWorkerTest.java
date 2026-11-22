@@ -163,6 +163,10 @@ public class KubernetesClusterRollingUpdateWorkerTest {
     final Set<String> failingDrains = new HashSet<>();
     final Set<String> failingStarts = new HashSet<>();
     final Set<String> details = new HashSet<>();
+    static final String JOIN_HASH = "sha256:" + "ab".repeat(32);
+    static final String OLD_JOIN = "kubeadm join 10.1.1.1:6443 --token abcdef.0123456789abcdef --discovery-token-unsafe-skip-ca-verification";
+    /** The user data of the VMs, decoded */
+    final Map<Long, String> vmUserData = new HashMap<>();
     /** The VMs that have the recreate detail, with its value */
     final Map<Long, String> recreating = new HashMap<>();
     KubernetesCluster.State clusterState;
@@ -253,6 +257,12 @@ public class KubernetesClusterRollingUpdateWorkerTest {
         Mockito.when(vm.getServiceOfferingId()).thenAnswer(i -> vmOfferings.get(id));
         Mockito.when(vm.getTemplateId()).thenAnswer(i -> vmTemplates.getOrDefault(id, OLD_TEMPLATE));
         Mockito.when(vm.getIsoId()).thenAnswer(i -> vmIsos.get(id));
+        vmUserData.put(id, "#cloud-config\n      " + OLD_JOIN + "\n");
+        Mockito.when(vm.getUserData()).thenAnswer(i -> org.apache.commons.codec.binary.Base64.encodeBase64String(vmUserData.get(id).getBytes()));
+        Mockito.doAnswer(i -> {
+            vmUserData.put(id, new String(org.apache.commons.codec.binary.Base64.decodeBase64((String) i.getArgument(0))));
+            return calls.add("userData:" + name);
+        }).when(vm).setUserData(Mockito.anyString());
         vms.put(id, vm);
         vmStates.put(id, VirtualMachine.State.Running);
         vmOfferings.put(id, offeringId);
@@ -270,6 +280,14 @@ public class KubernetesClusterRollingUpdateWorkerTest {
         }
         if (KubernetesClusterRollingUpdateWorker.ETCD_READY_COMMAND.equals(command)) {
             return "ok";
+        }
+        if (command.startsWith("sudo /opt/bin/kubeadm token create --ttl ")) {
+            calls.add("tokenCreate");
+            return "kubeadm join 10.1.1.1:6443 --token fresh1.0123456789abcdef --discovery-token-ca-cert-hash " + JOIN_HASH + " \n";
+        }
+        if (command.startsWith("sudo /opt/bin/kubeadm token delete ")) {
+            calls.add("tokenDelete:" + command.substring(command.lastIndexOf(' ') + 1));
+            return "";
         }
         String[] tokens = command.split(" ");
         String name = tokens[3].equals("node") ? tokens[4] : tokens[3];
@@ -884,7 +902,8 @@ public class KubernetesClusterRollingUpdateWorkerTest {
         Assert.assertTrue(worker.rollout());
 
         // the root disk keeps its 20 GB, the larger of it and the 5 GB template
-        Assert.assertEquals(List.of("annotate:w1", "cordon:w1", "drain:w1", "stop:w1", "restore:w1:20", "attachIso:w1", "start:w1", "release:w1",
+        Assert.assertEquals(List.of("tokenCreate", "annotate:w1", "cordon:w1", "drain:w1", "stop:w1", "userData:w1", "restore:w1:20", "attachIso:w1", "start:w1",
+                "release:w1", "tokenDelete:fresh1",
                 "detachIso:w1", "event:OperationSucceeded"), calls);
         Assert.assertNull(kube.get("w1").annotation);
         Assert.assertTrue(recreating.isEmpty());
@@ -946,7 +965,7 @@ public class KubernetesClusterRollingUpdateWorkerTest {
 
         Assert.assertTrue(worker.rollout());
 
-        Assert.assertEquals(List.of("cordon:w1", "restore:w1:20", "attachIso:w1", "start:w1", "release:w1", "detachIso:w1", "event:OperationSucceeded"), calls);
+        Assert.assertEquals(List.of("tokenCreate", "cordon:w1", "userData:w1", "restore:w1:20", "attachIso:w1", "start:w1", "release:w1", "tokenDelete:fresh1", "detachIso:w1", "event:OperationSucceeded"), calls);
     }
 
     @Test
@@ -1180,7 +1199,7 @@ public class KubernetesClusterRollingUpdateWorkerTest {
 
         Assert.assertTrue(newWorker(1).rollout());
 
-        Assert.assertEquals(List.of("cordon:w1", "attachIso:w1", "start:w1", "release:w1", "detachIso:w1", "event:OperationSucceeded"), calls);
+        Assert.assertEquals(List.of("tokenCreate", "cordon:w1", "userData:w1", "attachIso:w1", "start:w1", "release:w1", "tokenDelete:fresh1", "detachIso:w1", "event:OperationSucceeded"), calls);
     }
 
     @Test
@@ -1194,5 +1213,114 @@ public class KubernetesClusterRollingUpdateWorkerTest {
 
         Assert.assertTrue(e.getMessage(), e.getMessage().contains("not stopped"));
         Assert.assertTrue(calls.stream().noneMatch(call -> call.startsWith("restore:")));
+    }
+
+    @Test
+    public void aRecreatedWorkerJoinsWithAFreshTokenAndThePinnedCa() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        UserVmVO w1 = addNode("w1", WORKER, NEW_OFFERING);
+        // user data of a cluster that already pins the CA
+        vmUserData.put(w1.getId(), "x\n  kubeadm join 10.1.1.1:6443 --token old123.0123456789abcdef --discovery-token-ca-cert-hash sha256:" + "cd".repeat(32) + "\ny\n");
+
+        Assert.assertTrue(newWorker(1).rollout());
+
+        Assert.assertEquals("x\n  kubeadm join 10.1.1.1:6443 --token fresh1.0123456789abcdef --discovery-token-ca-cert-hash " + JOIN_HASH + "\ny\n",
+                vmUserData.get(w1.getId()));
+        Assert.assertTrue(calls.indexOf("userData:w1") < calls.indexOf("restore:w1:20"));
+        Assert.assertTrue(calls.indexOf("tokenDelete:fresh1") > calls.indexOf("start:w1"));
+    }
+
+    @Test
+    public void userDataWithoutTheCaPinnedGetsItPinned() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getUserData()).thenReturn(org.apache.commons.codec.binary.Base64.encodeBase64String(("a\n" + OLD_JOIN + "\n").getBytes()));
+
+        String userData = KubernetesClusterRollingUpdateWorker.getJoinUserData(vm, "fresh1.0123456789abcdef", JOIN_HASH);
+
+        Assert.assertEquals("a\nkubeadm join 10.1.1.1:6443 --token fresh1.0123456789abcdef --discovery-token-ca-cert-hash " + JOIN_HASH + "\n",
+                new String(org.apache.commons.codec.binary.Base64.decodeBase64(userData)));
+        Mockito.when(vm.getUserData()).thenReturn(org.apache.commons.codec.binary.Base64.encodeBase64String("#!/bin/bash\necho".getBytes()));
+        Assert.assertNull(KubernetesClusterRollingUpdateWorker.getJoinUserData(vm, "fresh1.0123456789abcdef", JOIN_HASH));
+    }
+
+    @Test
+    public void joinCommandParsing() {
+        Assert.assertEquals(new Pair<>("fresh1.0123456789abcdef", JOIN_HASH), KubernetesClusterRollingUpdateWorker.parseJoinCommand(
+                "kubeadm join 10.1.1.1:6443 --token fresh1.0123456789abcdef --discovery-token-ca-cert-hash " + JOIN_HASH + " \n"));
+        Assert.assertNull(KubernetesClusterRollingUpdateWorker.parseJoinCommand("kubeadm join 10.1.1.1:6443 --token fresh1.0123456789abcdef"));
+        Assert.assertNull(KubernetesClusterRollingUpdateWorker.parseJoinCommand(null));
+    }
+
+    @Test
+    public void aWorkerWhoseUserDataHasNoJoinIsRefusedBeforeTheDrain() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        UserVmVO w1 = addNode("w1", WORKER, NEW_OFFERING);
+        vmUserData.put(w1.getId(), "#!/bin/bash\necho");
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, newWorker(1)::rollout);
+
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("no kubeadm join"));
+        Assert.assertFalse(calls.contains("tokenCreate"));
+        Assert.assertFalse(calls.contains("drain:w1"));
+    }
+
+    @Test
+    public void aJoinTokenThatCanNotBeCreatedStopsTheBatchBeforeTheDrain() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, NEW_OFFERING);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+        Mockito.doReturn(null).when(worker).runKubectl(Mockito.startsWith("sudo /opt/bin/kubeadm token create"));
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, worker::rollout);
+
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("join token"));
+        Assert.assertFalse(calls.contains("drain:w1"));
+    }
+
+    @Test
+    public void theJoinTokenIsDeletedOnAFailureBeforeAnyNodeWasStarted() throws Exception {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        UserVmVO w1 = addNode("w1", WORKER, NEW_OFFERING);
+        Mockito.doThrow(new CloudRuntimeException("refused")).when(itMgr)
+                .restoreVirtualMachine(Mockito.anyLong(), Mockito.eq(NEW_TEMPLATE), Mockito.isNull(), Mockito.eq(false), Mockito.anyMap());
+
+        Assert.assertThrows(CloudRuntimeException.class, newWorker(1)::rollout);
+
+        Assert.assertTrue(calls.toString(), calls.contains("tokenDelete:fresh1"));
+        // the restore was refused, so the VM keeps the user data it had
+        Assert.assertTrue(vmUserData.get(w1.getId()).contains(OLD_JOIN));
+    }
+
+    @Test
+    public void aJoinTokenWhoseHashCouldNotBeReadIsDeleted() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, NEW_OFFERING);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+        Mockito.doReturn("W1122 warning\nkubeadm join 10.1.1.1:6443 --token fresh1.0123456789abcdef").when(worker)
+                .runKubectl(Mockito.startsWith("sudo /opt/bin/kubeadm token create"));
+
+        Assert.assertThrows(CloudRuntimeException.class, worker::rollout);
+
+        Assert.assertTrue(calls.toString(), calls.contains("tokenDelete:fresh1"));
+        Assert.assertFalse(calls.contains("drain:w1"));
+    }
+
+    @Test
+    public void theJoinTokenIsKeptForANodeThatMayStillBeJoining() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, NEW_OFFERING);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+        Mockito.doThrow(new CloudRuntimeException("timed out")).when(worker).waitUntilBack(Mockito.any(), Mockito.anyLong());
+
+        Assert.assertThrows(CloudRuntimeException.class, worker::rollout);
+
+        Assert.assertTrue(calls.toString(), calls.contains("start:w1"));
+        Assert.assertTrue(calls.stream().noneMatch(call -> call.startsWith("tokenDelete:")));
     }
 }
