@@ -55,6 +55,7 @@ public class ConfigKey<T> {
     public static final Ternary<String, String, Long> GROUP_SYSTEM_VMS = new Ternary<>("System VMs", "System VMs related configuration", 7L);
     public static final Ternary<String, String, Long> GROUP_INFRASTRUCTURE = new Ternary<>("Infrastructure", "Infrastructure configuration", 8L);
     public static final Ternary<String, String, Long> GROUP_USAGE_SERVER = new Ternary<>("Usage Server", "Usage Server related configuration", 9L);
+    public static final Ternary<String, String, Long> GROUP_MCP = new Ternary<>("MCP", "Model Context Protocol (MCP) server configuration", 10L);
 
     // Configuration Subgroups to be used to define subgroup for a config key
     // Subgroup name, description, precedence
@@ -98,6 +99,7 @@ public class ConfigKey<T> {
     public static final Pair<String, Long> SUBGROUP_BACKUP_AND_RECOVERY = new Pair<>("Backup & Recovery", 1L);
     public static final Pair<String, Long> SUBGROUP_CERTIFICATE_AUTHORITY = new Pair<>("Certificate Authority", 2L);
     public static final Pair<String, Long> SUBGROUP_QUOTA = new Pair<>("Quota", 3L);
+    public static final Pair<String, Long> SUBGROUP_MCP_SERVER = new Pair<>("MCP Server", 1L);
     public static final Pair<String, Long> SUBGROUP_CLOUDIAN = new Pair<>("Cloudian", 4L);
     public static final Pair<String, Long> SUBGROUP_DRS = new Pair<>("DRS", 4L);
 

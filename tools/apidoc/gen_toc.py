@@ -258,6 +258,7 @@ known_categories = {
     'SharedFileSystem': 'Shared FileSystem',
     'Webhook': 'Webhook',
     'Webhooks': 'Webhook',
+    'McpToken': 'MCP',
     'purgeExpungedResources': 'Resource',
     'forgotPassword': 'Authentication',
     'resetPassword': 'Authentication',
