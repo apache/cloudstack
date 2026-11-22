@@ -113,6 +113,7 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.mcp.dao.McpTokenDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
@@ -264,6 +265,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private InstanceGroupDao _vmGroupDao;
     @Inject
     private ApiKeyPairDao apiKeyPairDao;
+    @Inject
+    private McpTokenDao mcpTokenDao;
     @Inject
     private ApiKeyPairService apiKeyPairService;
     @Inject
@@ -982,6 +985,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             List<UserVO> users = _userDao.listByAccount(accountId);
             for (UserVO user : users) {
                 removeUserApiKeys(user.getId());
+                mcpTokenDao.removeByUserId(user.getId());
                 if (!_userDao.remove(user.getId())) {
                     logger.error("Unable to delete user: " + user + " as a part of account " + account + " cleanup");
                     accountCleanupNeeded = true;
@@ -2597,6 +2601,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             long userId = user.getId();
 
             removeUserApiKeys(userId);
+            mcpTokenDao.removeByUserId(userId);
             _projectMgr.cleanupProjectsForUser(null, user);
 
             return _userDao.remove(userId);
@@ -2641,6 +2646,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             newUser.setAccountId(newAccountId);
             UserVO persisted = _userDao.persist(newUser);
             _projectMgr.moveProjectAssociationsToUser(user, persisted);
+            mcpTokenDao.removeByUserId(user.getId());
             boolean success = _userDao.remove(user.getId());
             return success && persisted.getUuid().equals(user.getExternalEntity());
         });

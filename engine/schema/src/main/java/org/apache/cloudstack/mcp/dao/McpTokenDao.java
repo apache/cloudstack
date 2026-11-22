@@ -27,4 +27,6 @@ public interface McpTokenDao extends GenericDao<McpTokenVO, Long> {
     McpTokenVO findByTokenHash(String tokenHash);
 
     Pair<List<McpTokenVO>, Integer> listByUserId(long userId, Long startIndex, Long pageSize);
+
+    int removeByUserId(long userId);
 }

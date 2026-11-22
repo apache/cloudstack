@@ -57,4 +57,11 @@ public class McpTokenDaoImpl extends GenericDaoBase<McpTokenVO, Long> implements
         sc.setParameters(USER_ID, userId);
         return searchAndCount(sc, new Filter(McpTokenVO.class, ID, true, startIndex, pageSize));
     }
+
+    @Override
+    public int removeByUserId(long userId) {
+        SearchCriteria<McpTokenVO> sc = tokenSearch.create();
+        sc.setParameters(USER_ID, userId);
+        return remove(sc);
+    }
 }

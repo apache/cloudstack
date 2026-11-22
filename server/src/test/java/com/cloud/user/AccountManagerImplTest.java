@@ -62,6 +62,7 @@ import org.apache.cloudstack.auth.UserAuthenticator.ActionOnFailedAuthentication
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.mcp.dao.McpTokenDao;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.webhook.WebhookHelper;
 import org.junit.Assert;
@@ -168,6 +169,9 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
 
     @Mock
     ApiKeyPairDao apiKeyPairDaoMock;
+
+    @Mock
+    McpTokenDao mcpTokenDaoMock;
 
     @Mock
     RegisterUserKeysCmd registerCmdMock;
@@ -2247,6 +2251,7 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         accountManagerImpl.deleteAndCleanupUser(userVoMock);
 
         Mockito.verify(accountManagerImpl).removeUserApiKeys(userId);
+        Mockito.verify(mcpTokenDaoMock).removeByUserId(userId);
         Mockito.verify(_projectMgr).cleanupProjectsForUser(null, userVoMock);
     }
 
