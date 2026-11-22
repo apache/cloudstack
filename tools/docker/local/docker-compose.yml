@@ -1,0 +1,182 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# Local development environment with the simulator hypervisor.
+#
+#   tools/docker/local/generate-certs.sh cloud.test
+#   echo '127.0.0.1 cloudstack.cloud.test' | sudo tee -a /etc/hosts
+#   docker compose -f tools/docker/local/docker-compose.yml up -d --build
+#
+# Then open https://cloudstack.cloud.test (admin / password).
+
+name: cloudstack
+
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: 30m
+      max-file: 3
+      tag: '{{.ImageName}}|{{.Name}}|{{.ImageID}}|{{.FullID}}'
+
+x-networking-external: &external-networking
+  networks:
+    - public
+    - internal
+
+x-networking-internal: &internal-networking
+  networks:
+    - internal
+
+services:
+  nginx:
+    image: docker.io/nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+    container_name: cloudstack-nginx
+    restart: unless-stopped
+    ports:
+      - target: 80
+        published: 80
+        host_ip: 127.0.0.1
+        protocol: tcp
+      - target: 443
+        published: 443
+        host_ip: 127.0.0.1
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: ./nginx/default.conf
+        target: /etc/nginx/conf.d/default.conf
+        read_only: true
+      - type: bind
+        source: ./certs
+        target: /etc/nginx/certs
+        read_only: true
+    depends_on:
+      - ui
+      - management
+    <<: [*external-networking, *logging]
+
+  ui:
+    build:
+      context: ../../../ui
+      dockerfile: ../tools/docker/local/Dockerfile.ui
+    image: cloudstack-ui
+    container_name: cloudstack-ui
+    restart: unless-stopped
+    <<: [*internal-networking, *logging]
+
+  mysql:
+    image: docker.io/mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902
+    container_name: cloudstack-mysql
+    restart: unless-stopped
+    # The cloud, usage and simulator connection pools add up to 600 connections
+    command: ["--max-connections=1000"]
+    environment:
+      MYSQL_ROOT_PASSWORD: cloud
+    volumes:
+      - type: volume
+        source: mysql
+        target: /var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -pcloud"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    <<: [*internal-networking, *logging]
+
+  # Creates the cloud, cloud_usage and simulator schemas on first run
+  db-init:
+    image: cloudstack-management
+    container_name: cloudstack-db-init
+    restart: "no"
+    entrypoint: ["/usr/local/bin/db-init.sh"]
+    volumes:
+      - type: bind
+        source: ./db-init.sh
+        target: /usr/local/bin/db-init.sh
+        read_only: true
+    depends_on:
+      mysql:
+        condition: service_healthy
+    <<: [*internal-networking, *logging]
+
+  management:
+    build:
+      context: ../../..
+      dockerfile: tools/docker/local/Dockerfile
+    image: cloudstack-management
+    container_name: cloudstack-management
+    restart: unless-stopped
+    environment:
+      MAVEN_OPTS: >-
+        -Xmx4096m
+        -XX:MaxMetaspaceSize=800m
+        -Djava.security.egd=file:/dev/urandom
+        --add-opens=java.base/java.lang=ALL-UNNAMED
+        --add-exports=java.base/sun.security.x509=ALL-UNNAMED
+        --add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED
+    healthcheck:
+      # The integration API port opens once the server has finished starting
+      test: ["CMD", "bash", "-c", "</dev/tcp/localhost/8096"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 600s
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    <<: [*external-networking, *logging]
+
+  # Deploys the simulated zone on first run
+  datacenter:
+    image: cloudstack-management
+    container_name: cloudstack-datacenter
+    restart: "no"
+    entrypoint: ["/usr/local/bin/deploy-datacenter.sh"]
+    volumes:
+      - type: bind
+        source: ./deploy-datacenter.sh
+        target: /usr/local/bin/deploy-datacenter.sh
+        read_only: true
+    depends_on:
+      management:
+        condition: service_healthy
+    <<: [*internal-networking, *logging]
+
+volumes:
+  mysql:
+    name: cloudstack-mysql
+
+# Fixed subnets: the 172.16.0.0/12 and 10.0.0.0/8 ranges Docker picks on its
+# own collide with corporate VPN routes and leave the containers without network.
+networks:
+  public:
+    name: cloudstack-public
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.242.0/24
+  # No route to the internet: container-to-container traffic only. The
+  # management server reaches Maven repositories through the public network.
+  internal:
+    name: cloudstack-internal
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 192.168.243.0/24
