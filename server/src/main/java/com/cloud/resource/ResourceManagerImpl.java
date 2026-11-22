@@ -343,6 +343,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     private AlertManager alertManager;
     @Inject
+    private RollingMaintenanceManager rollingMaintenanceManager;
+    @Inject
     private AnnotationService annotationService;
     @Inject
     private VolumeDao volumeDao;
@@ -1440,6 +1442,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new CloudRuntimeException(String.format("Cannot perform cancelMaintenance when resource state is %s, host: %s", host.getResourceState(), host));
         }
 
+        if (rollingMaintenanceManager.isMaintenanceHooksActive(host)) {
+            handleAgentIfNotConnected(host, hasTakenMigrationWork(host));
+            rollingMaintenanceManager.runPostMaintenanceHook(host);
+        }
         processResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_BEFORE, hostId);
         final boolean success = cancelMaintenance(hostId);
         processResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, hostId);
@@ -1661,6 +1667,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_MAINTENANCE_PREPARE, eventDescription = "prepare maintenance for host", async = true)
     public Host maintain(final PrepareForHostMaintenanceCmd cmd) {
+        return prepareForMaintenance(cmd, true);
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_MAINTENANCE_PREPARE, eventDescription = "prepare maintenance for host", async = true)
+    public Host maintain(final PrepareForHostMaintenanceCmd cmd, final boolean runMaintenanceHooks) {
+        return prepareForMaintenance(cmd, runMaintenanceHooks);
+    }
+
+    private Host prepareForMaintenance(final PrepareForHostMaintenanceCmd cmd, final boolean runMaintenanceHooks) {
         final Long hostId = cmd.getId();
         final HostVO host = _hostDao.findById(hostId);
 
@@ -1674,6 +1691,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (SET_HOST_DOWN_TO_MAINTENANCE.valueIn(host.getDataCenterId()) && (host.getStatus() == Status.Down)) {
             if (host.getResourceState() == ResourceState.Enabled) {
+                rollingMaintenanceManager.clearMaintenanceHooks(host);
                 _hostDao.updateResourceState(ResourceState.Enabled, ResourceState.Event.AdminAskMaintenance, ResourceState.PrepareForMaintenance, host);
                 _hostDao.updateResourceState(ResourceState.PrepareForMaintenance, ResourceState.Event.InternalEnterMaintenance, ResourceState.Maintenance, host);
                 return _hostDao.findById(hostId);
@@ -1683,6 +1701,74 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
 
+        checkHostCanEnterMaintenance(host);
+        final boolean hooksRan = runMaintenanceHooks && rollingMaintenanceManager.runPreMaintenanceHooks(host);
+        boolean prepared = false;
+        try {
+            if (hooksRan) {
+                final HostVO current = _hostDao.findById(hostId);
+                if (!ResourceState.canAttemptMaintenance(current.getResourceState())) {
+                    throw new CloudRuntimeException("Host is already in state " + current.getResourceState() + ". Cannot recall for maintenance until resolved.");
+                }
+                checkHostCanEnterMaintenance(current);
+            }
+            processResourceEvent(ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE, hostId);
+            if (maintain(hostId)) {
+                prepared = true;
+                processResourceEvent(ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER, hostId);
+                return _hostDao.findById(hostId);
+            } else {
+                throw new CloudRuntimeException(String.format("Unable to prepare for maintenance host %s", host));
+            }
+        } catch (final AgentUnavailableException e) {
+            throw new CloudRuntimeException(String.format("Unable to prepare for maintenance host %s", host));
+        } finally {
+            if (hooksRan && !prepared) {
+                undoPreMaintenanceHooks(hostId);
+            }
+        }
+    }
+
+    /**
+     * The pre-maintenance hooks ran but the host did not enter maintenance; let the PostMaintenance hook undo them.
+     * If the host is in a maintenance state anyway (a concurrent request, or doMaintain moved it before failing),
+     * the hooks stay for that maintenance.
+     */
+    private void undoPreMaintenanceHooks(final long hostId) {
+        try {
+            final HostVO current = _hostDao.findById(hostId);
+            if (current == null || ResourceState.isMaintenanceState(current.getResourceState())) {
+                return;
+            }
+            String error = null;
+            if (current.getStatus() != Status.Up) {
+                error = String.format("host is %s", current.getStatus());
+            } else {
+                try {
+                    rollingMaintenanceManager.runPostMaintenanceHook(current);
+                } catch (final CloudRuntimeException e) {
+                    error = e.getMessage();
+                }
+            }
+            if (error != null) {
+                final String subject = String.format("Could not undo the pre-maintenance hooks on host %s", current.getName());
+                logger.error("{}: {}", subject, error);
+                alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, current.getDataCenterId(), current.getPodId(), subject, error);
+                rollingMaintenanceManager.clearMaintenanceHooks(current);
+            }
+        } catch (final RuntimeException e) {
+            logger.error("Could not undo the pre-maintenance hooks on host {}", hostId, e);
+        }
+    }
+
+    private void checkHostCanEnterMaintenance(final HostVO host) {
+        final long hostId = host.getId();
+        if (host.getResourceState().getNextState(ResourceState.Event.AdminAskMaintenance) == null) {
+            throw new CloudRuntimeException(String.format("Host %s in state %s cannot be put into maintenance", host, host.getResourceState()));
+        }
+        if (!_vmDao.listByHostId(hostId).isEmpty() && !HighAvailabilityManagerImpl.VmHaEnabled.valueIn(host.getDataCenterId())) {
+            throw new CloudRuntimeException(String.format("Cannot perform maintain for the host %s (%d) as there are running VMs on it and VM high availability manager is disabled", host.getName(), hostId));
+        }
         if (_hostDao.countBy(host.getClusterId(), ResourceState.PrepareForMaintenance, ResourceState.ErrorInPrepareForMaintenance) > 0) {
             throw new CloudRuntimeException(String.format("There are other servers attempting migrations for maintenance. " +
                     "Found hosts in PrepareForMaintenance OR ErrorInPrepareForMaintenance STATUS in cluster %s",
@@ -1707,18 +1793,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (!_vmDao.findByHostInStates(hostId, State.Error, State.Unknown).isEmpty()) {
             throw new CloudRuntimeException("Host contains VMs in error/unknown/shutdown state. Please fix errors to proceed.");
-        }
-
-        try {
-            processResourceEvent(ResourceListener.EVENT_PREPARE_MAINTENANCE_BEFORE, hostId);
-            if (maintain(hostId)) {
-                processResourceEvent(ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER, hostId);
-                return _hostDao.findById(hostId);
-            } else {
-                throw new CloudRuntimeException(String.format("Unable to prepare for maintenance host %s", host));
-            }
-        } catch (final AgentUnavailableException e) {
-            throw new CloudRuntimeException(String.format("Unable to prepare for maintenance host %s", host));
         }
     }
 
@@ -1874,7 +1948,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      */
     protected boolean setHostIntoMaintenance(HostVO host) throws NoTransitionException {
         logger.debug("Host {} entering in Maintenance", host);
-        resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
+        if (resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId)) {
+            try {
+                rollingMaintenanceManager.runPostMigrateHook(host);
+            } catch (final RuntimeException e) {
+                logger.error("Could not start the PostMigrate maintenance hook on {}", host, e);
+            }
+        }
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
                 EventVO.LEVEL_INFO, EventTypes.EVENT_MAINTENANCE_PREPARE,
                 String.format("completed maintenance for host %s", host), host.getId(), null, 0);
@@ -3927,16 +4007,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         /* TODO: move to listener */
         _haMgr.cancelScheduledMigrations(host);
 
-        boolean vms_migrating = false;
-        final List<VMInstanceVO> vms = _haMgr.findTakenMigrationWork();
-        for (final VMInstanceVO vm : vms) {
-            if (vm.getHostId() != null && vm.getHostId() == hostId) {
-                logger.warn("Unable to cancel migration because the vm is being migrated: {}, host {}", vm, host);
-                vms_migrating = true;
-            }
-        }
-
-        handleAgentIfNotConnected(host, vms_migrating);
+        handleAgentIfNotConnected(host, hasTakenMigrationWork(host));
 
         try {
             resourceStateTransitTo(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
@@ -3948,6 +4019,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         return true;
 
+    }
+
+    private boolean hasTakenMigrationWork(final HostVO host) {
+        boolean vmsMigrating = false;
+        for (final VMInstanceVO vm : _haMgr.findTakenMigrationWork()) {
+            if (vm.getHostId() != null && vm.getHostId() == host.getId()) {
+                logger.warn("Unable to cancel migration because the vm is being migrated: {}, host {}", vm, host);
+                vmsMigrating = true;
+            }
+        }
+        return vmsMigrating;
     }
 
     /**
