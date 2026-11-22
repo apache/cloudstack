@@ -70,6 +70,12 @@ export default {
       resourceType: 'User',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/ApiKeyPairsTab.vue'))),
       show: () => { return 'listUserKeys' in store.getters.apis }
+    },
+    {
+      name: 'mcptokens',
+      resourceType: 'User',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/McpTokensTab.vue'))),
+      show: () => { return 'listMcpTokens' in store.getters.apis }
     }
   ],
   actions: [
