@@ -2816,7 +2816,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             KubernetesControlNodeInstallReattempts,
             KubernetesWorkerNodeInstallAttemptWait,
             KubernetesWorkerNodeInstallReattempts,
-            KubernetesEtcdNodeStartPort
+            KubernetesEtcdNodeStartPort,
+            KubernetesClusterExternalCloudProviderEnabled
         };
     }
 }

@@ -107,10 +107,15 @@ echo "Downloading kubernetes cluster autoscaler ${AUTOSCALER_URL}"
 autoscaler_conf_file="${working_dir}/autoscaler.yaml"
 curl -sSL ${AUTOSCALER_URL} -o ${autoscaler_conf_file}
 
-PROVIDER_URL="https://raw.githubusercontent.com/apache/cloudstack-kubernetes-provider/main/deployment.yaml"
+PROVIDER_VERSION="v1.3.0"
+PROVIDER_URL="https://raw.githubusercontent.com/apache/cloudstack-kubernetes-provider/${PROVIDER_VERSION}/deployment.yaml"
+PROVIDER_IMAGE="apache/cloudstack-kubernetes-provider:${PROVIDER_VERSION}"
 echo "Downloading kubernetes cluster provider ${PROVIDER_URL}"
 provider_conf_file="${working_dir}/provider.yaml"
-curl -sSL ${PROVIDER_URL} -o ${provider_conf_file}
+curl -fsSL ${PROVIDER_URL} -o ${provider_conf_file}
+# The v1.3.0 release manifest still references the v1.2.0 image
+sed -i "s|image: apache/cloudstack-kubernetes-provider:.*|image: ${PROVIDER_IMAGE}|" ${provider_conf_file}
+grep -q "image: ${PROVIDER_IMAGE}" ${provider_conf_file}
 
 csi_conf_file="${working_dir}/manifest.yaml"
 echo "Including CloudStack CSI Driver manifest"

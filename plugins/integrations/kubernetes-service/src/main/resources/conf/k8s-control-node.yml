@@ -145,7 +145,7 @@ write_files:
         mkdir -p /etc/systemd/system/kubelet.service.d
         sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/10-kubeadm.conf > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 
-        echo "KUBELET_EXTRA_ARGS=--cgroup-driver=systemd" > /etc/default/kubelet
+        echo "KUBELET_EXTRA_ARGS=--cgroup-driver=systemd{{ k8s.kubelet.cloud.provider.arg }}" > /etc/default/kubelet
 
         output=`ls ${BINARIES_DIR}/docker/`
         if [ "$output" != "" ]; then
