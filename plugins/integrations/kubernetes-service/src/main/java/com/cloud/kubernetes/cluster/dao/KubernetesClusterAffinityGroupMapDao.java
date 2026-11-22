@@ -28,4 +28,6 @@ public interface KubernetesClusterAffinityGroupMapDao extends GenericDao<Kuberne
     List<Long> listAffinityGroupIdsByClusterIdAndNodeType(long clusterId, String nodeType);
 
     int removeByClusterId(long clusterId);
+
+    List<KubernetesClusterAffinityGroupMapVO> listByAffinityGroupId(long affinityGroupId);
 }

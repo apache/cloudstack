@@ -34,6 +34,7 @@ public class KubernetesClusterAffinityGroupMapDaoImpl extends GenericDaoBase<Kub
 
     private final SearchBuilder<KubernetesClusterAffinityGroupMapVO> clusterIdAndNodeTypeSearch;
     private final SearchBuilder<KubernetesClusterAffinityGroupMapVO> clusterIdSearch;
+    private final SearchBuilder<KubernetesClusterAffinityGroupMapVO> affinityGroupIdSearch;
 
     public KubernetesClusterAffinityGroupMapDaoImpl() {
         clusterIdAndNodeTypeSearch = createSearchBuilder();
@@ -44,6 +45,10 @@ public class KubernetesClusterAffinityGroupMapDaoImpl extends GenericDaoBase<Kub
         clusterIdSearch = createSearchBuilder();
         clusterIdSearch.and("clusterId", clusterIdSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         clusterIdSearch.done();
+
+        affinityGroupIdSearch = createSearchBuilder();
+        affinityGroupIdSearch.and("affinityGroupId", affinityGroupIdSearch.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
+        affinityGroupIdSearch.done();
     }
 
     @Override
@@ -68,5 +73,12 @@ public class KubernetesClusterAffinityGroupMapDaoImpl extends GenericDaoBase<Kub
         SearchCriteria<KubernetesClusterAffinityGroupMapVO> sc = clusterIdSearch.create();
         sc.setParameters("clusterId", clusterId);
         return remove(sc);
+    }
+
+    @Override
+    public List<KubernetesClusterAffinityGroupMapVO> listByAffinityGroupId(long affinityGroupId) {
+        SearchCriteria<KubernetesClusterAffinityGroupMapVO> sc = affinityGroupIdSearch.create();
+        sc.setParameters("affinityGroupId", affinityGroupId);
+        return listBy(sc);
     }
 }
