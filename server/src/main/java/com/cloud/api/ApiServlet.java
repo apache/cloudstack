@@ -390,7 +390,7 @@ public class ApiServlet extends HttpServlet {
             } else {
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
             }
-            setProjectContext(params);
+            setProjectContext(params, projectDao);
             setGuiThemeParameterIfApiCallIsUnauthenticated(userId, command, req, params);
 
             if (LOGGER.isTraceEnabled()) {
@@ -403,7 +403,7 @@ public class ApiServlet extends HttpServlet {
 
                 // Add the HTTP method (GET/POST/PUT/DELETE) as well into the params map.
                 params.put("httpmethod", new String[]{req.getMethod()});
-                setProjectContext(params);
+                setProjectContext(params, projectDao);
                 setClientAddressForConsoleEndpointAccess(command, params, req);
                 final String response = apiServer.handleRequest(params, responseType, auditTrailSb);
                 HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, ApiServer.JSONContentType.value());
@@ -674,7 +674,7 @@ public class ApiServlet extends HttpServlet {
         }
     }
 
-    private void setProjectContext(Map<String, Object[]> requestParameters) {
+    static void setProjectContext(Map<String, Object[]> requestParameters, ProjectDao projectDao) {
         final String[] command = (String[])requestParameters.get(ApiConstants.COMMAND);
         if (command == null) {
             LOGGER.info("missing command, ignoring request...");
@@ -701,7 +701,7 @@ public class ApiServlet extends HttpServlet {
         }
     }
 
-    private boolean isSpecificAPI(String commandName) {
+    private static boolean isSpecificAPI(String commandName) {
         List<String> commands = Arrays.asList("suspendProject", "updateProject", "activateProject", "deleteProject");
         if (commands.contains(commandName)) {
             return true;

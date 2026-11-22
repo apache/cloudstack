@@ -54,6 +54,12 @@
         <load-on-startup>6</load-on-startup>
     </servlet>
 
+    <servlet>
+        <servlet-name>mcpServlet</servlet-name>
+        <servlet-class>com.cloud.api.McpServlet</servlet-class>
+        <load-on-startup>7</load-on-startup>
+    </servlet>
+
     <servlet-mapping>
          <servlet-name>apiServlet</servlet-name>
          <url-pattern>/api/*</url-pattern>
@@ -62,6 +68,11 @@
     <servlet-mapping>
          <servlet-name>consoleServlet</servlet-name>
          <url-pattern>/console</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+         <servlet-name>mcpServlet</servlet-name>
+         <url-pattern>/mcp</url-pattern>
     </servlet-mapping>
 
     <error-page>

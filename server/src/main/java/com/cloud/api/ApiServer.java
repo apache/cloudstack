@@ -962,7 +962,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
     }
 
-    protected boolean verifyApiKeyAccessAllowed(User user, Account account) {
+    @Override
+    public boolean verifyApiKeyAccessAllowed(User user, Account account) {
         Boolean apiKeyAccessEnabled = user.getApiKeyAccess();
         if (apiKeyAccessEnabled != null) {
             if (Boolean.TRUE.equals(apiKeyAccessEnabled)) {
