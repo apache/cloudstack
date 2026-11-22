@@ -83,6 +83,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -3079,5 +3080,38 @@ public class VolumeApiServiceImplTest {
 
         Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L)), volumeApiServiceImpl.getReservedDeviceIds(vm, false));
         Assert.assertEquals(new HashSet<>(Arrays.asList(3L, 4L, 5L)), volumeApiServiceImpl.getReservedDeviceIds(vm, true));
+    }
+
+    @Test
+    public void changeDiskOfferingForVolumeInternalMigratesAndResizesOnce() throws ResourceAllocationException {
+        Long newMaxIops = 1000L;
+        Mockito.when(volumeDaoMock.findById(volumeMockId)).thenReturn(volumeVoMock);
+        Mockito.when(volumeVoMock.getDiskOfferingId()).thenReturn(diskOfferingMockId);
+        Mockito.when(volumeVoMock.getState()).thenReturn(Volume.State.Ready);
+        Mockito.when(_diskOfferingDao.findByIdIncludingRemoved(diskOfferingMockId)).thenReturn(diskOfferingMock);
+        Mockito.when(_diskOfferingDao.findById(newDiskOfferingMockId)).thenReturn(newDiskOfferingMock);
+        Mockito.when(newDiskOfferingMock.getId()).thenReturn(newDiskOfferingMockId);
+        Mockito.when(volumeDataFactoryMock.getVolume(volumeMockId)).thenReturn(volumeInfoMock);
+        doNothing().when(volumeApiServiceImpl).validateVolumeResizeWithNewDiskOfferingAndLoad(any(), any(), any(), any(), any(), any(), any());
+        doNothing().when(volumeApiServiceImpl).validateVolumeReadyStateAndHypervisorChecks(any(), anyLong(), any());
+
+        StoragePool otherPool = Mockito.mock(StoragePool.class);
+        Mockito.when(otherPool.getId()).thenReturn(storagePoolMockId + 1);
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> pools = new Pair<>(List.of(otherPool), List.of(otherPool));
+        Mockito.doReturn(pools).when(managementService).listStoragePoolsForSystemMigrationOfVolume(volumeMockId, newDiskOfferingMockId, volumeSizeMock, null, newMaxIops, true, false);
+        Mockito.when(storageMgr.storagePoolHasEnoughSpaceForResize(otherPool, 0L, volumeSizeMock)).thenReturn(true);
+        doReturn(volumeVoMock).when(volumeApiServiceImpl).migrateVolume(any(MigrateVolumeCmd.class));
+        doReturn(volumeVoMock).when(volumeApiServiceImpl).resizeVolumeInternal(any(), any(), any(), any(), any(), any(), any(), anyBoolean());
+
+        volumeApiServiceImpl.changeDiskOfferingForVolumeInternal(volumeMockId, newDiskOfferingMockId, volumeSizeMock, null, newMaxIops, true, false);
+
+        ArgumentCaptor<MigrateVolumeCmd> migrateCmd = ArgumentCaptor.forClass(MigrateVolumeCmd.class);
+        InOrder inOrder = Mockito.inOrder(volumeApiServiceImpl);
+        inOrder.verify(volumeApiServiceImpl, times(1)).migrateVolume(migrateCmd.capture());
+        inOrder.verify(volumeApiServiceImpl, times(1)).resizeVolumeInternal(any(), any(), any(), any(), any(), any(), any(), anyBoolean());
+        Mockito.verify(volumeApiServiceImpl, times(1)).migrateVolume(any(MigrateVolumeCmd.class));
+        Mockito.verify(volumeApiServiceImpl, times(1)).resizeVolumeInternal(any(), any(), any(), any(), any(), any(), any(), anyBoolean());
+        assertEquals(Long.valueOf(storagePoolMockId + 1), migrateCmd.getValue().getStoragePoolId());
+        assertEquals(Long.valueOf(newDiskOfferingMockId), migrateCmd.getValue().getNewDiskOfferingId());
     }
 }

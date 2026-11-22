@@ -2338,50 +2338,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
 
-            if (!volumeMigrateRequired && !volumeResizeRequired) {
-                _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
-                volume = _volsDao.findById(volume.getId());
-                updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
-
-                return volume;
-            }
-
-            if (volumeMigrateRequired) {
-                if (CollectionUtils.isEmpty(poolsPair.first()) && CollectionUtils.isEmpty(poolsPair.second())) {
-                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume change offering operation failed for volume: %s as no suitable pool(s) found for migrating to support new disk offering", volume));
-                }
-                final Long newSizeFinal = newSize;
-                List<? extends StoragePool> suitableStoragePoolsWithEnoughSpace = suitableStoragePools.stream().filter(pool -> storageMgr.storagePoolHasEnoughSpaceForResize(pool, 0L, newSizeFinal)).collect(Collectors.toList());
-                if (CollectionUtils.isEmpty(suitableStoragePoolsWithEnoughSpace)) {
-                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume change offering operation failed for volume: %s as no suitable pool(s) with enough space found for volume migration.", volume));
-                }
-                Collections.shuffle(suitableStoragePoolsWithEnoughSpace);
-                MigrateVolumeCmd migrateVolumeCmd = new MigrateVolumeCmd(volume.getId(), suitableStoragePoolsWithEnoughSpace.get(0).getId(), newDiskOffering.getId(), true);
-                try {
-                    Volume result = migrateVolume(migrateVolumeCmd);
-                    volume = (result != null) ? _volsDao.findById(result.getId()) : null;
-                    if (volume == null) {
-                        throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume: %s migration failed to storage pool %s", volume, suitableStoragePools.get(0)));
-                    }
-                } catch (Exception e) {
-                    throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume: %s migration failed to storage pool %s due to %s", volume, suitableStoragePools.get(0), e.getMessage()));
-                }
-            }
-
-            if (volumeResizeRequired) {
-                // refresh volume data
-                volume = _volsDao.findById(volume.getId());
-                try {
-                    volume = resizeVolumeInternal(volume, newDiskOffering, currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, shrinkOk);
-                } catch (Exception e) {
-                    if (volumeMigrateRequired) {
-                        logger.warn(String.format("Volume change offering operation succeeded for volume ID: %s but volume resize operation failed, so please try resize volume operation separately", volume.getUuid()));
-                    } else {
-                        throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume ID: %s due to resize volume operation failed", volume.getUuid()));
-                    }
-                }
-            }
-
             return volume;
 
         } finally {
