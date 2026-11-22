@@ -212,6 +212,18 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @Param(description = "Indicates if the CloudStack CSI driver has been setup in the cluster")
     private Boolean isCsiEnabled;
 
+    @SerializedName(ApiConstants.API_SERVER_ARGS)
+    @Param(description = "Extra kube-apiserver arguments of the cluster", since = "24.0.0")
+    private Map<String, String> apiServerArgs;
+
+    @SerializedName(ApiConstants.KUBELET_CONFIG)
+    @Param(description = "KubeletConfiguration fields applied to the cluster nodes", since = "24.0.0")
+    private String kubeletConfig;
+
+    @SerializedName(ApiConstants.AUDIT_POLICY)
+    @Param(description = "kube-apiserver audit policy of the cluster", since = "24.0.0")
+    private String auditPolicy;
+
     @SerializedName(ApiConstants.CLUSTER_TYPE)
     @Param(description = "The type of the cluster")
     private KubernetesCluster.ClusterType clusterType;
@@ -558,6 +570,18 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     public void setCsiEnabled(Boolean csiEnabled) {
         isCsiEnabled = csiEnabled;
+    }
+
+    public void setApiServerArgs(Map<String, String> apiServerArgs) {
+        this.apiServerArgs = apiServerArgs;
+    }
+
+    public void setKubeletConfig(String kubeletConfig) {
+        this.kubeletConfig = kubeletConfig;
+    }
+
+    public void setAuditPolicy(String auditPolicy) {
+        this.auditPolicy = auditPolicy;
     }
 
     public void setControlAffinityGroupIds(String controlAffinityGroupIds) {

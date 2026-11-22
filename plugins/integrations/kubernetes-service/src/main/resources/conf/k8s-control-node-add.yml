@@ -25,6 +25,8 @@ users:
       {{ k8s.ssh.pub.key }}
 
 write_files:
+  {{ k8s.audit.policy.file }}
+
   - path: /opt/bin/setup-kube-system
     permissions: '0700'
     owner: root:root

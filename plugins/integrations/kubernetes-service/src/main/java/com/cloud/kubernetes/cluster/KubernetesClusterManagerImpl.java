@@ -177,6 +177,7 @@ import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
+import com.cloud.kubernetes.cluster.utils.KubeadmConfigBuilder;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.kubernetes.version.KubernetesSupportedVersionVO;
 import com.cloud.kubernetes.version.KubernetesVersionManagerImpl;
@@ -962,9 +963,21 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setClusterType(kubernetesCluster.getClusterType());
         response.setCsiEnabled(kubernetesCluster.isCsiEnabled());
         response.setCreated(kubernetesCluster.getCreated());
+        setNodeSettingsResponse(response, kubernetesCluster.getId());
         setNodeTypeAffinityGroupResponse(response, kubernetesCluster.getId());
 
         return response;
+    }
+
+    protected void setNodeSettingsResponse(KubernetesClusterResponse response, long clusterId) {
+        Map<String, String> details = kubernetesClusterDetailsDao.listDetailsKeyPairs(clusterId,
+                List.of(ApiConstants.API_SERVER_ARGS, ApiConstants.KUBELET_CONFIG, ApiConstants.AUDIT_POLICY));
+        String apiServerArgs = details.get(ApiConstants.API_SERVER_ARGS);
+        if (StringUtils.isNotEmpty(apiServerArgs)) {
+            response.setApiServerArgs(KubeadmConfigBuilder.apiServerArgsFromJson(apiServerArgs));
+        }
+        response.setKubeletConfig(details.get(ApiConstants.KUBELET_CONFIG));
+        response.setAuditPolicy(details.get(ApiConstants.AUDIT_POLICY));
     }
 
     protected void setNodeTypeAffinityGroupResponse(KubernetesClusterResponse response, long clusterId) {
@@ -1064,6 +1077,34 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         if (StringUtils.isNotEmpty(externalLoadBalancerIpAddress) && (!NetUtils.isValidIp4(externalLoadBalancerIpAddress) && !NetUtils.isValidIp6(externalLoadBalancerIpAddress))) {
             throw new InvalidParameterValueException("Invalid external load balancer IP address");
+        }
+
+        if (hasNodeSettings(cmd)) {
+            throw new InvalidParameterValueException(String.format("%s, %s and %s are not supported for %s clusters",
+                    ApiConstants.API_SERVER_ARGS, ApiConstants.KUBELET_CONFIG, ApiConstants.AUDIT_POLICY, KubernetesCluster.ClusterType.ExternalManaged));
+        }
+    }
+
+    private boolean hasNodeSettings(final CreateKubernetesClusterCmd cmd) {
+        return MapUtils.isNotEmpty(cmd.getApiServerArgs()) || StringUtils.isNotBlank(cmd.getKubeletConfig()) || StringUtils.isNotEmpty(cmd.getAuditPolicy());
+    }
+
+    protected void validateNodeSettings(final CreateKubernetesClusterCmd cmd, final KubernetesSupportedVersion clusterKubernetesVersion) {
+        if (!hasNodeSettings(cmd)) {
+            return;
+        }
+        KubeadmConfigBuilder.validateApiServerArgs(cmd.getApiServerArgs());
+        KubeadmConfigBuilder.normalizeKubeletConfig(cmd.getKubeletConfig());
+        KubeadmConfigBuilder.validateAuditPolicy(cmd.getAuditPolicy());
+        boolean supported;
+        try {
+            supported = KubernetesVersionManagerImpl.compareSemanticVersions(clusterKubernetesVersion.getSemanticVersion(), KubeadmConfigBuilder.MIN_KUBERNETES_VERSION) >= 0;
+        } catch (IllegalArgumentException e) {
+            supported = false;
+        }
+        if (!supported) {
+            throw new InvalidParameterValueException(String.format("%s, %s and %s need Kubernetes version %s or above",
+                    ApiConstants.API_SERVER_ARGS, ApiConstants.KUBELET_CONFIG, ApiConstants.AUDIT_POLICY, KubeadmConfigBuilder.MIN_KUBERNETES_VERSION));
         }
     }
 
@@ -1177,6 +1218,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         validateDockerRegistryParams(dockerRegistryUserName, dockerRegistryPassword, dockerRegistryUrl);
+
+        validateNodeSettings(cmd, clusterKubernetesVersion);
 
         Network network = validateAndGetNetworkForKubernetesCreateParameters(networkId);
 
@@ -1305,6 +1348,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final String dockerRegistryPassword = cmd.getDockerRegistryPassword();
         final String dockerRegistryUrl = cmd.getDockerRegistryUrl();
         final boolean networkCleanup = cmd.getNetworkId() == null;
+        final Map<String, String> apiServerArgs = cmd.getApiServerArgs();
+        final String kubeletConfig = KubeadmConfigBuilder.normalizeKubeletConfig(cmd.getKubeletConfig());
+        final String auditPolicy = cmd.getAuditPolicy();
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
@@ -1318,6 +1364,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.DOCKER_REGISTRY_USER_NAME, dockerRegistryUserName, true);
                 addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.DOCKER_REGISTRY_PASSWORD, dockerRegistryPassword, false);
                 addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.DOCKER_REGISTRY_URL, dockerRegistryUrl, true);
+                if (MapUtils.isNotEmpty(apiServerArgs)) {
+                    details.add(new KubernetesClusterDetailsVO(kubernetesClusterId, ApiConstants.API_SERVER_ARGS, KubeadmConfigBuilder.apiServerArgsToJson(apiServerArgs), true));
+                }
+                addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.KUBELET_CONFIG, kubeletConfig, true);
+                addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.AUDIT_POLICY, auditPolicy, true);
                 if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.CloudManaged) {
                     details.add(new KubernetesClusterDetailsVO(kubernetesClusterId, "networkCleanup", String.valueOf(networkCleanup), true));
                 }

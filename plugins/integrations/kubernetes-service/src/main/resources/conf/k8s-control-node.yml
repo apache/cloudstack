@@ -243,32 +243,12 @@ write_files:
       fi
 
   - path: /etc/kubernetes/kubeadm-config.yaml
-    permissions: '0644'
+    permissions: '0600'
     owner: root:root
     content: |
-      apiVersion: kubeadm.k8s.io/v1beta3
-      kind: ClusterConfiguration
-      apiServer:
-        certSANs:
-        {{ k8s_control.server_ips }}
-      controlPlaneEndpoint: {{ k8s_control.server_ip }}:{{ k8s.api_server_port }}
-      etcd:
-        external:
-          endpoints:
-          {{ etcd.etcd_endpoint_list }}
-      ---
-      apiVersion: kubeadm.k8s.io/v1beta3
-      kind: InitConfiguration
-      bootstrapTokens:
-        - token: "{{ k8s_control_node.cluster.token }}"
-          ttl: "0"
-      nodeRegistration:
-        criSocket: /run/containerd/containerd.sock
-      localAPIEndpoint:
-        advertiseAddress: {{ k8s_control.server_ip }}
-        bindPort: {{ k8s.api_server_port }}
-      certificateKey: {{ k8s_control.certificate_key }}
+      {{ k8s_control.kubeadm_config }}
 
+  {{ k8s.audit.policy.file }}
 
   - path: /opt/bin/deploy-kube-system
     permissions: '0700'
@@ -285,7 +265,7 @@ write_files:
         export PATH=$PATH:/opt/bin
       fi
 
-      EXTERNAL_ETCD_NODES={{ etcd.unstacked_etcd }}
+      KUBEADM_INIT_WITH_CONFIG={{ k8s_control.init_with_config }}
       EXTERNAL_CNI_PLUGIN={{ k8s.external.cni.plugin }}
       MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
       crucial_cmd_attempts=1
@@ -296,10 +276,10 @@ write_files:
         fi
         retval=0
         set +e
-        if [[ ${EXTERNAL_ETCD_NODES} == true ]]; then
+        if [[ ${KUBEADM_INIT_WITH_CONFIG} == true ]]; then
           kubeadm init --config /etc/kubernetes/kubeadm-config.yaml --upload-certs
         else
-          kubeadm init --token {{ k8s_control_node.cluster.token }} --token-ttl 0 {{ k8s_control_node.cluster.initargs }} --cri-socket /run/containerd/containerd.sock
+          kubeadm init --token {{ k8s_control_node.cluster.token }} --token-ttl {{ k8s_control_node.cluster.token.ttl }} {{ k8s_control_node.cluster.initargs }} --cri-socket /run/containerd/containerd.sock
         fi
         retval=$?
         set -e
