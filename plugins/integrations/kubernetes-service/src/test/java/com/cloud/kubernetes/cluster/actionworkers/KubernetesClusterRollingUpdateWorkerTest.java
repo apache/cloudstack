@@ -51,16 +51,37 @@ import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
+import com.cloud.kubernetes.version.KubernetesSupportedVersionVO;
+import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
+import com.cloud.storage.LaunchPermissionVO;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.LaunchPermissionDao;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.TemplateApiService;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VMInstanceDetailVO;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 /**
  * Runs the rollout against a simulated cluster: the VMs, their offerings, and the Kubernetes nodes kubectl reports,
@@ -72,6 +93,9 @@ public class KubernetesClusterRollingUpdateWorkerTest {
     private static final long CLUSTER_ID = 1L;
     private static final long OLD_OFFERING = 10L;
     private static final long NEW_OFFERING = 20L;
+    private static final long OLD_TEMPLATE = 30L;
+    private static final long NEW_TEMPLATE = 40L;
+    private static final long ISO = 50L;
 
     @Mock
     KubernetesClusterManagerImpl manager;
@@ -95,6 +119,28 @@ public class KubernetesClusterRollingUpdateWorkerTest {
     KubernetesCluster cluster;
     @Mock
     KubernetesClusterVO clusterVO;
+    @Mock
+    VMTemplateDao templateDao;
+    @Mock
+    TemplateApiService templateService;
+    @Mock
+    LaunchPermissionDao launchPermissionDao;
+    @Mock
+    KubernetesSupportedVersionDao kubernetesSupportedVersionDao;
+    @Mock
+    Account owner;
+    @Mock
+    VMInstanceDetailsDao vmDetailsDao;
+    @Mock
+    SnapshotDao snapshotDao;
+    @Mock
+    VMSnapshotDao vmSnapshotDao;
+    @Mock
+    DiskOfferingDao diskOfferingDao;
+    @Mock
+    VirtualMachineManager itMgr;
+    @Mock
+    com.cloud.user.AccountManager accountManager;
 
     /** A Kubernetes node as the simulated kubectl reports it */
     static class Kube {
@@ -108,6 +154,8 @@ public class KubernetesClusterRollingUpdateWorkerTest {
     final Map<Long, UserVmVO> vms = new HashMap<>();
     final Map<Long, VirtualMachine.State> vmStates = new HashMap<>();
     final Map<Long, Long> vmOfferings = new HashMap<>();
+    final Map<Long, Long> vmTemplates = new HashMap<>();
+    final Map<Long, Long> vmIsos = new HashMap<>();
     final Map<String, Kube> kube = new LinkedHashMap<>();
     final Map<KubernetesClusterNodeType, Long> desiredOfferings = new HashMap<>();
     final List<String> calls = new ArrayList<>();
@@ -115,6 +163,8 @@ public class KubernetesClusterRollingUpdateWorkerTest {
     final Set<String> failingDrains = new HashSet<>();
     final Set<String> failingStarts = new HashSet<>();
     final Set<String> details = new HashSet<>();
+    /** The VMs that have the recreate detail, with its value */
+    final Map<Long, String> recreating = new HashMap<>();
     KubernetesCluster.State clusterState;
     long nextVmId = 100;
 
@@ -143,6 +193,7 @@ public class KubernetesClusterRollingUpdateWorkerTest {
             return desiredOfferings.get(KubernetesClusterUtil.getNodeType(vmMap)).equals(vmOfferings.get(vm.getId())) ? null : "its service offering differs";
         });
         Mockito.when(manager.getNodeTypeWantedAffinityGroupIds(Mockito.anyLong(), Mockito.any())).thenReturn(null);
+        Mockito.when(manager.getNodeTypeTemplateId(Mockito.any(), Mockito.any())).thenReturn(null);
         Mockito.when(manager.getVmAffinityGroupIds(Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(Set.of());
         Mockito.doAnswer(i -> details.add(i.getArgument(1)) ? null : null).when(detailsDao).addDetail(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
         Mockito.doAnswer(i -> {
@@ -200,6 +251,8 @@ public class KubernetesClusterRollingUpdateWorkerTest {
         Mockito.when(vm.getHostName()).thenReturn(name);
         Mockito.when(vm.getState()).thenAnswer(i -> vmStates.get(id));
         Mockito.when(vm.getServiceOfferingId()).thenAnswer(i -> vmOfferings.get(id));
+        Mockito.when(vm.getTemplateId()).thenAnswer(i -> vmTemplates.getOrDefault(id, OLD_TEMPLATE));
+        Mockito.when(vm.getIsoId()).thenAnswer(i -> vmIsos.get(id));
         vms.put(id, vm);
         vmStates.put(id, VirtualMachine.State.Running);
         vmOfferings.put(id, offeringId);
@@ -247,6 +300,38 @@ public class KubernetesClusterRollingUpdateWorkerTest {
         worker.userVmManager = userVmManager;
         worker.volumeDao = volumeDao;
         worker.affinityGroupVMMapDao = affinityGroupVMMapDao;
+        worker.templateDao = templateDao;
+        worker.templateService = templateService;
+        worker.launchPermissionDao = launchPermissionDao;
+        worker.kubernetesSupportedVersionDao = kubernetesSupportedVersionDao;
+        worker.owner = owner;
+        worker.vmInstanceDetailsDao = vmDetailsDao;
+        worker.snapshotDao = snapshotDao;
+        worker.vmSnapshotDao = vmSnapshotDao;
+        worker.diskOfferingDao = diskOfferingDao;
+        worker.itMgr = itMgr;
+        worker.accountManager = accountManager;
+        Mockito.doAnswer(i -> {
+            List<UserVm> detached = i.getArgument(0);
+            detached.forEach(vm -> {
+                calls.add("detachIso:" + vm.getHostName());
+                vmIsos.remove(vm.getId());
+            });
+            return null;
+        }).when(worker).detachIsoKubernetesVMs(Mockito.anyList());
+        Mockito.when(vmDetailsDao.findDetail(Mockito.anyLong(), Mockito.eq(KubernetesClusterRollingUpdateWorker.RECREATE_DETAIL))).thenAnswer(i -> {
+            String value = recreating.get((Long) i.getArgument(0));
+            if (value == null) {
+                return null;
+            }
+            VMInstanceDetailVO detail = Mockito.mock(VMInstanceDetailVO.class);
+            Mockito.when(detail.getValue()).thenReturn(value);
+            return detail;
+        });
+        Mockito.doAnswer(i -> recreating.put(i.getArgument(0), i.getArgument(2))).when(vmDetailsDao)
+                .addDetail(Mockito.anyLong(), Mockito.eq(KubernetesClusterRollingUpdateWorker.RECREATE_DETAIL), Mockito.anyString(), Mockito.anyBoolean());
+        Mockito.doAnswer(i -> recreating.remove((Long) i.getArgument(0))).when(vmDetailsDao)
+                .removeDetail(Mockito.anyLong(), Mockito.eq(KubernetesClusterRollingUpdateWorker.RECREATE_DETAIL));
         worker.kubectlAddress = new Pair<>("10.0.0.1", 2222);
         Mockito.doNothing().when(worker).init();
         Mockito.doReturn(true).when(worker).transitToOperationState(KubernetesCluster.Event.UpdateRequested);
@@ -733,5 +818,381 @@ public class KubernetesClusterRollingUpdateWorkerTest {
         worker.rollout();
 
         Assert.assertEquals(List.of("release:w1", "event:OperationSucceeded"), calls);
+    }
+
+    // a new template
+
+    /** Gives the worker nodes a new template; the VM of a node is recreated from it, and Kubernetes sees the node go down */
+    private void setUpNewWorkerTemplate(Storage.TemplateType templateType) {
+        Mockito.doReturn(NEW_TEMPLATE).when(manager).getNodeTypeTemplateId(Mockito.any(), Mockito.eq(WORKER));
+        Mockito.doAnswer(i -> {
+            KubernetesClusterVmMapVO vmMap = i.getArgument(1);
+            UserVmVO vm = i.getArgument(2);
+            KubernetesClusterNodeType type = KubernetesClusterUtil.getNodeType(vmMap);
+            if (type == WORKER && vm.getTemplateId() != NEW_TEMPLATE) {
+                return "its template differs";
+            }
+            return desiredOfferings.get(type).equals(vmOfferings.get(vm.getId())) ? null : "its service offering differs";
+        }).when(manager).getNodeOutOfDateReason(Mockito.any(), Mockito.any(), Mockito.any());
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.getSize()).thenReturn(5L << 30);
+        Mockito.when(template.getTemplateType()).thenReturn(templateType);
+        Mockito.when(template.getAccountId()).thenReturn(1L);
+        Mockito.when(template.getId()).thenReturn(NEW_TEMPLATE);
+        Mockito.when(template.getState()).thenReturn(VirtualMachineTemplate.State.Active);
+        Mockito.when(manager.isTemplateReadyInZone(Mockito.any(), Mockito.anyLong())).thenReturn(true);
+        Mockito.when(templateDao.findById(NEW_TEMPLATE)).thenReturn(template);
+        Mockito.when(templateDao.findById(OLD_TEMPLATE)).thenReturn(Mockito.mock(VMTemplateVO.class));
+        KubernetesSupportedVersionVO version = Mockito.mock(KubernetesSupportedVersionVO.class);
+        Mockito.when(version.getIsoId()).thenReturn(ISO);
+        Mockito.when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(version);
+        VMTemplateVO iso = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(iso.getState()).thenReturn(VirtualMachineTemplate.State.Active);
+        Mockito.when(iso.getId()).thenReturn(ISO);
+        Mockito.when(templateDao.findById(ISO)).thenReturn(iso);
+        Mockito.when(owner.getId()).thenReturn(7L);
+        VolumeVO root = Mockito.mock(VolumeVO.class);
+        Mockito.when(root.getSize()).thenReturn(20L << 30);
+        Mockito.when(volumeDao.findByInstanceAndType(Mockito.anyLong(), Mockito.eq(Volume.Type.ROOT))).thenReturn(List.of(root));
+        try {
+            Mockito.doAnswer(i -> {
+                long id = i.getArgument(0);
+                Map<String, String> details = i.getArgument(4);
+                calls.add("restore:" + name(id) + ":" + details.get(VmDetailConstants.ROOT_DISK_SIZE));
+                vmTemplates.put(id, NEW_TEMPLATE);
+                kube.get(name(id)).ready = false;
+                return vms.get(id);
+            }).when(itMgr).restoreVirtualMachine(Mockito.anyLong(), Mockito.eq(NEW_TEMPLATE), Mockito.isNull(), Mockito.eq(false), Mockito.anyMap());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        Mockito.when(templateService.attachIso(Mockito.eq(ISO), Mockito.anyLong(), Mockito.eq(true))).thenAnswer(i -> {
+            vmIsos.put(i.getArgument(1), ISO);
+            return calls.add("attachIso:" + name(i.getArgument(1)));
+        });
+    }
+
+    @Test
+    public void workerWithAnotherTemplateIsRecreatedFromTheTemplateOfItsType() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, NEW_OFFERING);
+        UserVmVO w2 = addNode("w2", WORKER, NEW_OFFERING);
+        vmTemplates.put(w2.getId(), NEW_TEMPLATE);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+
+        Assert.assertTrue(worker.rollout());
+
+        // the root disk keeps its 20 GB, the larger of it and the 5 GB template
+        Assert.assertEquals(List.of("annotate:w1", "cordon:w1", "drain:w1", "stop:w1", "restore:w1:20", "attachIso:w1", "start:w1", "release:w1",
+                "detachIso:w1", "event:OperationSucceeded"), calls);
+        Assert.assertNull(kube.get("w1").annotation);
+        Assert.assertTrue(recreating.isEmpty());
+        Mockito.verify(launchPermissionDao, Mockito.never()).persist(Mockito.any());
+        Assert.assertEquals(KubernetesCluster.State.Running, clusterState);
+    }
+
+    @Test
+    public void recreateFromASystemVmTemplateLetsTheOwnerUseItMeanwhile() {
+        setUpNewWorkerTemplate(Storage.TemplateType.SYSTEM);
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, NEW_OFFERING);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+
+        Assert.assertTrue(worker.rollout());
+
+        Mockito.verify(launchPermissionDao).persist(Mockito.any(LaunchPermissionVO.class));
+        long callerId = CallContext.current().getCallingAccountId();
+        Mockito.verify(launchPermissionDao).removePermissions(NEW_TEMPLATE, List.of(callerId));
+    }
+
+    @Test
+    public void recreateWaitsForTheNodeToBeNotReady() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, NEW_OFFERING);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+        try {
+            // Kubernetes still sees the node Ready
+            Mockito.doAnswer(i -> calls.add("restore:" + name(i.getArgument(0))) ? null : null).when(itMgr)
+                    .restoreVirtualMachine(Mockito.anyLong(), Mockito.anyLong(), Mockito.isNull(), Mockito.eq(false), Mockito.anyMap());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, worker::rollout);
+
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("did not report NotReady"));
+        Assert.assertFalse(calls.contains("start:w1"));
+        // the ISO stays for the VM to install from once started; the node stays cordoned, and the detail has the next rollout recreate it
+        Assert.assertFalse(calls.contains("detachIso:w1"));
+        Assert.assertTrue(kube.get("w1").unschedulable);
+        Assert.assertEquals(1, recreating.size());
+    }
+
+    @Test
+    public void rerunRecreatesAgainANodeWhoseRecreateDidNotFinish() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        UserVmVO w1 = addNode("w1", WORKER, NEW_OFFERING);
+        // recreated from the new template, but stopped before it joined again
+        vmTemplates.put(w1.getId(), NEW_TEMPLATE);
+        vmStates.put(w1.getId(), VirtualMachine.State.Stopped);
+        kube.get("w1").ready = false;
+        kube.get("w1").annotation = "boot-before";
+        kube.get("w1").unschedulable = true;
+        recreating.put(w1.getId(), kube.get("w1").bootId);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+
+        Assert.assertTrue(worker.rollout());
+
+        Assert.assertEquals(List.of("cordon:w1", "restore:w1:20", "attachIso:w1", "start:w1", "release:w1", "detachIso:w1", "event:OperationSucceeded"), calls);
+    }
+
+    @Test
+    public void controlNodesAreNotRecreated() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        Mockito.doReturn(NEW_TEMPLATE).when(manager).getNodeTypeTemplateId(Mockito.any(), Mockito.eq(CONTROL));
+        addStackedControlPlane(3);
+        desiredOfferings.put(CONTROL, NEW_OFFERING);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+
+        Assert.assertTrue(worker.rollout());
+
+        Assert.assertTrue(calls.contains("upgrade:c1"));
+        Assert.assertTrue(calls.stream().noneMatch(call -> call.startsWith("restore:") || call.startsWith("attachIso:")));
+    }
+
+    @Test
+    public void aStartedRecreatedNodeThatIsNotBackKeepsTheIsoUntilALaterRolloutSeesItBack() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, NEW_OFFERING);
+        staleAfterStart.add("w1");
+        KubernetesClusterRollingUpdateWorker first = newWorker(1);
+        Assert.assertThrows(CloudRuntimeException.class, first::rollout);
+        Assert.assertFalse(calls.contains("detachIso:w1"));
+
+        // it joins after all: the next rollout releases it without recreating it again
+        kube.get("w1").ready = true;
+        kube.get("w1").bootId = UUID.randomUUID().toString();
+        calls.clear();
+        clusterState = KubernetesCluster.State.Updating;
+        Assert.assertTrue(newWorker(1).rollout());
+
+        Assert.assertEquals(List.of("detachIso:w1", "release:w1", "event:OperationSucceeded"), calls);
+        Assert.assertTrue(recreating.isEmpty());
+    }
+
+    @Test
+    public void aNodeWhoseRootDiskIsBeingSnapshottedIsNotRecreated() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, NEW_OFFERING);
+        Mockito.when(snapshotDao.listByStatus(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(List.of(Mockito.mock(SnapshotVO.class)));
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, worker::rollout);
+
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("snapshot"));
+        Assert.assertFalse(calls.contains("drain:w1"));
+    }
+
+    @Test
+    public void aNodeWithVmSnapshotsIsNotRecreated() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, NEW_OFFERING);
+        Mockito.when(vmSnapshotDao.findByVm(Mockito.anyLong())).thenReturn(List.of(Mockito.mock(VMSnapshotVO.class)));
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, worker::rollout);
+
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("VM snapshots"));
+        Assert.assertFalse(calls.contains("drain:w1"));
+    }
+
+    @Test
+    public void aRecreatedNodeSomeoneElseCordonedIsCleanedUpOnceItIsReady() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        UserVmVO w1 = addNode("w1", WORKER, NEW_OFFERING);
+        vmTemplates.put(w1.getId(), NEW_TEMPLATE);
+        kube.get("w1").unschedulable = true;
+        recreating.put(w1.getId(), "boot-before-recreate");
+        vmIsos.put(w1.getId(), ISO);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+
+        Assert.assertTrue(worker.rollout());
+
+        // not recreated again, and left cordoned, as someone else cordoned it
+        Assert.assertEquals(List.of("detachIso:w1", "event:OperationSucceeded"), calls);
+        Assert.assertTrue(recreating.isEmpty());
+        Assert.assertTrue(kube.get("w1").unschedulable);
+    }
+
+    @Test
+    public void aTemplateThatIsNoLongerReadyIsRefusedBeforeTheDrain() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, NEW_OFFERING);
+        Mockito.when(manager.isTemplateReadyInZone(Mockito.eq(templateDao.findById(NEW_TEMPLATE)), Mockito.anyLong())).thenReturn(false);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, worker::rollout);
+
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("not active and ready"));
+        Assert.assertFalse(calls.contains("drain:w1"));
+    }
+
+    @Test
+    public void aTemplateLargerThanTheRootDiskOfAStrictOfferingIsRefusedBeforeTheDrain() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        Mockito.when(templateDao.findById(NEW_TEMPLATE).getSize()).thenReturn(30L << 30);
+        com.cloud.storage.DiskOfferingVO strict = Mockito.mock(com.cloud.storage.DiskOfferingVO.class);
+        Mockito.when(strict.getDiskSizeStrictness()).thenReturn(true);
+        Mockito.when(diskOfferingDao.findById(Mockito.anyLong())).thenReturn(strict);
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, NEW_OFFERING);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, worker::rollout);
+
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("strictly fixed"));
+        Assert.assertFalse(calls.contains("drain:w1"));
+    }
+
+    @Test
+    public void aRootDiskSizeOfTheTypeLargerThanTheRootDiskOfAStrictOfferingIsRefusedBeforeTheDrain() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        Mockito.when(clusterVO.getWorkerNodeRootDiskSize()).thenReturn(30L);
+        com.cloud.storage.DiskOfferingVO strict = Mockito.mock(com.cloud.storage.DiskOfferingVO.class);
+        Mockito.when(strict.getDiskSizeStrictness()).thenReturn(true);
+        Mockito.when(diskOfferingDao.findById(Mockito.anyLong())).thenReturn(strict);
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, NEW_OFFERING);
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, newWorker(1)::rollout);
+
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("strictly fixed"));
+        Assert.assertFalse(calls.contains("drain:w1"));
+    }
+
+    @Test
+    public void aRestoreRefusedBeforeTheRootDiskWasReplacedLeavesNoRecreateDetail() throws Exception {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, NEW_OFFERING);
+        Mockito.doThrow(new CloudRuntimeException("refused")).when(itMgr)
+                .restoreVirtualMachine(Mockito.anyLong(), Mockito.eq(NEW_TEMPLATE), Mockito.isNull(), Mockito.eq(false), Mockito.anyMap());
+
+        Assert.assertThrows(CloudRuntimeException.class, newWorker(1)::rollout);
+
+        Assert.assertTrue(calls.toString(), calls.contains("stop:w1"));
+        Assert.assertTrue(recreating.isEmpty());
+    }
+
+    @Test
+    public void aFailedIsoDetachDoesNotHaveTheNodeRecreatedAgain() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        UserVmVO w1 = addNode("w1", WORKER, NEW_OFFERING);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+        // the detach fails, and only logs it
+        Mockito.doAnswer(i -> calls.add("detachIsoFailed") ? null : null).when(worker).detachIsoKubernetesVMs(Mockito.anyList());
+
+        Assert.assertTrue(worker.rollout());
+
+        Assert.assertTrue(recreating.isEmpty());
+        // a later rollout for another setting restarts the node, without recreating it
+        vmOfferings.put(w1.getId(), OLD_OFFERING);
+        calls.clear();
+        clusterState = KubernetesCluster.State.Updating;
+        Assert.assertTrue(newWorker(1).rollout());
+        Assert.assertTrue(calls.toString(), calls.contains("upgrade:w1"));
+        Assert.assertTrue(calls.stream().noneMatch(call -> call.startsWith("restore:")));
+    }
+
+    @Test
+    public void aNodeWhoseTemplateWasDeletedIsRefusedBeforeTheDrain() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        Mockito.when(templateDao.findById(OLD_TEMPLATE)).thenReturn(null);
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, NEW_OFFERING);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, worker::rollout);
+
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("was deleted"));
+        Assert.assertFalse(calls.contains("drain:w1"));
+    }
+
+    @Test
+    public void aRecreatedNodeSomeoneElseCordonedThatIsNotBackIsRecreatedAgain() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        UserVmVO w1 = addNode("w1", WORKER, NEW_OFFERING);
+        vmTemplates.put(w1.getId(), NEW_TEMPLATE);
+        kube.get("w1").unschedulable = true;
+        kube.get("w1").ready = false;
+        recreating.put(w1.getId(), kube.get("w1").bootId);
+        // the rollout before recreated the node someone else had cordoned, but it did not come back
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+
+        Assert.assertTrue(worker.rollout());
+
+        Assert.assertTrue(calls.toString(), calls.contains("restore:w1:20"));
+        Assert.assertTrue(recreating.isEmpty());
+        Assert.assertTrue(kube.get("w1").unschedulable);
+    }
+
+    @Test
+    public void aNodeWithAnotherIsoOrADeleteProtectedRootDiskIsRefusedBeforeTheDrain() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        UserVmVO w1 = addNode("w1", WORKER, NEW_OFFERING);
+        vmIsos.put(w1.getId(), 99L);
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, newWorker(1)::rollout);
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("another ISO"));
+
+        vmIsos.clear();
+        VolumeVO root = volumeDao.findByInstanceAndType(w1.getId(), Volume.Type.ROOT).get(0);
+        Mockito.when(root.isDeleteProtection()).thenReturn(true);
+        clusterState = KubernetesCluster.State.Updating;
+        e = Assert.assertThrows(CloudRuntimeException.class, newWorker(1)::rollout);
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("delete protection"));
+        Assert.assertFalse(calls.contains("drain:w1"));
+    }
+
+    @Test
+    public void aRecreateWhoseNewRootDiskIsNotCreatedYetIsNotRestoredAgain() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        UserVmVO w1 = addNode("w1", WORKER, NEW_OFFERING);
+        vmTemplates.put(w1.getId(), NEW_TEMPLATE);
+        vmStates.put(w1.getId(), VirtualMachine.State.Stopped);
+        kube.get("w1").ready = false;
+        kube.get("w1").annotation = "boot-before";
+        kube.get("w1").unschedulable = true;
+        recreating.put(w1.getId(), kube.get("w1").bootId);
+        VolumeVO root = volumeDao.findByInstanceAndType(w1.getId(), Volume.Type.ROOT).get(0);
+        Mockito.when(root.getState()).thenReturn(Volume.State.Allocated);
+
+        Assert.assertTrue(newWorker(1).rollout());
+
+        Assert.assertEquals(List.of("cordon:w1", "attachIso:w1", "start:w1", "release:w1", "detachIso:w1", "event:OperationSucceeded"), calls);
+    }
+
+    @Test
+    public void aVmThatIsNotStoppedIsNotRestored() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        UserVmVO w1 = addNode("w1", WORKER, NEW_OFFERING);
+        vmStates.put(w1.getId(), VirtualMachine.State.Migrating);
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, newWorker(1)::rollout);
+
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("not stopped"));
+        Assert.assertTrue(calls.stream().noneMatch(call -> call.startsWith("restore:")));
     }
 }

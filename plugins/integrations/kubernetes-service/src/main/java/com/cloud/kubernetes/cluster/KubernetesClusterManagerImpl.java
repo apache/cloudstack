@@ -43,6 +43,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -127,6 +128,8 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
@@ -226,7 +229,10 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -234,6 +240,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.TemplateApiService;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -358,6 +365,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected VMTemplateDao templateDao;
     @Inject
     protected TemplateJoinDao templateJoinDao;
+    @Inject
+    protected TemplateDataStoreDao templateDataStoreDao;
     @Inject
     protected DedicatedResourceDao dedicatedResourceDao;
     @Inject
@@ -827,6 +836,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return Collections.emptyList();
     }
 
+    protected String getTemplateUuid(Long templateId) {
+        VMTemplateVO template = templateId == null ? null : templateDao.findByIdIncludingRemoved(templateId);
+        return template == null ? null : template.getUuid();
+    }
+
     protected void setNodeTypeServiceOfferingResponse(KubernetesClusterResponse response,
                                                       KubernetesClusterNodeType nodeType,
                                                       Long offeringId) {
@@ -891,6 +905,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setControlNodeRootDiskSize(kubernetesCluster.getControlNodeRootDiskSize());
         response.setWorkerNodeRootDiskSize(kubernetesCluster.getWorkerNodeRootDiskSize());
         response.setEtcdNodeRootDiskSize(kubernetesCluster.getEtcdNodeRootDiskSize());
+        response.setControlNodeTemplateId(getTemplateUuid(kubernetesCluster.getControlNodeTemplateId()));
+        response.setWorkerNodeTemplateId(getTemplateUuid(kubernetesCluster.getWorkerNodeTemplateId()));
+        response.setEtcdNodeTemplateId(getTemplateUuid(kubernetesCluster.getEtcdNodeTemplateId()));
         if (KubernetesCluster.ClusterType.CloudManaged.equals(kubernetesCluster.getClusterType())) {
             Map<KubernetesClusterNodeType, Integer> outOfDate = countOutOfDateNodes(kubernetesCluster);
             response.setControlNodesOutOfDate(outOfDate.get(CONTROL));
@@ -2559,6 +2576,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     Set<KubernetesClusterNodeType> unrollable = worker == null ? Set.of() : getUnrollableNodeTypes(cluster);
                     Set<Long> outOfDateBefore = unrollable.isEmpty() ? Set.of() : getOutOfDateNodeIds(cluster, unrollable);
                     convertToNodeTypeSettings(cluster);
+                    // the templates are checked against the node types as another update may have left them
+                    checkNodeTemplates(cluster, cmd.getTemplateNodeTypeMap(), kubernetesClusterVmMapDao.listByClusterId(cluster.getId()));
                     storeNodeTypeSettings(cluster, cmd);
                     if (!unrollable.isEmpty()) {
                         checkUnrollableNodeTypes(cluster, unrollable, outOfDateBefore);
@@ -2590,7 +2609,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     /** Asks the rollout in progress to stop between two batches of nodes */
     protected boolean cancelRollout(UpdateKubernetesClusterCmd cmd, KubernetesClusterVO cluster) {
         if (cmd.isRollout() || cmd.getMaxUnavailable() != null || MapUtils.isNotEmpty(cmd.getServiceOfferingNodeTypeMap())
-                || MapUtils.isNotEmpty(cmd.getRootDiskSizeNodeTypeMap()) || MapUtils.isNotEmpty(cmd.getAffinityGroupNodeTypeMap())) {
+                || MapUtils.isNotEmpty(cmd.getRootDiskSizeNodeTypeMap()) || MapUtils.isNotEmpty(cmd.getAffinityGroupNodeTypeMap())
+                || MapUtils.isNotEmpty(cmd.getTemplateNodeTypeMap())) {
             throw new InvalidParameterValueException(String.format("%s takes no other parameter", ApiConstants.CANCEL_ROLLOUT));
         }
         if (!KubernetesCluster.State.Updating.equals(cluster.getState())) {
@@ -2605,9 +2625,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final Map<String, Long> offerings = cmd.getServiceOfferingNodeTypeMap();
         final Map<String, Long> rootDiskSizes = cmd.getRootDiskSizeNodeTypeMap();
         final Map<String, List<Long>> affinityGroups = cmd.getAffinityGroupNodeTypeMap();
-        if (!cmd.isRollout() && MapUtils.isEmpty(offerings) && MapUtils.isEmpty(rootDiskSizes) && MapUtils.isEmpty(affinityGroups)) {
-            throw new InvalidParameterValueException(String.format("Nothing to update for Kubernetes cluster %s: pass %s, %s, %s or %s=true", kubernetesCluster.getName(),
-                    ApiConstants.NODE_TYPE_OFFERING_MAP, ApiConstants.NODE_TYPE_ROOT_DISK_SIZE_MAP, ApiConstants.NODE_TYPE_AFFINITY_GROUP_MAP, ApiConstants.ROLLOUT));
+        final Map<String, Long> templates = cmd.getTemplateNodeTypeMap();
+        if (!cmd.isRollout() && MapUtils.isEmpty(offerings) && MapUtils.isEmpty(rootDiskSizes) && MapUtils.isEmpty(affinityGroups) && MapUtils.isEmpty(templates)) {
+            throw new InvalidParameterValueException(String.format("Nothing to update for Kubernetes cluster %s: pass %s, %s, %s, %s or %s=true", kubernetesCluster.getName(),
+                    ApiConstants.NODE_TYPE_OFFERING_MAP, ApiConstants.NODE_TYPE_ROOT_DISK_SIZE_MAP, ApiConstants.NODE_TYPE_AFFINITY_GROUP_MAP,
+                    ApiConstants.NODE_TYPE_TEMPLATE_MAP, ApiConstants.ROLLOUT));
         }
         final List<KubernetesClusterVmMapVO> vmMaps = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         if (cmd.getMaxUnavailable() != null) {
@@ -2653,6 +2675,73 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     throw new InvalidParameterValueException(String.format("%s takes no explicit dedication group: CKS gives the nodes of a dedicated domain " +
                             "or account theirs", ApiConstants.NODE_TYPE_AFFINITY_GROUP_MAP));
                 }
+            }
+        }
+        checkNodeTemplates(kubernetesCluster, templates, vmMaps);
+    }
+
+    protected void checkNodeTemplates(KubernetesClusterVO cluster, Map<String, Long> templates, List<KubernetesClusterVmMapVO> vmMaps) {
+        final boolean hasEtcdNodes = cluster.getEtcdNodeCount() != null && cluster.getEtcdNodeCount() > 0;
+        for (Map.Entry<String, Long> entry : Objects.requireNonNullElse(templates, Map.<String, Long>of()).entrySet()) {
+            KubernetesClusterNodeType nodeType = checkUpdatableNodeType(entry.getKey(), hasEtcdNodes, ApiConstants.NODE_TYPE_TEMPLATE_MAP);
+            checkNodeTemplate(cluster, nodeType, templateDao.findById(entry.getValue()), vmMaps, templates);
+        }
+    }
+
+    /**
+     * Refuses a template that can not run the nodes of a type: one that is not ready in the zone, is for another
+     * hypervisor than the cluster, or another architecture than the binaries ISO of its Kubernetes version, or is
+     * neither marked for CKS, nor the system VM template CKS deploys new nodes from, nor one the cluster uses already. The caller and the owner of the
+     * cluster must be able to use it, as CKS only gives the owner access to that system VM template. Only worker nodes are recreated from a new template: a control or
+     * etcd node holds etcd data, and the first control node is set up by kubeadm init, so those types only take a
+     * template their nodes have already, which is how a cluster that has no nodes yet gets one.
+     */
+    protected void checkNodeTemplate(KubernetesClusterVO cluster, KubernetesClusterNodeType nodeType, VMTemplateVO template, List<KubernetesClusterVmMapVO> vmMaps,
+                                     Map<String, Long> templates) {
+        if (template == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find the template for the %s nodes", nodeType.name().toLowerCase()));
+        }
+        final String name = template.getName();
+        if (Storage.ImageFormat.ISO.equals(template.getFormat()) || !VirtualMachineTemplate.State.Active.equals(template.getState())) {
+            throw new InvalidParameterValueException(String.format("Template %s is not an active template", name));
+        }
+        if (!isTemplateReadyInZone(template, cluster.getZoneId())) {
+            throw new InvalidParameterValueException(String.format("Template %s is not ready in the zone of Kubernetes cluster %s", name, cluster.getName()));
+        }
+        VMTemplateVO clusterTemplate = cluster.getTemplateId() == null ? null : templateDao.findByIdIncludingRemoved(cluster.getTemplateId());
+        if (clusterTemplate != null && !Objects.equals(clusterTemplate.getHypervisorType(), template.getHypervisorType())) {
+            throw new InvalidParameterValueException(String.format("Template %s is for %s, and the nodes of Kubernetes cluster %s run on %s", name,
+                    template.getHypervisorType(), cluster.getName(), clusterTemplate.getHypervisorType()));
+        }
+        KubernetesSupportedVersion version = kubernetesSupportedVersionDao.findById(cluster.getKubernetesVersionId());
+        VMTemplateVO iso = version == null ? null : templateDao.findByIdIncludingRemoved(version.getIsoId());
+        if (iso != null && iso.getArch() != null && !Objects.equals(iso.getArch(), template.getArch())) {
+            throw new InvalidParameterValueException(String.format("Template %s is for the %s architecture, and the Kubernetes binaries of cluster %s are for %s", name,
+                    template.getArch(), cluster.getName(), iso.getArch()));
+        }
+        final boolean systemTemplate = KubernetesClusterRollingUpdateWorker.isSystemTemplate(template);
+        final boolean inUse = Stream.of(cluster.getTemplateId(), cluster.getControlNodeTemplateId(), cluster.getWorkerNodeTemplateId(), cluster.getEtcdNodeTemplateId())
+                .anyMatch(id -> Objects.equals(id, template.getId()));
+        if (!inUse && !template.isForCks() && !systemTemplate) {
+            throw new InvalidParameterValueException(String.format("Template %s is not marked for CKS", name));
+        }
+        if (!inUse && systemTemplate && !isSystemTemplateGrantedForNewNodes(cluster, template, clusterTemplate, version, templates)) {
+            throw new InvalidParameterValueException(String.format("CKS lets the owner of Kubernetes cluster %s deploy new nodes from system VM template %s " +
+                    "only if it is the one ready in the zone now, and the control nodes keep the template of the cluster: pass that one for them " +
+                    "in %s too. Or use a template marked for CKS", cluster.getName(), name, ApiConstants.NODE_TYPE_TEMPLATE_MAP));
+        }
+        if (!systemTemplate) {
+            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, template);
+            accountManager.checkAccess(accountDao.findById(cluster.getAccountId()), null, false, template);
+        }
+        if (WORKER == nodeType) {
+            return;
+        }
+        for (KubernetesClusterVmMapVO vmMap : vmMaps) {
+            VMInstanceVO vm = vmMap.isExternalNode() || KubernetesClusterUtil.getNodeType(vmMap) != nodeType ? null : vmInstanceDao.findById(vmMap.getVmId());
+            if (vm != null && vm.getTemplateId() != template.getId()) {
+                throw new InvalidParameterValueException(String.format("The %s nodes of Kubernetes cluster %s can not be recreated from another template, as only " +
+                        "worker nodes are", nodeType.name().toLowerCase(), cluster.getName()));
             }
         }
     }
@@ -2750,7 +2839,58 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             kubernetesClusterAffinityGroupMapDao.removeByClusterIdAndNodeType(cluster.getId(), nodeType);
             persistAffinityGroupMappings(cluster.getId(), Map.of(nodeType, new ArrayList<>(new LinkedHashSet<>(entry.getValue()))));
         }
+        for (Map.Entry<String, Long> entry : Objects.requireNonNullElse(cmd.getTemplateNodeTypeMap(), Map.<String, Long>of()).entrySet()) {
+            setNodeTypeTemplateId(cluster, KubernetesClusterNodeType.valueOf(entry.getKey().toUpperCase()), entry.getValue());
+        }
         kubernetesClusterDao.update(cluster.getId(), cluster);
+    }
+
+    /** Whether a VM can be deployed or restored from a template in a zone, as restoreVirtualMachine checks it */
+    public boolean isTemplateReadyInZone(VMTemplateVO template, long zoneId) {
+        if (!template.isDirectDownload()) {
+            return templateDataStoreDao.findByTemplateZoneReady(template.getId(), zoneId) != null;
+        }
+        TemplateDataStoreVO store = templateDataStoreDao.findByTemplate(template.getId(), DataStoreRole.Image);
+        return store != null && VMTemplateStorageResourceAssoc.Status.BYPASSED.equals(store.getDownloadState());
+    }
+
+    /**
+     * Whether the owner can deploy new nodes from a system VM template the cluster does not use yet: the one ready in
+     * the zone now, which CKS lets the owner use while a scale deploys nodes, as long as a control or etcd node type
+     * still has the cluster's own template once the given templates are stored, as CKS checks before it does
+     */
+    protected boolean isSystemTemplateGrantedForNewNodes(KubernetesClusterVO cluster, VMTemplateVO template, VMTemplateVO clusterTemplate,
+                                                         KubernetesSupportedVersion version, Map<String, Long> templates) {
+        Long controlTemplateId = templates.getOrDefault(CONTROL.name(), cluster.getControlNodeTemplateId());
+        Long etcdTemplateId = templates.getOrDefault(ETCD.name(), cluster.getEtcdNodeTemplateId());
+        if (clusterTemplate == null || !(Objects.equals(controlTemplateId, cluster.getTemplateId()) || Objects.equals(etcdTemplateId, cluster.getTemplateId()))) {
+            return false;
+        }
+        try {
+            VMTemplateVO current = getKubernetesServiceTemplate(dataCenterDao.findById(cluster.getZoneId()), clusterTemplate.getHypervisorType(), null, DEFAULT, version);
+            return current != null && current.getId() == template.getId();
+        } catch (CloudRuntimeException e) {
+            // no system VM template is ready in the zone
+            return false;
+        }
+    }
+
+    protected void setNodeTypeTemplateId(KubernetesClusterVO cluster, KubernetesClusterNodeType nodeType, Long templateId) {
+        if (CONTROL == nodeType) {
+            cluster.setControlNodeTemplateId(templateId);
+        } else if (WORKER == nodeType) {
+            cluster.setWorkerNodeTemplateId(templateId);
+        } else if (ETCD == nodeType) {
+            cluster.setEtcdNodeTemplateId(templateId);
+        }
+    }
+
+    /** The template of a node type, or null if it has none of its own */
+    public Long getNodeTypeTemplateId(KubernetesCluster cluster, KubernetesClusterNodeType nodeType) {
+        if (CONTROL == nodeType) {
+            return cluster.getControlNodeTemplateId();
+        }
+        return WORKER == nodeType ? cluster.getWorkerNodeTemplateId() : cluster.getEtcdNodeTemplateId();
     }
 
     protected void setNodeTypeServiceOfferingId(KubernetesClusterVO cluster, KubernetesClusterNodeType nodeType, Long serviceOfferingId) {
@@ -2775,8 +2915,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     /**
      * A cluster created before its node types had settings of their own has a service offering only for the whole
-     * cluster. It is copied to the node types, so that a change to one node type keeps the others as they are. The
-     * template is left as it is, as this API does not change templates. A node type with no affinity groups of its
+     * cluster. It is copied to the node types, so that a change to one node type keeps the others as they are. Templates
+     * are not copied: a node type gets one when it is given one. A node type with no affinity groups of its
      * own gets those its nodes all have, if any, so that a rollout does not take them away. Nothing changes for node
      * types that have their settings already.
      */
@@ -2858,11 +2998,15 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     /**
-     * Why a node differs from the settings of its node type, or null if it does not: its service offering, a root disk
-     * smaller than the size of the type (a rollout only grows disks), or its affinity groups
+     * Why a node differs from the settings of its node type, or null if it does not: the template of a worker node, its
+     * service offering, a root disk smaller than the size of the type (a rollout only grows disks), or its affinity groups
      */
     public String getNodeOutOfDateReason(KubernetesCluster cluster, KubernetesClusterVmMapVO vmMap, VMInstanceVO vm) {
         KubernetesClusterNodeType nodeType = KubernetesClusterUtil.getNodeType(vmMap);
+        Long templateId = WORKER == nodeType ? getNodeTypeTemplateId(cluster, nodeType) : null;
+        if (templateId != null && templateId != vm.getTemplateId()) {
+            return "its template differs";
+        }
         Long offeringId = getNodeTypeServiceOfferingId(cluster, nodeType);
         if (offeringId != null && offeringId != vm.getServiceOfferingId()) {
             return "its service offering differs";

@@ -32,6 +32,8 @@ import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -44,19 +46,33 @@ import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
 import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
+import com.cloud.kubernetes.version.KubernetesSupportedVersion;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.LaunchPermissionVO;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Storage;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 /**
  * Restarts the nodes of a cluster whose service offering, root disk size or affinity groups differ from the settings
  * of their node type, with those settings: the external etcd nodes, then the control nodes, one at a time, then the
- * worker nodes, a batch at a time.
+ * worker nodes, a batch at a time. A worker node whose template differs is recreated from the template of its type.
  * <p>
  * Each Kubernetes node is annotated with its boot ID before it is drained, unless it was cordoned by someone else. It is
  * then stopped, changed and started, and only taken to be back once it is Ready with another boot ID, as Kubernetes
@@ -67,6 +83,8 @@ import com.cloud.vm.VirtualMachine;
 public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResourceModifierActionWorker {
 
     public static final String BOOT_ID_ANNOTATION = "cloudstack.apache.org/rollout-boot-id";
+    /** A detail of a VM that is being recreated, so that a rollout that stopped recreates it again rather than only starting it */
+    public static final String RECREATE_DETAIL = "cks.rollout.recreate";
     protected static final String KUBECTL = "sudo /opt/bin/kubectl ";
     /** One line per node: its name, Ready condition, boot ID, rollout annotation and whether it is cordoned, tab separated */
     protected static final String NODE_STATUSES_COMMAND = KUBECTL + "get nodes -o jsonpath='{range .items[*]}{.metadata.name}{\"\\t\"}"
@@ -106,12 +124,20 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
         UserVmVO vm;
         /** The boot ID the Kubernetes node has to change from to be back, "" if any will do */
         String bootIdBefore = "";
+        /** The boot ID the Kubernetes node reports before the batch, "" if none */
+        String bootIdNow = "";
         /** Whether the node carries the annotation, so that it is uncordoned once it is back */
         boolean annotated;
         /** Whether this batch annotated the node */
         boolean annotatedHere;
         /** Whether its VM may have gone down in this batch */
         boolean stopped;
+        /** Whether its VM is recreated from the template of its type */
+        boolean recreate;
+        /** Whether its VM was recreated by this batch and has the binaries ISO attached, to be detached once it is back */
+        boolean isoAttached;
+        /** Whether this batch saw the node back */
+        boolean back;
 
         Node(KubernetesClusterVmMapVO vmMap, UserVmVO vm) {
             this.vmMap = vmMap;
@@ -123,6 +149,17 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
             return type != ETCD;
         }
     }
+
+    @Inject
+    protected SnapshotDao snapshotDao;
+    @Inject
+    protected VMSnapshotDao vmSnapshotDao;
+    @Inject
+    protected DiskOfferingDao diskOfferingDao;
+    @Inject
+    protected VirtualMachineManager itMgr;
+    @Inject
+    protected AccountManager accountManager;
 
     protected final int maxUnavailable;
     private boolean begun;
@@ -283,7 +320,7 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
 
     /**
      * The nodes of the type to restart: those that differ from the settings of their type, are stopped, or carry the
-     * annotation of a rollout that did not finish with them, which go first. External nodes are left out.
+     * annotation or recreate detail of a rollout that did not finish with them, which go first. External nodes are left out.
      */
     protected List<Node> selectNodes(final KubernetesClusterNodeType type, final Map<String, NodeStatus> statuses) {
         List<Node> nodes = new ArrayList<>();
@@ -298,7 +335,8 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
             }
             NodeStatus status = type == ETCD ? null : statuses.get(getNodeName(vm));
             boolean stopped = !VirtualMachine.State.Running.equals(vm.getState());
-            if (stopped || status != null && status.annotation != null) {
+            boolean recreating = type == WORKER && vmInstanceDetailsDao.findDetail(vm.getId(), RECREATE_DETAIL) != null;
+            if (stopped || recreating || status != null && status.annotation != null) {
                 unfinished.add(vm.getId());
             } else if (manager.getNodeOutOfDateReason(kubernetesCluster, vmMap, vm) == null) {
                 continue;
@@ -342,6 +380,12 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
                 checkQuorum(batch.get(0), statuses);
             }
             for (Node node : batch) {
+                node.recreate = isRecreateNeeded(node);
+                if (node.recreate) {
+                    checkRecreatable(node);
+                }
+            }
+            for (Node node : batch) {
                 annotateAndCordon(node, statuses.get(getNodeName(node.vm)));
             }
             for (Node node : batch) {
@@ -354,10 +398,16 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
                 applySettings(node);
             }
             for (Node node : batch) {
+                if (node.recreate) {
+                    waitUntilNotReady(node, deadline);
+                }
+            }
+            for (Node node : batch) {
                 startVm(node);
             }
             for (Node node : batch) {
                 waitUntilBack(node, deadline);
+                node.back = true;
             }
             for (Node node : batch) {
                 String reason = manager.getNodeOutOfDateReason(kubernetesCluster, node.vmMap, userVmDao.findById(node.vm.getId()));
@@ -375,7 +425,101 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
                 }
             }
             throw e;
+        } finally {
+            // a recreated VM that is not back needs the ISO to install from once started; a later rollout detaches it
+            for (Node node : batch) {
+                if (node.isoAttached && node.back) {
+                    try {
+                        finishRecreate(node.vm);
+                    } catch (RuntimeException e) {
+                        logger.warn("Unable to detach the binaries ISO from the VM of node {} of Kubernetes cluster {}", getNodeName(node.vm), kubernetesCluster, e);
+                    }
+                }
+            }
         }
+    }
+
+    /**
+     * Whether the VM of a node is to be recreated: a worker node whose template differs from that of its type, or
+     * whose recreation a rollout that stopped did not finish
+     */
+    protected boolean isRecreateNeeded(final Node node) {
+        if (node.type != WORKER) {
+            return false;
+        }
+        Long templateId = manager.getNodeTypeTemplateId(kubernetesCluster, node.type);
+        return templateId != null && templateId != node.vm.getTemplateId() || vmInstanceDetailsDao.findDetail(node.vm.getId(), RECREATE_DETAIL) != null;
+    }
+
+    /** Removes the recreate detail of a VM whose node joined again, and detaches the binaries ISO from it */
+    protected void finishRecreate(final UserVm vm) {
+        vmInstanceDetailsDao.removeDetail(vm.getId(), RECREATE_DETAIL);
+        detachIsoKubernetesVMs(List.of(vm));
+    }
+
+    protected boolean isReadyInZone(final VMTemplateVO template) {
+        return VirtualMachineTemplate.State.Active.equals(template.getState()) && manager.isTemplateReadyInZone(template, kubernetesCluster.getZoneId());
+    }
+
+    protected long getRecreateTemplateId(final Node node) {
+        final Long typeTemplateId = manager.getNodeTypeTemplateId(kubernetesCluster, node.type);
+        return typeTemplateId != null ? typeTemplateId : node.vm.getTemplateId();
+    }
+
+    public static boolean isSystemTemplate(final VMTemplateVO template) {
+        return Storage.TemplateType.SYSTEM.equals(template.getTemplateType()) || Storage.TemplateType.ROUTING.equals(template.getTemplateType());
+    }
+
+    /**
+     * Refuses to recreate a VM that restoreVirtualMachine would refuse, or that could not come back: one with VM
+     * snapshots or a snapshot of its root disk in progress, or whose template is not active and ready in the zone.
+     * Returns the size in GB of the new root disk: the largest of the old one, the size of the node type and the
+     * template, but the old one if its disk offering has a strictly fixed size, which the template has to fit in.
+     */
+    protected long checkRecreatable(final Node node) {
+        final String name = getNodeName(node.vm);
+        if (!vmSnapshotDao.findByVm(node.vm.getId()).isEmpty()) {
+            throw new CloudRuntimeException(String.format("the VM of node %s has VM snapshots, which have to be removed for it to be recreated", name));
+        }
+        List<VolumeVO> roots = volumeDao.findByInstanceAndType(node.vm.getId(), Volume.Type.ROOT);
+        for (VolumeVO root : roots) {
+            if (!snapshotDao.listByStatus(root.getId(), Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp).isEmpty()) {
+                throw new CloudRuntimeException(String.format("a snapshot of the root disk of node %s is in progress", name));
+            }
+            if (root.isDeleteProtection()) {
+                throw new CloudRuntimeException(String.format("the root disk of node %s has delete protection", name));
+            }
+        }
+        if (templateDao.findById(node.vm.getTemplateId()) == null) {
+            // restoreVirtualMachine needs the template the VM has
+            throw new CloudRuntimeException(String.format("the template of the VM of node %s was deleted, so it can not be recreated", name));
+        }
+        final VMTemplateVO template = templateDao.findById(getRecreateTemplateId(node));
+        if (template == null || !isReadyInZone(template)) {
+            throw new CloudRuntimeException(String.format("the template to recreate node %s from is not active and ready in the zone", name));
+        }
+        if (!isSystemTemplate(template)) {
+            // the restore checks the access of the caller, who may not be the one who set the template
+            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, template);
+        }
+        final KubernetesSupportedVersion version = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
+        final VMTemplateVO iso = version == null ? null : templateDao.findById(version.getIsoId());
+        if (iso == null || !isReadyInZone(iso)) {
+            throw new CloudRuntimeException(String.format("the binaries ISO of the Kubernetes version of cluster %s is not active and ready in the zone",
+                    kubernetesCluster.getName()));
+        }
+        if (node.vm.getIsoId() != null && node.vm.getIsoId() != iso.getId()) {
+            throw new CloudRuntimeException(String.format("the VM of node %s has another ISO attached, which has to be detached for the binaries ISO", name));
+        }
+        final long oldSizeGb = roots.isEmpty() ? 0 : toGb(roots.get(0).getSize());
+        final DiskOfferingVO diskOffering = roots.isEmpty() ? null : diskOfferingDao.findById(roots.get(0).getDiskOfferingId());
+        if (diskOffering != null && diskOffering.getDiskSizeStrictness()) {
+            if (toGb(template.getSize()) > oldSizeGb || KubernetesClusterUtil.getNodeRootDiskSize(kubernetesCluster, node.type) > oldSizeGb) {
+                throw new CloudRuntimeException(String.format("the template or the root disk size of its type is larger than the root disk of node %s, whose disk offering has a strictly fixed size", name));
+            }
+            return oldSizeGb;
+        }
+        return Math.max(oldSizeGb, Math.max(KubernetesClusterUtil.getNodeRootDiskSize(kubernetesCluster, node.type), toGb(template.getSize())));
     }
 
     /**
@@ -387,6 +531,7 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
             return;
         }
         final String name = getNodeName(node.vm);
+        node.bootIdNow = status == null ? "" : StringUtils.defaultString(status.bootId);
         if (status == null) {
             if (VirtualMachine.State.Running.equals(node.vm.getState())) {
                 throw new CloudRuntimeException(String.format("node %s is not in the Kubernetes cluster", name));
@@ -449,10 +594,13 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
         node.vm = vm;
     }
 
-    /** Gives the stopped VM the service offering, root disk size and affinity groups of its node type, as needed */
+    /** Gives the stopped VM the template, service offering, root disk size and affinity groups of its node type, as needed */
     protected void applySettings(final Node node) {
         final String name = getNodeName(node.vm);
         try {
+            if (node.recreate) {
+                recreateVm(node);
+            }
             Long offeringId = manager.getNodeTypeServiceOfferingId(kubernetesCluster, node.type);
             if (offeringId != null && offeringId != node.vm.getServiceOfferingId()) {
                 registerVmContext(node.vm);
@@ -484,6 +632,105 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
         } catch (Exception e) {
             logger.warn("Failed to change the VM of node {} of Kubernetes cluster {}", name, kubernetesCluster, e);
             throw new CloudRuntimeException(String.format("unable to change the VM of node %s: %s", name, e.getMessage()), e);
+        }
+    }
+
+    /**
+     * Reinstalls the stopped VM of a worker node from the template of its type, keeping its name, addresses and
+     * Kubernetes node. Its user data then joins it to the cluster again, with the binaries ISO attached, as for a new
+     * node. The old root disk is destroyed, not expunged.
+     */
+    protected void recreateVm(final Node node) throws Exception {
+        if (!VirtualMachine.State.Stopped.equals(node.vm.getState())) {
+            // the restore would restart a running VM, without the drain
+            throw new CloudRuntimeException(String.format("the VM of node %s is %s, not stopped, so it can not be recreated", getNodeName(node.vm), node.vm.getState()));
+        }
+        // a snapshot may have started while the node was drained
+        final long sizeGb = checkRecreatable(node);
+        final long templateId = getRecreateTemplateId(node);
+        final VMTemplateVO template = templateDao.findById(templateId);
+        final KubernetesSupportedVersion version = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
+        Map<String, String> details = new HashMap<>();
+        if (sizeGb > 0) {
+            details.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(sizeGb));
+        }
+        logger.info("Recreating the VM of node {} of Kubernetes cluster {} from template {}", getNodeName(node.vm), kubernetesCluster, template);
+        // the boot ID before, for a later rollout to tell when the node is back, even if it does not carry the annotation
+        vmInstanceDetailsDao.addDetail(node.vm.getId(), RECREATE_DETAIL, node.bootIdNow, false);
+        // as for new nodes, the system VM template is only let use while the node is deployed from it; the restore
+        // checks the access of the caller
+        final long callerId = CallContext.current().getCallingAccountId();
+        final boolean grant = isSystemTemplate(template) && !template.isPublicTemplate()
+                && template.getAccountId() != callerId && launchPermissionDao.findByTemplateAndAccount(templateId, callerId) == null;
+        List<VolumeVO> roots = volumeDao.findByInstanceAndType(node.vm.getId(), Volume.Type.ROOT);
+        if (node.vm.getTemplateId() == templateId && !roots.isEmpty() && Volume.State.Allocated.equals(roots.get(0).getState())) {
+            // restored already by a rollout that stopped before the VM started: its new root disk is created when it starts
+            logger.info("The VM of node {} of Kubernetes cluster {} was recreated from template {} already", getNodeName(node.vm), kubernetesCluster, template);
+        } else {
+            try {
+                restoreVm(node, templateId, grant, callerId, details);
+            } catch (Exception e) {
+                List<VolumeVO> after = volumeDao.findByInstanceAndType(node.vm.getId(), Volume.Type.ROOT);
+                if (after.size() == 1 && !roots.isEmpty() && after.get(0).getId() == roots.get(0).getId()) {
+                    // refused before the root disk was replaced: the VM is as it was
+                    vmInstanceDetailsDao.removeDetail(node.vm.getId(), RECREATE_DETAIL);
+                }
+                throw e;
+            }
+        }
+        attachBinariesIso(node, version);
+    }
+
+    protected void restoreVm(final Node node, final long templateId, final boolean grant, final long callerId, final Map<String, String> details) throws Exception {
+        registerVmContext(node.vm);
+        try {
+            if (grant) {
+                launchPermissionDao.persist(new LaunchPermissionVO(templateId, callerId));
+            }
+            itMgr.restoreVirtualMachine(node.vm.getId(), templateId, null, false, details);
+        } finally {
+            CallContext.unregister();
+            if (grant) {
+                launchPermissionDao.removePermissions(templateId, List.of(callerId));
+            }
+        }
+        node.vm = userVmDao.findById(node.vm.getId());
+    }
+
+    protected void attachBinariesIso(final Node node, final KubernetesSupportedVersion version) {
+        if (!Objects.equals(version.getIsoId(), node.vm.getIsoId())) {
+            registerVmContext(node.vm);
+            try {
+                if (!templateService.attachIso(version.getIsoId(), node.vm.getId(), true)) {
+                    throw new CloudRuntimeException(String.format("unable to attach the binaries ISO to the VM of node %s", getNodeName(node.vm)));
+                }
+            } finally {
+                CallContext.unregister();
+            }
+        }
+        node.isoAttached = true;
+    }
+
+    protected static long toGb(final Long bytes) {
+        return bytes == null ? 0 : (bytes + (1L << 30) - 1) >> 30;
+    }
+
+    /**
+     * Waits for Kubernetes to see the node of a stopped VM as not Ready, as kubeadm join refuses to join a node under
+     * the name of a Ready one
+     */
+    protected void waitUntilNotReady(final Node node, final long deadline) {
+        final String name = getNodeName(node.vm);
+        BooleanSupplier notReady = () -> {
+            try {
+                NodeStatus status = getNodeStatuses().get(name);
+                return status == null || !status.ready;
+            } catch (CloudRuntimeException e) {
+                return false;
+            }
+        };
+        if (!pollUntil(deadline, notReady)) {
+            throw new CloudRuntimeException(String.format("node %s did not report NotReady while its VM was stopped, or its status could not be read", name));
         }
     }
 
@@ -644,6 +891,12 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
         for (KubernetesClusterVmMapVO vmMap : getKubernetesClusterVMMaps()) {
             UserVmVO vm = userVmDao.findById(vmMap.getVmId());
             NodeStatus status = vm == null ? null : statuses.get(getNodeName(vm));
+            VMInstanceDetailVO recreating = vm == null ? null : vmInstanceDetailsDao.findDetail(vm.getId(), RECREATE_DETAIL);
+            if (recreating != null && status != null && status.bootId != null && !status.bootId.equals(recreating.getValue())) {
+                // recreated by a rollout that stopped before the node was back; it has joined again since, as it has
+                // another boot ID, even if it is down now
+                finishRecreate(vm);
+            }
             if (status == null || status.annotation == null || !isBack(status, status.annotation)) {
                 continue;
             }

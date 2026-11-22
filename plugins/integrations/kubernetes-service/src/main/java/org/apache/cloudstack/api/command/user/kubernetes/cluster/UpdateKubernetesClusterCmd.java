@@ -48,9 +48,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VmDetailConstants;
 
 @APICommand(name = "updateKubernetesCluster",
-        description = "Updates the service offering, root disk size and affinity groups of the node types of a CloudManaged Kubernetes cluster. " +
+        description = "Updates the template, service offering, root disk size and affinity groups of the node types of a CloudManaged Kubernetes cluster. " +
                 "The new settings are used for the nodes created from then on. With rollout=true, the existing nodes that differ from them are " +
-                "drained, stopped, changed and started again, one at a time, or maxunavailable worker nodes at a time. A rollout that fails " +
+                "drained, stopped, changed and started again, one at a time, or maxunavailable worker nodes at a time. A worker node with " +
+                "another template is recreated from the new one, keeping its name and addresses. A rollout that fails " +
                 "is resumed by calling this API again with rollout=true",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
@@ -79,6 +80,15 @@ public class UpdateKubernetesClusterCmd extends BaseAsyncCmd {
             description = "Node type to service offering ID mapping, for the node types control, worker and etcd. " +
                     "Example: nodeofferings[0].node=worker&nodeofferings[0].offering=<offering ID>")
     private Map<String, Map<String, String>> serviceOfferingNodeTypeMap;
+
+    @ACL(accessType = SecurityChecker.AccessType.UseEntry)
+    @Parameter(name = ApiConstants.NODE_TYPE_TEMPLATE_MAP, type = CommandType.MAP,
+            description = "Node type to template ID mapping, for the node types control, worker and etcd. " +
+                    "A rollout recreates the worker nodes from it, which replaces their root disks: what is on them, such as hostPath " +
+                    "or local path volumes, is lost. Control and etcd nodes are not recreated, so for those it must be " +
+                    "the template they have, or the cluster must have no nodes yet. " +
+                    "Example: nodetemplates[0].node=worker&nodetemplates[0].template=<template ID>")
+    private Map<String, Map<String, String>> templateNodeTypeMap;
 
     @Parameter(name = ApiConstants.NODE_TYPE_ROOT_DISK_SIZE_MAP, type = CommandType.MAP,
             description = "Node type to root disk size in GB mapping, for the node types control, worker and etcd. " +
@@ -118,6 +128,10 @@ public class UpdateKubernetesClusterCmd extends BaseAsyncCmd {
 
     public Map<String, Long> getServiceOfferingNodeTypeMap() {
         return kubernetesServiceHelper.getServiceOfferingNodeTypeMap(serviceOfferingNodeTypeMap);
+    }
+
+    public Map<String, Long> getTemplateNodeTypeMap() {
+        return kubernetesServiceHelper.getTemplateNodeTypeMap(templateNodeTypeMap);
     }
 
     /** The root disk sizes in GB, by node type */

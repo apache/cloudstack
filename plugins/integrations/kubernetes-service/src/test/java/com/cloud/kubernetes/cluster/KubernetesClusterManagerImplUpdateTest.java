@@ -36,6 +36,8 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpdateKubernete
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -49,7 +51,9 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.cpu.CPU;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterRollingUpdateWorker;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
@@ -60,10 +64,14 @@ import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -111,6 +119,12 @@ public class KubernetesClusterManagerImplUpdateTest {
     AccountManager accountManager;
     @Mock
     AccountDao accountDao;
+    @Mock
+    VMTemplateDao templateDao;
+    @Mock
+    TemplateDataStoreDao templateDataStoreDao;
+    @Mock
+    com.cloud.dc.dao.DataCenterDao dataCenterDao;
 
     @Spy
     @InjectMocks
@@ -163,6 +177,29 @@ public class KubernetesClusterManagerImplUpdateTest {
         Mockito.when(cmd.getRootDiskSizeNodeTypeMap()).thenReturn(rootDiskSizes);
         Mockito.when(cmd.getAffinityGroupNodeTypeMap()).thenReturn(affinityGroups);
         return cmd;
+    }
+
+    private UpdateKubernetesClusterCmd templateCmd(boolean rollout, Map<String, Long> templates) {
+        UpdateKubernetesClusterCmd cmd = cmd(rollout, null, null, null, null);
+        Mockito.when(cmd.getTemplateNodeTypeMap()).thenReturn(templates);
+        return cmd;
+    }
+
+    /** A template the nodes can run from: active, ready in the zone, for KVM and x86_64, and marked for CKS */
+    private VMTemplateVO mockTemplate(long id) {
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.getId()).thenReturn(id);
+        Mockito.when(template.getName()).thenReturn("template" + id);
+        Mockito.when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        Mockito.when(template.getState()).thenReturn(VirtualMachineTemplate.State.Active);
+        Mockito.when(template.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        Mockito.when(template.getArch()).thenReturn(CPU.CPUArch.amd64);
+        Mockito.when(template.getTemplateType()).thenReturn(Storage.TemplateType.USER);
+        Mockito.when(template.isForCks()).thenReturn(true);
+        Mockito.when(templateDao.findById(id)).thenReturn(template);
+        Mockito.when(templateDao.findByIdIncludingRemoved(id)).thenReturn(template);
+        Mockito.when(templateDataStoreDao.findByTemplateZoneReady(Mockito.eq(id), Mockito.any())).thenReturn(Mockito.mock(TemplateDataStoreVO.class));
+        return template;
     }
 
     private UpdateKubernetesClusterCmd cancelCmd() {
@@ -569,5 +606,128 @@ public class KubernetesClusterManagerImplUpdateTest {
         Assert.assertEquals(10L, update.getCores());
         Assert.assertEquals(5120L, update.getMemory());
         Mockito.verify(kubernetesClusterDao).update(CLUSTER_ID, update);
+    }
+
+    // templates
+
+    private void mockClusterTemplateAndIso() {
+        mockTemplate(4L);
+        KubernetesSupportedVersionVO version = Mockito.mock(KubernetesSupportedVersionVO.class);
+        Mockito.when(version.getIsoId()).thenReturn(6L);
+        Mockito.when(kubernetesSupportedVersionDao.findById(5L)).thenReturn(version);
+        VMTemplateVO iso = mockTemplate(6L);
+        Mockito.when(iso.getFormat()).thenReturn(Storage.ImageFormat.ISO);
+        Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(com.cloud.user.AccountVO.class));
+    }
+
+    @Test
+    public void updateStoresTheTemplateOfANodeType() {
+        mockClusterTemplateAndIso();
+        mockTemplate(40L);
+        VMInstanceVO worker = addVm(10L, WORKER, CLUSTER_OFFERING, null);
+        Mockito.when(worker.getTemplateId()).thenReturn(4L);
+
+        Assert.assertTrue(manager.updateKubernetesCluster(templateCmd(false, Map.of(WORKER.name(), 40L))));
+
+        Assert.assertEquals(Long.valueOf(40L), cluster.getWorkerNodeTemplateId());
+        Assert.assertNull(cluster.getControlNodeTemplateId());
+        Assert.assertEquals("its template differs", manager.getNodeOutOfDateReason(cluster, vmMaps.get(0), worker));
+    }
+
+    @Test
+    public void templateValidationRefusesTemplatesTheNodesCanNotRunFrom() {
+        mockClusterTemplateAndIso();
+        VMTemplateVO iso = mockTemplate(41L);
+        Mockito.when(iso.getFormat()).thenReturn(Storage.ImageFormat.ISO);
+        VMTemplateVO inactive = mockTemplate(42L);
+        Mockito.when(inactive.getState()).thenReturn(VirtualMachineTemplate.State.Inactive);
+        mockTemplate(43L);
+        Mockito.when(templateDataStoreDao.findByTemplateZoneReady(Mockito.eq(43L), Mockito.any())).thenReturn(null);
+        VMTemplateVO otherHypervisor = mockTemplate(44L);
+        Mockito.when(otherHypervisor.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.VMware);
+        VMTemplateVO otherArch = mockTemplate(45L);
+        Mockito.when(otherArch.getArch()).thenReturn(CPU.CPUArch.arm64);
+        VMTemplateVO notForCks = mockTemplate(46L);
+        Mockito.when(notForCks.isForCks()).thenReturn(false);
+
+        for (long id : List.of(41L, 42L, 43L, 44L, 45L, 46L, 99L)) {
+            Assert.assertThrows(String.valueOf(id), InvalidParameterValueException.class,
+                    () -> manager.validateKubernetesClusterUpdateParameters(templateCmd(true, Map.of(WORKER.name(), id)), cluster));
+        }
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> manager.validateKubernetesClusterUpdateParameters(templateCmd(false, Map.of(ETCD.name(), 4L)), cluster));
+
+        // the system VM template CKS deploys new nodes from is accepted without being marked for CKS, and without access checks:
+        // CKS gives the owner access to it, while a control node type still has the cluster's own template
+        Mockito.when(notForCks.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM);
+        Mockito.doReturn(notForCks).when(manager).getKubernetesServiceTemplate(Mockito.any(), Mockito.any(), Mockito.isNull(),
+                Mockito.eq(KubernetesServiceHelper.KubernetesClusterNodeType.DEFAULT), Mockito.any());
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> manager.validateKubernetesClusterUpdateParameters(templateCmd(true, Map.of(WORKER.name(), 46L)), cluster));
+        cluster.setControlNodeTemplateId(4L);
+        manager.validateKubernetesClusterUpdateParameters(templateCmd(true, Map.of(WORKER.name(), 46L)), cluster);
+        Mockito.verify(accountManager, Mockito.never()).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.eq(false), Mockito.eq(notForCks));
+        // not if the same request takes the cluster's own template from the control node type
+        cluster.setControlNodeTemplateId(4L);
+        Assert.assertThrows(InvalidParameterValueException.class, () -> manager.validateKubernetesClusterUpdateParameters(
+                templateCmd(false, Map.of(WORKER.name(), 46L, CONTROL.name(), 46L)), cluster));
+        // a template the cluster uses already is accepted as it is
+        VMTemplateVO inUse = mockTemplate(48L);
+        Mockito.when(inUse.isForCks()).thenReturn(false);
+        Mockito.when(inUse.getTemplateType()).thenReturn(Storage.TemplateType.ROUTING);
+        cluster.setWorkerNodeTemplateId(48L);
+        manager.validateKubernetesClusterUpdateParameters(templateCmd(true, Map.of(WORKER.name(), 48L)), cluster);
+        // another system VM template is not
+        VMTemplateVO otherSystem = mockTemplate(47L);
+        Mockito.when(otherSystem.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM);
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> manager.validateKubernetesClusterUpdateParameters(templateCmd(true, Map.of(WORKER.name(), 47L)), cluster));
+        // a direct download template is not in the zone, but has to be bypassed, as restore checks
+        Mockito.when(inactive.getState()).thenReturn(VirtualMachineTemplate.State.Active);
+        Mockito.when(inactive.isDirectDownload()).thenReturn(true);
+        Mockito.when(templateDataStoreDao.findByTemplateZoneReady(Mockito.eq(42L), Mockito.any())).thenReturn(null);
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> manager.validateKubernetesClusterUpdateParameters(templateCmd(true, Map.of(WORKER.name(), 42L)), cluster));
+        TemplateDataStoreVO bypassed = Mockito.mock(TemplateDataStoreVO.class);
+        Mockito.when(bypassed.getDownloadState()).thenReturn(com.cloud.storage.VMTemplateStorageResourceAssoc.Status.BYPASSED);
+        Mockito.when(templateDataStoreDao.findByTemplate(42L, com.cloud.storage.DataStoreRole.Image)).thenReturn(bypassed);
+        manager.validateKubernetesClusterUpdateParameters(templateCmd(true, Map.of(WORKER.name(), 42L)), cluster);
+    }
+
+    @Test
+    public void templateValidationChecksTheCallerAndTheOwnerCanUseTheTemplate() {
+        mockClusterTemplateAndIso();
+        VMTemplateVO template = mockTemplate(40L);
+        Mockito.doThrow(new com.cloud.exception.PermissionDeniedException("no")).when(accountManager)
+                .checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.eq(false), Mockito.eq(template));
+
+        Assert.assertThrows(com.cloud.exception.PermissionDeniedException.class,
+                () -> manager.validateKubernetesClusterUpdateParameters(templateCmd(false, Map.of(WORKER.name(), 40L)), cluster));
+    }
+
+    @Test
+    public void controlAndEtcdNodesTakeOnlyTheTemplateTheyHave() {
+        mockClusterTemplateAndIso();
+        mockTemplate(40L);
+        // a cluster with no nodes yet gets the template its nodes are created from
+        manager.validateKubernetesClusterUpdateParameters(templateCmd(false, Map.of(CONTROL.name(), 40L)), cluster);
+
+        VMInstanceVO control = addVm(10L, CONTROL, CLUSTER_OFFERING, null);
+        Mockito.when(control.getTemplateId()).thenReturn(4L);
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> manager.validateKubernetesClusterUpdateParameters(templateCmd(false, Map.of(CONTROL.name(), 40L)), cluster));
+        manager.validateKubernetesClusterUpdateParameters(templateCmd(true, Map.of(CONTROL.name(), 4L)), cluster);
+
+        // control nodes are not compared with the template of their type
+        cluster.setControlNodeTemplateId(40L);
+        Assert.assertNull(manager.getNodeOutOfDateReason(cluster, vmMaps.get(0), control));
+    }
+
+    @Test
+    public void cancelRefusesATemplate() {
+        cluster.setState(KubernetesCluster.State.Updating);
+        UpdateKubernetesClusterCmd cmd = cancelCmd();
+        Mockito.when(cmd.getTemplateNodeTypeMap()).thenReturn(Map.of(WORKER.name(), 40L));
+        Assert.assertThrows(InvalidParameterValueException.class, () -> manager.updateKubernetesCluster(cmd));
     }
 }

@@ -1334,6 +1334,9 @@ public class ApiConstants {
     public static final String CONTROL_ROOT_DISK_SIZE = "controlrootdisksize";
     public static final String WORKER_ROOT_DISK_SIZE = "workerrootdisksize";
     public static final String ETCD_ROOT_DISK_SIZE = "etcdrootdisksize";
+    public static final String CONTROL_TEMPLATE_ID = "controltemplateid";
+    public static final String WORKER_TEMPLATE_ID = "workertemplateid";
+    public static final String ETCD_TEMPLATE_ID = "etcdtemplateid";
     public static final String CONTROL_NODES_OUT_OF_DATE = "controlnodesoutofdate";
     public static final String WORKER_NODES_OUT_OF_DATE = "workernodesoutofdate";
     public static final String ETCD_NODES_OUT_OF_DATE = "etcdnodesoutofdate";

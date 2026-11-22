@@ -232,12 +232,24 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @Param(description = "The root disk size in GB of the etcd nodes, if set for the node type", since = "24.0.0")
     private Long etcdNodeRootDiskSize;
 
+    @SerializedName(ApiConstants.CONTROL_TEMPLATE_ID)
+    @Param(description = "The ID of the template of the control nodes, if set for the node type", since = "24.0.0")
+    private String controlNodeTemplateId;
+
+    @SerializedName(ApiConstants.WORKER_TEMPLATE_ID)
+    @Param(description = "The ID of the template of the worker nodes, if set for the node type", since = "24.0.0")
+    private String workerNodeTemplateId;
+
+    @SerializedName(ApiConstants.ETCD_TEMPLATE_ID)
+    @Param(description = "The ID of the template of the etcd nodes, if set for the node type", since = "24.0.0")
+    private String etcdNodeTemplateId;
+
     @SerializedName(ApiConstants.CONTROL_NODES_OUT_OF_DATE)
     @Param(description = "The number of control nodes whose service offering, root disk size or affinity groups differ from those set for the node type", since = "24.0.0")
     private Integer controlNodesOutOfDate;
 
     @SerializedName(ApiConstants.WORKER_NODES_OUT_OF_DATE)
-    @Param(description = "The number of worker nodes whose service offering, root disk size or affinity groups differ from those set for the node type", since = "24.0.0")
+    @Param(description = "The number of worker nodes whose template, service offering, root disk size or affinity groups differ from those set for the node type", since = "24.0.0")
     private Integer workerNodesOutOfDate;
 
     @SerializedName(ApiConstants.ETCD_NODES_OUT_OF_DATE)
@@ -622,6 +634,18 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     public void setEtcdNodeRootDiskSize(Long etcdNodeRootDiskSize) {
         this.etcdNodeRootDiskSize = etcdNodeRootDiskSize;
+    }
+
+    public void setControlNodeTemplateId(String controlNodeTemplateId) {
+        this.controlNodeTemplateId = controlNodeTemplateId;
+    }
+
+    public void setWorkerNodeTemplateId(String workerNodeTemplateId) {
+        this.workerNodeTemplateId = workerNodeTemplateId;
+    }
+
+    public void setEtcdNodeTemplateId(String etcdNodeTemplateId) {
+        this.etcdNodeTemplateId = etcdNodeTemplateId;
     }
 
     public void setControlNodesOutOfDate(Integer controlNodesOutOfDate) {
