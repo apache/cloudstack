@@ -2746,18 +2746,27 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
-    /** The control and etcd node types with too few nodes to restart one at a time */
+    /**
+     * The control and etcd node types with too few nodes to restart one at a time, and the etcd nodes behind an
+     * external load balancer, which has no SSH port for them
+     */
     protected Set<KubernetesClusterNodeType> getUnrollableNodeTypes(KubernetesClusterVO cluster) {
         List<KubernetesClusterVmMapVO> vmMaps = kubernetesClusterVmMapDao.listByClusterId(cluster.getId());
         boolean hasEtcdNodes = cluster.getEtcdNodeCount() != null && cluster.getEtcdNodeCount() > 0;
         Set<KubernetesClusterNodeType> types = new HashSet<>();
         for (KubernetesClusterNodeType nodeType : List.of(CONTROL, ETCD)) {
             int members = KubernetesClusterUtil.countManagedNodes(vmMaps, nodeType);
-            if (members > 0 && !KubernetesClusterRollingUpdateWorker.canRestartOneAtATime(nodeType, members, hasEtcdNodes)) {
+            if (members > 0 && (!KubernetesClusterRollingUpdateWorker.canRestartOneAtATime(nodeType, members, hasEtcdNodes)
+                    || nodeType == ETCD && hasExternalLoadBalancer(cluster.getId()))) {
                 types.add(nodeType);
             }
         }
         return types;
+    }
+
+    public boolean hasExternalLoadBalancer(long clusterId) {
+        KubernetesClusterDetailsVO detail = kubernetesClusterDetailsDao.findDetail(clusterId, ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS);
+        return detail != null && StringUtils.isNotEmpty(detail.getValue());
     }
 
     /**
@@ -2773,9 +2782,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 VMInstanceVO vm = vmMap.isExternalNode() || KubernetesClusterUtil.getNodeType(vmMap) != nodeType ? null : vmInstanceDao.findById(vmMap.getVmId());
                 if (vm != null && VirtualMachine.State.Running.equals(vm.getState()) && !outOfDateBefore.contains(vm.getId())
                         && getNodeOutOfDateReason(cluster, vmMap, vm) != null) {
-                    throw new InvalidParameterValueException(String.format("The %d %s node(s) of Kubernetes cluster %s can not be restarted one at a time, as the " +
-                            "cluster can not keep running without one, so a rollout can not change their settings. Use rollout=false to store them " +
-                            "without restarting the nodes", members, nodeType.name().toLowerCase(), cluster.getName()));
+                    String reason = KubernetesClusterRollingUpdateWorker.canRestartOneAtATime(nodeType, members, cluster.getEtcdNodeCount() != null && cluster.getEtcdNodeCount() > 0)
+                            ? "can not be reached over SSH behind the external load balancer"
+                            : "can not be restarted one at a time, as the cluster can not keep running without one";
+                    throw new InvalidParameterValueException(String.format("The %d %s node(s) of Kubernetes cluster %s %s, so a rollout can not change their settings. " +
+                            "Use rollout=false to store them without restarting the nodes", members, nodeType.name().toLowerCase(), cluster.getName(), reason));
                 }
             }
         }

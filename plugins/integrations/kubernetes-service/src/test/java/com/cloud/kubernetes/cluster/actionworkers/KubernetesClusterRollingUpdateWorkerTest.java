@@ -31,6 +31,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.junit.After;
 import org.junit.Assert;
@@ -53,6 +54,11 @@ import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.kubernetes.version.KubernetesSupportedVersionVO;
 import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
@@ -71,6 +77,7 @@ import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
@@ -141,6 +148,10 @@ public class KubernetesClusterRollingUpdateWorkerTest {
     VirtualMachineManager itMgr;
     @Mock
     com.cloud.user.AccountManager accountManager;
+    @Mock
+    IPAddressDao ipAddressDao;
+    @Mock
+    PortForwardingRulesDao portForwardingRulesDao;
 
     /** A Kubernetes node as the simulated kubectl reports it */
     static class Kube {
@@ -354,6 +365,10 @@ public class KubernetesClusterRollingUpdateWorkerTest {
         Mockito.doNothing().when(worker).init();
         Mockito.doReturn(true).when(worker).transitToOperationState(KubernetesCluster.Event.UpdateRequested);
         Mockito.doNothing().when(worker).resolveKubectlAddress(Mockito.anySet());
+        Mockito.doAnswer(i -> {
+            worker.nodeSshAddresses = vms.keySet().stream().collect(Collectors.toMap(id -> id, id -> new Pair<>("10.0.0.1", 2222)));
+            return null;
+        }).when(worker).resolveNodeSshAddresses();
         Mockito.doReturn(false).when(worker).sleepBeforeRetry(Mockito.anyLong());
         Mockito.doReturn(true).when(worker).isEtcdMemberHealthy(Mockito.any());
         // the worker unregisters it after each VM action
@@ -1336,5 +1351,117 @@ public class KubernetesClusterRollingUpdateWorkerTest {
 
         Assert.assertTrue(calls.toString(), calls.contains("start:w1"));
         Assert.assertTrue(calls.stream().noneMatch(call -> call.startsWith("tokenDelete:")));
+    }
+
+    // SSH addresses
+
+    private static final String SSH_IP = "203.0.113.10";
+    private static final long SSH_IP_ID = 5L;
+
+    private UserVmVO vmNamed(String name) {
+        return vms.values().stream().filter(vm -> vm.getHostName().equals(name)).findFirst().get();
+    }
+
+    /** The worker resolves the SSH addresses for real, from the given tcp port forwarding rules to port 22 on the SSH IP */
+    private KubernetesClusterRollingUpdateWorker newWorkerWithSshRules(Map<String, Integer> publicPorts) {
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+        Mockito.doCallRealMethod().when(worker).resolveNodeSshAddresses();
+        Mockito.doReturn(new Pair<>(SSH_IP, KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT)).when(worker).getKubernetesClusterServerIpSshPort(null);
+        worker.ipAddressDao = ipAddressDao;
+        // the field of the class that resolves them, which KubernetesClusterResourceModifierActionWorker hides
+        ((KubernetesClusterActionWorker) worker).portForwardingRulesDao = portForwardingRulesDao;
+        IPAddressVO ip = Mockito.mock(IPAddressVO.class);
+        Mockito.when(ip.getId()).thenReturn(SSH_IP_ID);
+        Mockito.when(ipAddressDao.findByIpAndDcId(Mockito.anyLong(), Mockito.eq(SSH_IP))).thenReturn(ip);
+        List<PortForwardingRuleVO> rules = new ArrayList<>();
+        publicPorts.forEach((name, port) -> {
+            PortForwardingRuleVO rule = new PortForwardingRuleVO(null, SSH_IP_ID, port, new Ip("10.1.1.10"), 22, "tcp", 1L, 1L, 1L, vmNamed(name).getId());
+            rule.setState(FirewallRule.State.Active);
+            rules.add(rule);
+        });
+        Mockito.when(portForwardingRulesDao.listByIpAndNotRevoked(SSH_IP_ID)).thenReturn(rules);
+        return worker;
+    }
+
+    @Test
+    public void controlAndEtcdNodesAreReachedOnThePortOfTheirOwnRule() {
+        addNode("e1", ETCD, OLD_OFFERING);
+        addStackedControlPlane(2);
+        addNode("w1", WORKER, OLD_OFFERING);
+        KubernetesClusterRollingUpdateWorker worker = newWorkerWithSshRules(Map.of("e1", 2224, "c1", 2223, "c2", 2222));
+        Mockito.doCallRealMethod().when(worker).resolveKubectlAddress(Mockito.anySet());
+
+        worker.begin();
+
+        Assert.assertEquals(Map.of(vmNamed("e1").getId(), new Pair<>(SSH_IP, 2224), vmNamed("c1").getId(), new Pair<>(SSH_IP, 2223),
+                vmNamed("c2").getId(), new Pair<>(SSH_IP, 2222)), worker.nodeSshAddresses);
+        worker.resolveKubectlAddress(Set.of());
+        Assert.assertEquals(new Pair<>(SSH_IP, 2223), worker.kubectlAddress);
+        worker.resolveKubectlAddress(Set.of(vmNamed("c1").getId()));
+        Assert.assertEquals(new Pair<>(SSH_IP, 2222), worker.kubectlAddress);
+    }
+
+    @Test
+    public void aNodeWithoutARuleFailsTheRolloutBeforeItChangesAnything() {
+        addNode("e1", ETCD, OLD_OFFERING);
+        addStackedControlPlane(2);
+        addNode("w1", WORKER, OLD_OFFERING);
+        KubernetesClusterRollingUpdateWorker worker = newWorkerWithSshRules(Map.of("e1", 2222, "c1", 2223));
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, worker::rollout);
+
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("c2") && e.getMessage().contains(SSH_IP));
+        Mockito.verify(worker, Mockito.never()).transitToOperationState(Mockito.any());
+        Mockito.verify(worker, Mockito.never()).runKubectl(Mockito.anyString());
+        Assert.assertEquals(List.of(), calls);
+    }
+
+    @Test
+    public void aDirectAccessNodeWithoutAnAddressFailsTheRolloutBeforeItChangesAnything() {
+        addStackedControlPlane(2);
+        Mockito.when(vmNamed("c1").getPrivateIpAddress()).thenReturn("10.1.1.20");
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+        Mockito.doCallRealMethod().when(worker).resolveNodeSshAddresses();
+        Mockito.doReturn(new Pair<>("10.1.1.20", KubernetesClusterActionWorker.DEFAULT_SSH_PORT)).when(worker).getKubernetesClusterServerIpSshPort(null);
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, worker::begin);
+
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("node c2 has no IP address"));
+        Mockito.verify(worker, Mockito.never()).transitToOperationState(Mockito.any());
+    }
+
+    @Test
+    public void aMissingAddressIsNotReplacedByThePositionOfTheNode() {
+        addStackedControlPlane(1);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+        UserVmVO c1 = vmNamed("c1");
+
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, () -> worker.getSshAddress(c1));
+
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("c1"));
+    }
+
+    @Test
+    public void etcdNodesBehindAnExternalLoadBalancerAreLeftOutAndReported() {
+        for (int i = 1; i <= 3; i++) {
+            addNode("e" + i, ETCD, OLD_OFFERING);
+        }
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, OLD_OFFERING);
+        desiredOfferings.put(ETCD, NEW_OFFERING);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+        Mockito.doCallRealMethod().when(worker).resolveNodeSshAddresses();
+        Mockito.doReturn(new Pair<>("198.51.100.7", KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT)).when(worker).getKubernetesClusterServerIpSshPort(null);
+        Mockito.when(manager.hasExternalLoadBalancer(CLUSTER_ID)).thenReturn(true);
+        Mockito.when(detailsDao.findDetail(CLUSTER_ID, ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS))
+                .thenReturn(new KubernetesClusterDetailsVO(CLUSTER_ID, ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, "198.51.100.7", true));
+
+        Assert.assertTrue(worker.rollout());
+
+        Assert.assertEquals(Map.of(vmNamed("c1").getId(), new Pair<>("198.51.100.7", 2222)), worker.nodeSshAddresses);
+        Assert.assertTrue(calls.contains("stop:w1"));
+        Assert.assertFalse(calls.contains("stop:e1"));
+        Mockito.verify(detailsDao).addDetail(Mockito.eq(CLUSTER_ID), Mockito.eq(KubernetesClusterManagerImpl.ROLLOUT_LAST_ERROR_DETAIL),
+                Mockito.contains("the 3 etcd node(s) were not restarted"), Mockito.anyBoolean());
     }
 }

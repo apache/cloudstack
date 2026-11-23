@@ -31,6 +31,7 @@ import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpdateKubernetesClusterCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -530,6 +531,26 @@ public class KubernetesClusterManagerImplUpdateTest {
                 () -> manager.updateKubernetesCluster(cmd(true, null, Map.of(ETCD.name(), 7L), null, null)));
         Assert.assertTrue(e.getMessage(), e.getMessage().contains("The 2 etcd node(s)"));
         // two control nodes with external etcd: one serves the API while the other restarts
+        Assert.assertTrue(manager.updateKubernetesCluster(cmd(true, null, Map.of(CONTROL.name(), 7L), null, null)));
+        Mockito.verify(worker).rollout();
+    }
+
+    @Test
+    public void rolloutRefusesSettingsOfEtcdNodesBehindAnExternalLoadBalancer() {
+        cluster.setEtcdNodeCount(3L);
+        addVm(10L, CONTROL, CLUSTER_OFFERING, null);
+        addVm(11L, CONTROL, CLUSTER_OFFERING, null);
+        addVm(12L, ETCD, CLUSTER_OFFERING, null);
+        addVm(13L, ETCD, CLUSTER_OFFERING, null);
+        addVm(14L, ETCD, CLUSTER_OFFERING, null);
+        Mockito.when(kubernetesClusterDetailsDao.findDetail(CLUSTER_ID, ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS))
+                .thenReturn(new KubernetesClusterDetailsVO(CLUSTER_ID, ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, "198.51.100.7", true));
+        mockOffering(7L);
+        KubernetesClusterRollingUpdateWorker worker = mockWorker();
+
+        InvalidParameterValueException e = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> manager.updateKubernetesCluster(cmd(true, null, Map.of(ETCD.name(), 7L), null, null)));
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("The 3 etcd node(s)") && e.getMessage().contains("external load balancer"));
         Assert.assertTrue(manager.updateKubernetesCluster(cmd(true, null, Map.of(CONTROL.name(), 7L), null, null)));
         Mockito.verify(worker).rollout();
     }

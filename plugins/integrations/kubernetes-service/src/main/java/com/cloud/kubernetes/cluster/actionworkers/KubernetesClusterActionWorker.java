@@ -27,6 +27,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,6 +36,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -60,6 +62,7 @@ import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
@@ -683,6 +686,65 @@ public class KubernetesClusterActionWorker {
             logger.debug("This exception should not have occurred", e);
         }
         return new Pair<>(null, CLUSTER_NODES_DEFAULT_START_SSH_PORT);
+    }
+
+    /**
+     * Address and port to reach each of the given nodes over SSH, by VM id, once {@link #publicIpAddress} and
+     * {@link #sshPort} hold the cluster's SSH endpoint from {@link #getKubernetesClusterServerIpSshPort(UserVm)}.
+     * <ul>
+     *   <li>direct access (port 22): the node's own IP on port 22</li>
+     *   <li>external load balancer: the load balancer's port for the node's place among the cluster's non-etcd nodes,
+     *   as documented for operators</li>
+     *   <li>otherwise: the public port (from 2222 up; Active, then Add, then Staged rules first) of the node's port forwarding rule to port 22
+     *   on the cluster's SSH IP</li>
+     * </ul>
+     * @throws CloudRuntimeException when a node has no such port forwarding rule
+     */
+    protected Map<Long, Pair<String, Integer>> getClusterNodesSshIpPorts(List<UserVm> vms) {
+        Map<Long, Pair<String, Integer>> result = new HashMap<>();
+        if (sshPort == DEFAULT_SSH_PORT) {
+            vms.forEach(vm -> result.put(vm.getId(), new Pair<>(vm.getPrivateIpAddress(), DEFAULT_SSH_PORT)));
+            return result;
+        }
+        KubernetesClusterDetailsVO externalLb = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS);
+        if (externalLb != null && StringUtils.isNotEmpty(externalLb.getValue())) {
+            List<Long> nodeIds = getKubernetesClusterVMMaps().stream().filter(map -> !map.isEtcdNode())
+                    .map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+            for (UserVm vm : vms) {
+                int position = nodeIds.indexOf(vm.getId());
+                if (position < 0) {
+                    throw new CloudRuntimeException(String.format("Node %s is not part of Kubernetes cluster %s", vm.getHostName(), kubernetesCluster.getName()));
+                }
+                result.put(vm.getId(), new Pair<>(publicIpAddress, sshPort + position));
+            }
+            return result;
+        }
+        IpAddress sshIp = ipAddressDao.findByIpAndDcId(kubernetesCluster.getZoneId(), publicIpAddress);
+        if (sshIp == null) {
+            throw new CloudRuntimeException(String.format("Unable to find the SSH IP address %s of Kubernetes cluster %s", publicIpAddress, kubernetesCluster.getName()));
+        }
+        List<FirewallRule.State> stateOrder = List.of(FirewallRule.State.Active, FirewallRule.State.Add, FirewallRule.State.Staged);
+        Comparator<PortForwardingRuleVO> preferred = Comparator
+                .comparing((PortForwardingRuleVO rule) -> stateOrder.indexOf(rule.getState()))
+                .thenComparing(PortForwardingRuleVO::getSourcePortStart);
+        Map<Long, PortForwardingRuleVO> sshRules = new HashMap<>();
+        for (PortForwardingRuleVO rule : portForwardingRulesDao.listByIpAndNotRevoked(sshIp.getId())) {
+            if (stateOrder.contains(rule.getState())
+                    && NetUtils.TCP_PROTO.equalsIgnoreCase(rule.getProtocol())
+                    && rule.getDestinationPortStart() == DEFAULT_SSH_PORT && rule.getDestinationPortEnd() == DEFAULT_SSH_PORT
+                    && rule.getSourcePortStart() != null && rule.getSourcePortStart() >= CLUSTER_NODES_DEFAULT_START_SSH_PORT) {
+                sshRules.merge(rule.getVirtualMachineId(), rule, BinaryOperator.minBy(preferred));
+            }
+        }
+        for (UserVm vm : vms) {
+            PortForwardingRuleVO rule = sshRules.get(vm.getId());
+            if (rule == null) {
+                throw new CloudRuntimeException(String.format("No port forwarding rule to port %d of node %s found on %s",
+                        DEFAULT_SSH_PORT, vm.getHostName(), publicIpAddress));
+            }
+            result.put(vm.getId(), new Pair<>(publicIpAddress, rule.getSourcePortStart()));
+        }
+        return result;
     }
 
     protected void attachIsoKubernetesVMs(List<UserVm> clusterVMs, final KubernetesSupportedVersion kubernetesSupportedVersion) throws CloudRuntimeException {

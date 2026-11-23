@@ -176,6 +176,10 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
     private boolean begun;
     /** The SSH address of the control node kubectl runs on */
     protected Pair<String, Integer> kubectlAddress;
+    /** The SSH address of each control node, and of each etcd node but behind an external load balancer, by VM id */
+    protected Map<Long, Pair<String, Integer>> nodeSshAddresses = Map.of();
+    /** Whether the etcd nodes can be reached over SSH, which they can not behind an external load balancer */
+    protected boolean etcdReachable = true;
     /** The join token and CA certificate hash the recreated workers of a batch join with */
     protected Pair<String, String> recreateJoin;
 
@@ -252,6 +256,8 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
             return;
         }
         init();
+        // a node that can not be reached fails the rollout before it changes anything
+        resolveNodeSshAddresses();
         transitToOperationState(KubernetesCluster.Event.UpdateRequested);
         begun = true;
         // a cancel left by a rollout that did not end; one asked for from now on is for this rollout
@@ -313,6 +319,13 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
                 String reason = String.format("the %d %s node(s) were not restarted, as a cluster with %d of them can not keep running without one",
                         nodes.size(), type.name().toLowerCase(), members);
                 logger.warn("Not restarting the {} nodes of Kubernetes cluster {}: {}", type.name().toLowerCase(), kubernetesCluster, reason);
+                skipped.add(reason);
+                continue;
+            }
+            if (type == ETCD && !nodes.isEmpty() && !etcdReachable) {
+                String reason = String.format("the %d etcd node(s) were not restarted, as they can not be reached over SSH behind the external load balancer",
+                        nodes.size());
+                logger.warn("Not restarting the etcd nodes of Kubernetes cluster {}: {}", kubernetesCluster, reason);
                 skipped.add(reason);
                 continue;
             }
@@ -1015,16 +1028,47 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
     // access to the nodes
 
     /**
+     * Resolves the SSH address of the nodes the rollout runs commands on: the control nodes, and the etcd nodes but
+     * behind an external load balancer, which has no port for them. Fails naming a node that has no address.
+     */
+    protected void resolveNodeSshAddresses() {
+        Pair<String, Integer> address = getKubernetesClusterServerIpSshPort(null);
+        if (StringUtils.isEmpty(address.first())) {
+            throw new CloudRuntimeException(String.format("Unable to find the address of Kubernetes cluster %s", kubernetesCluster.getName()));
+        }
+        publicIpAddress = address.first();
+        sshPort = address.second();
+        etcdReachable = !manager.hasExternalLoadBalancer(kubernetesCluster.getId());
+        List<UserVm> vms = new ArrayList<>();
+        for (KubernetesClusterVmMapVO vmMap : getKubernetesClusterVMMaps()) {
+            if (!vmMap.isControlNode() && !(vmMap.isEtcdNode() && etcdReachable)) {
+                continue;
+            }
+            UserVmVO vm = userVmDao.findById(vmMap.getVmId());
+            if (vm != null) {
+                vms.add(vm);
+            }
+        }
+        Map<Long, Pair<String, Integer>> addresses;
+        try {
+            addresses = getClusterNodesSshIpPorts(vms);
+        } catch (CloudRuntimeException e) {
+            throw new CloudRuntimeException(String.format("Unable to reach the nodes of Kubernetes cluster %s over SSH: %s", kubernetesCluster.getName(), e.getMessage()), e);
+        }
+        for (UserVm vm : vms) {
+            if (StringUtils.isEmpty(addresses.get(vm.getId()).first())) {
+                throw new CloudRuntimeException(String.format("Unable to reach the nodes of Kubernetes cluster %s over SSH: node %s has no IP address",
+                        kubernetesCluster.getName(), getNodeName(vm)));
+            }
+        }
+        nodeSshAddresses = addresses;
+    }
+
+    /**
      * Runs kubectl on the first running control node that is not one of the given VMs: the first control node, which
      * the address of the cluster reaches, unless it is being restarted
      */
     protected void resolveKubectlAddress(final Set<Long> excludedVmIds) {
-        Pair<String, Integer> address = getKubernetesClusterServerIpSshPort(null);
-        if (StringUtils.isEmpty(address.first())) {
-            throw new CloudRuntimeException(String.format("unable to find the address of Kubernetes cluster %s", kubernetesCluster.getName()));
-        }
-        publicIpAddress = address.first();
-        sshPort = address.second();
         for (KubernetesClusterVmMapVO vmMap : getKubernetesClusterVMMaps()) {
             if (!vmMap.isControlNode() || excludedVmIds.contains(vmMap.getVmId())) {
                 continue;
@@ -1038,23 +1082,13 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
         throw new CloudRuntimeException(String.format("no control node of Kubernetes cluster %s is running", kubernetesCluster.getName()));
     }
 
-    /**
-     * The address to reach a node over SSH: without port forwarding, its own address; with it, the port of its rule,
-     * or else of its position among the VMs of the cluster
-     */
+    /** The SSH address of a control or etcd node, as resolved when the rollout began */
     protected Pair<String, Integer> getSshAddress(final UserVm vm) {
-        if (sshPort == DEFAULT_SSH_PORT && StringUtils.isNotEmpty(vm.getPrivateIpAddress())) {
-            return new Pair<>(vm.getPrivateIpAddress(), DEFAULT_SSH_PORT);
+        Pair<String, Integer> address = nodeSshAddresses.get(vm.getId());
+        if (address == null) {
+            throw new CloudRuntimeException(String.format("the SSH address of node %s is not known", getNodeName(vm)));
         }
-        List<KubernetesClusterVmMapVO> vmMaps = getKubernetesClusterVMMaps();
-        int index = 0;
-        for (int i = 0; i < vmMaps.size(); i++) {
-            if (vmMaps.get(i).getVmId() == vm.getId()) {
-                index = i;
-                break;
-            }
-        }
-        return getNodeSshAddress(vm, index);
+        return address;
     }
 
     /** The output of a kubectl command, or null if it failed */
