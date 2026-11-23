@@ -19,6 +19,8 @@ package com.cloud.kubernetes.cluster.actionworkers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -72,7 +74,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
     @Inject
     private BGPService bgpService;
 
-    private List<KubernetesClusterVmMapVO> clusterVMs;
+    List<KubernetesClusterVmMapVO> clusterVMs;
 
     public KubernetesClusterDestroyWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
@@ -91,8 +93,9 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         }
     }
 
-    private boolean destroyClusterVMs() {
+    boolean destroyClusterVMs() {
         boolean vmDestroyed = true;
+        List<KubernetesClusterVmMapVO> staleVmMaps = new ArrayList<>();
         if (!CollectionUtils.isEmpty(clusterVMs)) {
             for (KubernetesClusterVmMapVO clusterVM : clusterVMs) {
                 long vmID = clusterVM.getVmId();
@@ -100,6 +103,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 // delete only if VM exists and is not removed
                 UserVmVO userVM = userVmDao.findById(vmID);
                 if (userVM == null || userVM.isRemoved()) {
+                    staleVmMaps.add(clusterVM);
                     continue;
                 }
                 CallContext vmContext = CallContext.register(CallContext.current(),
@@ -126,6 +130,10 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                     CallContext.unregister();
                 }
             }
+        }
+        for (KubernetesClusterVmMapVO staleVmMap : staleVmMaps) {
+            logger.warn("VM with ID {} of Kubernetes cluster {} no longer exists, removing it from the cluster", staleVmMap.getVmId(), kubernetesCluster);
+            kubernetesClusterVmMapDao.expunge(staleVmMap.getId());
         }
         return vmDestroyed;
     }
@@ -287,7 +295,8 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         init();
         validateClusterSate();
         this.clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
-        List<VMInstanceVO> vms = this.clusterVMs.stream().map(vmMap -> vmInstanceDao.findById(vmMap.getVmId())).collect(Collectors.toList());
+        List<VMInstanceVO> vms = this.clusterVMs.stream().map(vmMap -> vmInstanceDao.findById(vmMap.getVmId())).filter(Objects::nonNull).collect(Collectors.toList());
+        Set<Long> existingVmIds = vms.stream().map(VMInstanceVO::getId).collect(Collectors.toSet());
         if (KubernetesClusterManagerImpl.checkIfVmsAssociatedWithBackupOffering(vms)) {
             throw new CloudRuntimeException("Unable to delete Kubernetes cluster, as node(s) are associated to a backup offering");
         }
@@ -298,7 +307,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         }
         if (cleanupNetwork) { // if network has additional VM, cannot proceed with cluster destroy
             NetworkVO network = networkDao.findById(kubernetesCluster.getNetworkId());
-            List<KubernetesClusterVmMapVO> externalNodes = clusterVMs.stream().filter(KubernetesClusterVmMapVO::isExternalNode).collect(Collectors.toList());
+            List<KubernetesClusterVmMapVO> externalNodes = clusterVMs.stream().filter(vmMap -> vmMap.isExternalNode() && existingVmIds.contains(vmMap.getVmId())).collect(Collectors.toList());
             if (!externalNodes.isEmpty()) {
                 String errMsg = String.format("Failed to delete kubernetes cluster %s as there are %s external node(s) present. Please remove the external node(s) from the cluster (and network) or delete them before deleting the cluster.", kubernetesCluster.getName(), externalNodes.size());
                 logger.error(errMsg);
@@ -306,7 +315,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
             }
             if (network != null) {
                 List<VMInstanceVO> networkVMs = vmInstanceDao.listNonRemovedVmsByTypeAndNetwork(network.getId(), VirtualMachine.Type.User);
-                if (networkVMs.size() > clusterVMs.size()) {
+                if (networkVMs.size() > existingVmIds.size()) {
                     logAndThrow(Level.ERROR, String.format("Network : %s for Kubernetes cluster : %s has instances using it which are not part of the Kubernetes cluster", network.getName(), kubernetesCluster.getName()));
                 }
                 for (VMInstanceVO vm : networkVMs) {
