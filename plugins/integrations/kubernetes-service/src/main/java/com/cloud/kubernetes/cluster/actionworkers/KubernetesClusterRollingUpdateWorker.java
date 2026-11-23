@@ -922,8 +922,9 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
     /**
      * Puts back in service what a rollout leaves behind, however it ends; running it again changes nothing more.
      * It uncordons the annotated nodes that are Ready with a new boot ID, and leaves the others cordoned, counts the
-     * CPU cores and memory of the cluster from its VMs, moves the cluster from Updating to Running, or to Alert if it is
-     * not healthy, and records why the rollout stopped, if it did.
+     * CPU cores and memory of the cluster from its VMs, makes the offering all its nodes run that of the cluster if
+     * it is the one of their types, moves the cluster from Updating to Running, or to Alert if it is not healthy, and
+     * records why the rollout stopped, if it did.
      */
     public void release(final String error) {
         release(error, true);
@@ -960,6 +961,11 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
         if (cluster == null || !KubernetesCluster.State.Updating.equals(cluster.getState())) {
             // released already: the details may be those of a rollout that started since
             return;
+        }
+        try {
+            manager.syncClusterServiceOffering(kubernetesCluster.getId());
+        } catch (Exception e) {
+            logger.warn("Unable to update the service offering of Kubernetes cluster {} from its nodes", kubernetesCluster, e);
         }
         // before the cluster leaves Updating, after which another rollout may start and be asked to cancel
         if (!recordError) {

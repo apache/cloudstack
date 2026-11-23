@@ -2842,7 +2842,43 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         for (Map.Entry<String, Long> entry : Objects.requireNonNullElse(cmd.getTemplateNodeTypeMap(), Map.<String, Long>of()).entrySet()) {
             setNodeTypeTemplateId(cluster, KubernetesClusterNodeType.valueOf(entry.getKey().toUpperCase()), entry.getValue());
         }
+        syncClusterServiceOfferingWithNodeOfferings(cluster);
         kubernetesClusterDao.update(cluster.getId(), cluster);
+    }
+
+    /**
+     * Once every node type that has nodes is on the same offering, and every node VM has it, it becomes the offering of
+     * the cluster. Otherwise the offering of the cluster stays as it is: a scale takes it as the offering the nodes
+     * should run, so it never names one they have yet to be restarted with. Returns whether it changed; the caller
+     * stores the cluster.
+     */
+    protected boolean syncClusterServiceOfferingWithNodeOfferings(KubernetesClusterVO cluster) {
+        Long commonOfferingId = KubernetesClusterUtil.getCommonNodeServiceOfferingId(cluster);
+        if (commonOfferingId == null || commonOfferingId.equals(cluster.getServiceOfferingId())) {
+            return false;
+        }
+        for (KubernetesClusterVmMapVO vmMap : kubernetesClusterVmMapDao.listByClusterId(cluster.getId())) {
+            VMInstanceVO vm = vmMap.isExternalNode() ? null : vmInstanceDao.findById(vmMap.getVmId());
+            if (vm != null && !VirtualMachine.State.Destroyed.equals(vm.getState()) && !VirtualMachine.State.Expunging.equals(vm.getState())
+                    && vm.getServiceOfferingId() != commonOfferingId) {
+                return false;
+            }
+        }
+        logger.info("Changing the service offering ID of Kubernetes cluster {} from {} to {}, the offering of all its nodes",
+                cluster, cluster.getServiceOfferingId(), commonOfferingId);
+        cluster.setServiceOfferingId(commonOfferingId);
+        return true;
+    }
+
+    /** Makes the offering every node VM has, once it is the offering of their types, the offering of the cluster */
+    public void syncClusterServiceOffering(long clusterId) {
+        KubernetesClusterVO cluster = kubernetesClusterDao.findById(clusterId);
+        if (cluster == null || !syncClusterServiceOfferingWithNodeOfferings(cluster)) {
+            return;
+        }
+        KubernetesClusterVO update = kubernetesClusterDao.createForUpdate(clusterId);
+        update.setServiceOfferingId(cluster.getServiceOfferingId());
+        kubernetesClusterDao.update(clusterId, update);
     }
 
     /** Whether a VM can be deployed or restored from a template in a zone, as restoreVirtualMachine checks it */

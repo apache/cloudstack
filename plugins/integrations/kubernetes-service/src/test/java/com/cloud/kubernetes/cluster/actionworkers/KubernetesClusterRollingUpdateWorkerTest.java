@@ -470,6 +470,7 @@ public class KubernetesClusterRollingUpdateWorkerTest {
         Assert.assertFalse(kube.get("w1").unschedulable);
         Assert.assertEquals(KubernetesCluster.State.Running, clusterState);
         Mockito.verify(manager).updateKubernetesClusterCapacity(CLUSTER_ID);
+        Mockito.verify(manager).syncClusterServiceOffering(CLUSTER_ID);
         Assert.assertTrue(details.isEmpty());
     }
 
@@ -697,6 +698,19 @@ public class KubernetesClusterRollingUpdateWorkerTest {
 
         Assert.assertEquals(List.of(), releaseAgain(worker, null));
         Mockito.verify(manager, Mockito.times(2)).updateKubernetesClusterCapacity(CLUSTER_ID);
+        // not once the cluster has left Updating, when another operation may hold it
+        Mockito.verify(manager).syncClusterServiceOffering(CLUSTER_ID);
+    }
+
+    @Test
+    public void releaseEndsTheRolloutWhenTheClusterOfferingCanNotBeUpdated() {
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, OLD_OFFERING);
+        Mockito.doThrow(new CloudRuntimeException("db down")).when(manager).syncClusterServiceOffering(CLUSTER_ID);
+
+        Assert.assertTrue(newWorker(1).rollout());
+
+        Assert.assertEquals(KubernetesCluster.State.Running, clusterState);
     }
 
     @Test

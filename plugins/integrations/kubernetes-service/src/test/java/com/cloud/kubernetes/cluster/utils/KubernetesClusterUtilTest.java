@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.kubernetes.cluster.utils;
 
+import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.utils.Pair;
 import org.junit.Assert;
 import org.junit.Test;
@@ -24,6 +25,53 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesClusterUtilTest {
+
+    private KubernetesClusterVO createCluster(Long clusterOfferingId, Long controlOfferingId, Long workerOfferingId,
+                                              Long etcdNodeCount, Long etcdOfferingId) {
+        KubernetesClusterVO cluster = new KubernetesClusterVO();
+        if (clusterOfferingId != null) {
+            cluster.setServiceOfferingId(clusterOfferingId);
+        }
+        cluster.setControlNodeCount(1);
+        cluster.setNodeCount(3);
+        cluster.setEtcdNodeCount(etcdNodeCount);
+        cluster.setControlNodeServiceOfferingId(controlOfferingId);
+        cluster.setWorkerNodeServiceOfferingId(workerOfferingId);
+        cluster.setEtcdNodeServiceOfferingId(etcdOfferingId);
+        return cluster;
+    }
+
+    @Test
+    public void getCommonNodeServiceOfferingIdAllNodeTypesOnSameOffering() {
+        Assert.assertEquals(Long.valueOf(2L), KubernetesClusterUtil.getCommonNodeServiceOfferingId(createCluster(1L, 2L, 2L, 3L, 2L)));
+    }
+
+    @Test
+    public void getCommonNodeServiceOfferingIdNodeTypesOnDifferentOfferings() {
+        Assert.assertNull(KubernetesClusterUtil.getCommonNodeServiceOfferingId(createCluster(1L, 2L, 3L, null, null)));
+    }
+
+    @Test
+    public void getCommonNodeServiceOfferingIdNodeTypeWithoutOfferingUsesClusterOffering() {
+        Assert.assertNull(KubernetesClusterUtil.getCommonNodeServiceOfferingId(createCluster(1L, null, 2L, null, null)));
+        Assert.assertEquals(Long.valueOf(1L), KubernetesClusterUtil.getCommonNodeServiceOfferingId(createCluster(1L, null, 1L, null, null)));
+    }
+
+    @Test
+    public void getCommonNodeServiceOfferingIdIgnoresNodeTypeWithoutNodes() {
+        Assert.assertEquals(Long.valueOf(2L), KubernetesClusterUtil.getCommonNodeServiceOfferingId(createCluster(1L, 2L, 2L, 0L, 3L)));
+        Assert.assertEquals(Long.valueOf(2L), KubernetesClusterUtil.getCommonNodeServiceOfferingId(createCluster(1L, 2L, 2L, null, null)));
+    }
+
+    @Test
+    public void getCommonNodeServiceOfferingIdEtcdNodesOnDifferentOffering() {
+        Assert.assertNull(KubernetesClusterUtil.getCommonNodeServiceOfferingId(createCluster(1L, 2L, 2L, 3L, 3L)));
+    }
+
+    @Test
+    public void getCommonNodeServiceOfferingIdNodeTypeWithoutAnyOffering() {
+        Assert.assertNull(KubernetesClusterUtil.getCommonNodeServiceOfferingId(createCluster(null, null, 2L, null, null)));
+    }
 
     private void executeThrowAndTestVersionMatch() {
         Pair<Boolean, String> resultPair = null;

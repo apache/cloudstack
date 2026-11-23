@@ -326,6 +326,123 @@ public class KubernetesClusterManagerImplUpdateTest {
         Mockito.verify(worker).rollout();
     }
 
+    // the offering of the cluster
+
+    @Test
+    public void updateWithoutRolloutKeepsTheClusterOfferingWhileTheNodesRunAnother() {
+        cluster.setControlNodeCount(1);
+        cluster.setNodeCount(1);
+        addVm(10L, CONTROL, CLUSTER_OFFERING, null);
+        addVm(11L, WORKER, CLUSTER_OFFERING, null);
+        mockOffering(7L);
+
+        Assert.assertTrue(manager.updateKubernetesCluster(cmd(false, null, Map.of(CONTROL.name(), 7L, WORKER.name(), 7L), null, null)));
+
+        // a scale takes the offering of the cluster as the one the nodes should run
+        Assert.assertEquals(Long.valueOf(CLUSTER_OFFERING), cluster.getServiceOfferingId());
+        Assert.assertEquals(Long.valueOf(7L), cluster.getControlNodeServiceOfferingId());
+        Assert.assertEquals(Long.valueOf(7L), cluster.getWorkerNodeServiceOfferingId());
+    }
+
+    @Test
+    public void updateWithoutRolloutSetsTheClusterOfferingOnceAllNodeTypesShareTheOneTheNodesRun() {
+        cluster.setControlNodeCount(1);
+        cluster.setNodeCount(1);
+        addVm(10L, CONTROL, 7L, null);
+        addVm(11L, WORKER, 7L, null);
+        mockOffering(7L);
+
+        Assert.assertTrue(manager.updateKubernetesCluster(cmd(false, null, Map.of(WORKER.name(), 7L), null, null)));
+        // the control nodes keep the offering of the cluster
+        Assert.assertEquals(Long.valueOf(CLUSTER_OFFERING), cluster.getServiceOfferingId());
+
+        Assert.assertTrue(manager.updateKubernetesCluster(cmd(false, null, Map.of(CONTROL.name(), 7L), null, null)));
+        Assert.assertEquals(Long.valueOf(7L), cluster.getServiceOfferingId());
+    }
+
+    @Test
+    public void updateKeepsTheClusterOfferingWhenTheNodeTypesDiffer() {
+        cluster.setControlNodeCount(1);
+        cluster.setNodeCount(2);
+        cluster.setEtcdNodeCount(3L);
+        mockOffering(7L);
+
+        Assert.assertTrue(manager.updateKubernetesCluster(cmd(false, null, Map.of(CONTROL.name(), 7L, WORKER.name(), 7L), null, null)));
+
+        Assert.assertEquals(Long.valueOf(CLUSTER_OFFERING), cluster.getServiceOfferingId());
+        Assert.assertEquals(Long.valueOf(CLUSTER_OFFERING), cluster.getEtcdNodeServiceOfferingId());
+    }
+
+    @Test
+    public void updateIgnoresNodeTypesWithoutNodesForTheClusterOffering() {
+        cluster.setControlNodeCount(1);
+        cluster.setNodeCount(0);
+        addVm(10L, CONTROL, 7L, null);
+        mockOffering(7L);
+
+        Assert.assertTrue(manager.updateKubernetesCluster(cmd(false, null, Map.of(CONTROL.name(), 7L), null, null)));
+
+        Assert.assertEquals(Long.valueOf(7L), cluster.getServiceOfferingId());
+        Assert.assertEquals(Long.valueOf(CLUSTER_OFFERING), cluster.getWorkerNodeServiceOfferingId());
+    }
+
+    @Test
+    public void updateOfAnotherSettingFixesADriftedClusterOffering() {
+        cluster.setControlNodeCount(1);
+        cluster.setNodeCount(1);
+        cluster.setControlNodeServiceOfferingId(7L);
+        cluster.setWorkerNodeServiceOfferingId(7L);
+        addVm(10L, CONTROL, 7L, null);
+        addVm(11L, WORKER, 7L, null);
+
+        Assert.assertTrue(manager.updateKubernetesCluster(cmd(false, null, null, Map.of(WORKER.name(), 40L), null)));
+
+        Assert.assertEquals(Long.valueOf(7L), cluster.getServiceOfferingId());
+        Mockito.verify(kubernetesClusterDao, Mockito.atLeastOnce()).update(CLUSTER_ID, cluster);
+    }
+
+    @Test
+    public void rolloutLeavesTheClusterOfferingToItsRelease() {
+        cluster.setControlNodeCount(3);
+        cluster.setNodeCount(2);
+        addVm(10L, CONTROL, CLUSTER_OFFERING, null);
+        addVm(11L, WORKER, CLUSTER_OFFERING, null);
+        KubernetesClusterRollingUpdateWorker worker = mockWorker();
+        mockOffering(7L);
+        Mockito.doReturn(Set.of()).when(manager).getUnrollableNodeTypes(Mockito.any());
+
+        Assert.assertTrue(manager.updateKubernetesCluster(cmd(true, null, Map.of(CONTROL.name(), 7L, WORKER.name(), 7L), null, null)));
+
+        Mockito.verify(worker).rollout();
+        Assert.assertEquals(Long.valueOf(CLUSTER_OFFERING), cluster.getServiceOfferingId());
+    }
+
+    @Test
+    public void syncClusterServiceOfferingOnceAllNodesRunTheOfferingOfTheirType() {
+        cluster.setControlNodeCount(1);
+        cluster.setNodeCount(2);
+        cluster.setControlNodeServiceOfferingId(7L);
+        cluster.setWorkerNodeServiceOfferingId(7L);
+        addVm(10L, CONTROL, 7L, null);
+        addVm(11L, WORKER, 7L, null);
+        VMInstanceVO notRestarted = addVm(12L, WORKER, CLUSTER_OFFERING, null);
+        Mockito.when(addVm(13L, WORKER, CLUSTER_OFFERING, null).getState()).thenReturn(VirtualMachine.State.Destroyed);
+        KubernetesClusterVmMapVO external = new KubernetesClusterVmMapVO(CLUSTER_ID, 14L, false);
+        external.setExternalNode(true);
+        vmMaps.add(external);
+        KubernetesClusterVO update = new KubernetesClusterVO();
+        Mockito.when(kubernetesClusterDao.createForUpdate(CLUSTER_ID)).thenReturn(update);
+
+        manager.syncClusterServiceOffering(CLUSTER_ID);
+        Mockito.verify(kubernetesClusterDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any());
+        Assert.assertEquals(Long.valueOf(CLUSTER_OFFERING), cluster.getServiceOfferingId());
+
+        Mockito.when(notRestarted.getServiceOfferingId()).thenReturn(7L);
+        manager.syncClusterServiceOffering(CLUSTER_ID);
+        Assert.assertEquals(Long.valueOf(7L), update.getServiceOfferingId());
+        Mockito.verify(kubernetesClusterDao).update(CLUSTER_ID, update);
+    }
+
     // gen 1 to gen 2
 
     @Test
