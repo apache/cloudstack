@@ -32,6 +32,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -44,6 +45,8 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.element.NetworkElement;
+import com.cloud.network.element.StaticNatServiceProvider;
+import com.cloud.network.element.VpcProvider;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter;
@@ -51,6 +54,7 @@ import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
+import com.cloud.network.vpc.dao.VpcServiceMapDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
@@ -581,6 +585,59 @@ public class VpcManagerImplTest {
         Mockito.doReturn(2L).when(networkACLVOMock).getVpcId();
         Mockito.doReturn(networkACLVOMock).when(networkACLDaoMock).findById(differentVpcAclId);
         Assert.assertThrows(InvalidParameterValueException.class, () -> manager.validateVpcPrivateGatewayAclId(vpcId, differentVpcAclId));
+    }
+
+    private VpcProvider mockStaticRouteProvider(String name, List<StaticRouteProfile> routes, Vpc vpc) throws ResourceUnavailableException {
+        VpcProvider provider = mock(VpcProvider.class, Mockito.withSettings().extraInterfaces(StaticNatServiceProvider.class));
+        Mockito.lenient().when(provider.getName()).thenReturn(name);
+        Mockito.lenient().when(provider.applyStaticRoutes(vpc, routes)).thenReturn(true);
+        return provider;
+    }
+
+    private List<StaticRouteProfile> mockStaticRoutes(Vpc vpc) {
+        StaticRouteProfile route = mock(StaticRouteProfile.class);
+        Mockito.when(route.getVpcId()).thenReturn(vpcId);
+        Mockito.when(vpcDao.findById(vpcId)).thenReturn((VpcVO) vpc);
+        Mockito.when(vpc.getId()).thenReturn(vpcId);
+        return List.of(route);
+    }
+
+    @Test
+    public void applyStaticRoutesUsesGatewayProviderWhenVpcHasNoStaticNat() throws ResourceUnavailableException {
+        // A ROUTED VPC has no StaticNat service. Its Gateway service is on the VPC virtual router.
+        VpcServiceMapDao vpcServiceMapDao = mock(VpcServiceMapDao.class);
+        manager._vpcSrvcDao = vpcServiceMapDao;
+        Vpc vpc = mock(VpcVO.class);
+        List<StaticRouteProfile> routes = mockStaticRoutes(vpc);
+        Mockito.lenient().when(vpcServiceMapDao.areServicesSupportedInVpc(vpcId, Service.StaticNat)).thenReturn(false);
+        Mockito.lenient().when(vpcServiceMapDao.getProviderForServiceInVpc(vpcId, Service.StaticNat))
+                .thenThrow(new UnsupportedServiceException("Service StaticNat is not supported in the vpc id=" + vpcId));
+        Mockito.lenient().when(vpcServiceMapDao.getProviderForServiceInVpc(vpcId, Service.Gateway)).thenReturn(Provider.VPCVirtualRouter.getName());
+        VpcProvider router = mockStaticRouteProvider(Provider.VPCVirtualRouter.getName(), routes, vpc);
+        VpcProvider other = mockStaticRouteProvider(Provider.JuniperContrailVpcRouter.getName(), routes, vpc);
+        manager.setVpcElements(List.of(router, other));
+
+        Assert.assertTrue(manager.applyStaticRoutes(routes));
+
+        verify(router).applyStaticRoutes(vpc, routes);
+        verify(other, Mockito.never()).applyStaticRoutes(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void applyStaticRoutesUsesStaticNatProviderWhenVpcHasStaticNat() throws ResourceUnavailableException {
+        VpcServiceMapDao vpcServiceMapDao = mock(VpcServiceMapDao.class);
+        manager._vpcSrvcDao = vpcServiceMapDao;
+        Vpc vpc = mock(VpcVO.class);
+        List<StaticRouteProfile> routes = mockStaticRoutes(vpc);
+        Mockito.lenient().when(vpcServiceMapDao.areServicesSupportedInVpc(vpcId, Service.StaticNat)).thenReturn(true);
+        Mockito.lenient().when(vpcServiceMapDao.getProviderForServiceInVpc(vpcId, Service.StaticNat)).thenReturn(Provider.VPCVirtualRouter.getName());
+        VpcProvider router = mockStaticRouteProvider(Provider.VPCVirtualRouter.getName(), routes, vpc);
+        manager.setVpcElements(List.of(router));
+
+        Assert.assertTrue(manager.applyStaticRoutes(routes));
+
+        verify(router).applyStaticRoutes(vpc, routes);
+        verify(vpcServiceMapDao, Mockito.never()).getProviderForServiceInVpc(vpcId, Service.Gateway);
     }
 
 }

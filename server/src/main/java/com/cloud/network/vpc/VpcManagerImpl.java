@@ -2878,6 +2878,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return success;
     }
 
+    /**
+     * Returns the provider that applies static routes for the VPC. VPCs with static NAT use its provider.
+     * ROUTED VPCs have no static NAT, so they use the provider of the Gateway service.
+     */
+    protected String getStaticRouteProvider(final long vpcId) {
+        final Service service = _vpcSrvcDao.areServicesSupportedInVpc(vpcId, Service.StaticNat) ? Service.StaticNat : Service.Gateway;
+        return _vpcSrvcDao.getProviderForServiceInVpc(vpcId, service);
+    }
+
     protected boolean applyStaticRoutes(final List<StaticRouteProfile> routes) throws ResourceUnavailableException {
         if (routes.isEmpty()) {
             logger.debug("No static routes to apply");
@@ -2886,10 +2895,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Vpc vpc = vpcDao.findById(routes.get(0).getVpcId());
 
         logger.debug("Applying static routes for vpc " + vpc);
-        final String staticNatProvider = _vpcSrvcDao.getProviderForServiceInVpc(vpc.getId(), Service.StaticNat);
+        final String staticRouteProvider = getStaticRouteProvider(vpc.getId());
 
         for (final VpcProvider provider : getVpcElements()) {
-            if (!(provider instanceof StaticNatServiceProvider && provider.getName().equalsIgnoreCase(staticNatProvider))) {
+            if (!(provider instanceof StaticNatServiceProvider && provider.getName().equalsIgnoreCase(staticRouteProvider))) {
                 continue;
             }
 
