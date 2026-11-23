@@ -60,7 +60,7 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     List<SnapshotDataStoreVO> listBySnapshotIdAndDataStoreRoleAndStateIn(long snapshotId, DataStoreRole role, ObjectInDataStoreStateMachine.State... state);
 
-    List<SnapshotDataStoreVO> listReadyByVolumeIdAndCheckpointPathNotNull(long volumeId);
+    List<SnapshotDataStoreVO> listReadyOrHiddenByVolumeIdAndCheckpointPathNotNull(long volumeId);
 
     SnapshotDataStoreVO findOneBySnapshotId(long snapshotId, long zoneId);
 

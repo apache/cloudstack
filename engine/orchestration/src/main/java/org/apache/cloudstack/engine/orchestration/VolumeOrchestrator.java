@@ -2384,7 +2384,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         Set<Long> imageStoreIds = new HashSet<>();
         Set<String> imageStoreUrls = new HashSet<>();
         if (HypervisorType.KVM.equals(hypervisorType)) {
-            List<SnapshotDataStoreVO> snapshotDataStoreVos = _snapshotDataStoreDao.listReadyByVolumeIdAndCheckpointPathNotNull(volumeId);
+            List<SnapshotDataStoreVO> snapshotDataStoreVos = _snapshotDataStoreDao.listReadyOrHiddenByVolumeIdAndCheckpointPathNotNull(volumeId);
             snapshotDataStoreVos.forEach(snapshotDataStoreVO -> {
                 checkpointPaths.add(snapshotDataStoreVO.getKvmCheckpointPath());
                 if (DataStoreRole.Image.equals(snapshotDataStoreVO.getRole())) {

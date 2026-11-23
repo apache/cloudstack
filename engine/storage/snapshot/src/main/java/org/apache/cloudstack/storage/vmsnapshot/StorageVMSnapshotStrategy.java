@@ -380,7 +380,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         }
 
         for (VolumeVO volume : volumeDao.findByInstance(vmId)) {
-            List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listReadyByVolumeIdAndCheckpointPathNotNull(volume.getId());
+            List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listReadyOrHiddenByVolumeIdAndCheckpointPathNotNull(volume.getId());
             if (CollectionUtils.isNotEmpty(snapshots)) {
                 logger.debug(
                         "{} as VM has a volume with incremental snapshots {}. Incremental volume snapshots and StorageVmSnapshotStrategy are not compatible," +
