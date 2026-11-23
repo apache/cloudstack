@@ -16,6 +16,7 @@
 # under the License.
 
 # Import Local Modules
+import math
 import random
 import time
 
@@ -104,6 +105,7 @@ class TestVmSnapshot(cloudstackTestCase):
                     with description %s" % cls.services["ostype"]
 
         cls.template = template
+        cls.root_disk_size = int(math.ceil(template.size / (1024 ** 3)))
 
         cls.account = cls.helper.create_account(
                             cls.apiclient,
@@ -169,7 +171,7 @@ class TestVmSnapshot(cloudstackTestCase):
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering_only.id,
             hypervisor=cls.hypervisor,
-            rootdisksize=10
+            rootdisksize=cls.root_disk_size
         )
 
         cls.random_data_0 = random_gen(size=100)
@@ -373,3 +375,35 @@ class TestVmSnapshot(cloudstackTestCase):
         self.debug('list_snapshot_response -------------------- %s' % list_snapshot_response)
 
         self.assertIsNone(list_snapshot_response, "snapshot is already deleted")
+
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_04_create_vm_snapshot_with_memory_fails(self):
+        """Test that creating a VM snapshot with memory is rejected for VMs with volumes on StorPool
+        """
+        vm = list_virtual_machines(
+            self.apiclient,
+            id=self.virtual_machine.id,
+            listall=True)[0]
+        self.assertEqual(vm.state, RUNNING, "Check the VM is running")
+
+        MemorySnapshot = True
+        with self.assertRaises(Exception) as context:
+            VmSnapshot.create(
+                self.apiclient,
+                self.virtual_machine.id,
+                MemorySnapshot,
+                "TestMemorySnapshot",
+                "Display Text"
+            )
+        self.debug("Creating a VM snapshot with memory failed with: %s" % context.exception)
+        self.assertIn(
+            "not supported for volumes on StorPool",
+            str(context.exception),
+            "Check the VM snapshot with memory is rejected by StorPool"
+        )
+
+        list_snapshot_response = VmSnapshot.list(
+            self.apiclient,
+            virtualmachineid=self.virtual_machine.id,
+            listall=True)
+        self.assertIsNone(list_snapshot_response, "Check no VM snapshot was created")
