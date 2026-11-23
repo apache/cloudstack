@@ -134,7 +134,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3;     // 3 seconds
 
     private static final int MAX_ONETIME_SCHEDULE_SIZE = 50;
-    private static final int HEARTBEAT_INTERVAL = 2000;
+    static final ConfigKey<Integer> AsyncJobHeartbeatInterval = new ConfigKey<>("Advanced", Integer.class,
+            "async.job.heartbeat.interval.ms", "2000",
+            "Interval in milliseconds between async job scheduler scans (500 to 2000). Shorter intervals increase database polling. "
+                    + "Restart the management server to apply.", false, ConfigKey.Scope.Global);
     private static final int GC_INTERVAL = 10000;                // 10 seconds
 
     @Inject
@@ -202,7 +205,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes, VmJobLockTimeout, HidePassword, ApiJobPoolSize, WorkJobPoolSize};
+        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes, VmJobLockTimeout, HidePassword, ApiJobPoolSize, WorkJobPoolSize, AsyncJobHeartbeatInterval};
     }
 
     @Override
@@ -1467,11 +1470,21 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     public void onManagementNodeIsolated() {
     }
 
+    int getHeartbeatInterval() {
+        int interval = AsyncJobHeartbeatInterval.value();
+        if (interval < 500 || interval > 2000) {
+            logger.warn("Invalid async.job.heartbeat.interval.ms value {}. Using the default of {} ms.", interval, AsyncJobHeartbeatInterval.defaultValue());
+            return Integer.parseInt(AsyncJobHeartbeatInterval.defaultValue());
+        }
+        return interval;
+    }
+
     @Override
     public boolean start() {
         cleanupLeftOverJobs(getMsid());
 
-        _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), HEARTBEAT_INTERVAL, HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS);
+        int heartbeatInterval = getHeartbeatInterval();
+        _heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
         _heartbeatScheduler.scheduleAtFixedRate(getGCTask(), GC_INTERVAL, GC_INTERVAL, TimeUnit.MILLISECONDS);
 
         return true;

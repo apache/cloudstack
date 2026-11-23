@@ -103,6 +103,27 @@ public class AsyncJobManagerImplTest {
         return locked;
     }
 
+    @Test
+    public void heartbeatUsesExistingTwoSecondDefault() {
+        Assert.assertEquals(2000, asyncJobManager.getHeartbeatInterval());
+    }
+
+    @Test
+    public void heartbeatAcceptsSupportedIntervals() {
+        for (int interval : new int[]{500, 1000, 2000}) {
+            overrideConfigValue(AsyncJobManagerImpl.AsyncJobHeartbeatInterval, interval);
+            Assert.assertEquals(interval, asyncJobManager.getHeartbeatInterval());
+        }
+    }
+
+    @Test
+    public void heartbeatFallsBackForOutOfRangeIntervals() {
+        for (int interval : new int[]{-1, 0, 499, 2001}) {
+            overrideConfigValue(AsyncJobManagerImpl.AsyncJobHeartbeatInterval, interval);
+            Assert.assertEquals(2000, asyncJobManager.getHeartbeatInterval());
+        }
+    }
+
     @Before
     public void preloadDbProperties() throws Exception {
         Properties props = new Properties();
@@ -121,6 +142,7 @@ public class AsyncJobManagerImplTest {
             // Reset static state even if executor shutdown throws, so we do not
             // pollute later test classes with our stubbed ConfigKey values or
             // preloaded DbProperties.
+            resetConfigValue(AsyncJobManagerImpl.AsyncJobHeartbeatInterval);
             resetConfigValue(AsyncJobManagerImpl.ApiJobPoolSize);
             resetConfigValue(AsyncJobManagerImpl.WorkJobPoolSize);
             setDbPropertiesStatics(new Properties(), false);
