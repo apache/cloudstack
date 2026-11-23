@@ -284,6 +284,8 @@ import com.googlecode.ipv6.IPv6Address;
  * NetworkManagerImpl implements NetworkManager.
  */
 public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestrationService, Listener, Configurable {
+    protected static final int NIC_ALLOCATION_LOCK_TIMEOUT_SECONDS = 600;
+
 
     @Inject
     EntityManager _entityMgr;
@@ -4847,6 +4849,46 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return nic;
     }
 
+    /**
+     * Picks the free device ID of the instance and allocates the NIC with it while holding a lock on the instance.
+     * Several networks can be added to the same instance at the same time (for instance, VPC tiers implemented in
+     * parallel are all plugged into the same VPC virtual router); without the lock, they could all read the same
+     * free device ID and the instance would end with several NICs sharing a device ID.
+     */
+    protected NicProfile allocateNicForVmWithFreeDeviceId(final Network network, final NicProfile requested, final VirtualMachineProfile vmProfile)
+            throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        final VirtualMachine vm = vmProfile.getVirtualMachine();
+        final GlobalLock lock = GlobalLock.getInternLock("vm.nic.allocation." + vm.getId());
+        try {
+            if (!lock.lock(NIC_ALLOCATION_LOCK_TIMEOUT_SECONDS)) {
+                throw new ConcurrentOperationException(String.format("Unable to acquire the lock to allocate a NIC for Instance %s in Network %s", vm, network));
+            }
+            try {
+                final int deviceId = _nicDao.getFreeDeviceId(vm.getId());
+
+                boolean isDefaultNic = getNicProfileDefaultNic(requested);
+
+                NicProfile nic = allocateNic(requested, network, isDefaultNic, deviceId, vmProfile).first();
+
+                if (nic == null) {
+                    throw new CloudRuntimeException("Failed to allocate nic for Instance " + vm + " in network " + network);
+                }
+
+                //Update vm_network_map table
+                if (vmProfile.getType() == VirtualMachine.Type.User) {
+                    final VMNetworkMapVO vno = new VMNetworkMapVO(vm.getId(), network.getId());
+                    _vmNetworkMapDao.persist(vno);
+                }
+                logger.debug("NIC is allocated successfully for Instance {} in Network {} with device ID {}", vm, network, deviceId);
+                return nic;
+            } finally {
+                lock.unlock();
+            }
+        } finally {
+            lock.releaseRef();
+        }
+    }
+
     @Override
     public NicProfile createNicForVm(final Network network, final NicProfile requested, final ReservationContext context, final VirtualMachineProfile vmProfile, final boolean prepare)
             throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
@@ -4860,22 +4902,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         //1) allocate nic (if needed) Always allocate if it is a user vm
         if (nic == null || vmProfile.getType() == VirtualMachine.Type.User) {
-            final int deviceId = _nicDao.getFreeDeviceId(vm.getId());
-
-            boolean isDefaultNic = getNicProfileDefaultNic(requested);
-
-            nic = allocateNic(requested, network, isDefaultNic, deviceId, vmProfile).first();
-
-            if (nic == null) {
-                throw new CloudRuntimeException("Failed to allocate nic for Instance " + vm + " in network " + network);
-            }
-
-            //Update vm_network_map table
-            if (vmProfile.getType() == VirtualMachine.Type.User) {
-                final VMNetworkMapVO vno = new VMNetworkMapVO(vm.getId(), network.getId());
-                _vmNetworkMapDao.persist(vno);
-            }
-            logger.debug("NIC is allocated successfully for Instance {} in Network {}", vm, network);
+            nic = allocateNicForVmWithFreeDeviceId(network, requested, vmProfile);
         }
 
         //2) prepare nic
