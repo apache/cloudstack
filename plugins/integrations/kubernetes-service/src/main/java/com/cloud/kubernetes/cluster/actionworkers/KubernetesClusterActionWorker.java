@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -299,6 +300,13 @@ public class KubernetesClusterActionWorker {
     protected String readK8sConfigFile(String resource) throws IOException {
         Path path = Paths.get(String.format("%s%s", CKS_CONFIG_PATH, resource));
         return Files.readString(path);
+    }
+
+    protected String getKubernetesNodeName(UserVm vm) {
+        if (vm == null || StringUtils.isBlank(vm.getHostName())) {
+            return null;
+        }
+        return vm.getHostName().toLowerCase(Locale.ROOT);
     }
 
     protected String getControlNodeLoginUser() {
@@ -846,7 +854,11 @@ public class KubernetesClusterActionWorker {
             if(!vmMap.isControlNode()) {
                 continue;
             }
-            String name = userVmDao.findById(vmMap.getVmId()).getDisplayName().toLowerCase();
+            String name = getKubernetesNodeName(userVmDao.findById(vmMap.getVmId()));
+            if (name == null) {
+                throw new CloudRuntimeException(String.format("Unable to find the Kubernetes node name of control node VM ID %d of Kubernetes cluster %s",
+                        vmMap.getVmId(), kubernetesCluster.getName()));
+            }
             String command = String.format("sudo /opt/bin/kubectl annotate node %s cluster-autoscaler.kubernetes.io/scale-down-disabled=true ; ", name);
             commands.append(command);
         }
