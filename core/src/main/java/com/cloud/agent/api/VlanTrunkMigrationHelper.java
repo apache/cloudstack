@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -141,20 +142,26 @@ public class VlanTrunkMigrationHelper {
                 && "1".equals(Networks.BroadcastDomainType.getValue(broadcastUri));
     }
 
+    // A plain VLAN nic only rides the shared bridge, and so needs manual membership, when the zone opt-in is on; a trunk nic always does.
+    public static boolean nicNeedsManualVlanMembership(NicVO nic, boolean vlanFilteringEnabled, boolean sharedVlanBridgeEnabled) {
+        return nicNeedsManualVlanMembership(nic, vlanFilteringEnabled && (nic.getMultiNetwork() || sharedVlanBridgeEnabled));
+    }
+
     public static boolean nicNeedsManualVlanMembership(NicVO nic, boolean vlanFilteringEnabled) {
         return nic.getBroadcastUri() != null && Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri()) == Networks.BroadcastDomainType.Vlan
                 && (nic.getMultiNetwork() || vlanFilteringEnabled);
     }
 
-    public static void sendPostMigrationVlanTrunkMembershipIfNeeded(VirtualMachineTO vmTO, long dstHostId,
+    // returns null when nothing was needed or the tasks completed, else the last failure so the caller can alert
+    public static String sendPostMigrationVlanTrunkMembershipIfNeeded(VirtualMachineTO vmTO, long dstHostId,
             NicDao nicDao, HostDetailsDao hostDetailsDao, CommandSender commandSender, Logger logger) {
-        sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, dstHostId, nicDao, hostDetailsDao, commandSender, logger, POST_MIGRATION_RETRY_DELAY_MS);
+        return sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, dstHostId, nicDao, hostDetailsDao, commandSender, logger, POST_MIGRATION_RETRY_DELAY_MS);
     }
 
-    static void sendPostMigrationVlanTrunkMembershipIfNeeded(VirtualMachineTO vmTO, long dstHostId,
+    static String sendPostMigrationVlanTrunkMembershipIfNeeded(VirtualMachineTO vmTO, long dstHostId,
             NicDao nicDao, HostDetailsDao hostDetailsDao, CommandSender commandSender, Logger logger, long retryDelayMs) {
         if (!vmNeedsPostMigrationVlanTrunkMembership(vmTO.getId(), dstHostId, nicDao, hostDetailsDao)) {
-            return;
+            return null;
         }
         String failure = sendPostMigrationCommandWithRetry(vmTO, dstHostId, commandSender, logger, retryDelayMs);
         if (failure != null) {
@@ -162,6 +169,7 @@ public class VlanTrunkMigrationHelper {
                     + "Migration completed but its tap may still be on the bridge's default VLAN; correct the VLAN membership or restart the VM.",
                     vmTO, dstHostId, failure);
         }
+        return failure;
     }
 
     // returns null once an attempt succeeds, else the last failure after all attempts
@@ -192,9 +200,9 @@ public class VlanTrunkMigrationHelper {
             if (postMigrationAnswer != null && postMigrationAnswer.getResult()) {
                 return null;
             }
-            return postMigrationAnswer != null ? postMigrationAnswer.getDetails() : "null answer returned";
+            return postMigrationAnswer != null ? StringUtils.defaultIfBlank(postMigrationAnswer.getDetails(), "no details returned") : "null answer returned";
         } catch (Exception e) {
-            return e.getMessage();
+            return StringUtils.defaultIfBlank(e.getMessage(), e.toString());
         }
     }
 

@@ -88,29 +88,39 @@ public final class LibvirtPostMigrationCommandWrapper extends CommandWrapper<Pos
     }
 
     private void applyManualVlanTrunkMembership(Connect conn, String vmName, NicTO[] nics, LibvirtComputingResource libvirtComputingResource)
-            throws InternalErrorException, LibvirtException {
+            throws InternalErrorException {
         if (nics == null) {
             return;
         }
-        InternalErrorException firstFailure = null;
+        Exception firstFailure = null;
         for (NicTO nic : nics) {
             if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vlan) {
                 continue;
             }
-            LibvirtVMDef.InterfaceDef liveInterface = libvirtComputingResource.getInterface(conn, vmName, nic.getMac());
             try {
-                libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).ensureVlanTrunkMembership(liveInterface, nic);
-            } catch (InternalErrorException e) {
+                applyVlanMembershipOrFailClosed(conn, vmName, nic, libvirtComputingResource);
+            } catch (Exception e) {
                 // keep going so every other nic of the VM is also applied or cut off, not left on VLAN 1
-                failClosed(conn, vmName, nic, libvirtComputingResource);
+                logger.error("Failed to set up the VLAN membership of nic {} of VM {}: {}", nic.getMac(), vmName, e.getMessage(), e);
                 firstFailure = firstFailure == null ? e : firstFailure;
-                continue;
             }
-            restoreLinkIfCutOff(conn, vmName, nic, liveInterface, libvirtComputingResource);
         }
         if (firstFailure != null) {
-            throw firstFailure;
+            throw new InternalErrorException(String.format("VLAN membership could not be set up for every nic of VM %s: %s", vmName, firstFailure.getMessage()));
         }
+    }
+
+    private void applyVlanMembershipOrFailClosed(Connect conn, String vmName, NicTO nic, LibvirtComputingResource libvirtComputingResource) throws Exception {
+        LibvirtVMDef.InterfaceDef liveInterface;
+        try {
+            liveInterface = libvirtComputingResource.getInterface(conn, vmName, nic.getMac());
+            libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).ensureVlanTrunkMembership(liveInterface, nic);
+        } catch (Exception e) {
+            failClosed(conn, vmName, nic, libvirtComputingResource);
+            throw e;
+        }
+        libvirtComputingResource.warnIfNicOnVlanAwareBridgeDespiteOptOut(liveInterface, nic, vmName);
+        restoreLinkIfCutOff(conn, vmName, nic, liveInterface, libvirtComputingResource);
     }
 
     // Without its VLANs the tap sits on the bridge's default VLAN 1, so cut the nic off rather than leave it there
@@ -122,7 +132,7 @@ public final class LibvirtPostMigrationCommandWrapper extends CommandWrapper<Pos
             setNicLinkState(conn, vmName, nic, false, libvirtComputingResource);
             logger.error("Could not apply the VLAN membership of nic {} of VM {}; its link was set down so it does not sit on the bridge's default VLAN. "
                     + "The link is restored once the membership is applied; otherwise correct it or restart the VM.", nic.getMac(), vmName);
-        } catch (LibvirtException e) {
+        } catch (Exception e) {
             logger.error("Could not apply the VLAN membership of nic {} of VM {} and could not set its link down either, so it may still be on the bridge's default VLAN: {}",
                     nic.getMac(), vmName, e.getMessage());
         }

@@ -50,6 +50,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.alert.PostMigrationAlerts;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.hypervisor.KVMGuru;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -3403,16 +3404,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void alertPostMigrationFailure(VMInstanceVO vm, String dstHostUuid, String details) {
-        AlertManager.AlertType alertType = AlertManager.AlertType.ALERT_TYPE_USERVM_MIGRATE;
-        if (VirtualMachine.Type.DomainRouter.equals(vm.getType())) {
-            alertType = AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER_MIGRATE;
-        } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-            alertType = AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY_MIGRATE;
-        }
-        _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
-                String.format("Post-migration tasks failed for VM %s on destination host %s.", vm.getInstanceName(), dstHostUuid),
-                String.format("Post-migration tasks failed: %s. VM network/storage configuration on the destination may be incomplete. "
-                        + "A VLAN trunk nic whose VLAN membership could not be applied has its link set down; restart the VM to apply it.", details));
+        PostMigrationAlerts.sendFailureAlert(_alertMgr, vm.getType(), vm.getDataCenterId(), vm.getPodIdToDeployIn(), vm.getInstanceName(), dstHostUuid, details);
     }
 
     /**

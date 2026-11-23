@@ -34,6 +34,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.alert.PostMigrationAlerts;
+import com.cloud.alert.AlertManager;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
@@ -126,6 +128,8 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
     private HostDetailsDao hostDetailsDao;
     @Inject
     private NicDao nicDao;
+    @Inject
+    private AlertManager alertMgr;
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
 
@@ -560,7 +564,8 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException(errMsg);
             }
 
-            VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, destHost.getId(), nicDao, hostDetailsDao, _agentManager::send, logger);
+            alertOnPostMigrationFailure(vmTO, destHost, VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(
+                    vmTO, destHost.getId(), nicDao, hostDetailsDao, _agentManager::send, logger));
         } catch (AgentUnavailableException | OperationTimedoutException | CloudRuntimeException ex) {
             errMsg = String.format(
                     "Copy volume(s) of VM [%s] to storage(s) [%s] and VM to host [%s] failed in LinstorDataMotionStrategy.copyAsync. Error message: [%s].",
@@ -583,6 +588,12 @@ public class LinstorDataMotionStrategy implements DataMotionStrategy {
             CopyCommandResult result = new CopyCommandResult(null, copyCmdAnswer);
             result.setResult(errMsg);
             callback.complete(result);
+        }
+    }
+
+    private void alertOnPostMigrationFailure(VirtualMachineTO vmTO, Host destHost, String failure) {
+        if (failure != null) {
+            PostMigrationAlerts.sendFailureAlert(alertMgr, vmTO.getType(), destHost.getDataCenterId(), destHost.getPodId(), vmTO.getName(), destHost.getUuid(), failure);
         }
     }
 }

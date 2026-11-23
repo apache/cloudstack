@@ -106,7 +106,7 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
                 }
             }
             if (linkDownUntilVlansApplied) {
-                interfaceDef.setLinkStateUp(true);
+                interfaceDef.setLinkStateUp(nic.isEnabled());
                 vm.updateDeviceFlags(interfaceDef.toString(), Domain.DeviceModifyFlags.LIVE);
             }
 

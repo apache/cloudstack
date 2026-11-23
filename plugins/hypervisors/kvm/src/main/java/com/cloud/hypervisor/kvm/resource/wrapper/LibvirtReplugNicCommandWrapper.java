@@ -91,7 +91,7 @@ public final class LibvirtReplugNicCommandWrapper extends CommandWrapper<ReplugN
                 newVifDriver.ensureVlanTrunkMembership(liveInterface, nic);
             }
 
-            interfaceDef.setLinkStateUp(true);
+            interfaceDef.setLinkStateUp(nic.isEnabled());
             logger.debug("ReplugNic: Updating interface" + interfaceDef);
             vm.updateDeviceFlags(interfaceDef.toString(), DomainAffect.LIVE.getValue());
 

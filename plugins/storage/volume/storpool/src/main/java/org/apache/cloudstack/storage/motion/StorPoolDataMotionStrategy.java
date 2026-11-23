@@ -19,6 +19,8 @@
 
 package org.apache.cloudstack.storage.motion;
 
+import com.cloud.alert.PostMigrationAlerts;
+import com.cloud.alert.AlertManager;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -127,6 +129,8 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
     private HostDetailsDao hostDetailsDao;
     @Inject
     private NicDao nicDao;
+    @Inject
+    private AlertManager alertMgr;
     @Inject
     private SnapshotDetailsDao _snapshotDetailsDao;
     @Inject
@@ -389,7 +393,8 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
             handlePostMigration(success, srcVolumeInfoToDestVolumeInfo, vmTO, destHost);
 
             if (success) {
-                VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, destHost.getId(), nicDao, hostDetailsDao, _agentManager::send, logger);
+                alertOnPostMigrationFailure(vmTO, destHost, VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(
+                        vmTO, destHost.getId(), nicDao, hostDetailsDao, _agentManager::send, logger));
             }
 
             if (migrateAnswer == null) {
@@ -596,5 +601,11 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
         return new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(),
                 MigrateCommand.MigrateDiskInfo.DiskType.BLOCK, MigrateCommand.MigrateDiskInfo.DriverType.RAW,
                 MigrateCommand.MigrateDiskInfo.Source.DEV, destPath);
+    }
+
+    private void alertOnPostMigrationFailure(VirtualMachineTO vmTO, Host destHost, String failure) {
+        if (failure != null) {
+            PostMigrationAlerts.sendFailureAlert(alertMgr, vmTO.getType(), destHost.getDataCenterId(), destHost.getPodId(), vmTO.getName(), destHost.getUuid(), failure);
+        }
     }
 }

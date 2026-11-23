@@ -1335,8 +1335,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         DetailVO vlanFilteringDetail = _hostDetailsDao.findDetail(vm.getHostId(), Host.HOST_VLAN_FILTERING_ENABLED);
         boolean vlanFilteringEnabled = vlanFilteringDetail != null && Boolean.parseBoolean(vlanFilteringDetail.getValue());
+        boolean sharedVlanBridgeEnabled = NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(vm.getDataCenterId());
         for (NicVO nic : _nicDao.listByVmId(vm.getId())) {
-            if (VlanTrunkMigrationHelper.nicNeedsManualVlanMembership(nic, vlanFilteringEnabled)) {
+            if (VlanTrunkMigrationHelper.nicNeedsManualVlanMembership(nic, vlanFilteringEnabled, sharedVlanBridgeEnabled)) {
                 updateLiveVlanTrunkMembership(vm, nic);
             }
         }

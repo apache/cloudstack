@@ -6383,6 +6383,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
+    // A plain VLAN nic plugged while multi.network.nic.enabled was on stays on the shared VLAN-aware bridge after the setting is turned off,
+    // but its VLAN membership is then no longer managed.
+    public void warnIfNicOnVlanAwareBridgeDespiteOptOut(InterfaceDef liveInterface, NicTO nic, String vmName) {
+        if (nic.getBroadcastType() != BroadcastDomainType.Vlan || nic.isTrunkVlan() || nic.isSharedVlanBridgeEnabled()
+                || StringUtils.isBlank(liveInterface.getBrName()) || !isBridgeVlanFilteringEnabled(liveInterface.getBrName())) {
+            return;
+        }
+        LOGGER.warn("Nic {} of VM {} is on the VLAN-aware guest bridge {} although multi.network.nic.enabled is off for its zone, because it was plugged while the "
+                + "setting was on. Its VLAN membership is no longer managed, so after a migration or a memory snapshot revert it may sit on the bridge's default VLAN. "
+                + "Restart the VM to move it to a dedicated per-VLAN bridge.", nic.getMac(), vmName, liveInterface.getBrName());
+    }
+
     public void setGuestTrafficLabel(String guestTrafficLabel) {
         this.guestTrafficLabel = guestTrafficLabel;
     }
@@ -6392,7 +6404,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return StringUtils.isNotBlank(guestTrafficLabel) ? guestTrafficLabel : guestBridgeName;
     }
 
-    protected boolean isBridgeVlanFilteringEnabled(String bridgeName) {
+    public boolean isBridgeVlanFilteringEnabled(String bridgeName) {
         if (StringUtils.isBlank(bridgeName)) {
             return false;
         }

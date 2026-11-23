@@ -32,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import com.cloud.alert.PostMigrationAlerts;
+import com.cloud.alert.AlertManager;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
@@ -185,6 +187,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private HostDetailsDao hostDetailsDao;
     @Inject
     private NicDao nicDao;
+    @Inject
+    private AlertManager alertMgr;
     @Inject
     protected PrimaryDataStoreDao _storagePoolDao;
     @Inject
@@ -2235,7 +2239,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             handlePostMigration(success, srcVolumeInfoToDestVolumeInfo, vmTO, srcHost, destHost);
 
             if (success) {
-                VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, destHost.getId(), nicDao, hostDetailsDao, agentManager::send, logger);
+                alertOnPostMigrationFailure(vmTO, destHost, VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(
+                        vmTO, destHost.getId(), nicDao, hostDetailsDao, agentManager::send, logger));
             }
 
             if (!success) {
@@ -3390,4 +3395,10 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         return supportedTypes.contains(storagePoolTypeToValidate);
     };
+
+    private void alertOnPostMigrationFailure(VirtualMachineTO vmTO, Host destHost, String failure) {
+        if (failure != null) {
+            PostMigrationAlerts.sendFailureAlert(alertMgr, vmTO.getType(), destHost.getDataCenterId(), destHost.getPodId(), vmTO.getName(), destHost.getUuid(), failure);
+        }
+    }
 }

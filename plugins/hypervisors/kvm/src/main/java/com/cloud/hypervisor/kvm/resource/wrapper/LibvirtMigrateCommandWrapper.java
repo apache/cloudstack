@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.concurrent.TimeoutException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -97,6 +99,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
     private static final String GRAPHICS_ELEM_END = "/graphics>";
     private static final String GRAPHICS_ELEM_START = "<graphics";
+    // quote style differs between libvirt's own XML (single) and XML re-serialized by an earlier rewrite step (double)
+    private static final Pattern LINK_DOWN_ELEMENT = Pattern.compile("<link\\s+state\\s*=\\s*['\"]down['\"]");
     private static final String CONTENTS_WILDCARD = "(?s).*";
     private static final String CDROM_LABEL = "hdc";
 
@@ -235,6 +239,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
 
             xmlDesc = replaceVlanTrunkInterfaces(xmlDesc, command, libvirtComputingResource);
+
+            xmlDesc = restoreCutOffNicLinks(xmlDesc, command, vmName);
+
+            warnAboutNicsOnVlanAwareBridgeDespiteOptOut(ifaces, command, libvirtComputingResource, vmName);
 
             xmlDesc = updateVmSharesIfNeeded(command, xmlDesc, libvirtComputingResource);
 
@@ -696,6 +704,66 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     }
 
     // Trunk nics always need it; ordinary nics only when the zone opted in to the shared VLAN-aware bridge
+    // A VLAN nic cut off by a failed post-migration is link-down in the source XML, which migration carries to the destination. Where the
+    // destination applies no VLAN membership by hand (libvirt does it from the XML, or it has dedicated per-VLAN bridges) nothing would ever bring
+    // the link back, so an enabled nic arrives up. Where the post-migration command will run it must stay down until that has applied the VLANs,
+    // so the nic is not exposed on VLAN 1 meanwhile. Other nics are left as they are.
+    protected String restoreCutOffNicLinks(String xmlDesc, MigrateCommand command, String vmName)
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO[] nics = command.getVirtualMachine().getNics();
+        if (!destinationAppliesNoManualVlanMembership(command) || !LINK_DOWN_ELEMENT.matcher(xmlDesc).find() || nics == null
+                || Arrays.stream(nics).noneMatch(this::isEnabledVlanNic)) {
+            return xmlDesc;
+        }
+        Document doc = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder().parse(IOUtils.toInputStream(xmlDesc));
+        boolean restored = false;
+        NodeList interfaces = doc.getElementsByTagName("interface");
+        for (int i = 0; i < interfaces.getLength(); i++) {
+            Element interfaceElement = (Element) interfaces.item(i);
+            String mac = findInterfaceMacAddress(interfaceElement);
+            NicTO nic = mac == null ? null : findNicByMac(nics, mac);
+            if (nic != null && isEnabledVlanNic(nic) && setLinkUp(interfaceElement)) {
+                logger.info("The link of nic {} of VM {} is down on the source; it is set up in the destination definition because the nic is enabled", mac, vmName);
+                restored = true;
+            }
+        }
+        return restored ? LibvirtXMLParser.getXml(doc) : xmlDesc;
+    }
+
+    private void warnAboutNicsOnVlanAwareBridgeDespiteOptOut(List<InterfaceDef> liveInterfaces, MigrateCommand command,
+            LibvirtComputingResource libvirtComputingResource, String vmName) {
+        NicTO[] nics = command.getVirtualMachine().getNics();
+        if (nics == null) {
+            return;
+        }
+        for (InterfaceDef liveInterface : liveInterfaces) {
+            NicTO nic = liveInterface.getMacAddress() == null ? null : findNicByMac(nics, liveInterface.getMacAddress());
+            if (nic != null) {
+                libvirtComputingResource.warnIfNicOnVlanAwareBridgeDespiteOptOut(liveInterface, nic, vmName);
+            }
+        }
+    }
+
+    private boolean destinationAppliesNoManualVlanMembership(MigrateCommand command) {
+        return Boolean.TRUE.equals(command.getDestVlanTrunkXmlSupported()) || Boolean.FALSE.equals(command.getDestVlanFilteringEnabled());
+    }
+
+    private boolean isEnabledVlanNic(NicTO nic) {
+        return nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && nic.isEnabled();
+    }
+
+    private boolean setLinkUp(Element interfaceElement) {
+        NodeList links = interfaceElement.getElementsByTagName("link");
+        for (int i = 0; i < links.getLength(); i++) {
+            Element link = (Element) links.item(i);
+            if ("down".equals(link.getAttribute("state"))) {
+                link.setAttribute("state", "up");
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean needsVlanRewrite(NicTO nic, boolean sourceVlanFilteringEnabled, boolean destVlanFilteringEnabled) {
         return nic.isTrunkVlan() || (nic.isSharedVlanBridgeEnabled() && (sourceVlanFilteringEnabled || destVlanFilteringEnabled));
     }
