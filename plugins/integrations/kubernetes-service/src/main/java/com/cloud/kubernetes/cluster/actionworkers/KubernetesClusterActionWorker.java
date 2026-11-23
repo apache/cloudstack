@@ -84,6 +84,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor;
@@ -379,6 +380,9 @@ public class KubernetesClusterActionWorker {
         if (e == null) {
             throw new CloudRuntimeException(message);
         }
+        if (e instanceof InvalidParameterValueException && StringUtils.isNotBlank(e.getMessage()) && !message.contains(e.getMessage())) {
+            throw new CloudRuntimeException(String.format("%s: %s", message, e.getMessage()), e);
+        }
         throw new CloudRuntimeException(message, e);
     }
 
@@ -392,6 +396,15 @@ public class KubernetesClusterActionWorker {
 
     protected void logAndThrow(final Level logLevel, final String message, final Exception ex) throws CloudRuntimeException {
         logTransitStateAndThrow(logLevel, message, null, null, ex);
+    }
+
+    protected void validateNodeUserDataLength(final String base64UserData, final KubernetesClusterNodeType nodeType) {
+        int maxLength = UserDataManager.VM_USERDATA_MAX_LENGTH.value();
+        if (base64UserData.length() > maxLength) {
+            throw new InvalidParameterValueException(String.format("User data for %s node of Kubernetes cluster %s is %d bytes after base64 encoding, over %s (%d). Raise %s.",
+                    nodeType.name().toLowerCase(), kubernetesCluster.getName(), base64UserData.length(), UserDataManager.VM_USERDATA_MAX_LENGTH_STRING, maxLength,
+                    UserDataManager.VM_USERDATA_MAX_LENGTH_STRING));
+        }
     }
 
     protected File getManagementServerSshPublicKeyFile() {

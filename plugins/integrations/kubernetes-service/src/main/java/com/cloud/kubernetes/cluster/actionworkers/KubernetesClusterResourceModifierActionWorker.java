@@ -422,6 +422,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
 
         String base64UserData = Base64.encodeBase64String(k8sNodeConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
+        validateNodeUserDataLength(base64UserData, WORKER);
         List<String> keypairs = new ArrayList<String>();
         if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
             keypairs.add(kubernetesCluster.getKeyPair());
