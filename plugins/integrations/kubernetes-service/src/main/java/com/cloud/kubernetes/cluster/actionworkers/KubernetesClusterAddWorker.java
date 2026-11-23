@@ -238,6 +238,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             userVmManager.updateVirtualMachine(nodeId, null, null, null, null,
                     null, null, base64UserData, null, null, null,
                     BaseCmd.HTTPMethod.POST, null, null, null, null, null);
+            resetNodeProvisioningState(userVmDao.findById(nodeId), publicIp, sshKeyFile, sshStartPort);
 
             RebootVMCmd rebootVMCmd = new RebootVMCmd();
             Field idField = rebootVMCmd.getClass().getDeclaredField("id");
@@ -292,21 +293,32 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             logger.error(String.format("Failed to validate node with ID: %s", nodeId), e);
             return false;
         }
-        UserVmVO userVm = userVmDao.findById(nodeId);
-        cleanupCloudInitSemFolder(userVm, publicIp, pkFile, nodeSshPort);
         return true;
     }
 
-    private void cleanupCloudInitSemFolder(UserVm userVm, IpAddress publicIp, File pkFile, int nodeSshPort) {
+    /**
+     * Clears the previous user data run, and any earlier cluster join: a VM removed from a cluster keeps
+     * /home/cloud/success, which makes the join scripts exit early, and kubeadm state if it wasn't reset.
+     */
+    protected String getNodeProvisioningResetCommand(UserVm userVm) {
+        return String.format("sudo rm -rf /var/lib/cloud/instances/%s/sem/* && sudo rm -f /home/cloud/success && " +
+                "{ sudo systemctl stop deploy-kube-system 2>/dev/null; " +
+                "sudo umount /mnt/k8sdisk 2>/dev/null; mountpoint -q /mnt/k8sdisk || sudo rm -rf /mnt/k8sdisk; sudo rm -rf /aux-dwnld; " +
+                "sudo systemctl disable --now kubelet 2>/dev/null; " +
+                "if PATH=$PATH:/opt/bin command -v kubeadm >/dev/null; then " +
+                "sudo env PATH=$PATH:/opt/bin kubeadm reset -f; fi; }", userVm.getUuid());
+    }
+
+    protected void resetNodeProvisioningState(UserVm userVm, IpAddress publicIp, File pkFile, int nodeSshPort) {
         try {
-            String command = String.format("sudo rm -rf /var/lib/cloud/instances/%s/sem/*", userVm.getUuid());
             Pair<Boolean, String> result = SshHelper.sshExecute(publicIp.getAddress().addr(), nodeSshPort, getControlNodeLoginUser(),
-                    pkFile, null, command, 10000, 10000, 10 * 60 * 1000);
+                    pkFile, null, getNodeProvisioningResetCommand(userVm), 10000, 10000, 10 * 60 * 1000);
             if (Boolean.FALSE.equals(result.first())) {
-                logger.error(String.format("Failed to cleanup previous applied userdata on node: %s; This may hamper to addition of the node to the cluster ", userVm.getName()));
+                logger.error(String.format("Failed to reset previous provisioning on node: %s; this may prevent it from joining the cluster: %s",
+                        userVm.getName(), result.second()));
             }
         } catch (Exception e) {
-            logger.error(String.format("Failed to cleanup previous applied userdata on node: %s; This may hamper to addition of the node to the cluster ", userVm.getName()), e);
+            logger.error(String.format("Failed to reset previous provisioning on node: %s; this may prevent it from joining the cluster", userVm.getName()), e);
         }
     }
 

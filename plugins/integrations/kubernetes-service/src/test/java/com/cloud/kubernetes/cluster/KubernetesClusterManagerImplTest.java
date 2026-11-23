@@ -44,7 +44,9 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
@@ -102,6 +104,9 @@ public class KubernetesClusterManagerImplTest {
 
     @Mock
     private ServiceOfferingDao serviceOfferingDao;
+
+    @Mock
+    private NicDao nicDao;
 
     @Spy
     @InjectMocks
@@ -295,6 +300,65 @@ public class KubernetesClusterManagerImplTest {
         Mockito.when(kubernetesClusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
         Mockito.when(kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(1L, vmIds)).thenReturn(Collections.emptyList());
         Assert.assertTrue(kubernetesClusterManager.addVmsToCluster(cmd));
+    }
+
+    private void mockNodeForAdd(long vmId, long networkId) {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(vm.getTemplateId()).thenReturn(10L);
+        Mockito.when(template.isForCks()).thenReturn(true);
+        Mockito.when(nic.getNetworkId()).thenReturn(networkId);
+        Mockito.when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+        Mockito.when(templateDao.findById(10L)).thenReturn(template);
+        Mockito.when(nicDao.findDefaultNicForVM(vmId)).thenReturn(nic);
+    }
+
+    @Test
+    public void validateNodesAcceptsNodeNotInAnyCluster() {
+        mockNodeForAdd(1L, 5L);
+        Mockito.when(kubernetesClusterVmMapDao.listByVmId(1L)).thenReturn(Collections.emptyList());
+        Assert.assertEquals(List.of(1L), kubernetesClusterManager.validateNodes(List.of(1L), 5L, "net", false));
+    }
+
+    @Test
+    public void validateNodesRejectsNodeInAnotherCluster() {
+        mockNodeForAdd(1L, 5L);
+        KubernetesClusterVmMapVO map = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(map.getClusterId()).thenReturn(7L);
+        Mockito.when(kubernetesClusterVmMapDao.listByVmId(1L)).thenReturn(List.of(map));
+        Mockito.when(kubernetesClusterDao.findById(7L)).thenReturn(Mockito.mock(KubernetesClusterVO.class));
+        Assert.assertTrue(kubernetesClusterManager.validateNodes(List.of(1L), 5L, "net", false).isEmpty());
+    }
+
+    @Test
+    public void validateNodesAcceptsNodeMappedToRemovedCluster() {
+        mockNodeForAdd(1L, 5L);
+        KubernetesClusterVmMapVO map = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(map.getClusterId()).thenReturn(7L);
+        Mockito.when(kubernetesClusterVmMapDao.listByVmId(1L)).thenReturn(List.of(map));
+        Mockito.when(kubernetesClusterDao.findById(7L)).thenReturn(null);
+        Assert.assertEquals(List.of(1L), kubernetesClusterManager.validateNodes(List.of(1L), 5L, "net", false));
+    }
+
+    @Test
+    public void validateNodesRejectsNodeWithLiveMappingBehindStaleOne() {
+        mockNodeForAdd(1L, 5L);
+        KubernetesClusterVmMapVO stale = Mockito.mock(KubernetesClusterVmMapVO.class);
+        KubernetesClusterVmMapVO live = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(stale.getClusterId()).thenReturn(7L);
+        Mockito.when(live.getClusterId()).thenReturn(8L);
+        Mockito.when(kubernetesClusterVmMapDao.listByVmId(1L)).thenReturn(List.of(stale, live));
+        Mockito.when(kubernetesClusterDao.findById(7L)).thenReturn(null);
+        Mockito.when(kubernetesClusterDao.findById(8L)).thenReturn(Mockito.mock(KubernetesClusterVO.class));
+        Assert.assertTrue(kubernetesClusterManager.validateNodes(List.of(1L), 5L, "net", false).isEmpty());
+    }
+
+    @Test
+    public void validateNodesDropsDuplicateIds() {
+        mockNodeForAdd(1L, 5L);
+        Mockito.when(kubernetesClusterVmMapDao.listByVmId(1L)).thenReturn(Collections.emptyList());
+        Assert.assertEquals(List.of(1L), kubernetesClusterManager.validateNodes(Arrays.asList(1L, 1L), 5L, "net", false));
     }
 
     @Test

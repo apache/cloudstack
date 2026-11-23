@@ -66,6 +66,13 @@ public class KubernetesClusterVmMapDaoImpl extends GenericDaoBase<KubernetesClus
     }
 
     @Override
+    public List<KubernetesClusterVmMapVO> listByVmId(long vmId) {
+        SearchCriteria<KubernetesClusterVmMapVO> sc = vmIdSearch.create();
+        sc.setParameters("vmId", vmId);
+        return listBy(sc);
+    }
+
+    @Override
     public List<KubernetesClusterVmMapVO> listByClusterIdAndVmIdsIn(long clusterId, List<Long> vmIds) {
         SearchCriteria<KubernetesClusterVmMapVO> sc = clusterIdSearch.create();
         sc.setParameters("clusterId", clusterId);
