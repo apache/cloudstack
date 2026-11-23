@@ -19,7 +19,9 @@
 package org.apache.cloudstack.oauth2.oidc;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -43,6 +45,7 @@ import org.apache.cxf.rs.security.jose.jwk.JwkUtils;
 import org.apache.cxf.rs.security.jose.jws.JwsJwtCompactConsumer;
 import org.apache.cxf.rs.security.jose.jwt.JwtClaims;
 import org.apache.cxf.rs.security.jose.jwt.JwtUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -52,7 +55,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -77,8 +79,9 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
     private static final String DISCOVERY_PATH = "/.well-known/openid-configuration";
     private static final int CLOCK_SKEW_SECONDS = 60;
     private static final long METADATA_CACHE_MINUTES = 60;
-    private static final long VERIFIED_EMAIL_CACHE_SECONDS = 60;
+    private static final long VERIFIED_EMAIL_CACHE_SECONDS = 300;
     private static final int HTTP_TIMEOUT_MILLIS = 10000;
+    private static final int MAX_RESPONSE_BYTES = 1024 * 1024;
 
     @Inject
     OauthProviderDao oauthProviderDao;
@@ -182,6 +185,18 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
         return validateAndExtractEmail(idToken, registration, metadata);
     }
 
+    /**
+     * Validate an issuer URL at provider registration: confirm it uses https (or loopback), that its
+     * discovery document is reachable, and that the document names the same issuer, so a bad issuer fails
+     * at registration instead of silently at the first login.
+     */
+    public void validateIssuer(String issuerUrl) {
+        if (StringUtils.isBlank(issuerUrl)) {
+            throw new CloudRuntimeException("An issuer URL is required for an oidc provider");
+        }
+        discover(StringUtils.trim(issuerUrl));
+    }
+
     @Override
     public String getUserEmailAddress() throws CloudRuntimeException {
         return null;
@@ -212,10 +227,12 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
     }
 
     protected OIDCMetadata discover(String issuerUrl) {
+        requireHttps(issuerUrl, "issuer URL");
         String document = httpGet(StringUtils.removeEnd(issuerUrl, "/") + DISCOVERY_PATH,
                 String.format("Unable to read the OpenID Connect discovery document from %s", issuerUrl));
 
-        JsonObject json = JsonParser.parseString(document).getAsJsonObject();
+        JsonObject json = asJsonObject(document,
+                String.format("The discovery document at %s is not a JSON object", issuerUrl));
         String issuer = readString(json, "issuer");
         String tokenEndpoint = readString(json, "token_endpoint");
         String jwksUri = readString(json, "jwks_uri");
@@ -226,6 +243,8 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
         if (!StringUtils.removeEnd(issuer, "/").equals(StringUtils.removeEnd(issuerUrl, "/"))) {
             throw new CloudRuntimeException(String.format("The discovery document at %s names a different issuer: %s", issuerUrl, issuer));
         }
+        requireHttps(tokenEndpoint, "token endpoint");
+        requireHttps(jwksUri, "JWKS URI");
 
         return new OIDCMetadata(issuer, readString(json, "authorization_endpoint"), tokenEndpoint, jwksUri);
     }
@@ -248,15 +267,17 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
         }
 
         try (CloseableHttpResponse response = httpClient.execute(post)) {
-            String body = EntityUtils.toString(response.getEntity());
+            String body = readBody(response);
             if (response.getStatusLine().getStatusCode() != 200) {
-                logger.warn("{} returned an error during the token exchange: {}", provider.getProvider(), body);
+                logger.warn("{} rejected the token exchange with HTTP {}", provider.getProvider(),
+                        response.getStatusLine().getStatusCode());
                 throw new CloudRuntimeException(String.format("The %s identity provider rejected the token exchange", provider.getProvider()));
             }
 
-            JsonElement fetchedIdToken = JsonParser.parseString(body).getAsJsonObject().get("id_token");
-            if (fetchedIdToken == null) {
-                throw new CloudRuntimeException("No id_token found in token");
+            JsonObject json = asJsonObject(body, "The token endpoint response is not a JSON object");
+            JsonElement fetchedIdToken = json.get("id_token");
+            if (fetchedIdToken == null || !fetchedIdToken.isJsonPrimitive()) {
+                throw new CloudRuntimeException("No id_token found in the token endpoint response");
             }
             return fetchedIdToken.getAsString();
         } catch (IOException e) {
@@ -273,12 +294,11 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
         if (!metadata.getIssuer().equals(claims.getIssuer())) {
             throw new CloudAuthenticationException("Issuer mismatch");
         }
-        if (!claims.getAudiences().contains(provider.getClientId())) {
-            throw new CloudAuthenticationException("Audience mismatch");
-        }
-        JwtUtils.validateJwtExpiry(claims, CLOCK_SKEW_SECONDS, true);
+        validateAudience(claims, provider.getClientId());
+        validateTokenTime(claims);
 
-        String email = (String) claims.getClaim("email");
+        Object emailClaim = claims.getClaim("email");
+        String email = emailClaim instanceof String ? (String) emailClaim : null;
         if (StringUtils.isBlank(email)) {
             throw new CloudAuthenticationException("The id_token carries no email claim");
         }
@@ -292,6 +312,40 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
                     OAuth2AuthManager.OIDCRequireVerifiedEmail.key()));
         }
         return email;
+    }
+
+    /**
+     * Validate the audience per OIDC core 3.1.3.7: the registered client must be an audience, and when the
+     * token lists more than one audience the authorized party (azp) must be present and must be this client.
+     * If azp is present at all it must match, so a token minted for another relying party on the same issuer
+     * cannot be replayed here.
+     */
+    private void validateAudience(JwtClaims claims, String clientId) {
+        List<String> audiences = claims.getAudiences();
+        if (audiences == null || !audiences.contains(clientId)) {
+            throw new CloudAuthenticationException("Audience mismatch");
+        }
+        Object azp = claims.getClaim("azp");
+        if (audiences.size() > 1 && azp == null) {
+            throw new CloudAuthenticationException("The id_token has multiple audiences but no authorized party (azp)");
+        }
+        if (azp != null && !clientId.equals(azp)) {
+            throw new CloudAuthenticationException("The authorized party (azp) does not match the registered client");
+        }
+    }
+
+    private void validateTokenTime(JwtClaims claims) {
+        try {
+            JwtUtils.validateJwtExpiry(claims, CLOCK_SKEW_SECONDS, true);
+        } catch (CloudAuthenticationException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new CloudAuthenticationException("The id_token has expired or carries no expiry");
+        }
+        Long notBefore = claims.getNotBefore();
+        if (notBefore != null && notBefore > (System.currentTimeMillis() / 1000L) + CLOCK_SKEW_SECONDS) {
+            throw new CloudAuthenticationException("The id_token is not valid yet");
+        }
     }
 
     private Boolean emailVerifiedClaim(JwtClaims claims) {
@@ -351,7 +405,20 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
         if (algorithm == null) {
             throw new CloudAuthenticationException("The id_token does not name a signature algorithm");
         }
+        if (!isAsymmetricSignature(algorithm)) {
+            throw new CloudAuthenticationException("Unsupported id_token signature algorithm: " + algorithm.getJwaName());
+        }
         return algorithm;
+    }
+
+    /**
+     * Only asymmetric signatures (RSA, RSA-PSS, ECDSA) are accepted for an id_token verified against a
+     * published JWKS. Rejecting HMAC (HS*) and "none" closes the RS256 to HS256 key-confusion attack where
+     * a token is HMAC-signed with the public key as the secret.
+     */
+    private boolean isAsymmetricSignature(SignatureAlgorithm algorithm) {
+        String name = algorithm.getJwaName();
+        return name != null && (name.startsWith("RS") || name.startsWith("PS") || name.startsWith("ES"));
     }
 
     protected JsonWebKeys readJwkSet(String jwksUri) {
@@ -365,15 +432,83 @@ public class GenericOIDCOAuth2Provider extends AdapterBase implements UserOAuth2
 
     protected String httpGet(String url, String failureMessage) {
         try (CloseableHttpResponse response = httpClient.execute(new HttpGet(url))) {
-            String body = EntityUtils.toString(response.getEntity());
+            String body = readBody(response);
             if (response.getStatusLine().getStatusCode() != 200) {
-                logger.warn("{} (HTTP {}): {}", failureMessage, response.getStatusLine().getStatusCode(), body);
+                logger.warn("{} (HTTP {})", failureMessage, response.getStatusLine().getStatusCode());
                 throw new CloudRuntimeException(failureMessage);
             }
             return body;
         } catch (IOException e) {
             throw new CloudRuntimeException(failureMessage, e);
         }
+    }
+
+    /**
+     * Read a response body with a hard size cap so a hostile or misbehaving identity provider cannot
+     * exhaust management-server memory by streaming an unbounded body.
+     */
+    private String readBody(CloseableHttpResponse response) throws IOException {
+        HttpEntity entity = response.getEntity();
+        if (entity == null) {
+            return "";
+        }
+        if (entity.getContentLength() > MAX_RESPONSE_BYTES) {
+            throw new CloudRuntimeException("The identity provider response is too large");
+        }
+        byte[] buffer = new byte[MAX_RESPONSE_BYTES + 1];
+        int total = 0;
+        try (InputStream in = entity.getContent()) {
+            int read;
+            while (total <= MAX_RESPONSE_BYTES && (read = in.read(buffer, total, buffer.length - total)) != -1) {
+                total += read;
+            }
+        }
+        if (total > MAX_RESPONSE_BYTES) {
+            throw new CloudRuntimeException("The identity provider response is too large");
+        }
+        return new String(buffer, 0, total, StandardCharsets.UTF_8);
+    }
+
+    private JsonObject asJsonObject(String body, String failureMessage) {
+        try {
+            JsonElement element = JsonParser.parseString(body);
+            if (!element.isJsonObject()) {
+                throw new CloudRuntimeException(failureMessage);
+            }
+            return element.getAsJsonObject();
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new CloudRuntimeException(failureMessage);
+        }
+    }
+
+    /**
+     * Require that an OIDC endpoint uses https, so the client secret is never POSTed in cleartext and a
+     * tampered discovery document cannot redirect the management server to an internal http target. Loopback
+     * is allowed for development.
+     */
+    private void requireHttps(String url, String what) {
+        if (StringUtils.isBlank(url) || url.toLowerCase().startsWith("https://") || !isHttpsRequired()) {
+            return;
+        }
+        if (url.toLowerCase().startsWith("http://")) {
+            String host;
+            try {
+                host = URI.create(url).getHost();
+            } catch (IllegalArgumentException e) {
+                throw new CloudRuntimeException(String.format("The %s is not a valid URL: %s", what, url));
+            }
+            if ("localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host) || "::1".equals(host) || "[::1]".equals(host)) {
+                return;
+            }
+        }
+        throw new CloudRuntimeException(String.format("The %s must use https: %s (set %s to false to allow http)",
+                what, url, OAuth2AuthManager.OIDCRequireHttps.key()));
+    }
+
+    protected boolean isHttpsRequired() {
+        return Boolean.TRUE.equals(OAuth2AuthManager.OIDCRequireHttps.value());
     }
 
     private String readString(JsonObject json, String member) {

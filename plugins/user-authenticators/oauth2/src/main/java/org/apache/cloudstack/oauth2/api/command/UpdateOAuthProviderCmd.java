@@ -40,7 +40,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.domain.Domain;
 
 @APICommand(name = "updateOauthProvider", description = "Updates the registered OAuth provider details", responseObject = OauthProviderResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = true, since = "4.19.0")
 public final class UpdateOAuthProviderCmd extends BaseCmd {
 
 

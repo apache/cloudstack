@@ -46,6 +46,11 @@ public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableS
             "When set to false for a trusted identity provider that does not send the claim (such as Microsoft Entra ID), an id_token without the claim is accepted, " +
             "but one that explicitly marks the email as not verified is always rejected. This can be configured at domain level.", true, ConfigKey.Scope.Domain);
 
+    public static final ConfigKey<Boolean> OIDCRequireHttps = new ConfigKey<Boolean>("Advanced", Boolean.class, "oauth2.oidc.require.https", "true",
+            "For the generic OIDC provider, require the issuer, token and JWKS endpoints to use https (loopback addresses are always allowed). " +
+            "Keep this enabled in production so the client secret is never sent in cleartext and a tampered discovery document cannot redirect the " +
+            "management server to a plain http target. Set to false only for a trusted lab identity provider served over http.", true, ConfigKey.Scope.Global);
+
     /**
      * Lists user OAuth2 provider plugins
      * @return list of providers

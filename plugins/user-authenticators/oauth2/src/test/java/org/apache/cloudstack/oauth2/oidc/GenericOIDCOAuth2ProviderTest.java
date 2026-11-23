@@ -499,6 +499,114 @@ public class GenericOIDCOAuth2ProviderTest {
         }
     }
 
+    private long future() {
+        return System.currentTimeMillis() / 1000L + 3600;
+    }
+
+    private String token(String bodyJson) {
+        Base64.Encoder enc = Base64.getUrlEncoder().withoutPadding();
+        String header = "{\"alg\":\"RS256\",\"kid\":\"key-1\"}";
+        return enc.encodeToString(header.getBytes(StandardCharsets.UTF_8)) + "."
+                + enc.encodeToString(bodyJson.getBytes(StandardCharsets.UTF_8)) + ".sig";
+    }
+
+    @Test
+    public void testMultiAudienceWithMatchingAzpIsAccepted() {
+        doNothing().when(provider).verifySignature(any(), any(), any());
+        String body = "{\"iss\":\"" + ISSUER + "\",\"aud\":[\"" + CLIENT_ID + "\",\"other\"],\"azp\":\"" + CLIENT_ID
+                + "\",\"email\":\"user@example.com\",\"email_verified\":true,\"exp\":" + future() + "}";
+        assertEquals("user@example.com", provider.validateAndExtractEmail(token(body), registration, metadata()));
+    }
+
+    @Test(expected = CloudAuthenticationException.class)
+    public void testMultiAudienceWithoutAzpIsRejected() {
+        doNothing().when(provider).verifySignature(any(), any(), any());
+        String body = "{\"iss\":\"" + ISSUER + "\",\"aud\":[\"" + CLIENT_ID + "\",\"other\"],"
+                + "\"email\":\"user@example.com\",\"email_verified\":true,\"exp\":" + future() + "}";
+        provider.validateAndExtractEmail(token(body), registration, metadata());
+    }
+
+    @Test(expected = CloudAuthenticationException.class)
+    public void testAuthorizedPartyForAnotherClientIsRejected() {
+        doNothing().when(provider).verifySignature(any(), any(), any());
+        String body = "{\"iss\":\"" + ISSUER + "\",\"aud\":[\"" + CLIENT_ID + "\"],\"azp\":\"other\","
+                + "\"email\":\"user@example.com\",\"email_verified\":true,\"exp\":" + future() + "}";
+        provider.validateAndExtractEmail(token(body), registration, metadata());
+    }
+
+    @Test(expected = CloudAuthenticationException.class)
+    public void testTokenWithoutAudienceIsRejected() {
+        doNothing().when(provider).verifySignature(any(), any(), any());
+        String body = "{\"iss\":\"" + ISSUER + "\",\"email\":\"user@example.com\",\"email_verified\":true,\"exp\":" + future() + "}";
+        provider.validateAndExtractEmail(token(body), registration, metadata());
+    }
+
+    @Test(expected = CloudAuthenticationException.class)
+    public void testNonStringEmailClaimIsRejected() {
+        doNothing().when(provider).verifySignature(any(), any(), any());
+        String body = "{\"iss\":\"" + ISSUER + "\",\"aud\":[\"" + CLIENT_ID + "\"],\"email\":12345,"
+                + "\"email_verified\":true,\"exp\":" + future() + "}";
+        provider.validateAndExtractEmail(token(body), registration, metadata());
+    }
+
+    @Test(expected = CloudAuthenticationException.class)
+    public void testTokenNotYetValidIsRejected() {
+        doNothing().when(provider).verifySignature(any(), any(), any());
+        String body = "{\"iss\":\"" + ISSUER + "\",\"aud\":[\"" + CLIENT_ID + "\"],\"email\":\"user@example.com\","
+                + "\"email_verified\":true,\"exp\":" + future() + ",\"nbf\":" + (future() + 1000) + "}";
+        provider.validateAndExtractEmail(token(body), registration, metadata());
+    }
+
+    @Test(expected = CloudAuthenticationException.class)
+    public void testHmacAlgorithmIsRejectedEvenWhenTheKeyOmitsItsAlgorithm() throws Exception {
+        KeyPair keys = rsaKeyPair();
+        JsonWebKey key = JwkUtils.fromRSAPublicKey((RSAPublicKey) keys.getPublic(), "RS256");
+        key.setAlgorithm(null);
+        key.setKeyId("key-1");
+        doReturn(JwkUtils.jwkSetToJson(new JsonWebKeys(key))).when(provider).httpGet(eq(ISSUER + "/jwks"), anyString());
+        Base64.Encoder enc = Base64.getUrlEncoder().withoutPadding();
+        String header = "{\"alg\":\"HS256\",\"kid\":\"key-1\"}";
+        String body = "{\"iss\":\"" + ISSUER + "\",\"aud\":[\"" + CLIENT_ID + "\"],\"email\":\"user@example.com\","
+                + "\"email_verified\":true,\"exp\":" + future() + "}";
+        String hmacToken = enc.encodeToString(header.getBytes(StandardCharsets.UTF_8)) + "."
+                + enc.encodeToString(body.getBytes(StandardCharsets.UTF_8)) + ".sig";
+
+        provider.validateAndExtractEmail(hmacToken, registration, metadata());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testHttpIssuerIsRejectedAtValidation() {
+        doReturn(true).when(provider).isHttpsRequired();
+        provider.validateIssuer("http://idp.example.com");
+    }
+
+    @Test
+    public void testHttpIssuerIsAcceptedWhenHttpsIsNotRequired() {
+        doReturn(false).when(provider).isHttpsRequired();
+        String document = "{\"issuer\":\"http://idp.example.com\",\"authorization_endpoint\":\"http://idp.example.com/authorize\","
+                + "\"token_endpoint\":\"http://idp.example.com/token\",\"jwks_uri\":\"http://idp.example.com/jwks\"}";
+        doReturn(document).when(provider).httpGet(eq("http://idp.example.com/.well-known/openid-configuration"), anyString());
+
+        provider.validateIssuer("http://idp.example.com");
+    }
+
+    @Test
+    public void testValidateIssuerAcceptsAReachableHttpsIssuer() {
+        String document = "{\"issuer\":\"" + ISSUER + "\",\"authorization_endpoint\":\"" + ISSUER + "/authorize\","
+                + "\"token_endpoint\":\"" + ISSUER + "/token\",\"jwks_uri\":\"" + ISSUER + "/jwks\"}";
+        doReturn(document).when(provider).httpGet(eq(ISSUER + "/.well-known/openid-configuration"), anyString());
+
+        provider.validateIssuer(ISSUER);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testDiscoveryWithHttpTokenEndpointIsRejected() {
+        doReturn(true).when(provider).isHttpsRequired();
+        doReturn("{\"issuer\":\"" + ISSUER + "\",\"token_endpoint\":\"http://idp.example.com/token\",\"jwks_uri\":\""
+                + ISSUER + "/jwks\"}").when(provider).httpGet(anyString(), anyString());
+        provider.discover(ISSUER);
+    }
+
     private String signedIdToken(KeyPair keys, String keyId, String email, Boolean emailVerified) {
         JwtClaims claims = new JwtClaims();
         claims.setIssuer(ISSUER);

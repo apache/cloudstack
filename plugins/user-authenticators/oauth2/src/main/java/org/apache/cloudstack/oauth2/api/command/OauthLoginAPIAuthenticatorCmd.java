@@ -154,13 +154,16 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
 
             return doOauthAuthentication(session, domainId, domain, email, params, remoteAddress, responseType, auditTrailSb);
         } catch (final CloudAuthenticationException ex) {
-            throw toServerApiException(session, params, responseType, auditTrailSb, ex);
+            throw toServerApiException(session, params, responseType, auditTrailSb, ex.getMessage());
+        } catch (final RuntimeException ex) {
+            logger.warn("OAuth login failed", ex);
+            throw toServerApiException(session, params, responseType, auditTrailSb, ex.getMessage());
         }
     }
 
-    private ServerApiException toServerApiException(HttpSession session, Map<String, Object[]> params, String responseType, StringBuilder auditTrailSb, CloudAuthenticationException ex) {
+    private ServerApiException toServerApiException(HttpSession session, Map<String, Object[]> params, String responseType, StringBuilder auditTrailSb, String message) {
         ApiServlet.invalidateHttpSession(session, "fall through to API key,");
-        String msg = ex.getMessage() != null ? ex.getMessage() : "failed to authenticate user via OAuth";
+        String msg = message != null ? message : "failed to authenticate user via OAuth";
         auditTrailSb.append(" " + ApiErrorCode.ACCOUNT_ERROR + " " + msg);
         String serializedResponse = _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(), msg, params, responseType);
         return new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, serializedResponse);

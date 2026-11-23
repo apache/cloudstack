@@ -43,8 +43,11 @@ import org.apache.commons.lang3.StringUtils;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "registerOauthProvider", responseObject = SuccessResponse.class, description = "Register the OAuth2 provider in CloudStack", since = "4.19.0")
+@APICommand(name = "registerOauthProvider", responseObject = SuccessResponse.class,
+        description = "Register the OAuth2 provider in CloudStack. The API name is registerOauthProvider "
+                + "(lower case a in Oauth), not registerOAuthProvider.", since = "4.19.0")
 public class RegisterOAuthProviderCmd extends BaseCmd {
 
     /////////////////////////////////////////////////////
@@ -175,8 +178,11 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
             }
         }
 
-        if (StringUtils.equalsIgnoreCase(GenericOIDCOAuth2Provider.OIDC_PROVIDER_TYPE, getType()) && StringUtils.isBlank(getIssuerUrl())) {
-            throw new ServerApiException(ApiErrorCode.BAD_REQUEST, "Parameter issuerurl is mandatory for an oidc OAuth provider");
+        if (StringUtils.equalsIgnoreCase(GenericOIDCOAuth2Provider.OIDC_PROVIDER_TYPE, getType())) {
+            if (StringUtils.isBlank(getIssuerUrl())) {
+                throw new ServerApiException(ApiErrorCode.BAD_REQUEST, "Parameter issuerurl is mandatory for an oidc OAuth provider");
+            }
+            validateOidcIssuer();
         }
 
         OauthProviderVO provider = _oauth2mgr.registerOauthProvider(this);
@@ -199,12 +205,29 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
         }
 
         boolean oauthEnabled = OAuth2AuthManager.isPluginEnabledForDomain(provider.getDomainId());
-        if (oauthEnabled && authenticatorPluginNames.contains(provider.getProvider()) && provider.isEnabled()) {
+        boolean servedByPlugin = authenticatorPluginNames.contains(provider.getProvider())
+                || (StringUtils.isNotBlank(provider.getType()) && authenticatorPluginNames.contains(provider.getType()));
+        if (oauthEnabled && servedByPlugin && provider.isEnabled()) {
             response.setEnabled(true);
         } else {
             response.setEnabled(false);
         }
 
         setResponseObject(response);
+    }
+
+    private void validateOidcIssuer() {
+        for (UserOAuth2Authenticator authenticator : _oauth2mgr.listUserOAuth2AuthenticationProviders()) {
+            if (GenericOIDCOAuth2Provider.OIDC_PROVIDER_TYPE.equals(authenticator.getName())) {
+                try {
+                    authenticator.validateIssuer(getIssuerUrl());
+                } catch (CloudRuntimeException ex) {
+                    // Best effort: do not block registration if the issuer is briefly unreachable. The same
+                    // problem surfaces with a clear error at the first login.
+                    logger.warn("The OIDC issuer {} could not be validated at registration: {}", getIssuerUrl(), ex.getMessage());
+                }
+                return;
+            }
+        }
     }
 }

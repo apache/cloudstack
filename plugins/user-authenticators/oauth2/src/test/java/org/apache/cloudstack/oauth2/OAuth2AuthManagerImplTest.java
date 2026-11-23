@@ -795,4 +795,24 @@ public class OAuth2AuthManagerImplTest {
         verify(_oauthProviderDao, Mockito.times(2)).expunge(Mockito.anyLong());
     }
 
+    @Test
+    public void testListOauthProvidersReturnsEmptyWhenUuidMatchesNothing() {
+        when(_oauthProviderDao.findByUuid("missing")).thenReturn(null);
+
+        List<OauthProviderVO> result = _authManager.listOauthProviders(null, "missing", null);
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testListOauthProvidersReturnsEmptyWhenProviderMatchesNothing() {
+        when(_oauthProviderDao.findByProviderAndDomain("missing", null)).thenReturn(null);
+
+        List<OauthProviderVO> result = _authManager.listOauthProviders("missing", null, null);
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isEmpty());
+    }
+
 }

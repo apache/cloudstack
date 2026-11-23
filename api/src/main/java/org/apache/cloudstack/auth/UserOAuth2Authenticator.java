@@ -79,4 +79,12 @@ public interface UserOAuth2Authenticator extends Adapter {
      * @return returns email
      */
     String getUserEmailAddress() throws CloudRuntimeException;
+
+    /**
+     * Validate an issuer URL at provider registration so a misconfigured issuer is rejected at register
+     * time instead of silently failing at the first login. Providers that need no pre-flight validation
+     * leave this as a no-op.
+     */
+    default void validateIssuer(String issuerUrl) {
+    }
 }

@@ -112,7 +112,14 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
         }
         domainId = _oauth2mgr.resolveDomainId(params);
 
-        String email = _oauth2mgr.verifySecretCodeAndFetchEmail(secretCode, provider, domainId);
+        String email;
+        try {
+            email = _oauth2mgr.verifySecretCodeAndFetchEmail(secretCode, provider, domainId);
+        } catch (RuntimeException ex) {
+            logger.warn("Failed to verify the OAuth code with provider {}", provider, ex);
+            throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR,
+                    ex.getMessage() != null ? ex.getMessage() : "Unable to verify the code provided");
+        }
         if (email != null) {
             UserResponse response = new UserResponse();
             response.setEmail(email);

@@ -19,7 +19,6 @@
 package org.apache.cloudstack.oauth2;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -219,15 +218,23 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     public List<OauthProviderVO> listOauthProviders(String provider, String uuid, Long domainId) {
         List<OauthProviderVO> providers;
         if (uuid != null) {
-            providers = Collections.singletonList(_oauthProviderDao.findByUuid(uuid));
+            providers = singleOrEmpty(_oauthProviderDao.findByUuid(uuid));
         } else if (StringUtils.isNotBlank(provider) && domainId != null) {
-            providers = Collections.singletonList(_oauthProviderDao.findByProviderAndDomain(provider, domainId));
+            providers = singleOrEmpty(_oauthProviderDao.findByProviderAndDomain(provider, domainId));
         } else if (StringUtils.isNotBlank(provider)) {
-            providers = Collections.singletonList(_oauthProviderDao.findByProviderAndDomain(provider, null));
+            providers = singleOrEmpty(_oauthProviderDao.findByProviderAndDomain(provider, null));
         } else if (domainId != null) {
             providers = _oauthProviderDao.listByDomainIncludingGlobal(domainId);
         } else {
             providers = _oauthProviderDao.listAll();
+        }
+        return providers;
+    }
+
+    private List<OauthProviderVO> singleOrEmpty(OauthProviderVO provider) {
+        List<OauthProviderVO> providers = new ArrayList<>();
+        if (provider != null) {
+            providers.add(provider);
         }
         return providers;
     }
@@ -397,6 +404,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {OAuth2IsPluginEnabled, OAuth2Plugins, OAuth2PluginsExclude, OIDCRequireVerifiedEmail};
+        return new ConfigKey<?>[] {OAuth2IsPluginEnabled, OAuth2Plugins, OAuth2PluginsExclude, OIDCRequireVerifiedEmail,
+                OIDCRequireHttps};
     }
 }
