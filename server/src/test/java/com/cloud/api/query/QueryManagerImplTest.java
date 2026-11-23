@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.command.admin.vm.ListAffectedVmsForStorageScope
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
+import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
 import org.apache.cloudstack.api.response.DetailOptionsResponse;
 import org.apache.cloudstack.api.response.EventResponse;
@@ -74,6 +75,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.ProjectInvitationJoinDao;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
@@ -100,6 +102,9 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
 import com.cloud.network.VNF;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
+import com.cloud.projects.dao.ProjectInvitationDao;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.ScopeType;
@@ -142,6 +147,15 @@ public class QueryManagerImplTest {
 
     @Mock
     EventJoinDao eventJoinDao;
+
+    @Mock
+    ProjectInvitationJoinDao projectInvitationJoinDao;
+
+    @Mock
+    ProjectInvitationDao projectInvitationDao;
+
+    @Mock
+    ProjectManager projectManager;
 
     @Mock
     Account accountMock;
@@ -890,5 +904,57 @@ public class QueryManagerImplTest {
         queryManagerImplSpy.addVmCurrentClusterHostTags(vmInstance, hostTags);
         assertEquals(1, hostTags.size());
         assertTrue(hostTags.contains(tag1));
+    }
+
+    @Test
+    public void listProjectInvitationsProjectAccountAccessIncludesAllRecipients() {
+        Pair<List<ProjectInvitationJoinVO>, Integer> result = listProjectInvitations(true,
+                mockInvitation("2"), mockInvitation("3"));
+
+        assertEquals(2, result.second().intValue());
+        assertEquals(2, result.first().size());
+    }
+
+    @Test
+    public void listProjectInvitationsWithoutProjectAccountAccessFiltersRecipients() {
+        Pair<List<ProjectInvitationJoinVO>, Integer> result = listProjectInvitations(false,
+                mockInvitation("1"), mockInvitation("2"), mockInvitation(null));
+
+        assertEquals(2, result.second().intValue());
+        assertEquals(2, result.first().size());
+        assertTrue(result.first().stream().anyMatch(invitation -> invitation.getUserId() == null));
+        assertTrue(result.first().stream().anyMatch(invitation -> "1".equals(invitation.getUserId())));
+    }
+
+    private Pair<List<ProjectInvitationJoinVO>, Integer> listProjectInvitations(boolean canAccessProject,
+            ProjectInvitationJoinVO... invitations) {
+        long projectId = 10L;
+        long projectAccountId = 20L;
+        List<ProjectInvitationJoinVO> invitationList = Arrays.asList(invitations);
+
+        ListProjectInvitationsCmd cmd = mock(ListProjectInvitationsCmd.class);
+        when(cmd.getProjectId()).thenReturn(projectId);
+
+        SearchBuilder<ProjectInvitationJoinVO> searchBuilder = mock(SearchBuilder.class);
+        SearchCriteria<ProjectInvitationJoinVO> searchCriteria = mock(SearchCriteria.class);
+        ProjectInvitationJoinVO entity = mock(ProjectInvitationJoinVO.class);
+        when(projectInvitationJoinDao.createSearchBuilder()).thenReturn(searchBuilder);
+        when(searchBuilder.entity()).thenReturn(entity);
+        when(searchBuilder.create()).thenReturn(searchCriteria);
+        when(projectInvitationJoinDao.searchAndCount(any(SearchCriteria.class), any(Filter.class)))
+                .thenReturn(new Pair<>(invitationList, invitationList.size()));
+
+        Project project = mock(Project.class);
+        when(project.getProjectAccountId()).thenReturn(projectAccountId);
+        when(projectManager.getProject(projectId)).thenReturn(project);
+        when(projectManager.canAccessProjectAccount(account, projectAccountId)).thenReturn(canAccessProject);
+
+        return queryManager.listProjectInvitationsInternal(cmd);
+    }
+
+    private ProjectInvitationJoinVO mockInvitation(String userId) {
+        ProjectInvitationJoinVO invitation = mock(ProjectInvitationJoinVO.class);
+        when(invitation.getUserId()).thenReturn(userId);
+        return invitation;
     }
 }
