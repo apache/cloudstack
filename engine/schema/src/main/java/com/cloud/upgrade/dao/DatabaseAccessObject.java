@@ -144,6 +144,20 @@ public class DatabaseAccessObject {
         }
     }
 
+    public void dropIndexIfExists(Connection conn, String tableName, String indexName) {
+        if (!indexExists(conn, tableName, indexName)) {
+            return;
+        }
+        String stmt = String.format("DROP INDEX %s ON %s", indexName, tableName);
+        logger.debug("Statement: {}", stmt);
+        try (PreparedStatement pstmt = conn.prepareStatement(stmt)) {
+            pstmt.execute();
+            logger.debug("Dropped index {}", indexName);
+        } catch (SQLException e) {
+            logger.warn("Unable to drop index {}", indexName, e);
+        }
+    }
+
     public void renameIndex(Connection conn, String tableName, String oldName, String newName) {
         String stmt = String.format("ALTER TABLE %s RENAME INDEX %s TO %s", tableName, oldName, newName);
         logger.debug("Statement: {}", stmt);
