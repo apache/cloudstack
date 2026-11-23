@@ -149,14 +149,7 @@ export default {
         if (this.resource.isstaticnat) {
           let tabs = this.$route.meta.tabs
           if (hasFirewallCapability) {
-            tabs = this.addFirewallTab(tabs).map(tab => {
-              if (tab.name !== 'firewall') {
-                return tab
-              }
-              const staticNatFirewallTab = { ...tab }
-              delete staticNatFirewallTab.networkServiceFilter
-              return staticNatFirewallTab
-            })
+            tabs = this.addFirewallTab(tabs)
           } else {
             tabs = tabs.filter(tab => tab.name !== 'firewall')
           }
@@ -166,7 +159,9 @@ export default {
 
         // VPC IPs have all tabs; firewall is shown only if VPC has firewall capability
         let tabs = this.$route.meta.tabs
-        if (!hasFirewallCapability) {
+        if (hasFirewallCapability) {
+          tabs = this.addFirewallTab(tabs)
+        } else {
           tabs = tabs.filter(tab => tab.name !== 'firewall')
         }
 
@@ -218,10 +213,17 @@ export default {
     },
     addFirewallTab (tabs) {
       const firewallTab = this.$route.meta.tabs.find(tab => tab.name === 'firewall')
-      if (!firewallTab || tabs.some(tab => tab.name === 'firewall')) {
+      if (!firewallTab) {
         return tabs
       }
-      return tabs.concat(firewallTab)
+      // In a VPC the Firewall service is provided by the VPC, not by the tier the IP is
+      // associated with, so the tab must not be filtered by the services of that tier
+      const vpcFirewallTab = { ...firewallTab }
+      delete vpcFirewallTab.networkServiceFilter
+      if (tabs.some(tab => tab.name === 'firewall')) {
+        return tabs.map(tab => tab.name === 'firewall' ? vpcFirewallTab : tab)
+      }
+      return tabs.concat(vpcFirewallTab)
     },
     hasVpcFirewallCapability (vpc) {
       const services = vpc?.service || []
