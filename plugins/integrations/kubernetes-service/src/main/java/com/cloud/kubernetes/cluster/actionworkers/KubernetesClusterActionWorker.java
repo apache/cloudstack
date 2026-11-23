@@ -695,7 +695,8 @@ public class KubernetesClusterActionWorker {
      *   <li>direct access (port 22): the node's own IP on port 22</li>
      *   <li>external load balancer: the load balancer's port for the node's place among the cluster's non-etcd nodes,
      *   as documented for operators</li>
-     *   <li>otherwise: the public port (from 2222 up; Active, then Add, then Staged rules first) of the node's port forwarding rule to port 22
+     *   <li>otherwise: the public port (from 2222 up, any port for etcd nodes, whose rules follow the etcd start port
+     *   setting at their creation; Active, then Add, then Staged rules first) of the node's port forwarding rule to port 22
      *   on the cluster's SSH IP</li>
      * </ul>
      * @throws CloudRuntimeException when a node has no such port forwarding rule
@@ -713,7 +714,8 @@ public class KubernetesClusterActionWorker {
             for (UserVm vm : vms) {
                 int position = nodeIds.indexOf(vm.getId());
                 if (position < 0) {
-                    throw new CloudRuntimeException(String.format("Node %s is not part of Kubernetes cluster %s", vm.getHostName(), kubernetesCluster.getName()));
+                    throw new CloudRuntimeException(String.format("No SSH port on the external load balancer %s is known for node %s of Kubernetes cluster %s; only control and worker nodes are mapped",
+                            publicIpAddress, vm.getHostName(), kubernetesCluster.getName()));
                 }
                 result.put(vm.getId(), new Pair<>(publicIpAddress, sshPort + position));
             }
@@ -727,12 +729,15 @@ public class KubernetesClusterActionWorker {
         Comparator<PortForwardingRuleVO> preferred = Comparator
                 .comparing((PortForwardingRuleVO rule) -> stateOrder.indexOf(rule.getState()))
                 .thenComparing(PortForwardingRuleVO::getSourcePortStart);
+        Set<Long> etcdVmIds = getKubernetesClusterVMMaps().stream().filter(KubernetesClusterVmMapVO::isEtcdNode)
+                .map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toSet());
         Map<Long, PortForwardingRuleVO> sshRules = new HashMap<>();
         for (PortForwardingRuleVO rule : portForwardingRulesDao.listByIpAndNotRevoked(sshIp.getId())) {
             if (stateOrder.contains(rule.getState())
                     && NetUtils.TCP_PROTO.equalsIgnoreCase(rule.getProtocol())
                     && rule.getDestinationPortStart() == DEFAULT_SSH_PORT && rule.getDestinationPortEnd() == DEFAULT_SSH_PORT
-                    && rule.getSourcePortStart() != null && rule.getSourcePortStart() >= CLUSTER_NODES_DEFAULT_START_SSH_PORT) {
+                    && rule.getSourcePortStart() != null
+                    && (rule.getSourcePortStart() >= CLUSTER_NODES_DEFAULT_START_SSH_PORT || etcdVmIds.contains(rule.getVirtualMachineId()))) {
                 sshRules.merge(rule.getVirtualMachineId(), rule, BinaryOperator.minBy(preferred));
             }
         }

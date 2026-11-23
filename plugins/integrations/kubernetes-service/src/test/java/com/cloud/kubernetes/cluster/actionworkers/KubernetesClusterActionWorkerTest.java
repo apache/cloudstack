@@ -552,6 +552,21 @@ public class KubernetesClusterActionWorkerTest {
     }
 
     @Test
+    public void testGetClusterNodesSshIpPortsEtcdNodeBelowDefaultStartPort() {
+        actionWorker.publicIpAddress = SSH_IP;
+        actionWorker.sshPort = KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT;
+        actionWorker.kubernetesClusterVmMapDao = kubernetesClusterVmMapDao;
+        List<KubernetesClusterVmMapVO> maps = Arrays.asList(vmMap(1L, true, true), vmMap(10L, false, false), vmMap(11L, false, false));
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(DEFAULT_ID)).thenReturn(maps);
+        mockSshIpRules(Arrays.asList(sshRule(1L, 2000, 22, "tcp"), sshRule(10L, 2222, 22, "tcp"), sshRule(11L, 2001, 22, "tcp")));
+        Map<Long, Pair<String, Integer>> result = actionWorker.getClusterNodesSshIpPorts(Arrays.asList(mockNode(1L), mockNode(10L)));
+        Assert.assertEquals(2000, result.get(1L).second().intValue());
+        Assert.assertEquals(2222, result.get(10L).second().intValue());
+        UserVm worker = mockNode(11L);
+        Assert.assertThrows(CloudRuntimeException.class, () -> actionWorker.getClusterNodesSshIpPorts(List.of(worker)));
+    }
+
+    @Test
     public void testGetClusterNodesSshIpPortsSkipsDeletingAndPrefersAddOverStaged() {
         actionWorker.publicIpAddress = SSH_IP;
         actionWorker.sshPort = KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT;
@@ -603,9 +618,13 @@ public class KubernetesClusterActionWorkerTest {
     }
 
     private KubernetesClusterVmMapVO vmMap(long vmId, boolean etcd) {
+        return vmMap(vmId, etcd, !etcd);
+    }
+
+    private KubernetesClusterVmMapVO vmMap(long vmId, boolean etcd, boolean idUsed) {
         KubernetesClusterVmMapVO map = Mockito.mock(KubernetesClusterVmMapVO.class);
         Mockito.when(map.isEtcdNode()).thenReturn(etcd);
-        if (!etcd) {
+        if (idUsed) {
             Mockito.when(map.getVmId()).thenReturn(vmId);
         }
         return map;
@@ -624,6 +643,10 @@ public class KubernetesClusterActionWorkerTest {
         Assert.assertEquals("198.51.100.7", result.get(12L).first());
         Assert.assertEquals(KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT, result.get(10L).second().intValue());
         Assert.assertEquals(KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT + 2, result.get(12L).second().intValue());
+        UserVm etcd = mockNode(1L);
+        Mockito.when(etcd.getHostName()).thenReturn("cks1-etcd-1");
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, () -> actionWorker.getClusterNodesSshIpPorts(List.of(etcd)));
+        Assert.assertTrue(e.getMessage().contains("cks1-etcd-1"));
         Mockito.verifyNoInteractions(portForwardingRulesDao);
     }
 }
