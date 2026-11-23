@@ -247,7 +247,7 @@ class CsNetfilters(object):
             if hook == "input":
                 # Accept replies to traffic the VR initiates, such as DNS and TCP over a private gateway.
                 CsHelper.execute("nft add rule %s %s %s ct state established,related accept" % (address_family, table, chain))
-        elif hook == "forward":
+        if hook == "input" or hook == "forward":
             CsHelper.execute("nft add rule %s %s %s ct state established,related accept" % (address_family, table, chain))
 
     def apply_nft_ipv4_rules(self, rules, type):
