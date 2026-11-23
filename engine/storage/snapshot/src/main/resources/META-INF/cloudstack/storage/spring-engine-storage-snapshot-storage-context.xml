@@ -39,6 +39,9 @@
     <bean id="scaleioSnapshotStrategy"
           class="org.apache.cloudstack.storage.snapshot.ScaleIOSnapshotStrategy" />
 
+    <bean id="kvmFileBasedNoCopySnapshotStrategy"
+          class="org.apache.cloudstack.storage.snapshot.KvmFileBasedNoCopySnapshotStrategy" />
+
     <bean id="DefaultVMSnapshotStrategy"
         class="org.apache.cloudstack.storage.vmsnapshot.DefaultVMSnapshotStrategy" />
 

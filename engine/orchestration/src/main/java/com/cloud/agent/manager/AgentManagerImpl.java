@@ -812,6 +812,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
                 String uefiEnabled = detailsMap.get(Host.HOST_UEFI_ENABLE);
                 String diskOnlyVmSnapshotNvramSupport = detailsMap.get(Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM);
+                String diskOnlySnapshotSingleVolumeSupport = detailsMap.get(Host.HOST_KVM_DISK_ONLY_SNAPSHOT_SINGLE_VOLUME);
                 String virtv2vVersion = detailsMap.get(Host.HOST_VIRTV2V_VERSION);
                 String ovftoolVersion = detailsMap.get(Host.HOST_OVFTOOL_VERSION);
                 String vddkSupport = detailsMap.get(Host.HOST_VDDK_SUPPORT);
@@ -831,7 +832,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 String qemuImgRbdSupport = detailsMap.get(Host.HOST_QEMU_RBD_SUPPORT);
                 String vddkRbdDirectImportSupport = detailsMap.get(Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT);
                 logger.debug("Got HOST_UEFI_ENABLE [{}] for host [{}]:", uefiEnabled, host);
-                if (ObjectUtils.anyNotNull(uefiEnabled, diskOnlyVmSnapshotNvramSupport, virtv2vVersion, ovftoolVersion, vddkSupport, vddkLibDir, vddkVersion,
+                if (ObjectUtils.anyNotNull(uefiEnabled, diskOnlyVmSnapshotNvramSupport, diskOnlySnapshotSingleVolumeSupport, virtv2vVersion, ovftoolVersion, vddkSupport, vddkLibDir, vddkVersion,
                         vlanFilteringEnabled, guestBridgeStpEnabled, vlanTrunkXmlSupported,
                         vmwareCbtSupport, vmwareCbtInPlaceFinalizationSupport, vmwareCbtRbdSupport, qemuImgVersion, qemuNbdVersion, qemuIoVersion, virtV2vInPlaceVersion,
                         virtv2vInPlaceSupport, qemuImgRbdSupport, vddkRbdDirectImportSupport)) {
@@ -841,6 +842,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         updateNeeded = true;
                     }
                     if (syncBooleanHostCapability(host, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, diskOnlyVmSnapshotNvramSupport)) {
+                        updateNeeded = true;
+                    }
+                    if (syncBooleanHostCapability(host, Host.HOST_KVM_DISK_ONLY_SNAPSHOT_SINGLE_VOLUME, diskOnlySnapshotSingleVolumeSupport)) {
                         updateNeeded = true;
                     }
                     if (StringUtils.isNotBlank(virtv2vVersion) && !virtv2vVersion.equals(host.getDetails().get(Host.HOST_VIRTV2V_VERSION))) {

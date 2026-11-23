@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import com.cloud.storage.snapshot.SnapshotManager;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -236,6 +237,9 @@ public class UserVmManagerImplTest {
     @Spy
     @InjectMocks
     private UserVmManagerImpl userVmManagerImpl = new UserVmManagerImpl();
+
+    @Mock
+    private SnapshotManager snapshotManager;
 
     @Mock
     private ServiceOfferingDao _serviceOfferingDao;

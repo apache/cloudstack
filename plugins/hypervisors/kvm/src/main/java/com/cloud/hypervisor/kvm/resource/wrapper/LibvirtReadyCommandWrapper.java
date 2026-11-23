@@ -44,6 +44,7 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
     public Answer execute(final ReadyCommand command, final LibvirtComputingResource libvirtComputingResource) {
         Map<String, String> hostDetails = new HashMap<String, String>();
         hostDetails.put(Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, Boolean.TRUE.toString());
+        hostDetails.put(Host.HOST_KVM_DISK_ONLY_SNAPSHOT_SINGLE_VOLUME, Boolean.TRUE.toString());
 
         if (hostSupportsUefi(libvirtComputingResource.isUbuntuOrDebianHost()) && libvirtComputingResource.isUefiPropertiesFileLoaded()) {
             hostDetails.put(Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());

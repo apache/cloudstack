@@ -27,6 +27,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -72,6 +73,18 @@ public interface SnapshotManager extends Configurable {
             "For snapshot copy to another primary storage in a different zone. This is supported only for StorPool storage for now.",
             true, ConfigKey.Scope.StoragePool, null);
 
+    ConfigKey<Boolean> KvmFileBasedVolumeSnapshotNoCopy = new ConfigKey<>(Boolean.class, "kvm.file.based.volume.snapshot.no.copy", "Snapshots", "false",
+            "When true, volume snapshots of KVM QCOW2 volumes on file-based primary storage (NFS, SharedMountPoint and Filesystem) that are kept only on primary storage" +
+            " (snapshot.backup.to.secondary=false) are taken as external snapshots in the backing chain of the volume, instead of full copies of the volume." +
+            " Taking or reverting such a snapshot does not copy the volume; deleting it merges it with its child. While a volume has such snapshots, it cannot be" +
+            " migrated, regular snapshots of it cannot be reverted, and the snapshots cannot be backed up, copied, or used to create volumes, templates or Instances.",
+            true, ConfigKey.Scope.StoragePool, null);
+
+    /**
+     * Name of the snapshot detail that marks a volume snapshot taken with {@link #KvmFileBasedVolumeSnapshotNoCopy}.
+     */
+    String KVM_FILE_BASED_NO_COPY_SNAPSHOT = "kvmFileBasedNoCopySnapshot";
+
     void deletePoliciesForVolume(Long volumeId);
 
     /**
@@ -87,6 +100,29 @@ public interface SnapshotManager extends Configurable {
     boolean isHypervisorKvmAndFileBasedStorage(VolumeInfo volumeInfo, StoragePool storagePool);
 
     boolean canOperateOnVolume(Volume volume);
+
+    boolean isBackupSnapshotToSecondaryForZone(long zoneId);
+
+    /**
+     * @return true if the snapshot was taken as a KVM file-based no-copy snapshot (see {@link #KvmFileBasedVolumeSnapshotNoCopy}).
+     */
+    boolean isKvmFileBasedNoCopySnapshot(long snapshotId);
+
+    /**
+     * @return true if the volume has KVM file-based no-copy snapshots that are not destroyed (see {@link #KvmFileBasedVolumeSnapshotNoCopy}).
+     */
+    boolean volumeHasKvmFileBasedNoCopySnapshots(long volumeId);
+
+    /**
+     * Throws an {@link com.cloud.exception.InvalidParameterValueException} if the snapshot is a KVM file-based no-copy snapshot, which cannot be used for the
+     * given operation.
+     */
+    void validateSnapshotIsNotKvmFileBasedNoCopy(Snapshot snapshot, String operation);
+
+    /**
+     * Throws an {@link com.cloud.exception.InvalidParameterValueException} if the volume has KVM file-based no-copy snapshots, which prevent the given operation.
+     */
+    void validateVolumeHasNoKvmFileBasedNoCopySnapshots(Volume volume, String operation);
 
     boolean backedUpSnapshotsExistsForVolume(Volume volume);
 

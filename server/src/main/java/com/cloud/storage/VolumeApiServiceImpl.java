@@ -920,6 +920,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException(String.format("Snapshot %s is not in %s state yet and can't be used for volume creation", snapshotCheck, Snapshot.State.BackedUp));
             }
 
+            _snapshotMgr.validateSnapshotIsNotKvmFileBasedNoCopy(snapshotCheck, "create a volume");
+
             SnapshotDataStoreVO snapshotStore = _snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(snapshotId, DataStoreRole.Primary);
             if (snapshotStore != null) {
                 StoragePoolVO storagePoolVO = _storagePoolDao.findById(snapshotStore.getDataStoreId());
@@ -3781,6 +3783,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (vm != null && _vmSnapshotDao.findByVm(vm.getId()).size() > 0) {
             throw new InvalidParameterValueException("Volume cannot be migrated, please remove all Instance Snapshots for Instance to which this volume is attached");
         }
+
+        _snapshotMgr.validateVolumeHasNoKvmFileBasedNoCopySnapshots(vol, "migrate it");
 
         StoragePoolVO srcStoragePoolVO = _storagePoolDao.findById(vol.getPoolId());
 

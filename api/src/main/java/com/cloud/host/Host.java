@@ -56,6 +56,10 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
 
     String HOST_UEFI_ENABLE = "host.uefi.enable";
     String HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM = "host.kvm.diskonlyvmsnapshot.nvram";
+    /**
+     * The KVM agent excludes the disks that are not being snapshotted from disk-only snapshots of running Instances, so a single volume can be snapshotted.
+     */
+    String HOST_KVM_DISK_ONLY_SNAPSHOT_SINGLE_VOLUME = "host.kvm.diskonlysnapshot.singlevolume";
     String HOST_VOLUME_ENCRYPTION = "host.volume.encryption";
     String HOST_RBD_VOLUME_ENCRYPTION = "host.volume.encryption.rbd";
     String HOST_INSTANCE_CONVERSION = "host.instance.conversion";

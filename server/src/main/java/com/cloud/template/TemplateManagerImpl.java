@@ -286,6 +286,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject
     private SnapshotDao _snapshotDao;
     @Inject
+    private SnapshotManager snapshotManager;
+    @Inject
     private ConfigurationDao _configDao;
     @Inject
     private DomainDao _domainDao;
@@ -2290,6 +2292,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (snapshot == null) {
                 throw new InvalidParameterValueException("Failed to create private Template record, unable to find Snapshot " + snapshotId);
             }
+            snapshotManager.validateSnapshotIsNotKvmFileBasedNoCopy(snapshot, "create a Template");
             // Volume could be removed so find including removed to record source template id.
             volume = _volumeDao.findByIdIncludingRemoved(snapshot.getVolumeId());
 

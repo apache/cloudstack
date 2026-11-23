@@ -20,6 +20,7 @@ import com.cloud.offering.DiskOffering;
 import static com.cloud.host.Host.HOST_CDROM_MAX_COUNT;
 import static com.cloud.host.Host.HOST_CPU_MAX_SPEED_MHZ;
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
+import static com.cloud.host.Host.HOST_KVM_DISK_ONLY_SNAPSHOT_SINGLE_VOLUME;
 import static com.cloud.host.Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM;
 import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
 import static com.cloud.host.Host.HOST_QEMU_RBD_SUPPORT;
@@ -445,6 +446,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final String TAG_DISK_SNAPSHOT = "<disk name='%s' snapshot='external'>\n" +
             "<source file='%s'/>\n" +
             "</disk>\n";
+
+    private static final String TAG_DISK_NO_SNAPSHOT = "<disk name='%s' snapshot='no'/>\n";
 
     protected int qcow2DeltaMergeTimeout;
 
@@ -4475,6 +4478,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.getHostDetails().putAll(getVersionStrings());
         cmd.getHostDetails().put(KeyStoreUtils.SECURED, String.valueOf(isHostSecured()).toLowerCase());
         cmd.getHostDetails().put(HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, Boolean.TRUE.toString());
+        cmd.getHostDetails().put(HOST_KVM_DISK_ONLY_SNAPSHOT_SINGLE_VOLUME, Boolean.TRUE.toString());
         cmd.setPool(pool);
         cmd.setCluster(clusterId);
         cmd.setGatewayIpAddress(localGateway);
@@ -7689,22 +7693,44 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return flags;
     }
 
+    /**
+     * Builds the XML of a disk-only, external snapshot of the given volumes. Every other disk of the domain is explicitly excluded with
+     * <code>snapshot='no'</code>: with <code>VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY</code>, Libvirt takes an external snapshot of the disks that are not
+     * listed in the XML, which would move them onto new files that CloudStack does not know about. This matters when only some of the volumes of the
+     * domain are snapshotted (e.g. a single volume snapshot).
+     */
     public Pair<String, Map<String, Long>> createSnapshotXmlAndNewVolumePathMap(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, List<LibvirtVMDef.DiskDef> disks, String snapshotName) {
         StringBuilder stringBuilder = new StringBuilder();
         Map<String, Long> volumeObjectToNewPathMap = new HashMap<>();
+        Set<String> snapshottedDiskLabels = new HashSet<>();
 
         for (Pair<VolumeObjectTO, String> volumeObjectTOAndPath : volumeTosAndNewPaths) {
             LibvirtVMDef.DiskDef diskdef = getDiskWithPathOfVolumeObjectTO(disks, volumeObjectTOAndPath.first());
             String newPath = volumeObjectTOAndPath.second();
             stringBuilder.append(String.format(TAG_DISK_SNAPSHOT, diskdef.getDiskLabel(), getSnapshotTemporaryPath(diskdef.getDiskPath(), newPath)));
+            snapshottedDiskLabels.add(diskdef.getDiskLabel());
 
             long snapSize = getFileSize(diskdef.getDiskPath());
 
             volumeObjectToNewPathMap.put(volumeObjectTOAndPath.first().getUuid(), snapSize);
         }
 
+        for (LibvirtVMDef.DiskDef disk : disks) {
+            if (isDiskToExcludeFromSnapshot(disk, snapshottedDiskLabels)) {
+                stringBuilder.append(String.format(TAG_DISK_NO_SNAPSHOT, disk.getDiskLabel()));
+            }
+        }
+
         String snapshotXml = String.format(SNAPSHOT_XML, snapshotName, stringBuilder);
         return new Pair<>(snapshotXml, volumeObjectToNewPathMap);
+    }
+
+    protected boolean isDiskToExcludeFromSnapshot(LibvirtVMDef.DiskDef disk, Set<String> snapshottedDiskLabels) {
+        if (StringUtils.isBlank(disk.getDiskLabel()) || snapshottedDiskLabels.contains(disk.getDiskLabel())) {
+            return false;
+        }
+        DiskDef.DeviceType deviceType = disk.getDeviceType();
+        return deviceType != DiskDef.DeviceType.CDROM && deviceType != DiskDef.DeviceType.FLOPPY;
     }
 
     public long getFileSize(String path) {

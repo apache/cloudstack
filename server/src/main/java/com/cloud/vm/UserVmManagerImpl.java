@@ -361,6 +361,7 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -501,6 +502,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private UserDao _userDao;
     @Inject
     private SnapshotDao _snapshotDao;
+    @Inject
+    private SnapshotManager snapshotManager;
     @Inject
     private GuestOSDao _guestOSDao;
     @Inject
@@ -6777,6 +6780,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException("Could not find snapshot with id=" + cmd.getSnapshotId());
             }
             _accountMgr.checkAccess(caller, null, true, snapshot);
+            snapshotManager.validateSnapshotIsNotKvmFileBasedNoCopy(snapshot, "deploy an Instance");
             VolumeInfo volumeOfSnapshot = getVolume(snapshot.getVolumeId(), templateId, true);
             if (volumeOfSnapshot != null) {
                 templateId = volumeOfSnapshot.getTemplateId();
@@ -7554,7 +7558,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Instance's disk cannot be migrated, please remove all the Instance Snapshots for this Instance");
         }
 
+        validateVmVolumesHaveNoKvmFileBasedNoCopySnapshots(vmId, "migrate the storage of its Instance");
+
         return vm;
+    }
+
+    protected void validateVmVolumesHaveNoKvmFileBasedNoCopySnapshots(long vmId, String operation) {
+        for (VolumeVO volume : _volsDao.findByInstance(vmId)) {
+            snapshotManager.validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, operation);
+        }
     }
 
     private VirtualMachine findMigratedVm(long vmId, VirtualMachine.Type vmType) {
@@ -8362,6 +8374,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 CollectionUtils.isNotEmpty(_vmSnapshotDao.findByVm(vmId))) {
             throw new InvalidParameterValueException("Instance with Instance Snapshots cannot be migrated with storage, please remove all Instance Snapshots");
         }
+
+        validateVmVolumesHaveNoKvmFileBasedNoCopySnapshots(vmId, "migrate its Instance with storage");
 
         Pair<Host, Host> sourceDestinationHosts = getHostsForMigrateVmWithStorage(vm, destinationHost);
         Host srcHost = sourceDestinationHosts.first();
