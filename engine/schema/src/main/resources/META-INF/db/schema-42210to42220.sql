@@ -73,6 +73,16 @@ WHERE dc.type = 'Edge' AND dc.removed IS NULL
   AND NOT EXISTS (SELECT 1 FROM cloud.template_zone_ref tzr
                   WHERE tzr.zone_id = dc.id AND tzr.template_id = vt.id AND tzr.removed IS NULL);
 
+--- Recalculate the allocated size in bytes for each Object Storage provider
+UPDATE `cloud`.`object_store`
+JOIN (
+    SELECT object_store_id, SUM(quota) * 1024 * 1024 * 1024 AS total_quota
+    FROM `cloud`.`bucket`
+    WHERE removed IS NULL
+    GROUP BY object_store_id
+) buckets_quota_sum_view ON `object_store`.id = buckets_quota_sum_view.object_store_id
+SET `object_store`.allocated_size = buckets_quota_sum_view.total_quota;
+
 -- Widen vm_template.url to match the url parameter of registerTemplate/registerIso and the VO (2048), like the
 -- sibling url columns. A URL of 1025 to 2048 characters, such as an S3 presigned URL, failed on insert. See #14715.
 ALTER TABLE `cloud`.`vm_template` MODIFY COLUMN `url` VARCHAR(2048) DEFAULT NULL COMMENT 'the url where the template exists externally';
