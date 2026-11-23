@@ -22,8 +22,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -32,7 +34,6 @@ import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNod
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
@@ -55,11 +56,14 @@ import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -132,87 +136,110 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         logTransitStateToFailedIfNeededAndThrow(logLevel, message, null);
     }
 
-    private void scaleKubernetesClusterIsolatedNetworkRules(final List<Long> clusterVMIds) throws ManagementServerException {
-        IpAddress publicIp = getNetworkSourceNatIp(network);
-        if (publicIp == null) {
-            throw new ManagementServerException(String.format("No source NAT IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
-        }
-
-        // Remove existing SSH firewall rules
-        FirewallRule firewallRule = removeSshFirewallRule(publicIp, network.getId());
-        int existingFirewallRuleSourcePortEnd;
-        if (firewallRule == null) {
-            logger.warn("SSH firewall rule not found for Kubernetes cluster: {}. It may have been manually deleted or modified.", kubernetesCluster.getName());
-            existingFirewallRuleSourcePortEnd = CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMIds.size() - 1;
-        } else {
-            existingFirewallRuleSourcePortEnd = firewallRule.getSourcePortEnd();
-        }
-
-        try {
-            removePortForwardingRules(publicIp, network, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, existingFirewallRuleSourcePortEnd);
-        } catch (ResourceUnavailableException e) {
-            throw new ManagementServerException(String.format("Failed to remove SSH port forwarding rules for removed VMs for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
-        }
-        setupKubernetesClusterIsolatedNetworkRules(publicIp, network, clusterVMIds, false);
+    protected IpAddress getNodeSshIp() throws ManagementServerException {
+        return getNodeSshIp(network);
     }
 
-    private void scaleKubernetesClusterVpcTierRules(final List<Long> clusterVMIds) throws ManagementServerException {
-        if (manager.isNetrisNetwork(network)) {
-            // For Netris: SSH port-forwarding is on NAT IP; the LB rule on LB IP for 6443 is fixed and never re-provisioned during scale
-            IpAddress natIp = getVpcTierKubernetesPublicIp(network, ApiConstants.NETRIS_NAT_PUBLIC_IP_ID);
-            if (natIp == null) {
-                throw new ManagementServerException(String.format("No NAT IP found for Netris VPC tier : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
-            }
-            try {
-                removePortForwardingRules(natIp, network, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMIds.size() - 1);
-            } catch (ResourceUnavailableException e) {
-                throw new ManagementServerException(String.format("Failed to remove SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
-            }
-            try {
-                Map<Long, Integer> vmIdPortMap = getVmPortMap();
-                provisionSshPortForwardingRules(natIp, network, owner, clusterVMIds, vmIdPortMap);
-            } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
-                throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
-            }
+    /**
+     * Gives SSH access to each of the given nodes that has no SSH port forwarding rule yet, such as the nodes just
+     * created by the scale. The rules of the other nodes are left as they are. A node created with the cluster or by a
+     * scale gets the port of its place among those nodes when that port is free, else the lowest free port from
+     * {@link #CLUSTER_NODES_DEFAULT_START_SSH_PORT} up. Any other node gets the lowest free port after those places. An
+     * existing node whose SSH port no firewall rule covers at all gets a firewall rule for it again.
+     */
+    protected void provisionMissingNodeSshRules(final List<Long> nodeVmIds) throws ManagementServerException {
+        IpAddress sshIp = getNodeSshIp();
+        if (sshIp == null) {
+            logger.debug("Network: {} for Kubernetes cluster: {} is not an isolated network or ROUTED network, therefore, no need for network rules", network, kubernetesCluster);
             return;
         }
-        IpAddress publicIp = getVpcTierKubernetesPublicIp(network);
-        if (publicIp == null) {
-            throw new ManagementServerException(String.format("No public IP addresses found for VPC tier : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
+        boolean firewall = network.getVpcId() == null;
+        List<PortForwardingRuleVO> sshRules = portForwardingRulesDao.listByIpAndNotRevoked(sshIp.getId()).stream()
+                .filter(rule -> isNodeSshPortForwardingRule(rule, sshIp) && nodeVmIds.contains(rule.getVirtualMachineId()))
+                .collect(Collectors.toList());
+        Set<Long> nodesWithSshRule = sshRules.stream().map(PortForwardingRuleVO::getVirtualMachineId).collect(Collectors.toSet());
+        List<Long> positionalNodeIds = getKubernetesClusterVMMaps().stream()
+                .filter(map -> !map.isExternalNode() && !map.isEtcdNode())
+                .map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+        int firstNonPositionalPort = CLUSTER_NODES_DEFAULT_START_SSH_PORT + positionalNodeIds.size();
+        List<FirewallRuleVO> rules = firewallRulesDao.listByIp(sshIp.getId()).stream()
+                .filter(rule -> rule.getSourcePortStart() != null && rule.getSourcePortEnd() != null
+                        && rule.getSourcePortEnd() >= CLUSTER_NODES_DEFAULT_START_SSH_PORT)
+                .collect(Collectors.toList());
+        List<FirewallRuleVO> usedPortRules = rules.stream()
+                .filter(rule -> rule.getPurpose() != FirewallRule.Purpose.Firewall).collect(Collectors.toList());
+        List<FirewallRuleVO> openPortRules = !firewall ? Collections.emptyList() : rules.stream()
+                .filter(rule -> rule.getPurpose() == FirewallRule.Purpose.Firewall && isOpenTcpFirewallRule(rule))
+                .collect(Collectors.toList());
+        if (firewall) {
+            List<FirewallRuleVO> firewallRules = rules.stream()
+                    .filter(rule -> rule.getPurpose() == FirewallRule.Purpose.Firewall && rule.getState() != FirewallRule.State.Revoke
+                            && NetUtils.TCP_PROTO.equalsIgnoreCase(rule.getProtocol()))
+                    .collect(Collectors.toList());
+            for (PortForwardingRuleVO sshRule : sshRules) {
+                int port = sshRule.getSourcePortStart();
+                if (!isPortInRules(firewallRules, port)) {
+                    logger.warn("SSH port {} of node VM {} of Kubernetes cluster {} is not open on {}, adding a firewall rule for it",
+                            port, sshRule.getVirtualMachineId(), kubernetesCluster.getName(), sshIp.getAddress().addr());
+                    try {
+                        provisionNodeSshFirewallRule(sshIp, port, port);
+                    } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException | RuntimeException e) {
+                        throw new ManagementServerException(String.format("Failed to provision SSH firewall rule for port %d of %s of Kubernetes cluster %s",
+                                port, sshIp.getAddress().addr(), kubernetesCluster.getName()), e);
+                    }
+                }
+            }
         }
-        try {
-            removePortForwardingRules(publicIp, network, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMIds.size() - 1);
-        } catch (ResourceUnavailableException e) {
-            throw new ManagementServerException(String.format("Failed to remove SSH port forwarding rules for removed VMs for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
-        }
-        try {
-           Map<Long, Integer> vmIdPortMap = getVmPortMap();
-            provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds, vmIdPortMap);
-        } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
-            throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        Set<Integer> takenPorts = new HashSet<>();
+        for (Long vmId : nodeVmIds) {
+            if (nodesWithSshRule.contains(vmId)) {
+                continue;
+            }
+            int position = positionalNodeIds.indexOf(vmId);
+            int preferredPort = position < 0 ? firstNonPositionalPort : CLUSTER_NODES_DEFAULT_START_SSH_PORT + position;
+            int searchFrom = position < 0 ? firstNonPositionalPort : CLUSTER_NODES_DEFAULT_START_SSH_PORT;
+            Integer port = getFreeNodeSshPort(usedPortRules, takenPorts, preferredPort, searchFrom);
+            if (port == null) {
+                throw new ManagementServerException(String.format("No free port left on %s for SSH to node VM %d of Kubernetes cluster %s",
+                        sshIp.getAddress().addr(), vmId, kubernetesCluster.getName()));
+            }
+            takenPorts.add(port);
+            boolean firewallRuleAdded = false;
+            try {
+                if (firewall && !isPortInRules(openPortRules, port)) {
+                    firewallRuleAdded = true;
+                    provisionNodeSshFirewallRule(sshIp, port, port);
+                }
+                provisionPublicIpPortForwardingRule(sshIp, network, owner, vmId, port, DEFAULT_SSH_PORT);
+            } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException | RuntimeException e) {
+                removeNodeSshRules(sshIp, listNodeSshPortForwardingRules(sshIp, vmId), false);
+                if (firewallRuleAdded) {
+                    removeNodeSshFirewallRules(sshIp, port, port);
+                }
+                throw new ManagementServerException(String.format("Failed to provision SSH access on port %d of %s to node VM %d of Kubernetes cluster %s",
+                        port, sshIp.getAddress().addr(), vmId, kubernetesCluster.getName()), e);
+            }
         }
     }
 
     /**
-     * Scale network rules for an existing Kubernetes cluster while scaling it
-     * Open up firewall for SSH access from port NODES_DEFAULT_START_SSH_PORT to NODES_DEFAULT_START_SSH_PORT+n.
-     * Also remove port forwarding rules for all virtual machines and re-create port-forwarding rule
-     * to forward public IP traffic to all node VMs' private IP.
-     * @param clusterVMIds
-     * @throws ManagementServerException
+     * Returns preferredPort, or else the lowest port from searchFrom up, that is not in takenPorts and that no port
+     * forwarding, load balancing or other non-firewall rule in usedPortRules covers, or null if there is none.
      */
-    private void scaleKubernetesClusterNetworkRules(final List<Long> clusterVMIds) throws ManagementServerException {
-        if (manager.isDirectAccess(network)) {
-            if (logger.isDebugEnabled())
-                logger.debug("Network: {} for Kubernetes cluster: {} is not an isolated network " +
-                        "or ROUTED network, therefore, no need for network rules", network, kubernetesCluster);
-            return;
+    protected Integer getFreeNodeSshPort(List<FirewallRuleVO> usedPortRules, Set<Integer> takenPorts, int preferredPort, int searchFrom) {
+        if (!takenPorts.contains(preferredPort) && !isPortInRules(usedPortRules, preferredPort)) {
+            return preferredPort;
         }
-        if (network.getVpcId() != null) {
-            scaleKubernetesClusterVpcTierRules(clusterVMIds);
-            return;
+        for (int port = searchFrom; port <= NetUtils.PORT_RANGE_MAX; port++) {
+            if (!takenPorts.contains(port) && !isPortInRules(usedPortRules, port)) {
+                return port;
+            }
         }
-        scaleKubernetesClusterIsolatedNetworkRules(clusterVMIds);
+        return null;
+    }
+
+    private boolean isPortInRules(List<FirewallRuleVO> rules, int port) {
+        return rules.stream().anyMatch(rule -> rule.getSourcePortStart() <= port && port <= rule.getSourcePortEnd());
     }
 
     private KubernetesClusterVO updateKubernetesClusterEntryForNodeType(final Long newWorkerSize, final KubernetesClusterNodeType nodeType,
@@ -412,8 +439,18 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     }
 
     private void removeNodesFromCluster(List<KubernetesClusterVmMapVO> vmMaps) throws CloudRuntimeException {
+        IpAddress sshIp = null;
+        try {
+            sshIp = getNodeSshIp();
+        } catch (ManagementServerException e) {
+            logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes " +
+                    "cluster %s, unable to update network rules", kubernetesCluster),
+                    kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
+        }
         for (KubernetesClusterVmMapVO vmMapVO : vmMaps) {
             UserVmVO userVM = userVmDao.findById(vmMapVO.getVmId());
+            List<PortForwardingRuleVO> nodeSshRules = sshIp == null ? Collections.emptyList()
+                    : listNodeSshPortForwardingRules(sshIp, vmMapVO.getVmId());
             logger.info("Removing vm {} from cluster {}", userVM, kubernetesCluster);
             if (!removeKubernetesClusterNode(publicIpAddress, sshPort, userVM, 3, 30000)) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes" +
@@ -435,24 +472,34 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             } finally {
                 CallContext.unregister();
             }
+            boolean sshRulesRemoved = true;
+            if (sshIp != null) {
+                try {
+                    sshRulesRemoved = removeNodeSshRules(sshIp, nodeSshRules, network.getVpcId() == null);
+                } catch (RuntimeException e) {
+                    logger.error("Failed to remove the SSH network rules of VM {} of Kubernetes cluster {}", userVM, kubernetesCluster, e);
+                    sshRulesRemoved = false;
+                }
+            }
             kubernetesClusterVmMapDao.expunge(vmMapVO.getId());
+            if (!sshRulesRemoved) {
+                logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to remove the SSH network rules of VM %s",
+                        kubernetesCluster, userVM), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            }
             if (System.currentTimeMillis() > scaleTimeoutTime) {
                 logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster %s failed, scaling action timed out",
                         kubernetesCluster), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
         }
 
-        // Scale network rules to update firewall rule
-        try {
-            List<Long> clusterVMIds = getKubernetesClusterVMMaps()
-                    .stream()
-                    .filter(x -> !x.isEtcdNode())
-                    .map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
-            scaleKubernetesClusterNetworkRules(clusterVMIds);
-        } catch (ManagementServerException e) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes " +
-                    "cluster %s, unable to update network rules", kubernetesCluster),
-                    kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
+        if (sshIp != null && network.getVpcId() == null) {
+            try {
+                shrinkNodeSshFirewallRule(sshIp);
+            } catch (ManagementServerException e) {
+                logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes " +
+                        "cluster %s, unable to update the SSH firewall rule", kubernetesCluster),
+                        kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
+            }
         }
     }
 
@@ -504,10 +551,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to provision node VM in the cluster", kubernetesCluster.getName()), e);
         }
         try {
-            List<Long> externalNodeIds = getKubernetesClusterVMMaps().stream().filter(KubernetesClusterVmMapVO::isExternalNode).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
-            List<Long> clusterVMIds = getKubernetesClusterVMMaps().stream().filter(vm -> !vm.isExternalNode() && !vm.isEtcdNode()).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
-            clusterVMIds.addAll(externalNodeIds);
-            scaleKubernetesClusterNetworkRules(clusterVMIds);
+            List<Long> clusterVMIds = getKubernetesClusterVMMaps().stream().filter(vm -> !vm.isEtcdNode()).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+            provisionMissingNodeSshRules(clusterVMIds);
         } catch (ManagementServerException e) {
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to update network rules", kubernetesCluster.getName()), e);
         }

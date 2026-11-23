@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -49,6 +50,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.Ip;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
@@ -579,17 +581,166 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
     }
 
-    protected void removePortForwardingRules(final IpAddress publicIp, final Network network, final Account account, int startPort, int endPort)
-        throws ResourceUnavailableException {
-        List<PortForwardingRuleVO> pfRules = portForwardingRulesDao.listByNetwork(network.getId());
-        for (PortForwardingRuleVO pfRule : pfRules) {
-            if (startPort <= pfRule.getSourcePortStart() && pfRule.getSourcePortStart() <= endPort) {
-                portForwardingRulesDao.remove(pfRule.getId());
-                logger.debug("The Port forwarding rule [{}] with the id [{}] was mark as revoked.", pfRule.getName(), pfRule.getId());
-                pfRule.setState(FirewallRule.State.Revoke);
+    /**
+     * A port forwarding rule from a single public port, from {@link #CLUSTER_NODES_DEFAULT_START_SSH_PORT} up, on the
+     * given IP to TCP port 22 of a node: the rule that gives a node its SSH port.
+     */
+    protected boolean isNodeSshPortForwardingRule(PortForwardingRuleVO rule, IpAddress sshIp) {
+        return Objects.equals(rule.getSourceIpAddressId(), sshIp.getId()) && rule.getState() != FirewallRule.State.Revoke
+                && NetUtils.TCP_PROTO.equalsIgnoreCase(rule.getProtocol())
+                && rule.getSourcePortStart() != null && Objects.equals(rule.getSourcePortStart(), rule.getSourcePortEnd())
+                && rule.getSourcePortStart() >= CLUSTER_NODES_DEFAULT_START_SSH_PORT
+                && rule.getDestinationPortStart() == DEFAULT_SSH_PORT && rule.getDestinationPortEnd() == DEFAULT_SSH_PORT;
+    }
+
+    protected List<PortForwardingRuleVO> listNodeSshPortForwardingRules(IpAddress sshIp, long vmId) {
+        return portForwardingRulesDao.listByVm(vmId).stream()
+                .filter(rule -> isNodeSshPortForwardingRule(rule, sshIp)).collect(Collectors.toList());
+    }
+
+    /**
+     * Revokes those of the given SSH port forwarding rules of nodes that still exist (expunging a VM removes its own)
+     * and, when firewall is true, the TCP firewall rules from 0.0.0.0/0 on the IP for exactly their ports. A wider
+     * firewall rule, such as the one for the nodes created with the cluster, is kept.
+     * @return false if a rule could not be revoked
+     */
+    protected boolean removeNodeSshRules(IpAddress sshIp, List<PortForwardingRuleVO> sshRules, boolean firewall) {
+        boolean result = true;
+        for (PortForwardingRuleVO sshRule : sshRules) {
+            int port = sshRule.getSourcePortStart();
+            if (firewall) {
+                result &= removeNodeSshFirewallRules(sshIp, port, port);
+            }
+            Optional<PortForwardingRuleVO> current = portForwardingRulesDao.listByVm(sshRule.getVirtualMachineId()).stream()
+                    .filter(rule -> rule.getId() == sshRule.getId() && rule.getState() != FirewallRule.State.Revoke).findFirst();
+            if (current.isPresent()) {
+                result &= revokeNodeSshRule(current.get());
             }
         }
-        firewallManager.applyRules(pfRules, false, true);
+        return result;
+    }
+
+    /**
+     * The IP that carries the SSH port forwarding rules of the nodes, or null when the nodes are reached directly.
+     */
+    protected IpAddress getNodeSshIp(Network network) throws ManagementServerException {
+        if (manager.isDirectAccess(network)) {
+            return null;
+        }
+        if (network.getVpcId() == null) {
+            IpAddress publicIp = getNetworkSourceNatIp(network);
+            if (publicIp == null) {
+                throw new ManagementServerException(String.format("No source NAT IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
+            }
+            return publicIp;
+        }
+        if (manager.isNetrisNetwork(network)) {
+            IpAddress natIp = getVpcTierKubernetesPublicIp(network, ApiConstants.NETRIS_NAT_PUBLIC_IP_ID);
+            if (natIp == null) {
+                throw new ManagementServerException(String.format("No NAT IP found for Netris VPC tier : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
+            }
+            return natIp;
+        }
+        IpAddress publicIp = getVpcTierKubernetesPublicIp(network);
+        if (publicIp == null) {
+            throw new ManagementServerException(String.format("No public IP addresses found for VPC tier : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
+        }
+        return publicIp;
+    }
+
+    /**
+     * A firewall rule that opens its ports to TCP from anywhere, which a node's firewall rule would clash with, as
+     * checked by FirewallManagerImpl#detectRulesConflict.
+     */
+    protected boolean isOpenTcpFirewallRule(FirewallRuleVO rule) {
+        if (rule.getState() == FirewallRule.State.Revoke || !NetUtils.TCP_PROTO.equalsIgnoreCase(rule.getProtocol())) {
+            return false;
+        }
+        firewallRulesDao.loadSourceCidrs(rule);
+        firewallRulesDao.loadDestinationCidrs(rule);
+        return rule.getSourceCidrList() != null && rule.getSourceCidrList().contains(NetUtils.ALL_IP4_CIDRS)
+                && CollectionUtils.isEmpty(rule.getDestinationCidrList());
+    }
+
+    protected void provisionNodeSshFirewallRule(IpAddress sshIp, int startPort, int endPort) throws NoSuchFieldException, IllegalAccessException,
+            ResourceUnavailableException, NetworkRuleConflictException {
+        CallContext.register(CallContext.current(), null);
+        try {
+            provisionFirewallRules(sshIp, owner, startPort, endPort);
+        } finally {
+            CallContext.unregister();
+        }
+    }
+
+    /**
+     * Shrinks the firewall rule opening the SSH ports of the nodes created with the cluster (TCP from 0.0.0.0/0, from
+     * {@link #CLUSTER_NODES_DEFAULT_START_SSH_PORT} up) to end at the highest of its ports that a port forwarding or
+     * other non-firewall rule on the IP still uses, so that the ports of removed nodes at its top end are closed.
+     */
+    protected void shrinkNodeSshFirewallRule(IpAddress sshIp) throws ManagementServerException {
+        FirewallRuleVO rangeRule = firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(sshIp.getId(), FirewallRule.Purpose.Firewall, NetUtils.TCP_PROTO).stream()
+                .filter(rule -> Objects.equals(rule.getSourcePortStart(), CLUSTER_NODES_DEFAULT_START_SSH_PORT) && rule.getSourcePortEnd() != null
+                        && rule.getSourcePortEnd() > CLUSTER_NODES_DEFAULT_START_SSH_PORT && isOpenTcpFirewallRule(rule))
+                .findFirst().orElse(null);
+        if (rangeRule == null) {
+            return;
+        }
+        int end = rangeRule.getSourcePortEnd();
+        int newEnd = firewallRulesDao.listByIp(sshIp.getId()).stream()
+                .filter(rule -> rule.getPurpose() != FirewallRule.Purpose.Firewall && rule.getSourcePortStart() != null && rule.getSourcePortEnd() != null
+                        && rule.getSourcePortStart() <= end && rule.getSourcePortEnd() >= CLUSTER_NODES_DEFAULT_START_SSH_PORT)
+                .mapToInt(rule -> Math.min(rule.getSourcePortEnd(), end))
+                .max().orElse(CLUSTER_NODES_DEFAULT_START_SSH_PORT - 1);
+        if (newEnd >= end) {
+            return;
+        }
+        if (!revokeNodeSshRule(rangeRule)) {
+            throw new ManagementServerException(String.format("Failed to revoke SSH firewall rule %s of Kubernetes cluster %s", rangeRule.getUuid(), kubernetesCluster.getName()));
+        }
+        if (newEnd < CLUSTER_NODES_DEFAULT_START_SSH_PORT) {
+            return;
+        }
+        try {
+            provisionNodeSshFirewallRule(sshIp, CLUSTER_NODES_DEFAULT_START_SSH_PORT, newEnd);
+        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException | CloudRuntimeException e) {
+            try {
+                removeNodeSshFirewallRules(sshIp, CLUSTER_NODES_DEFAULT_START_SSH_PORT, newEnd);
+                provisionNodeSshFirewallRule(sshIp, CLUSTER_NODES_DEFAULT_START_SSH_PORT, end);
+            } catch (Exception restoreException) {
+                logger.error("Failed to restore SSH firewall rule for ports {}-{} of Kubernetes cluster {}",
+                        CLUSTER_NODES_DEFAULT_START_SSH_PORT, end, kubernetesCluster, restoreException);
+            }
+            throw new ManagementServerException(String.format("Failed to provision SSH firewall rule for ports %d-%d of Kubernetes cluster %s",
+                    CLUSTER_NODES_DEFAULT_START_SSH_PORT, newEnd, kubernetesCluster.getName()), e);
+        }
+    }
+
+    /**
+     * Revokes the TCP firewall rules from 0.0.0.0/0 on the IP for exactly the given ports.
+     * @return false if a rule could not be revoked
+     */
+    protected boolean removeNodeSshFirewallRules(IpAddress sshIp, int startPort, int endPort) {
+        boolean result = true;
+        for (FirewallRuleVO firewallRule : firewallRulesDao.listByIpPurposePortsProtocolAndNotRevoked(sshIp.getId(), startPort, endPort,
+                NetUtils.TCP_PROTO, FirewallRule.Purpose.Firewall)) {
+            if (isOpenTcpFirewallRule(firewallRule)) {
+                result &= revokeNodeSshRule(firewallRule);
+            }
+        }
+        return result;
+    }
+
+    private boolean revokeNodeSshRule(FirewallRuleVO rule) {
+        try {
+            if (rule.getPurpose() == FirewallRule.Purpose.PortForwarding) {
+                return rulesService.revokePortForwardingRule(rule.getId(), true);
+            }
+            return firewallService.revokeIngressFirewallRule(rule.getId(), true);
+        } catch (Exception e) {
+            logger.error("Failed to revoke {} rule {} on port {} of Kubernetes cluster {}", rule.getPurpose(), rule.getUuid(),
+                    rule.getSourcePortStart(), kubernetesCluster, e);
+            return false;
+        }
     }
 
     protected void removeLoadBalancingRule(final IpAddress publicIp, final Network network,

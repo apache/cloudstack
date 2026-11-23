@@ -49,6 +49,7 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -73,6 +74,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
     private BGPService bgpService;
 
     private List<KubernetesClusterVmMapVO> clusterVMs;
+    private List<PortForwardingRuleVO> nodeSshRules = new ArrayList<>();
 
     public KubernetesClusterDestroyWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
@@ -164,6 +166,29 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         }
     }
 
+    /**
+     * The SSH port forwarding rules of the nodes on the source NAT IP of an isolated network, to be listed before the
+     * nodes are expunged, which also removes these rules but not the firewall rules opening their ports.
+     */
+    protected List<PortForwardingRuleVO> listIsolatedNetworkNodeSshRules() {
+        NetworkVO network = networkDao.findById(kubernetesCluster.getNetworkId());
+        if (network == null || network.getVpcId() != null || CollectionUtils.isEmpty(clusterVMs)) {
+            return new ArrayList<>();
+        }
+        IpAddress sshIp;
+        try {
+            sshIp = getNodeSshIp(network);
+        } catch (ManagementServerException e) {
+            logger.warn("Unable to list the SSH port forwarding rules of the nodes of Kubernetes cluster {}", kubernetesCluster, e);
+            return new ArrayList<>();
+        }
+        if (sshIp == null) {
+            return new ArrayList<>();
+        }
+        return clusterVMs.stream().flatMap(vmMap -> listNodeSshPortForwardingRules(sshIp, vmMap.getVmId()).stream())
+                .collect(Collectors.toList());
+    }
+
     protected void deleteKubernetesClusterIsolatedNetworkRules(Network network, List<Long> removedVmIds) throws ManagementServerException {
         IpAddress publicIp = getNetworkSourceNatIp(network);
         if (publicIp == null) {
@@ -177,6 +202,9 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         FirewallRule firewallRule = removeApiFirewallRule(publicIp);
         if (firewallRule == null) {
             logMessage(Level.WARN, "Firewall rule for API access can't be removed", null);
+        }
+        if (!removeNodeSshRules(publicIp, nodeSshRules, true)) {
+            logMessage(Level.WARN, "Network rules for SSH access to some nodes can't be removed", null);
         }
         firewallRule = removeSshFirewallRule(publicIp, network.getId());
         if (firewallRule == null) {
@@ -329,6 +357,9 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
             logger.info("Destroying Kubernetes cluster : {}", kubernetesCluster);
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.DestroyRequested);
+        if (!cleanupNetwork) {
+            nodeSshRules = listIsolatedNetworkNodeSshRules();
+        }
         boolean vmsDestroyed = destroyClusterVMs();
         // if there are VM's that were not expunged, we can not delete the network
         if (vmsDestroyed) {
