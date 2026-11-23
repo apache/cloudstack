@@ -27,11 +27,13 @@ import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmVO;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -44,6 +46,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class KubernetesClusterRemoveWorker extends KubernetesClusterActionWorker {
 
@@ -97,7 +100,7 @@ public class KubernetesClusterRemoveWorker extends KubernetesClusterActionWorker
             }
             try {
                 removeNodeVmFromCluster(nodeId, vm.getDisplayName().toLowerCase(Locale.ROOT), publicIp.getAddress().addr());
-                result &= removeNodePortForwardingRules(nodeId, network, vm);
+                result &= removeNodePortForwardingRules(nodeId, network, publicIp, vm);
                 if (System.currentTimeMillis() > removeNodeTimeoutTime) {
                     logger.error(String.format("Removal of node %s from Kubernetes cluster %s timed out", vm.getName(), kubernetesCluster.getName()));
                     result = false;
@@ -122,22 +125,48 @@ public class KubernetesClusterRemoveWorker extends KubernetesClusterActionWorker
         return result;
     }
 
-    protected boolean removeNodePortForwardingRules(Long nodeId, Network network, UserVmVO vm) {
-        List<PortForwardingRuleVO> pfRules = portForwardingRulesDao.listByVm(nodeId);
+    protected boolean removeNodePortForwardingRules(Long nodeId, Network network, IpAddress publicIp, UserVmVO vm) {
+        List<PortForwardingRuleVO> pfRules = portForwardingRulesDao.listByVm(nodeId).stream()
+                .filter(rule -> isNodeSshPfRule(rule, publicIp)).collect(Collectors.toList());
         boolean result = true;
         for (PortForwardingRuleVO pfRule : pfRules) {
-            try {
-                result &= rulesService.revokePortForwardingRule(pfRule.getId(), true);
-                if (Objects.isNull(network.getVpcId())) {
-                    FirewallRuleVO ruleVO = firewallRulesDao.findByNetworkIdAndPorts(network.getId(), pfRule.getSourcePortStart(), pfRule.getSourcePortEnd());
-                    result &= firewallService.revokeIngressFirewallRule(ruleVO.getId(), true);
+            if (Objects.isNull(network.getVpcId())) {
+                try {
+                    for (FirewallRuleVO ruleVO : listNodeSshFirewallRules(publicIp, pfRule.getSourcePortStart())) {
+                        result &= revokeNodeRule(ruleVO, vm);
+                    }
+                } catch (Exception e) {
+                    logger.error(String.format("Failed to find the firewall rule on port %s of node %s, due to: %s",
+                            pfRule.getSourcePortStart(), vm.getName(), e.getMessage()), e);
+                    result = false;
                 }
-            } catch (Exception e) {
-                String err = String.format("Failed to cleanup network rules for node %s, due to: %s", vm.getName(), e.getMessage());
-                logger.error(err, e);
             }
+            result &= revokeNodeRule(pfRule, vm);
         }
         return result;
+    }
+
+    private boolean revokeNodeRule(FirewallRuleVO rule, UserVmVO vm) {
+        try {
+            if (rule.getPurpose() == FirewallRule.Purpose.PortForwarding) {
+                return rulesService.revokePortForwardingRule(rule.getId(), true);
+            }
+            return firewallService.revokeIngressFirewallRule(rule.getId(), true);
+        } catch (Exception e) {
+            logger.error(String.format("Failed to remove network rule %s of node %s, due to: %s", rule.getUuid(), vm.getName(), e.getMessage()), e);
+            return false;
+        }
+    }
+
+    private boolean isNodeSshPfRule(PortForwardingRuleVO pfRule, IpAddress publicIp) {
+        return Objects.equals(pfRule.getSourceIpAddressId(), publicIp.getId()) && Objects.nonNull(pfRule.getSourcePortStart())
+                && Objects.equals(pfRule.getSourcePortStart(), pfRule.getSourcePortEnd()) && NetUtils.TCP_PROTO.equalsIgnoreCase(pfRule.getProtocol())
+                && pfRule.getDestinationPortStart() == DEFAULT_SSH_PORT && pfRule.getDestinationPortEnd() == DEFAULT_SSH_PORT
+                && pfRule.getState() != FirewallRule.State.Revoke;
+    }
+
+    private List<FirewallRuleVO> listNodeSshFirewallRules(IpAddress publicIp, int port) {
+        return firewallRulesDao.listByIpPurposePortsProtocolAndNotRevoked(publicIp.getId(), port, port, NetUtils.TCP_PROTO, FirewallRule.Purpose.Firewall);
     }
 
     private void removeNodeVmFromCluster(Long nodeId, String nodeName, String publicIp) throws Exception {
