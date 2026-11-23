@@ -706,7 +706,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             VirtualMachineManager.ExecuteInSequence.value());
 
         final StoragePool pool = (StoragePool) volumeInfo.getDataStore();
-        Host diskfulHost = getDiskfullHost(linstorApi, pool, rscName);
+        Host diskfulHost = getDiskfulHost(linstorApi, pool, rscName);
         Answer answer;
         if (diskfulHost != null) {
             answer = sendWithRscActivated(linstorApi, rscName, diskfulHost, cmd);
@@ -925,7 +925,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         return Optional.empty();
     }
 
-    private Host getDiskfullHost(DevelopersApi api, StoragePool storagePool, String rscName)
+    private Host getDiskfulHost(DevelopersApi api, StoragePool storagePool, String rscName)
             throws ApiException {
         // Take the first diskful copy whose host can be used: the copies are ordered by how
         // suited they are (in use, then active, then inactive), and for shared storage pools
@@ -939,7 +939,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             logger.debug("Linstor: no usable cloudstack host for diskful node {}, trying next copy",
                     linSP.getNodeName());
         }
-        logger.error("Linstor: No diskfull host found.");
+        logger.error("Linstor: No diskful host found.");
         return null;
     }
 
@@ -1216,7 +1216,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 VirtualMachineManager.ExecuteInSequence.value());
             cmd.setOptions(options);
 
-            Host diskfulHost = encrypted ? null : getDiskfullHost(api, pool, rscName);
+            Host diskfulHost = encrypted ? null : getDiskfulHost(api, pool, rscName);
             Answer answer;
             if (diskfulHost != null) {
                 answer = sendWithRscActivated(api, rscName, diskfulHost, cmd);
