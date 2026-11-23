@@ -811,6 +811,18 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
+    protected Map<String, String> getEtcdIps(List<KubernetesClusterVmMapVO> vmList) {
+        return vmList.stream().filter(KubernetesClusterVmMapVO::isEtcdNode)
+                .flatMap(vmMap -> pfRuleDao.listByVm(vmMap.getVmId()).stream())
+                .filter(rule -> rule.getState() != FirewallRule.State.Revoke
+                        && NetUtils.TCP_PROTO.equalsIgnoreCase(rule.getProtocol())
+                        && rule.getDestinationPortStart() == KubernetesClusterActionWorker.DEFAULT_SSH_PORT
+                        && rule.getDestinationPortEnd() == KubernetesClusterActionWorker.DEFAULT_SSH_PORT)
+                .map(PortForwardingRuleVO::getSourceIpAddressId).distinct()
+                .map(ipAddressDao::findById).filter(Objects::nonNull)
+                .collect(Collectors.toMap(IPAddressVO::getUuid, ip -> ip.getAddress().addr(), (a, b) -> a));
+    }
+
     @Override
     public KubernetesClusterResponse createKubernetesClusterResponse(long kubernetesClusterId) {
         KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(kubernetesClusterId);
@@ -899,19 +911,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     vmResponses.add(kubernetesUserVmResponse);
                 }
             }
-            List<Long> etcdNodeIds = vmList.stream().filter(KubernetesClusterVmMapVO::isEtcdNode).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
-            List<Long> etcdIpIds = new ArrayList<>();
-            Map<String, String> etcdIps = new HashMap<>();
-            int etcdNodeSshPort = KubernetesClusterService.KubernetesEtcdNodeStartPort.value();
-            etcdNodeIds.forEach(id -> {
-               etcdIpIds.addAll(pfRuleDao.listByVm(id).stream().filter(rule -> rule.getSourcePortStart() == etcdNodeSshPort)
-                       .map(PortForwardingRuleVO::getSourceIpAddressId).collect(Collectors.toList()));
-            });
-            etcdIpIds.forEach(id -> {
-                IPAddressVO ipAddress = ipAddressDao.findById(id);
-                etcdIps.put(ipAddress.getUuid(), ipAddress.getAddress().addr());
-            });
-            response.setEtcdIps(etcdIps);
+            response.setEtcdIps(getEtcdIps(vmList));
         }
         response.setHasAnnotation(annotationDao.hasAnnotations(kubernetesCluster.getUuid(),
                 AnnotationService.EntityType.KUBERNETES_CLUSTER.name(), accountService.isRootAdmin(caller.getId())));
