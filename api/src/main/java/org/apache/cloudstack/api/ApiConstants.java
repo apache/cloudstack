@@ -335,6 +335,8 @@ public class ApiConstants {
     public static final String MOVE_ACL_CONSISTENCY_HASH = "aclconsistencyhash";
     public static final String IMAGE_PATH = "imagepath";
     public static final String INSTANCE_CONVERSION_SUPPORTED = "instanceconversionsupported";
+    public static final String VLAN_FILTERING_ENABLED = "vlanfilteringenabled";
+    public static final String VLAN_TRUNK_XML_SUPPORTED = "vlantrunkxmlsupported";
     public static final String INTERNAL_DNS1 = "internaldns1";
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERNET_PROTOCOL = "internetprotocol";
@@ -375,6 +377,7 @@ public class ApiConstants {
     public static final String IS_ISO = "isiso";
     public static final String IS_PORTABLE = "isportable";
     public static final String IS_PUBLIC = "ispublic";
+    public static final String IDLE_TIMEOUT = "idletimeout";
     public static final String IS_PERSISTENT = "ispersistent";
     public static final String EGRESS_DEFAULT_POLICY = "egressdefaultpolicy";
     public static final String IS_READY = "isready";
@@ -386,6 +389,8 @@ public class ApiConstants {
     public static final String JAVA_VERSION = "javaversion";
     public static final String JOB_ID = "jobid";
     public static final String JOB_STATUS = "jobstatus";
+    public static final String KEEPALIVE = "keepalive";
+    public static final String KEEPALIVE_TIMEOUT = "keepalivetimeout";
     public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
     public static final String KERNEL_VERSION = "kernelversion";
     public static final String KEYPAIR_ID = "keypairid";
@@ -438,6 +443,7 @@ public class ApiConstants {
     public static final String NIC = "nic";
     public static final String NICS = "nics";
     public static final String NIC_NETWORK_LIST = "nicnetworklist";
+    public static final String NIC_NETWORKS_LIST = "nicnetworkslist";
     public static final String NIC_IP_ADDRESS_LIST = "nicipaddresslist";
     public static final String NIC_MULTIQUEUE_NUMBER = "nicmultiqueuenumber";
     public static final String NIC_PACKED_VIRTQUEUES_ENABLED = "nicpackedvirtqueuesenabled";
@@ -671,6 +677,29 @@ public class ApiConstants {
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
     public static final String USER_SECRET_KEY = "usersecretkey";
     public static final String USE_VDDK = "usevddk";
+    public static final String VMWARE_MIGRATION_MODE = "vmwaremigrationmode";
+    public static final String VMWARE_CBT_MIGRATION_ID = "vmwarecbtmigrationid";
+    public static final String SOURCE_HOST = "sourcehost";
+    public static final String SOURCE_CLUSTER = "sourcecluster";
+    public static final String SOURCE_VM_NAME = "sourcevmname";
+    public static final String SOURCE_DISK_ID = "sourcediskid";
+    public static final String SOURCE_DISK_DEVICE_KEY = "sourcediskdevicekey";
+    public static final String SOURCE_DISK_PATH = "sourcediskpath";
+    public static final String TARGET_PATH = "targetpath";
+    public static final String TARGET_FORMAT = "targetformat";
+    public static final String CHANGE_ID = "changeid";
+    public static final String SNAPSHOT_MOR = "snapshotmor";
+    public static final String CURRENT_STEP = "currentstep";
+    public static final String LAST_ERROR = "lasterror";
+    public static final String COMPLETED_CYCLES = "completedcycles";
+    public static final String QUIET_CYCLES = "quietcycles";
+    public static final String LAST_CHANGED_BYTES = "lastchangedbytes";
+    public static final String LAST_DIRTY_RATE = "lastdirtyrate";
+    public static final String TOTAL_CHANGED_BYTES = "totalchangedbytes";
+    public static final String CYCLE = "cycle";
+    public static final String CYCLE_NUMBER = "cyclenumber";
+    public static final String CHANGED_BYTES = "changedbytes";
+    public static final String DIRTY_RATE = "dirtyrate";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
     public static final String USE_VIRTUAL_ROUTER_IP_RESOLVER = "userouteripresolver";
     public static final String UPDATE_IN_SEQUENCE = "updateinsequence";
@@ -883,6 +912,8 @@ public class ApiConstants {
     public static final String ASSOCIATED_NETWORK = "associatednetwork";
     public static final String ASSOCIATED_NETWORK_ID = "associatednetworkid";
     public static final String ASSOCIATED_NETWORK_NAME = "associatednetworkname";
+    public static final String ASSOCIATED_NETWORKS = "associatednetworks";
+    public static final String TRUNKED = "trunked";
     public static final String ASSOCIATED_VPC_ID = "associatedvpcid";
     public static final String ASSOCIATED_VPC_NAME = "associatedvpcname";
     public static final String SOURCE_NAT_SUPPORTED = "sourcenatsupported";
@@ -1225,6 +1256,7 @@ public class ApiConstants {
     public static final String OVM3_POOL = "ovm3pool";
     public static final String OVM3_CLUSTER = "ovm3cluster";
     public static final String OVM3_VIP = "ovm3vip";
+    public static final String CLEAN_UP_CONNECTION_SETTINGS = "cleanupconnectionsettings";
     public static final String CLEAN_UP_DETAILS = "cleanupdetails";
     public static final String CLEAN_UP_EXTERNAL_DETAILS = "cleanupexternaldetails";
     public static final String CLEAN_UP_EXTRA_CONFIG = "cleanupextraconfig";
@@ -1270,6 +1302,7 @@ public class ApiConstants {
     public static final String LAST_UPDATED = "lastupdated";
     public static final String PERFORM_FRESH_CHECKS = "performfreshchecks";
     public static final String CACHE_MODE = "cachemode";
+    public static final String ERROR_POLICY = "errorpolicy";
 
     public static final String CONSOLE_END_POINT = "consoleendpoint";
     public static final String EXTERNAL_LOAD_BALANCER_IP_ADDRESS = "externalloadbalanceripaddress";
@@ -1360,6 +1393,7 @@ public class ApiConstants {
     public static final String HAS_RULES = "hasrules";
     public static final String NSX_DETAIL_KEY = "forNsx";
     public static final String NETRIS_DETAIL_KEY = "forNetris";
+    public static final String NETRIS_NAT_PUBLIC_IP_ID = "netrisnatpublicipid";
     public static final String NETRIS_TAG = "netristag";
     public static final String NETRIS_VXLAN_ID = "netrisvxlanid";
     public static final String NETRIS_URL = "netrisurl";
@@ -1508,6 +1542,7 @@ public class ApiConstants {
     public static final String SCHEDULED = "scheduled";
     public static final String SCHEDULED_DATE = "scheduleddate";
     public static final String BACKUP_PROVIDER = "backupprovider";
+    public static final String COMPRESS_ASYNC = "compressasync";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

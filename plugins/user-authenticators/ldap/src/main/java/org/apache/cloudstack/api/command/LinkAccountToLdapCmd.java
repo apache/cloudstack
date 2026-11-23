@@ -79,7 +79,7 @@ public class LinkAccountToLdapCmd extends BaseCmd {
             if (admin != null) {
                 LdapUser ldapUser = null;
                 try {
-                    ldapUser = _ldapManager.getUser(admin, type, ldapDomain, domainId);
+                    ldapUser = _ldapManager.getUser(admin, getType(), ldapDomain, domainId);
                 } catch (NoLdapUserMatchingQueryException e) {
                     logger.debug("no ldap user matching username {} in the given group/ou", admin, e);
                 }
@@ -120,7 +120,7 @@ public class LinkAccountToLdapCmd extends BaseCmd {
     }
 
     public String getType() {
-        return type;
+        return type == null ? LdapManager.LinkType.GROUP.name() : type;
     }
 
     public String getLdapDomain() {

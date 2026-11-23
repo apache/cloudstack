@@ -26,6 +26,7 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.libvirt.Connect;
@@ -112,9 +113,9 @@ public class LibvirtUtilitiesHelper {
     }
 
     public String generateVMSnapshotXML(VMSnapshotTO snapshot, VMSnapshotTO parent, String domainXmlDesc) {
-        String parentName = (parent == null)? "": ("  <parent><name>" + parent.getSnapshotName() + "</name></parent>\n");
+        String parentName = (parent == null)? "": ("  <parent><name>" + StringEscapeUtils.escapeXml(parent.getSnapshotName()) + "</name></parent>\n");
         String vmSnapshotXML = "<domainsnapshot>\n"
-                + "  <name>" + snapshot.getSnapshotName() + "</name>\n"
+                + "  <name>" + StringEscapeUtils.escapeXml(snapshot.getSnapshotName()) + "</name>\n"
                 + "  <state>running</state>\n"
                 + parentName
                 + "  <creationTime>" + (int) Math.rint(snapshot.getCreateTime()/1000) + "</creationTime>\n"

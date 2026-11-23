@@ -40,6 +40,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
@@ -101,6 +102,15 @@ public class AssignLoadBalancerTest {
             nicvo.setNetworkId(204L);
             nic.add(nicvo);
             return nic;
+        }
+
+        @Override
+        public Pair<Nic, Network.IpAddresses> getNicAndIpInNetwork(long vmId, long networkId) {
+            nicvo.setNetworkId(204L);
+            if (networkId != 204L) {
+                return null;
+            }
+            return new Pair<>(nicvo, new Network.IpAddresses(nicvo.getIPv4Address(), nicvo.getIPv6Address()));
         }
     };
 
