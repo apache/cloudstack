@@ -36,10 +36,13 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.DEFAULT;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.WORKER;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesClusterScaleWorkerTest {
@@ -186,5 +189,72 @@ public class KubernetesClusterScaleWorkerTest {
         List<KubernetesClusterVmMapVO> toRemove = spyWorker.getWorkerNodesToRemove();
 
         Assert.assertTrue(toRemove.isEmpty());
+    }
+
+    private KubernetesClusterScaleWorker mockScaleCluster(Map<String, ServiceOffering> offeringMap, Long clusterSize,
+                                                          Boolean autoscalingEnabled, Long minSize, Long maxSize) {
+        long clusterOfferingId = 1L;
+        long workerOfferingId = 2L;
+        Mockito.when(kubernetesCluster.getNodeCount()).thenReturn(3L);
+        Mockito.lenient().when(kubernetesCluster.getServiceOfferingId()).thenReturn(clusterOfferingId);
+        Mockito.lenient().when(kubernetesCluster.getAutoscalingEnabled()).thenReturn(false);
+
+        ServiceOfferingVO clusterOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.lenient().when(clusterOffering.getId()).thenReturn(clusterOfferingId);
+        ServiceOfferingVO workerOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.lenient().when(workerOffering.getId()).thenReturn(workerOfferingId);
+        Mockito.lenient().when(serviceOfferingDao.findById(clusterOfferingId)).thenReturn(clusterOffering);
+        Mockito.lenient().when(serviceOfferingDao.findById(workerOfferingId)).thenReturn(workerOffering);
+
+        KubernetesClusterScaleWorker scaleWorker = new KubernetesClusterScaleWorker(kubernetesCluster, offeringMap, clusterSize,
+                null, autoscalingEnabled, minSize, maxSize, clusterManager);
+        scaleWorker.serviceOfferingDao = serviceOfferingDao;
+        scaleWorker = Mockito.spy(scaleWorker);
+        Mockito.doNothing().when(scaleWorker).init();
+        Mockito.lenient().doReturn(clusterOfferingId).when(scaleWorker).getExistingOfferingIdForNodeType(Mockito.any(), Mockito.any());
+        Mockito.lenient().doReturn(workerOfferingId).when(scaleWorker).getExistingOfferingIdForNodeType(WORKER, kubernetesCluster);
+        Mockito.doReturn(true).when(scaleWorker).stateTransitTo(Mockito.anyLong(), Mockito.any());
+        Mockito.lenient().doNothing().when(scaleWorker).scaleKubernetesClusterSize(Mockito.any());
+        Mockito.lenient().doNothing().when(scaleWorker).scaleKubernetesClusterOffering(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean());
+        Mockito.lenient().doReturn(true).when(scaleWorker).autoscaleCluster(Mockito.anyBoolean(), Mockito.any(), Mockito.any());
+        return scaleWorker;
+    }
+
+    @Test
+    public void testScaleClusterSizeOnlyKeepsNodeOfferings() {
+        KubernetesClusterScaleWorker scaleWorker = mockScaleCluster(new HashMap<>(), 2L, null, null, null);
+        Assert.assertTrue(scaleWorker.scaleCluster());
+        Mockito.verify(scaleWorker).scaleKubernetesClusterSize(WORKER);
+        Mockito.verify(scaleWorker, Mockito.never()).scaleKubernetesClusterOffering(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testScaleClusterAutoscalingOnlyKeepsNodeOfferings() {
+        KubernetesClusterScaleWorker scaleWorker = mockScaleCluster(new HashMap<>(), null, true, 1L, 5L);
+        Assert.assertTrue(scaleWorker.scaleCluster());
+        Mockito.verify(scaleWorker).autoscaleCluster(true, 1L, 5L);
+        Mockito.verify(scaleWorker, Mockito.never()).scaleKubernetesClusterOffering(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testScaleClusterAutoscalingDisableKeepsNodeOfferings() {
+        KubernetesClusterScaleWorker scaleWorker = mockScaleCluster(new HashMap<>(), null, false, null, null);
+        Mockito.when(kubernetesCluster.getAutoscalingEnabled()).thenReturn(true);
+        Assert.assertTrue(scaleWorker.scaleCluster());
+        Mockito.verify(scaleWorker).autoscaleCluster(false, null, null);
+        Mockito.verify(scaleWorker, Mockito.never()).scaleKubernetesClusterOffering(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testScaleClusterDefaultOfferingScalesDifferingNodeType() {
+        ServiceOfferingVO clusterOffering = Mockito.mock(ServiceOfferingVO.class);
+        Map<String, ServiceOffering> offeringMap = new HashMap<>();
+        offeringMap.put(DEFAULT.name(), clusterOffering);
+        KubernetesClusterScaleWorker scaleWorker = mockScaleCluster(offeringMap, 2L, null, null, null);
+        Mockito.when(clusterOffering.getId()).thenReturn(1L);
+        Assert.assertTrue(scaleWorker.scaleCluster());
+        Mockito.verify(scaleWorker).scaleKubernetesClusterSize(WORKER);
+        Mockito.verify(scaleWorker).scaleKubernetesClusterOffering(WORKER, clusterOffering, true, true);
+        Mockito.verify(scaleWorker, Mockito.times(1)).scaleKubernetesClusterOffering(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 }
