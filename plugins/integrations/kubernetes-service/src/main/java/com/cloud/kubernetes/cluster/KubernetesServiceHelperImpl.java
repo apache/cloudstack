@@ -19,6 +19,7 @@ package com.cloud.kubernetes.cluster;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -41,11 +42,13 @@ import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.kubernetes.version.KubernetesVersionEventTypes;
 import com.cloud.user.Account;
+import com.cloud.user.UserData;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -121,6 +124,17 @@ public class KubernetesServiceHelperImpl extends AdapterBase implements Kubernet
         msg += ". Use Instance delete option from Kubernetes cluster details or scale API for " +
                 "Kubernetes clusters with 'nodeids' to destroy the instance.";
         throw new CloudRuntimeException(msg);
+    }
+
+    @Override
+    public void checkUserDataCanBeDeleted(UserData userData) {
+        List<KubernetesClusterVO> clusters = kubernetesClusterDao.listByCniConfigId(userData.getId());
+        if (CollectionUtils.isEmpty(clusters)) {
+            return;
+        }
+        throw new CloudRuntimeException(String.format("CNI configuration %s cannot be removed as it is used by Kubernetes cluster %s%s",
+                userData.getName(), clusters.get(0).getName(),
+                clusters.size() > 1 ? String.format(" and %d more", clusters.size() - 1) : ""));
     }
 
     @Override

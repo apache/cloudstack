@@ -836,12 +836,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             response.setServiceOfferingName(offering.getName());
         }
 
-        Long cniConfigId = kubernetesCluster.getCniConfigId();
-        if (Objects.nonNull(cniConfigId)) {
-            UserDataVO cniConfig = userDataDao.findById(cniConfigId);
-            response.setCniConfigId(cniConfig.getUuid());
-            response.setCniConfigName(cniConfig.getName());
-        }
+        setCniConfigResponse(response, kubernetesCluster.getCniConfigId());
         setNodeTypeServiceOfferingResponse(response, WORKER, kubernetesCluster.getWorkerNodeServiceOfferingId());
         setNodeTypeServiceOfferingResponse(response, CONTROL, kubernetesCluster.getControlNodeServiceOfferingId());
         setNodeTypeServiceOfferingResponse(response, ETCD, kubernetesCluster.getEtcdNodeServiceOfferingId());
@@ -924,6 +919,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setCreated(kubernetesCluster.getCreated());
 
         return response;
+    }
+
+    protected void setCniConfigResponse(KubernetesClusterResponse response, Long cniConfigId) {
+        if (cniConfigId == null) {
+            return;
+        }
+        UserDataVO cniConfig = userDataDao.findByIdIncludingRemoved(cniConfigId);
+        if (cniConfig != null) {
+            response.setCniConfigId(cniConfig.getUuid());
+            response.setCniConfigName(cniConfig.getName());
+        }
     }
 
     private DataCenter validateAndGetZoneForKubernetesCreateParameters(Long zoneId, Long networkId) {
@@ -1097,6 +1103,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         validateSshKeyPairForKubernetesCreateParameters(sshKeyPair, owner);
 
+        validateCniConfigForKubernetesCreateParameters(cmd.getCniConfigId());
+
         if (nodeRootDiskSize != null && nodeRootDiskSize <= 0) {
             throw new InvalidParameterValueException(String.format("Invalid value for %s", ApiConstants.NODE_ROOT_DISK_SIZE));
         }
@@ -1124,6 +1132,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (!KubernetesClusterExperimentalFeaturesEnabled.value() && !StringUtils.isAllEmpty(dockerRegistryUrl, dockerRegistryUserName, dockerRegistryPassword)) {
             throw new CloudRuntimeException(String.format("Private registry for the Kubernetes cluster is an experimental feature. Use %s configuration for enabling experimental features", KubernetesClusterExperimentalFeaturesEnabled.key()));
         }
+    }
+
+    protected void validateCniConfigForKubernetesCreateParameters(Long cniConfigId) {
+        if (cniConfigId == null) {
+            return;
+        }
+        UserDataVO cniConfig = userDataDao.findById(cniConfigId);
+        if (cniConfig == null) {
+            throw new InvalidParameterValueException("Unable to find the CNI configuration with the specified ID");
+        }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, cniConfig);
     }
 
     protected void validateServiceOfferingsForNodeTypes(Map<String, Long> map,

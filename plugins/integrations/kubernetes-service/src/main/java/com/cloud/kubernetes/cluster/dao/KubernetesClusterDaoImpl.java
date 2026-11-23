@@ -36,6 +36,7 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
     private final SearchBuilder<KubernetesClusterVO> ManagedStateSearch;
     private final SearchBuilder<KubernetesClusterVO> SameNetworkSearch;
     private final SearchBuilder<KubernetesClusterVO> KubernetesVersionSearch;
+    private final SearchBuilder<KubernetesClusterVO> CniConfigSearch;
 
     public KubernetesClusterDaoImpl() {
         CleanupAccountIdSearch = createSearchBuilder();
@@ -68,6 +69,10 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
         KubernetesVersionSearch = createSearchBuilder();
         KubernetesVersionSearch.and("kubernetesVersionId", KubernetesVersionSearch.entity().getKubernetesVersionId(), SearchCriteria.Op.EQ);
         KubernetesVersionSearch.done();
+
+        CniConfigSearch = createSearchBuilder();
+        CniConfigSearch.and("cniConfigId", CniConfigSearch.entity().getCniConfigId(), SearchCriteria.Op.EQ);
+        CniConfigSearch.done();
     }
 
     @Override
@@ -130,6 +135,13 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
     public List<KubernetesClusterVO> listAllByKubernetesVersion(long kubernetesVersionId) {
         SearchCriteria<KubernetesClusterVO> sc = KubernetesVersionSearch.create();
         sc.setParameters("kubernetesVersionId", kubernetesVersionId);
+        return this.listBy(sc);
+    }
+
+    @Override
+    public List<KubernetesClusterVO> listByCniConfigId(long cniConfigId) {
+        SearchCriteria<KubernetesClusterVO> sc = CniConfigSearch.create();
+        sc.setParameters("cniConfigId", cniConfigId);
         return this.listBy(sc);
     }
 }
