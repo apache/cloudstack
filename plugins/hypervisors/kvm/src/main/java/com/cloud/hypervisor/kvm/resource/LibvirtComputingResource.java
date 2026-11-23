@@ -58,6 +58,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -66,6 +67,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -6357,6 +6359,28 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     public boolean hostSupportsVlanFiltering() {
         return isBridgeVlanFilteringEnabled(getEffectiveGuestBridgeName());
+    }
+
+    /**
+     * Operator diagnostic for hosts with several guest bridges where only some have vlan_filtering on. Multiple
+     * guest physical networks are unsupported; nics are still kept isolated (per-bridge decision at plug time),
+     * but host-level readiness, trunk placement and migration only reflect one bridge.
+     */
+    public void warnIfGuestBridgesDifferInVlanFiltering(Collection<String> guestBridgeNames) {
+        Set<String> filtering = new TreeSet<>();
+        Set<String> notFiltering = new TreeSet<>();
+        for (String bridgeName : guestBridgeNames) {
+            if (StringUtils.isBlank(bridgeName)) {
+                continue;
+            }
+            (isBridgeVlanFilteringEnabled(bridgeName) ? filtering : notFiltering).add(bridgeName);
+        }
+        if (!filtering.isEmpty() && !notFiltering.isEmpty()) {
+            LOGGER.warn("Guest bridges differ in vlan_filtering: enabled on {}, disabled on {}. Multiple guest physical networks are not "
+                    + "supported with multi-VLAN trunk nics. VLAN nics on the disabled bridges keep dedicated per-VLAN bridges and trunk nics are "
+                    + "refused there, but host readiness, trunk placement and migration only reflect bridge '{}'. Use one guest bridge per host, "
+                    + "or enable vlan_filtering on all of them.", filtering, notFiltering, getEffectiveGuestBridgeName());
+        }
     }
 
     public void setGuestTrafficLabel(String guestTrafficLabel) {

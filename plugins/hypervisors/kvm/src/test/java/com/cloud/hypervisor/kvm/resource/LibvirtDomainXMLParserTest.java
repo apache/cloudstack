@@ -272,6 +272,20 @@ public class LibvirtDomainXMLParserTest extends TestCase {
     }
 
     @Test
+    public void testDomainXMLParserReadsNicLinkState() {
+        String xml = "<domain type='kvm'><name>vm</name><devices>"
+                + "<interface type='bridge'><mac address='02:00:00:00:00:01'/><source bridge='cloudbr1'/><target dev='vnet1'/><model type='virtio'/><link state='down'/></interface>"
+                + "<interface type='bridge'><mac address='02:00:00:00:00:02'/><source bridge='cloudbr1'/><target dev='vnet2'/><model type='virtio'/></interface>"
+                + "</devices></domain>";
+        LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+        Assert.assertTrue(parser.parseDomainXML(xml));
+
+        List<InterfaceDef> interfaces = parser.getInterfaces();
+        Assert.assertFalse(interfaces.get(0).isLinkStateUp());
+        Assert.assertTrue(interfaces.get(1).isLinkStateUp());
+    }
+
+    @Test
     public void testDomainXMLParserWithoutModelName() {
         String xml = "<domain type='kvm'>\n" +
                 "  <name>testkiran</name>\n" +

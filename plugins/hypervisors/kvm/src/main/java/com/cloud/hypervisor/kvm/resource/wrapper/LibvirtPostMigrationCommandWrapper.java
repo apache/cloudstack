@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.libvirt.Connect;
+import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.Answer;
@@ -87,16 +88,63 @@ public final class LibvirtPostMigrationCommandWrapper extends CommandWrapper<Pos
     }
 
     private void applyManualVlanTrunkMembership(Connect conn, String vmName, NicTO[] nics, LibvirtComputingResource libvirtComputingResource)
-            throws InternalErrorException {
+            throws InternalErrorException, LibvirtException {
         if (nics == null) {
             return;
         }
+        InternalErrorException firstFailure = null;
         for (NicTO nic : nics) {
             if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vlan) {
                 continue;
             }
             LibvirtVMDef.InterfaceDef liveInterface = libvirtComputingResource.getInterface(conn, vmName, nic.getMac());
-            libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).ensureVlanTrunkMembership(liveInterface, nic);
+            try {
+                libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).ensureVlanTrunkMembership(liveInterface, nic);
+            } catch (InternalErrorException e) {
+                // keep going so every other nic of the VM is also applied or cut off, not left on VLAN 1
+                failClosed(conn, vmName, nic, libvirtComputingResource);
+                firstFailure = firstFailure == null ? e : firstFailure;
+                continue;
+            }
+            restoreLinkIfCutOff(conn, vmName, nic, liveInterface, libvirtComputingResource);
+        }
+        if (firstFailure != null) {
+            throw firstFailure;
+        }
+    }
+
+    // Without its VLANs the tap sits on the bridge's default VLAN 1, so cut the nic off rather than leave it there
+    private void failClosed(Connect conn, String vmName, NicTO nic, LibvirtComputingResource libvirtComputingResource) {
+        if (!nic.isEnabled()) {
+            return;
+        }
+        try {
+            setNicLinkState(conn, vmName, nic, false, libvirtComputingResource);
+            logger.error("Could not apply the VLAN membership of nic {} of VM {}; its link was set down so it does not sit on the bridge's default VLAN. "
+                    + "The link is restored once the membership is applied; otherwise correct it or restart the VM.", nic.getMac(), vmName);
+        } catch (LibvirtException e) {
+            logger.error("Could not apply the VLAN membership of nic {} of VM {} and could not set its link down either, so it may still be on the bridge's default VLAN: {}",
+                    nic.getMac(), vmName, e.getMessage());
+        }
+    }
+
+    // The link follows the nic's enabled state, so an enabled nic found down was cut off by an earlier failed attempt, possibly on another host
+    private void restoreLinkIfCutOff(Connect conn, String vmName, NicTO nic, LibvirtVMDef.InterfaceDef liveInterface,
+            LibvirtComputingResource libvirtComputingResource) throws LibvirtException {
+        if (nic.isEnabled() && !liveInterface.isLinkStateUp()) {
+            setNicLinkState(conn, vmName, nic, true, libvirtComputingResource);
+            logger.info("VLAN membership of nic {} of VM {} is applied now; its link was set up again", nic.getMac(), vmName);
+        }
+    }
+
+    private void setNicLinkState(Connect conn, String vmName, NicTO nic, boolean up, LibvirtComputingResource libvirtComputingResource) throws LibvirtException {
+        Domain domain = libvirtComputingResource.getDomain(conn, vmName);
+        try {
+            LibvirtVMDef.InterfaceDef liveInterface = libvirtComputingResource.getInterface(conn, vmName, nic.getMac());
+            liveInterface.setLinkStateUp(up);
+            domain.updateDeviceFlags(liveInterface.toString(), Domain.DeviceModifyFlags.LIVE);
+        } finally {
+            domain.free();
         }
     }
 }

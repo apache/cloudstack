@@ -207,7 +207,8 @@ public class LibvirtReplugNicCommandWrapperTest {
 
         when(_domain.getXMLDesc(0))
                 .thenReturn(fullfile)
-                .thenReturn(part_1 + part_3);
+                .thenReturn(part_1 + part_3)
+                .thenReturn(fullfile);
         when(conn.domainLookupByName(Mockito.anyString())).thenReturn(_domain);
         when(helper.getConnectionByVmName(Mockito.anyString())).thenReturn(conn);
 

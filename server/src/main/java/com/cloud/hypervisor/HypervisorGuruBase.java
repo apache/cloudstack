@@ -233,6 +233,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         }
         to.setNetworkSegmentName(getNetworkName(zone.getId(), domain.getId(), account.getId(), vpc, network.getId()));
 
+        to.setSharedVlanBridgeEnabled(NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(zone.getId()));
+
         // Workaround to make sure the TO has the UUID we need for Nicira integration
         NicVO nicVO = nicDao.findById(profile.getId());
         if (nicVO != null) {

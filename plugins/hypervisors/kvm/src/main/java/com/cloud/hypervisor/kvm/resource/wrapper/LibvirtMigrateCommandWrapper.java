@@ -695,6 +695,11 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         return LibvirtXMLParser.getXml(doc);
     }
 
+    // Trunk nics always need it; ordinary nics only when the zone opted in to the shared VLAN-aware bridge
+    private boolean needsVlanRewrite(NicTO nic, boolean sourceVlanFilteringEnabled, boolean destVlanFilteringEnabled) {
+        return nic.isTrunkVlan() || (nic.isSharedVlanBridgeEnabled() && (sourceVlanFilteringEnabled || destVlanFilteringEnabled));
+    }
+
     // Rewrites Vlan-broadcast nics' bridge/trunk XML for the destination's capability; fails closed if that capability is unknown.
     protected String replaceVlanTrunkInterfaces(String xmlDesc, MigrateCommand command, LibvirtComputingResource libvirtComputingResource)
             throws ParserConfigurationException, IOException, SAXException, TransformerException {
@@ -705,7 +710,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         boolean destVlanFilteringEnabled = Boolean.TRUE.equals(command.getDestVlanFilteringEnabled());
         boolean anyNicNeedsHandling = false;
         for (NicTO nic : nics) {
-            if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && (sourceVlanFilteringEnabled || destVlanFilteringEnabled || nic.isTrunkVlan())) {
+            if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && needsVlanRewrite(nic, sourceVlanFilteringEnabled, destVlanFilteringEnabled)) {
                 failIfBroadcastUriMissing(nic);
                 anyNicNeedsHandling = true;
             }
@@ -736,7 +741,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 String mac = findInterfaceMacAddress(interfaceElement);
                 NicTO nic = mac == null ? null : findNicByMac(nics, mac);
                 if (nic == null || nic.getBroadcastType() != Networks.BroadcastDomainType.Vlan
-                        || !(sourceVlanFilteringEnabled || destVlanFilteringEnabled || nic.isTrunkVlan())) {
+                        || !needsVlanRewrite(nic, sourceVlanFilteringEnabled, destVlanFilteringEnabled)) {
                     continue;
                 }
                 replaceVlanTrunkInterface(doc, interfaceElement, nic, command);

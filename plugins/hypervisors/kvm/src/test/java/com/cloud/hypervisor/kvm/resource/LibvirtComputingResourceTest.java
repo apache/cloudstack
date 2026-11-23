@@ -7742,6 +7742,18 @@ public class LibvirtComputingResourceTest {
         Assert.assertEquals(expectedResult, result);
     }
 
+    @Test
+    public void warnIfGuestBridgesDifferInVlanFilteringChecksEachNonBlankBridge() {
+        Mockito.doReturn(true).when(libvirtComputingResourceSpy).isBridgeVlanFilteringEnabled("cloudbr1");
+        Mockito.doReturn(false).when(libvirtComputingResourceSpy).isBridgeVlanFilteringEnabled("cloudbr2");
+
+        libvirtComputingResourceSpy.warnIfGuestBridgesDifferInVlanFiltering(Arrays.asList("cloudbr1", "cloudbr2", " ", null));
+
+        Mockito.verify(libvirtComputingResourceSpy).isBridgeVlanFilteringEnabled("cloudbr1");
+        Mockito.verify(libvirtComputingResourceSpy).isBridgeVlanFilteringEnabled("cloudbr2");
+        Mockito.verify(libvirtComputingResourceSpy, Mockito.never()).isBridgeVlanFilteringEnabled(" ");
+    }
+
     // getEffectiveGuestBridgeName() must mirror BridgeVifDriver#plugTrunkVlanNic's resolution
 
     @Test

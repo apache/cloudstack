@@ -38,6 +38,8 @@ public class NicTO extends NetworkTO {
     String networkSegmentName;
 
     boolean trunkVlan;
+    // Zone setting multi.network.nic.enabled, resolved by the management server per operation; false keeps per-VLAN bridges
+    boolean sharedVlanBridgeEnabled;
     List<NetworkTO> associatedNetworks;
 
     public NicTO() {
@@ -174,6 +176,14 @@ public class NicTO extends NetworkTO {
 
     public void setTrunkVlan(boolean trunkVlan) {
         this.trunkVlan = trunkVlan;
+    }
+
+    public boolean isSharedVlanBridgeEnabled() {
+        return sharedVlanBridgeEnabled;
+    }
+
+    public void setSharedVlanBridgeEnabled(boolean sharedVlanBridgeEnabled) {
+        this.sharedVlanBridgeEnabled = sharedVlanBridgeEnabled;
     }
 
     public List<NetworkTO> getAssociatedNetworks() {

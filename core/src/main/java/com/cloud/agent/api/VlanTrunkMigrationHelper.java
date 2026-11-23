@@ -39,6 +39,9 @@ import com.cloud.vm.dao.NicDao;
 
 public class VlanTrunkMigrationHelper {
 
+    private static final int POST_MIGRATION_MAX_ATTEMPTS = 3;
+    private static final long POST_MIGRATION_RETRY_DELAY_MS = 2000L;
+
     private static final String NATIVE_VLAN_ON_FILTERING_HOST_REASON =
             "Instance has a NIC on VLAN 1, the native VLAN of the guest bridge, but this host has VLAN filtering enabled";
 
@@ -143,20 +146,63 @@ public class VlanTrunkMigrationHelper {
 
     public static void sendPostMigrationVlanTrunkMembershipIfNeeded(VirtualMachineTO vmTO, long dstHostId,
             NicDao nicDao, HostDetailsDao hostDetailsDao, CommandSender commandSender, Logger logger) {
+        sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, dstHostId, nicDao, hostDetailsDao, commandSender, logger, POST_MIGRATION_RETRY_DELAY_MS);
+    }
+
+    static void sendPostMigrationVlanTrunkMembershipIfNeeded(VirtualMachineTO vmTO, long dstHostId,
+            NicDao nicDao, HostDetailsDao hostDetailsDao, CommandSender commandSender, Logger logger, long retryDelayMs) {
         if (!vmNeedsPostMigrationVlanTrunkMembership(vmTO.getId(), dstHostId, nicDao, hostDetailsDao)) {
             return;
         }
-        final String warningMsg = "Post-migration VLAN trunk membership tasks did not complete for VM [{}] "
-                + "on destination host [{}]: {}. Migration completed but VLAN membership may need manual correction.";
-        try {
-            PostMigrationCommand postMigrationCommand = new PostMigrationCommand(vmTO, vmTO.getName());
-            Answer postMigrationAnswer = commandSender.send(dstHostId, postMigrationCommand);
-            if (postMigrationAnswer == null || !postMigrationAnswer.getResult()) {
-                String details = postMigrationAnswer != null ? postMigrationAnswer.getDetails() : "null answer returned";
-                logger.warn(warningMsg, vmTO, dstHostId, details);
+        String failure = sendPostMigrationCommandWithRetry(vmTO, dstHostId, commandSender, logger, retryDelayMs);
+        if (failure != null) {
+            logger.error("Post-migration VLAN trunk membership tasks did not complete for VM [{}] on destination host [{}]: {}. "
+                    + "Migration completed but its tap may still be on the bridge's default VLAN; correct the VLAN membership or restart the VM.",
+                    vmTO, dstHostId, failure);
+        }
+    }
+
+    // returns null once an attempt succeeds, else the last failure after all attempts
+    public static String sendPostMigrationCommandWithRetry(VirtualMachineTO vmTO, long dstHostId, CommandSender commandSender, Logger logger) {
+        return sendPostMigrationCommandWithRetry(vmTO, dstHostId, commandSender, logger, POST_MIGRATION_RETRY_DELAY_MS);
+    }
+
+    static String sendPostMigrationCommandWithRetry(VirtualMachineTO vmTO, long dstHostId, CommandSender commandSender, Logger logger, long retryDelayMs) {
+        String failure = null;
+        for (int attempt = 1; attempt <= POST_MIGRATION_MAX_ATTEMPTS; attempt++) {
+            failure = sendPostMigrationCommand(vmTO, dstHostId, commandSender);
+            if (failure == null) {
+                return null;
             }
+            logger.warn("Post-migration attempt {}/{} failed for VM [{}] on destination host [{}]: {}",
+                    attempt, POST_MIGRATION_MAX_ATTEMPTS, vmTO, dstHostId, failure);
+            if (attempt < POST_MIGRATION_MAX_ATTEMPTS && !pauseBeforePostMigrationRetry(retryDelayMs)) {
+                break;
+            }
+        }
+        return failure;
+    }
+
+    // returns null on success, else the reason
+    private static String sendPostMigrationCommand(VirtualMachineTO vmTO, long dstHostId, CommandSender commandSender) {
+        try {
+            Answer postMigrationAnswer = commandSender.send(dstHostId, new PostMigrationCommand(vmTO, vmTO.getName()));
+            if (postMigrationAnswer != null && postMigrationAnswer.getResult()) {
+                return null;
+            }
+            return postMigrationAnswer != null ? postMigrationAnswer.getDetails() : "null answer returned";
         } catch (Exception e) {
-            logger.warn(warningMsg, vmTO, dstHostId, e.getMessage(), e);
+            return e.getMessage();
+        }
+    }
+
+    private static boolean pauseBeforePostMigrationRetry(long retryDelayMs) {
+        try {
+            Thread.sleep(retryDelayMs);
+            return true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
         }
     }
 }

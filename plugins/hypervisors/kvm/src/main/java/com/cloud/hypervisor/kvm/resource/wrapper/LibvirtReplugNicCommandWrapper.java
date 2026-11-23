@@ -31,8 +31,10 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @ResourceWrapper(handles =  ReplugNicCommand.class)
 public final class LibvirtReplugNicCommandWrapper extends CommandWrapper<ReplugNicCommand, Answer, LibvirtComputingResource> {
@@ -83,6 +85,12 @@ public final class LibvirtReplugNicCommandWrapper extends CommandWrapper<ReplugN
             logger.debug("ReplugNic: Attaching interface" + interfaceDef);
             vm.attachDevice(interfaceDef.toString());
 
+            final InterfaceDef liveInterface = findLiveNic(libvirtComputingResource, conn, vmName, nic);
+            interfaceDef.setDevName(liveInterface.getDevName());
+            if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
+                newVifDriver.ensureVlanTrunkMembership(liveInterface, nic);
+            }
+
             interfaceDef.setLinkStateUp(true);
             logger.debug("ReplugNic: Updating interface" + interfaceDef);
             vm.updateDeviceFlags(interfaceDef.toString(), DomainAffect.LIVE.getValue());
@@ -106,6 +114,15 @@ public final class LibvirtReplugNicCommandWrapper extends CommandWrapper<ReplugN
                     logger.trace("Ignoring libvirt error.", l);
                 }
             }
+        }
+    }
+
+    // libvirt may name the re-attached tap differently from the detached one, so look the live nic up by mac
+    private InterfaceDef findLiveNic(LibvirtComputingResource libvirtComputingResource, Connect conn, String vmName, NicTO nic) throws InternalErrorException {
+        try {
+            return libvirtComputingResource.getInterface(conn, vmName, nic.getMac());
+        } catch (CloudRuntimeException e) {
+            throw new InternalErrorException("Failed to locate live tap for nic " + nic.getMac() + ": " + e.getMessage());
         }
     }
 

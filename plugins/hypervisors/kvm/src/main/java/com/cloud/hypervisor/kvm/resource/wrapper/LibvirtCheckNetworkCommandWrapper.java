@@ -19,7 +19,9 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckNetworkAnswer;
@@ -39,10 +41,12 @@ public final class LibvirtCheckNetworkCommandWrapper extends CommandWrapper<Chec
         final List<PhysicalNetworkSetupInfo> phyNics = command.getPhysicalNetworkInfoList();
         String errMsg = null;
         String guestNetworkLabel = null;
+        final Set<String> guestNetworkLabels = new LinkedHashSet<>();
 
         for (final PhysicalNetworkSetupInfo nic : phyNics) {
             if (StringUtils.isNotBlank(nic.getGuestNetworkName())) {
                 guestNetworkLabel = nic.getGuestNetworkName();
+                guestNetworkLabels.add(guestNetworkLabel);
             }
             if (!libvirtComputingResource.checkNetwork(Networks.TrafficType.Guest, nic.getGuestNetworkName())) {
                 errMsg = "Can not find network: " + nic.getGuestNetworkName();
@@ -57,6 +61,7 @@ public final class LibvirtCheckNetworkCommandWrapper extends CommandWrapper<Chec
         }
 
         libvirtComputingResource.setGuestTrafficLabel(guestNetworkLabel);
+        libvirtComputingResource.warnIfGuestBridgesDifferInVlanFiltering(guestNetworkLabels);
 
         if (errMsg != null) {
             return new CheckNetworkAnswer(command, false, errMsg);

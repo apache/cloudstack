@@ -951,8 +951,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             nic = _nicDao.findById(nic.getId());
             refreshNicVlanMappingMetadata(nic);
             for (NetworkVO network : newlyAssociatedNetworks) {
-                pushDhcpEntryForAssociation(vm, nic, network);
                 publishAssociationUsageEvent(vm, nic, network, EventTypes.EVENT_NETWORK_OFFERING_ASSIGN);
+                pushDhcpEntryForAssociationBestEffort(vm, nic, network);
             }
         }
 
@@ -1165,10 +1165,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         rollbackNetworkDisassociation(nic, association, nicMultiNetworkCleared, targetNetwork, vm);
                         throw ex;
                     }
-                    cleanupDhcpEntryForAssociation(vm, nic, targetNetworkId, association.getIp4Address(), association.getIp6Address());
                     if (targetNetwork != null) {
                         publishAssociationUsageEvent(vm, nic, targetNetwork, EventTypes.EVENT_NETWORK_OFFERING_REMOVE);
                     }
+                    cleanupDhcpEntryForAssociationBestEffort(vm, nic, targetNetworkId, association.getIp4Address(), association.getIp6Address());
                     refreshNicVlanMappingMetadata(nic);
                 }
 
@@ -1281,6 +1281,26 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private void publishAssociationUsageEvent(VirtualMachine vm, NicVO nic, NetworkVO network, String eventType) {
         UsageEventUtils.publishNicNetworkOfferingUsageEvent(eventType, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
                 VirtualMachine.class.getName(), vm.getUuid(), nic.getId(), network, 0L, vm.isDisplay());
+    }
+
+    // The association is already committed and billed by now, so an unreachable router must not fail the call;
+    // the entry is re-synced on the Instance's next start (UserVmManagerImpl.finalizeStart).
+    private void pushDhcpEntryForAssociationBestEffort(VirtualMachine vm, NicVO nic, NetworkVO network) {
+        try {
+            pushDhcpEntryForAssociation(vm, nic, network);
+        } catch (ResourceUnavailableException e) {
+            logger.warn("Network {} was associated to nic {} of Instance {}, but its DHCP entry could not be pushed to the router: {}",
+                    network.getUuid(), nic.getUuid(), vm.getUuid(), e.getMessage());
+        }
+    }
+
+    private void cleanupDhcpEntryForAssociationBestEffort(VirtualMachine vm, NicVO nic, long networkId, String ip4Address, String ip6Address) {
+        try {
+            cleanupDhcpEntryForAssociation(vm, nic, networkId, ip4Address, ip6Address);
+        } catch (ResourceUnavailableException e) {
+            logger.warn("Network {} was disassociated from nic {} of Instance {}, but its DHCP entry could not be removed from the router: {}",
+                    networkId, nic.getUuid(), vm.getUuid(), e.getMessage());
+        }
     }
 
     // Counterpart to pushDhcpEntryForAssociation, for a Running Instance's disassociate.

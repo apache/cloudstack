@@ -212,9 +212,34 @@ public class BridgeVifDriver extends VifDriverBase {
         return nic.getBroadcastUri() != null && "untagged".equalsIgnoreCase(Networks.BroadcastDomainType.getValue(nic.getBroadcastUri()));
     }
 
+    // the nic's own guest traffic label, else the default guest bridge
+    protected String resolveGuestBridgeName(final NicTO nic) {
+        String trafficLabel = nic.getName();
+        return StringUtils.isNotEmpty(trafficLabel) ? trafficLabel : _bridges.get("guest");
+    }
+
+    // Opt-in via the zone setting (carried on the nic) and decided per the nic's own bridge: a host can carry several
+    // guest bridges, only some with vlan_filtering on. Without the setting, vlan_filtering alone never changes the topology.
     protected boolean usesSharedVlanAwareBridge(final NicTO nic) {
-        return nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && _libvirtComputingResource.hostSupportsVlanFiltering()
-                && !isUntaggedBroadcast(nic);
+        if (!nic.isSharedVlanBridgeEnabled() || nic.getBroadcastType() != Networks.BroadcastDomainType.Vlan || isUntaggedBroadcast(nic)) {
+            return false;
+        }
+        String brName = resolveGuestBridgeName(nic);
+        boolean filtering = _libvirtComputingResource.isBridgeVlanFilteringEnabled(brName);
+        if (!filtering) {
+            logger.debug("Guest bridge {} has vlan_filtering disabled; nic {} uses a dedicated per-VLAN bridge", brName, nic.getMac());
+        }
+        return filtering;
+    }
+
+    private void requireVlanFiltering(final NicTO nic, final String brName, final String action) throws InternalErrorException {
+        if (!_libvirtComputingResource.isBridgeVlanFilteringEnabled(brName)) {
+            String message = String.format("Cannot %s multi-VLAN trunk nic %s: vlan_filtering is not enabled on guest bridge '%s'. "
+                    + "Enable it on that bridge (e.g. 'ip link set %s type bridge vlan_filtering 1') or use a bridge that has it; "
+                    + "without it the bridge does not isolate VLANs.", action, nic.getMac(), brName, brName);
+            logger.error(message);
+            throw new InternalErrorException(message);
+        }
     }
 
     protected void plugTrunkVlanNic(LibvirtVMDef.InterfaceDef intf, NicTO nic, String trafficLabel, String guestOsType, String nicAdapter,
@@ -222,12 +247,8 @@ public class BridgeVifDriver extends VifDriverBase {
         if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vlan) {
             throw new InternalErrorException("Multi-VLAN trunk nics are only supported on VLAN-isolated guest networks");
         }
-        if (!_libvirtComputingResource.hostSupportsVlanFiltering()) {
-            throw new InternalErrorException("vlan_filtering is not enabled on this host's guest bridge; "
-                    + "this host cannot accept a multi-VLAN trunk nic");
-        }
-
         String brName = trafficLabel != null && !trafficLabel.isEmpty() ? trafficLabel : _bridges.get("guest");
+        requireVlanFiltering(nic, brName, "plug");
 
         Integer primaryVlanTag = parseVlanTag(nic.getBroadcastUri(), "primary network of nic " + nic.getMac());
         List<Integer> vlanTags = collectTrunkVlanTags(nic);
@@ -302,9 +323,13 @@ public class BridgeVifDriver extends VifDriverBase {
     }
 
     @Override
+    public boolean needsManualVlanMembership(NicTO nic) {
+        return (nic.isTrunkVlan() || usesSharedVlanAwareBridge(nic)) && !_libvirtComputingResource.hostSupportsVlanTrunkXml();
+    }
+
+    @Override
     public void ensureVlanTrunkMembership(LibvirtVMDef.InterfaceDef iface, NicTO nic) throws InternalErrorException {
-        boolean usesSharedBridge = nic.isTrunkVlan() || usesSharedVlanAwareBridge(nic);
-        if (!usesSharedBridge || _libvirtComputingResource.hostSupportsVlanTrunkXml()) {
+        if (!needsManualVlanMembership(nic)) {
             return;
         }
         String tapName = iface.getDevName();
@@ -337,9 +362,7 @@ public class BridgeVifDriver extends VifDriverBase {
         if (!usesSharedBridge) {
             throw new InternalErrorException("Nic " + nic.getMac() + " does not use the shared VLAN-aware bridge; cannot update its VLAN membership live");
         }
-        if (!_libvirtComputingResource.hostSupportsVlanFiltering()) {
-            throw new InternalErrorException("vlan_filtering is not enabled on this host's guest bridge; cannot update multi-VLAN trunk membership live");
-        }
+        requireVlanFiltering(nic, iface.getBrName(), "update live VLAN membership of");
 
         Integer primaryVlanTag = parseVlanTag(nic.getBroadcastUri(), "primary network of nic " + nic.getMac());
         List<Integer> vlanTags = collectTrunkVlanTags(nic);
