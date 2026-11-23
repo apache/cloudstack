@@ -49,6 +49,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
@@ -490,7 +491,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     public void avoidHostsNotReadyForMultiNetworkNics(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
         List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
         boolean needsFilteringHost = VlanTrunkMigrationHelper.hasTrunkNic(nics);
-        boolean needsLegacyHost = !needsFilteringHost && VlanTrunkMigrationHelper.hasNativeVlanGuestNic(nics, _networkDao);
+        boolean needsLegacyHost = !needsFilteringHost && NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(dc.getId())
+                && VlanTrunkMigrationHelper.hasNativeVlanGuestNic(nics, _networkDao);
         if (!needsFilteringHost && !needsLegacyHost) {
             return;
         }

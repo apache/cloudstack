@@ -1776,7 +1776,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private String getVlanFilteringUnsuitableReason(VMInstanceVO vm, Host host) {
-        return VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(vm.getId(), host.getId(), _nicsDao, _networkDao, hostDetailsDao);
+        return VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(vm.getId(), host.getId(), _nicsDao, _networkDao, hostDetailsDao,
+                NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(vm.getDataCenterId()));
     }
 
     protected void updateStartCommandWithExternalDetails(Host host, VirtualMachineTO vmTO, StartCommand command) {

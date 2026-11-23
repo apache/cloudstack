@@ -145,7 +145,7 @@ export default {
       this.fetchHostReadiness(entity, params[entity])
     },
     fetchHostReadiness (entity, entityId) {
-      const params = { type: 'Routing' }
+      const params = { type: 'Routing', pagesize: -1 }
       params[entity] = entityId
       getAPI('listHosts', params).then(response => {
         const hosts = response.listhostsresponse.host || []

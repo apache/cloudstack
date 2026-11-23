@@ -18,12 +18,10 @@ package org.apache.cloudstack.api.response;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value = NicNetworkMapResponse.class)
 @SuppressWarnings("unused")
 public class NicNetworkMapResponse extends BaseResponse {
 

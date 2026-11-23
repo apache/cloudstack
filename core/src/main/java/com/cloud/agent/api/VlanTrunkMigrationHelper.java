@@ -77,11 +77,13 @@ public class VlanTrunkMigrationHelper {
         return nicDao.listByVmId(vmId).stream().anyMatch(nic -> nicNeedsManualVlanMembership(nic, destVlanFilteringEnabled));
     }
 
-    // A multi-VLAN trunk nic needs a VLAN-filtering host; a Guest VLAN 1 nic needs a legacy host, as the shared bridge's PVID is VLAN 1. Null when the host fits.
-    public static String getVlanFilteringUnsuitableReason(long vmId, long hostId, NicDao nicDao, NetworkDao networkDao, HostDetailsDao hostDetailsDao) {
+    // A multi-VLAN trunk nic needs a VLAN-filtering host; a Guest VLAN 1 nic needs a legacy host, as the shared bridge's PVID is VLAN 1.
+    // The shared bridge is only used when the zone setting is on, so a VLAN 1 nic is placeable anywhere without it. Null when the host fits.
+    public static String getVlanFilteringUnsuitableReason(long vmId, long hostId, NicDao nicDao, NetworkDao networkDao, HostDetailsDao hostDetailsDao,
+            boolean sharedVlanBridgeEnabled) {
         List<NicVO> nics = nicDao.listByVmId(vmId);
         boolean hasTrunkNic = hasTrunkNic(nics);
-        boolean hasNativeVlanNic = hasNativeVlanGuestNic(nics, networkDao);
+        boolean hasNativeVlanNic = sharedVlanBridgeEnabled && hasNativeVlanGuestNic(nics, networkDao);
         if (!hasTrunkNic && !hasNativeVlanNic) {
             return null;
         }
@@ -96,8 +98,8 @@ public class VlanTrunkMigrationHelper {
     }
 
     // For a network about to be plugged into a running Instance on this host.
-    public static String getNativeVlanUnsuitableReason(Network network, long hostId, HostDetailsDao hostDetailsDao) {
-        return isNativeVlanGuestNetwork(network) && isVlanFilteringEnabled(hostId, hostDetailsDao) ? NATIVE_VLAN_ON_FILTERING_HOST_REASON : null;
+    public static String getNativeVlanUnsuitableReason(Network network, long hostId, HostDetailsDao hostDetailsDao, boolean sharedVlanBridgeEnabled) {
+        return sharedVlanBridgeEnabled && isNativeVlanGuestNetwork(network) && isVlanFilteringEnabled(hostId, hostDetailsDao) ? NATIVE_VLAN_ON_FILTERING_HOST_REASON : null;
     }
 
     public static boolean hasTrunkNic(Collection<NicVO> nics) {
