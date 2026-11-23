@@ -5287,6 +5287,9 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
         final String params = cmd.getParams();
 
         userdata = userDataManager.validateUserData(userdata, cmd.getHttpMethod());
+        if (StringUtils.isBlank(userdata) || StringUtils.isBlank(new String(Base64.decodeBase64(userdata)))) {
+            throw new InvalidParameterValueException("CNI configuration content must not be empty");
+        }
 
         return createAndSaveUserData(name, userdata, params, owner, true);
     }

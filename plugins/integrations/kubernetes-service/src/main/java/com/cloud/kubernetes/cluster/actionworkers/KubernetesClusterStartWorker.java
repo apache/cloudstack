@@ -283,7 +283,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (Objects.nonNull(userDataId)) {
             logger.info("concatenating userdata");
             UserDataVO cniConfigVo = userDataDao.findById(userDataId);
-            String cniConfig = new String(Base64.decodeBase64(cniConfigVo.getUserData()));
+            String cniConfig = cniConfigVo == null || cniConfigVo.getUserData() == null ? null : new String(Base64.decodeBase64(cniConfigVo.getUserData()));
+            if (StringUtils.isBlank(cniConfig)) {
+                logAndThrow(Level.ERROR, String.format("The CNI configuration of the Kubernetes cluster %s is missing or empty", kubernetesCluster.getName()));
+            }
             if (Objects.nonNull(asNumber)) {
                 cniConfig = substituteASNumber(cniConfig, asNumber);
             }

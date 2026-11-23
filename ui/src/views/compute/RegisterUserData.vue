@@ -169,7 +169,8 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        userdata: [{ required: true, message: this.$t('message.error.user.data') }]
+        userdata: [{ required: true, message: this.$t('message.error.user.data') }],
+        cniconfig: [{ required: true, whitespace: true, message: this.$t('message.error.required.input') }]
       })
     },
     fetchData () {

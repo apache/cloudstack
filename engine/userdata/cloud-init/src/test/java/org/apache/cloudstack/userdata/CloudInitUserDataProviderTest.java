@@ -69,6 +69,9 @@ public class CloudInitUserDataProviderTest {
             "# Default: false\n" +
             "# Aliases: apt_upgrade\n" +
             "package_upgrade: true";
+    private final static String JINJA_SHELL_SCRIPT_USERDATA = "## template: jinja\n" +
+            "#!/bin/bash\n" +
+            "echo '{{ ds.meta_data.public_hostname }}' > /tmp/hostname";
     private static final Session session = Session.getDefaultInstance(new Properties());
 
     @Test
@@ -235,5 +238,90 @@ public class CloudInitUserDataProviderTest {
         } catch (IOException e) {
             Assert.fail("Exception encountered: " + e.getMessage());
         }
+    }
+
+    private String getBodyPartContent(MimeMultipart multipart, String contentType) throws MessagingException, IOException {
+        for (int i = 0; i < multipart.getCount(); ++i) {
+            BodyPart bodyPart = multipart.getBodyPart(i);
+            if (bodyPart.getContentType().startsWith(contentType)) {
+                return provider.getBodyPartContentAsString(bodyPart);
+            }
+        }
+        return null;
+    }
+
+    @Test
+    public void testIsJinjaTemplate() {
+        Assert.assertTrue(provider.isJinjaTemplate(CLOUD_CONFIG_USERDATA));
+        Assert.assertTrue(provider.isJinjaTemplate("## Template: Jinja \n#cloud-config\n"));
+        Assert.assertFalse(provider.isJinjaTemplate("## template: jinja\n\n#!/bin/bash\n"));
+        Assert.assertFalse(provider.isJinjaTemplate(" ## template: jinja\n#cloud-config\n"));
+        Assert.assertFalse(provider.isJinjaTemplate("##template:jinja\n#cloud-config\n"));
+        Assert.assertFalse(provider.isJinjaTemplate("\n## template: jinja\n#cloud-config\n"));
+        Assert.assertFalse(provider.isJinjaTemplate("## template: jinja2\n#cloud-config\n"));
+        Assert.assertFalse(provider.isJinjaTemplate("## template: jinja\n## note\n#cloud-config\n"));
+        Assert.assertFalse(provider.isJinjaTemplate("## template: jinja\nfoo: bar\n"));
+        Assert.assertFalse(provider.isJinjaTemplate(CLOUD_CONFIG_USERDATA1));
+        Assert.assertFalse(provider.isJinjaTemplate(SHELL_SCRIPT_USERDATA));
+    }
+
+    @Test
+    public void testAppendUserDataJinjaCloudConfigPartIsTypedJinja() throws MessagingException, IOException {
+        String multipartUserData = provider.appendUserData(Base64.encodeBase64String(CLOUD_CONFIG_USERDATA.getBytes()),
+                Base64.encodeBase64String(SHELL_SCRIPT_USERDATA.getBytes()));
+        MimeMultipart multipart = getCheckedMultipartFromMultipartData(multipartUserData, 2);
+        Assert.assertEquals(CLOUD_CONFIG_USERDATA, getBodyPartContent(multipart, "text/jinja2"));
+        Assert.assertEquals(SHELL_SCRIPT_USERDATA, getBodyPartContent(multipart, "text/x-shellscript"));
+        Assert.assertNull(getBodyPartContent(multipart, "text/cloud-config"));
+    }
+
+    @Test
+    public void testAppendUserDataPlainCloudConfigPartIsTypedCloudConfig() throws MessagingException, IOException {
+        String multipartUserData = provider.appendUserData(Base64.encodeBase64String(CLOUD_CONFIG_USERDATA1.getBytes()),
+                Base64.encodeBase64String(SHELL_SCRIPT_USERDATA.getBytes()));
+        MimeMultipart multipart = getCheckedMultipartFromMultipartData(multipartUserData, 2);
+        Assert.assertEquals(CLOUD_CONFIG_USERDATA1, getBodyPartContent(multipart, "text/cloud-config"));
+        Assert.assertNull(getBodyPartContent(multipart, "text/jinja2"));
+    }
+
+    @Test
+    public void testAppendUserDataJinjaPartsOfDifferentFormatAreNotMerged() throws MessagingException, IOException {
+        String templateData = provider.appendUserData(Base64.encodeBase64String(CLOUD_CONFIG_USERDATA.getBytes()),
+                Base64.encodeBase64String(SHELL_SCRIPT_USERDATA.getBytes()));
+        String multipartUserData = provider.appendUserData(Base64.encodeBase64String(templateData.getBytes()),
+                Base64.encodeBase64String(JINJA_SHELL_SCRIPT_USERDATA.getBytes()));
+        MimeMultipart multipart = getCheckedMultipartFromMultipartData(multipartUserData, 3);
+        int jinjaParts = 0;
+        for (int i = 0; i < multipart.getCount(); ++i) {
+            if (multipart.getBodyPart(i).getContentType().startsWith("text/jinja2")) {
+                jinjaParts++;
+            }
+        }
+        Assert.assertEquals(2, jinjaParts);
+    }
+
+    @Test
+    public void testAppendUserDataJinjaPartsAreNotMerged() throws MessagingException, IOException {
+        String templateData = provider.appendUserData(Base64.encodeBase64String(CLOUD_CONFIG_USERDATA.getBytes()),
+                Base64.encodeBase64String(SHELL_SCRIPT_USERDATA.getBytes()));
+        String multipartUserData = provider.appendUserData(Base64.encodeBase64String(templateData.getBytes()),
+                Base64.encodeBase64String(CLOUD_CONFIG_USERDATA.getBytes()));
+        MimeMultipart multipart = getCheckedMultipartFromMultipartData(multipartUserData, 3);
+        for (int i = 0; i < multipart.getCount(); ++i) {
+            BodyPart bodyPart = multipart.getBodyPart(i);
+            if (bodyPart.getContentType().startsWith("text/jinja2")) {
+                Assert.assertEquals(CLOUD_CONFIG_USERDATA, provider.getBodyPartContentAsString(bodyPart));
+            }
+        }
+    }
+
+    @Test
+    public void testAppendUserDataJinjaIncludeFileIsNotTypedJinja() throws MessagingException, IOException {
+        String jinjaInclude = "## template: jinja\n#include\nhttp://example.com/user-data";
+        String multipartUserData = provider.appendUserData(Base64.encodeBase64String(jinjaInclude.getBytes()),
+                Base64.encodeBase64String(SHELL_SCRIPT_USERDATA.getBytes()));
+        MimeMultipart multipart = getCheckedMultipartFromMultipartData(multipartUserData, 2);
+        Assert.assertEquals(jinjaInclude, getBodyPartContent(multipart, "text/x-include-url"));
+        Assert.assertNull(getBodyPartContent(multipart, "text/jinja2"));
     }
 }

@@ -58,6 +58,7 @@ import org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.RegisterCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
@@ -503,6 +504,37 @@ public class ManagementServerImplTest {
 
             spy.registerUserData(cmd);
         }
+    }
+
+    private void registerCniConfiguration(String cniConfig, String validatedCniConfig) {
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            when(CallContext.current()).thenReturn(callContextMock);
+            when(account.getAccountId()).thenReturn(1L);
+            when(account.getDomainId()).thenReturn(2L);
+            when(callContextMock.getCallingAccount()).thenReturn(account);
+            when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
+
+            RegisterCniConfigurationCmd cmd = Mockito.mock(RegisterCniConfigurationCmd.class);
+            when(cmd.getCniConfig()).thenReturn(cniConfig);
+            when(cmd.getName()).thenReturn("testName");
+            when(cmd.getHttpMethod()).thenReturn(BaseCmd.HTTPMethod.GET);
+
+            when(userDataDao.findByName(account.getAccountId(), account.getDomainId(), "testName")).thenReturn(null);
+            when(userDataManager.validateUserData(cniConfig, BaseCmd.HTTPMethod.GET)).thenReturn(validatedCniConfig);
+
+            spy.registerCniConfiguration(cmd);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testRegisterBlankCniConfiguration() {
+        registerCniConfiguration("   ", null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testRegisterWhitespaceCniConfiguration() {
+        registerCniConfiguration("ICAgCg==", "ICAgCg==");
     }
 
     @Test
