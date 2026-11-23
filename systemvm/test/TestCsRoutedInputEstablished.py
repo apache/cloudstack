@@ -71,6 +71,13 @@ class TestCsRoutedInputEstablished(unittest.TestCase):
         rules = self.chain_rules('ip4_acl', 'INPUT')
         self.assertTrue([c for c in rules if "icmp type" in c and "echo-reply" in c and c.endswith("accept")])
 
+    def test_each_hook_gets_established_accept_once(self):
+        # Input and forward get exactly one accept. Output gets none.
+        for chain, hook, expected in [('INPUT', 'input', 1), ('FORWARD', 'forward', 1), ('OUTPUT', 'output', 0)]:
+            CsNetfilters(load=False).add_ip4_chain('ip', 'ip4_acl', chain, hook, 'drop')
+            rules = self.chain_rules('ip4_acl', chain)
+            self.assertEqual(expected, len([c for c in rules if established(c)]), "%s: %s" % (chain, rules))
+
     def test_forward_hook_keeps_established(self):
         # #12986 behaviour, which already holds today.
         CsNetfilters(load=False).add_ip4_chain('ip', 'ip4_acl', 'FORWARD', 'forward', 'accept')

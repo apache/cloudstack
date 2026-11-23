@@ -244,9 +244,6 @@ class CsNetfilters(object):
         CsHelper.execute("nft add chain %s %s %s '{ %s }'" % (address_family, table, chain, chain_policy))
         if hook == "input" or hook == "output":
             CsHelper.execute("nft add rule %s %s %s icmp type { echo-request, echo-reply } accept" % (address_family, table, chain))
-            if hook == "input":
-                # Accept replies to traffic the VR initiates, such as DNS and TCP over a private gateway.
-                CsHelper.execute("nft add rule %s %s %s ct state established,related accept" % (address_family, table, chain))
         if hook == "input" or hook == "forward":
             CsHelper.execute("nft add rule %s %s %s ct state established,related accept" % (address_family, table, chain))
 
