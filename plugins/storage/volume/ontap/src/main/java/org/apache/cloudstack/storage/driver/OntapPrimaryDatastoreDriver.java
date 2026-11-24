@@ -31,6 +31,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.SnapshotVO;

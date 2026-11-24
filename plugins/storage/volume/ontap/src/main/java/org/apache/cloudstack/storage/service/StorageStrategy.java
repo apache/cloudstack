@@ -977,24 +977,4 @@ public abstract class StorageStrategy {
         }
     }
 
-    /**
-     * Polls an ONTAP async job when the API response includes a job reference.
-     *
-     * <p>When no job is returned (synchronous completion), the operation is treated as
-     * successful after HTTP 2xx.</p>
-     *
-     * @param response       ONTAP job response (may be null or without a job)
-     * @param operationName  label for logging and error messages
-     */
-    public void pollJobIfPresent(JobResponse response, String operationName) {
-        if (response == null || response.getJob() == null || response.getJob().getUuid() == null) {
-            logger.debug("pollJobIfPresent: No async job returned for operation [{}], continuing without polling",
-                    operationName);
-            return;
-        }
-        String jobUuid = response.getJob().getUuid();
-        if (!Boolean.TRUE.equals(jobPollForSuccess(jobUuid, 60, 2000))) {
-            throw new CloudRuntimeException("ONTAP job [" + jobUuid + "] failed for operation [" + operationName + "]");
-        }
-    }
 }

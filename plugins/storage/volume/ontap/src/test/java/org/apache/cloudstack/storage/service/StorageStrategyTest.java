@@ -59,7 +59,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mock;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -668,22 +667,6 @@ public class StorageStrategyTest {
         Exception ex = assertThrows(CloudRuntimeException.class,
                 () -> storageStrategy.deleteStorageVolume(volume));
         assertTrue(ex.getMessage().contains("Job failed"));
-    }
-
-    @Test
-    public void testPollJobIfPresent_failedPollThrowsWithOperationAndJobUuid() {
-        TestableStorageStrategy spyStrategy = spy(storageStrategy);
-        doReturn(false).when(spyStrategy).jobPollForSuccess(eq("job-uuid-1"), eq(60), eq(2000));
-
-        Job job = new Job();
-        job.setUuid("job-uuid-1");
-        JobResponse jobResponse = new JobResponse();
-        jobResponse.setJob(job);
-
-        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
-                () -> spyStrategy.pollJobIfPresent(jobResponse, "clone file"));
-        assertTrue(ex.getMessage().contains("job-uuid-1"));
-        assertTrue(ex.getMessage().contains("clone file"));
     }
 
     @Test

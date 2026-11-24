@@ -87,8 +87,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import feign.FeignException;
-
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class UnifiedNASStrategyTest {
@@ -861,6 +859,8 @@ public class UnifiedNASStrategyTest {
         request.setVolumeInfo(volumeObject);
 
         assertThrows(CloudRuntimeException.class, () -> strategy.resizeCloudStackVolume(request, 21474836480L));
+    }
+
     // -------------------------------------------------------------------------
     // updateAccessGroup tests
     // -------------------------------------------------------------------------

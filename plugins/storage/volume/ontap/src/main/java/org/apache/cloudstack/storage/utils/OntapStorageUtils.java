@@ -25,8 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import feign.FeignException;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.feign.model.Lun;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
 import org.apache.cloudstack.storage.provider.StorageProviderFactory;
@@ -38,8 +36,6 @@ import org.springframework.util.Base64Utils;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 public class OntapStorageUtils {
 
