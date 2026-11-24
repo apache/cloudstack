@@ -26,10 +26,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import com.cloud.cpu.CPU;
+import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -985,6 +988,7 @@ public class LibvirtVMDef {
         private Long _iopsWriteRateMax;
         private Long _iopsWriteRateMaxLength;
         private DiskCacheMode _diskCacheMode;
+        private DiskOffering.DiskErrorPolicy _errorPolicy;
         private String _serial;
         private boolean qemuDriver = true;
         private DiscardType _discard = DiscardType.IGNORE;
@@ -1340,6 +1344,14 @@ public class LibvirtVMDef {
             return _diskCacheMode;
         }
 
+        public void setErrorPolicy(DiskOffering.DiskErrorPolicy errorPolicy) {
+            _errorPolicy = errorPolicy;
+        }
+
+        public DiskOffering.DiskErrorPolicy getErrorPolicy() {
+            return _errorPolicy;
+        }
+
         public void setQemuDriver(boolean qemuDriver){
             this.qemuDriver = qemuDriver;
         }
@@ -1401,6 +1413,10 @@ public class LibvirtVMDef {
 
                 if(_discard != null && _discard != DiscardType.IGNORE) {
                     diskBuilder.append("discard='" + _discard.toString() + "' ");
+                }
+
+                if (_errorPolicy != null) {
+                    diskBuilder.append("error_policy='" + _errorPolicy + "' ");
                 }
 
                 if(ioDriver != null) {
@@ -1634,6 +1650,9 @@ public class LibvirtVMDef {
         private String _virtualPortType;
         private String _virtualPortInterfaceId;
         private int _vlanTag = -1;
+        private boolean _vlanTrunk = false;
+        private List<Integer> _vlanTrunkTags;
+        private Integer _nativeVlanTag;
         private boolean _pxeDisable = false;
         private boolean _linkStateUp = true;
         private Integer _slot;
@@ -1794,6 +1813,24 @@ public class LibvirtVMDef {
             return _vlanTag;
         }
 
+        public void setTrunkVlanTags(List<Integer> vlanTags, Integer nativeVlanTag) {
+            _vlanTrunk = true;
+            _vlanTrunkTags = vlanTags;
+            _nativeVlanTag = nativeVlanTag;
+        }
+
+        public List<Integer> getTrunkVlanTags() {
+            return _vlanTrunkTags;
+        }
+
+        public Integer getNativeVlanTag() {
+            return _nativeVlanTag;
+        }
+
+        public boolean isVlanTrunk() {
+            return _vlanTrunk;
+        }
+
         public void setSlot(Integer slot) {
             _slot = slot;
         }
@@ -1897,7 +1934,17 @@ public class LibvirtVMDef {
                 }
                 netBuilder.append("</virtualport>\n");
             }
-            if (_vlanTag > 0 && _vlanTag < 4095) {
+            if (_vlanTrunk && CollectionUtils.isNotEmpty(_vlanTrunkTags)) {
+                netBuilder.append("<vlan trunk='yes'>\n");
+                for (Integer tag : _vlanTrunkTags) {
+                    if (tag.equals(_nativeVlanTag)) {
+                        netBuilder.append("<tag id='" + tag + "' nativeMode='untagged'/>\n");
+                    } else {
+                        netBuilder.append("<tag id='" + tag + "'/>\n");
+                    }
+                }
+                netBuilder.append("</vlan>");
+            } else if (_vlanTag > 0 && _vlanTag < 4095) {
                 netBuilder.append("<vlan trunk='no'>\n<tag id='" + _vlanTag + "'/>\n</vlan>");
             }
 
@@ -2015,12 +2062,22 @@ public class LibvirtVMDef {
     }
 
     public static class CpuModeDef {
+        /**
+         * CPU model names as QEMU and libvirt define them, such as Nehalem, EPYC-Rome-v2 or x86-64-v2.
+         * The model reaches the domain XML from a VM detail, so anything else is rejected.
+         */
+        private static final Pattern CPU_MODEL_NAME = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9._+-]*$");
+
         private String _mode;
         private String _model;
         private List<String> _features;
         private int _coresPerSocket = -1;
         private int _threadsPerCore = -1;
         private int _sockets = -1;
+
+        public static boolean isValidModelName(String model) {
+            return model != null && CPU_MODEL_NAME.matcher(model).matches();
+        }
 
         public void setMode(String mode) {
             _mode = mode;
@@ -2032,7 +2089,14 @@ public class LibvirtVMDef {
             }
         }
 
+        /**
+         * Sets the CPU model for the custom mode. A name that is not a plain QEMU model name is ignored.
+         */
         public void setModel(String model) {
+            if (model != null && !isValidModelName(model)) {
+                LOGGER.warn("Ignoring CPU model '{}' because it is not a valid model name", model);
+                return;
+            }
             _model = model;
         }
 
@@ -2111,18 +2175,57 @@ public class LibvirtVMDef {
     }
 
     public static class VideoDef {
-        private String _videoModel;
+        /**
+         * Video model types accepted by libvirt. The model name reaches the domain XML
+         * from a VM detail, so only values from this list are ever emitted.
+         */
+        public enum VideoModel {
+            VGA("vga"), CIRRUS("cirrus"), VMVGA("vmvga"), XEN("xen"), VBOX("vbox"), QXL("qxl"), VIRTIO("virtio"), GOP("gop"), BOCHS("bochs"), RAMFB("ramfb"), NONE("none");
+
+            private final String model;
+
+            VideoModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+
+            /**
+             * Returns the matching model, ignoring case, or null when the value is blank or unknown.
+             */
+            public static VideoModel fromString(String model) {
+                if (StringUtils.isBlank(model)) {
+                    return null;
+                }
+                String trimmed = model.trim();
+                for (VideoModel videoModel : values()) {
+                    if (videoModel.model.equalsIgnoreCase(trimmed)) {
+                        return videoModel;
+                    }
+                }
+                return null;
+            }
+        }
+
+        private VideoModel _videoModel;
         private int _videoRam;
 
-        public VideoDef(String videoModel, int videoRam) {
+        public VideoDef(VideoModel videoModel, int videoRam) {
             _videoModel = videoModel;
             _videoRam = videoRam;
+        }
+
+        public VideoModel getVideoModel() {
+            return _videoModel;
         }
 
         @Override
         public String toString() {
             StringBuilder videoBuilder = new StringBuilder();
-            if (_videoModel != null && !_videoModel.isEmpty()){
+            if (_videoModel != null) {
                 videoBuilder.append("<video>\n");
                 if (_videoRam != 0) {
                     videoBuilder.append("<model type='" + _videoModel + "' vram='" + _videoRam + "'/>\n");

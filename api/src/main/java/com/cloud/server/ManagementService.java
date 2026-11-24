@@ -473,6 +473,20 @@ public interface ManagementService {
     Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(VirtualMachine vm, Long startIndex, Long pageSize, String keyword, List<VirtualMachine> vmList);
 
     /**
+     * If vm has a multi-VLAN trunk NIC and host is not ready for it (VLAN filtering not enabled), returns a
+     * human-readable reason; null otherwise (including when vm has no such NIC, in which case host readiness
+     * for this concern is irrelevant).
+     */
+    String getMultiNetworkNicUnsuitableReason(VirtualMachine vm, Host host);
+
+    /**
+     * If host's guest bridge has STP enabled, returns a human-readable caution about the forward-delay outage
+     * every new port on it incurs (migration, nic plug, vm start); null otherwise. Applies to every VM, not
+     * just ones with a multi-VLAN trunk NIC - unlike getMultiNetworkNicUnsuitableReason, never excludes the host.
+     */
+    String getGuestBridgeStpMigrationCaution(Host host);
+
+    /**
      * Apply affinity group constraints and other exclusion rules for VM migration.
      * This is a helper method that can be used independently for per-iteration affinity checks in DRS.
      *
