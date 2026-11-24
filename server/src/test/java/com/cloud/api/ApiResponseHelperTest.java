@@ -16,14 +16,6 @@
 // under the License.
 package com.cloud.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -37,20 +29,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
-import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
-import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
-import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
-import org.apache.cloudstack.api.response.IpQuarantineResponse;
-import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
-import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
-import org.apache.cloudstack.api.response.UsageRecordResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.usage.UsageService;
-import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -64,10 +42,32 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.ConsoleSessionResponse;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
+import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.response.IpQuarantineResponse;
+import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
+import org.apache.cloudstack.api.response.UsageRecordResponse;
+import org.apache.cloudstack.api.response.TrafficTypeResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.usage.UsageService;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
+
 import com.cloud.capacity.Capacity;
 import com.cloud.configuration.Resource;
 import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
+import com.cloud.network.IpAddress;
+import com.cloud.network.Networks;
+import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupVO;
@@ -78,6 +78,8 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.resource.icon.ResourceIconVO;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceIconManager;
@@ -95,10 +97,20 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.ConsoleSessionVO;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.response.ConsoleSessionResponse;
+import com.cloud.vm.VirtualMachine;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiResponseHelperTest {
@@ -417,7 +429,40 @@ public class ApiResponseHelperTest {
         }
     }
 
-    private UnmanagedInstanceTO getUnmanagedInstaceForTests() {
+    @Test
+    public void testCreateTrafficTypeResponse() {
+        PhysicalNetworkVO pnet = new PhysicalNetworkVO();
+        pnet.addIsolationMethod("VXLAN");
+        pnet.addIsolationMethod("STT");
+
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+            when(ApiDBUtils.findPhysicalNetworkById(anyLong())).thenReturn(pnet);
+            String xenLabel = "xen";
+            String kvmLabel = "kvm";
+            String vmwareLabel = "vmware";
+            String simulatorLabel = "simulator";
+            String hypervLabel = "hyperv";
+            String ovmLabel = "ovm";
+            String vlan = "vlan";
+            String trafficType = "Public";
+            PhysicalNetworkTrafficType pnetTrafficType = new PhysicalNetworkTrafficTypeVO(pnet.getId(), Networks.TrafficType.getTrafficType(trafficType), xenLabel, kvmLabel, vmwareLabel, simulatorLabel, vlan, hypervLabel, ovmLabel);
+
+            TrafficTypeResponse response = apiResponseHelper.createTrafficTypeResponse(pnetTrafficType);
+            assertFalse(UUID.fromString(response.getId()).toString().isEmpty());
+            assertEquals(response.getphysicalNetworkId(), pnet.getUuid());
+            assertEquals(response.getTrafficType(), trafficType);
+            assertEquals(response.getXenLabel(), xenLabel);
+            assertEquals(response.getKvmLabel(), kvmLabel);
+            assertEquals(response.getVmwareLabel(), vmwareLabel);
+            assertEquals(response.getHypervLabel(), hypervLabel);
+            assertEquals(response.getOvm3Label(), ovmLabel);
+            assertEquals(response.getVlan(), vlan);
+            assertEquals(response.getIsolationMethods(), "VXLAN,STT");
+
+        }
+    }
+
+    private UnmanagedInstanceTO getUnmanagedInstanceForTests() {
         UnmanagedInstanceTO instance = Mockito.mock(UnmanagedInstanceTO.class);
         Mockito.when(instance.getPowerState()).thenReturn(UnmanagedInstanceTO.PowerState.PowerOff);
         Mockito.when(instance.getClusterName()).thenReturn("CL1");
@@ -436,7 +481,7 @@ public class ApiResponseHelperTest {
 
     @Test
     public void testCreateUnmanagedInstanceResponseVmwareDcVms() {
-        UnmanagedInstanceTO instance = getUnmanagedInstaceForTests();
+        UnmanagedInstanceTO instance = getUnmanagedInstanceForTests();
         UnmanagedInstanceResponse response = apiResponseHelper.createUnmanagedInstanceResponse(instance, null, null);
         Assert.assertEquals(1, response.getDisks().size());
         Assert.assertEquals(1, response.getNics().size());
@@ -757,6 +802,52 @@ public class ApiResponseHelperTest {
             Assert.assertEquals(expected.getHostName(), response.getHostName());
             Assert.assertEquals(expected.getVmId(), response.getVmId());
             Assert.assertEquals(expected.getVmName(), response.getVmName());
+        }
+    }
+
+    @Test
+    public void showVmInfoForSharedNetworksTestRouterIp() {
+        IpAddress ipAddress = Mockito.mock(IpAddress.class);
+        when(ipAddress.getAddress()).thenReturn(new Ip("10.1.1.2"));
+        when(ipAddress.getNetworkId()).thenReturn(1L);
+        NicVO placeholderNic = new NicVO(null, null, 1L, VirtualMachine.Type.DomainRouter);
+        placeholderNic.setReservationStrategy(Nic.ReservationStrategy.PlaceHolder);
+        NicVO routerNic = new NicVO("DirectNetworkGuru", 2L, 1L, VirtualMachine.Type.DomainRouter);
+        IPAddressResponse ipResponse = Mockito.mock(IPAddressResponse.class);
+
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+            when(ApiDBUtils.findByIp4AddressAndNetworkId("10.1.1.2", 1L)).thenReturn(placeholderNic);
+            when(ApiDBUtils.findNonPlaceHolderByIp4AddressAndNetworkId("10.1.1.2", 1L)).thenReturn(routerNic);
+            when(ApiDBUtils.findVMInstanceById(2L)).thenReturn(vmInstanceVOMock);
+            when(vmInstanceVOMock.getUuid()).thenReturn("router-uuid");
+            when(vmInstanceVOMock.getHostName()).thenReturn("r-2-VM");
+            when(vmInstanceVOMock.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+
+            apiResponseHelper.showVmInfoForSharedNetworks(false, ipAddress, ipResponse);
+
+            verify(ipResponse).setIsSystem(true);
+            verify(ipResponse).setVirtualMachineId("router-uuid");
+            verify(ipResponse).setVirtualMachineName("r-2-VM");
+        }
+    }
+
+    @Test
+    public void showVmInfoForSharedNetworksTestRouterPlaceholderOnly() {
+        IpAddress ipAddress = Mockito.mock(IpAddress.class);
+        when(ipAddress.getAddress()).thenReturn(new Ip("10.1.1.2"));
+        when(ipAddress.getNetworkId()).thenReturn(1L);
+        NicVO placeholderNic = new NicVO(null, null, 1L, VirtualMachine.Type.DomainRouter);
+        placeholderNic.setReservationStrategy(Nic.ReservationStrategy.PlaceHolder);
+        IPAddressResponse ipResponse = Mockito.mock(IPAddressResponse.class);
+
+        try (MockedStatic<ApiDBUtils> ignored = Mockito.mockStatic(ApiDBUtils.class)) {
+            when(ApiDBUtils.findNonPlaceHolderByIp4AddressAndNetworkId("10.1.1.2", 1L)).thenReturn(null);
+            when(ApiDBUtils.findByIp4AddressAndNetworkId("10.1.1.2", 1L)).thenReturn(placeholderNic);
+
+            apiResponseHelper.showVmInfoForSharedNetworks(false, ipAddress, ipResponse);
+
+            verify(ipResponse).setIsSystem(true);
+            verify(ipResponse, Mockito.never()).setVirtualMachineId(Mockito.anyString());
         }
     }
 }

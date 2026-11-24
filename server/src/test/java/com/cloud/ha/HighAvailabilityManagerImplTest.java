@@ -35,6 +35,7 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,6 +78,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HighAvailabilityManagerImplTest {
@@ -117,6 +119,8 @@ public class HighAvailabilityManagerImplTest {
     ManagementServer _msServer;
     @Mock
     ConfigurationDao _configDao;
+    @Mock
+    HAConfigDao _haConfigDao;
     @Mock
     VolumeOrchestrationService volumeMgr;
     @Mock
@@ -306,7 +310,12 @@ public class HighAvailabilityManagerImplTest {
         Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Running);
         Mockito.when(vm.getHostId()).thenReturn(1L);
-        Mockito.when(_haDao.persist((HaWorkVO)Mockito.any())).thenReturn(Mockito.mock(HaWorkVO.class));
+
+        Mockito.when(_haDao.persist((HaWorkVO) Mockito.any())).thenAnswer(invocation -> {
+            HaWorkVO haWork = invocation.getArgument(0);
+            ReflectionTestUtils.setField(haWork, "id", 1L);
+            return haWork;
+        });
 
         ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
         highAvailabilityManager.VmHaEnabled = haEnabled;
@@ -362,7 +371,7 @@ public class HighAvailabilityManagerImplTest {
         investigators.add(investigator);
         highAvailabilityManager.setInvestigators(investigators);
         // Mock isAgentAlive to return host status as Down
-        Mockito.when(investigator.isAgentAlive(hostVO)).thenReturn(Status.Down);
+        Mockito.when(investigator.getHostAgentStatus(hostVO)).thenReturn(Status.Down);
 
         ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
         highAvailabilityManager.VmHaEnabled = haEnabled;

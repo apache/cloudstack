@@ -23,7 +23,6 @@ import javax.naming.directory.SearchControls;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.ldap.dao.LdapConfigurationDao;
@@ -34,7 +33,7 @@ public class LdapConfiguration implements Configurable{
     private final static String factory = "com.sun.jndi.ldap.LdapCtxFactory";
     protected Logger logger = LogManager.getLogger(getClass());
 
-    private static final ConfigKey<Long> ldapReadTimeout = new ConfigKey<Long>(
+    private static final ConfigKey<Long> ldapReadTimeout = new ConfigKey<>(
             Long.class,
             "ldap.read.timeout",
             "Advanced",
@@ -42,9 +41,9 @@ public class LdapConfiguration implements Configurable{
             "LDAP connection Timeout in milli sec",
             true,
             ConfigKey.Scope.Domain,
-            1l);
+            1L);
 
-    private static final ConfigKey<Integer> ldapPageSize = new ConfigKey<Integer>(
+    private static final ConfigKey<Integer> ldapPageSize = new ConfigKey<>(
             Integer.class,
             "ldap.request.page.size",
             "Advanced",
@@ -54,7 +53,7 @@ public class LdapConfiguration implements Configurable{
             ConfigKey.Scope.Domain,
             1);
 
-    private static final ConfigKey<Boolean> ldapEnableNestedGroups = new ConfigKey<Boolean>(
+    private static final ConfigKey<Boolean> ldapEnableNestedGroups = new ConfigKey<>(
             "Advanced",
             Boolean.class,
             "ldap.nested.groups.enable",
@@ -63,7 +62,7 @@ public class LdapConfiguration implements Configurable{
             true,
             ConfigKey.Scope.Domain);
 
-    private static final ConfigKey<String> ldapMemberOfAttribute = new ConfigKey<String>(
+    private static final ConfigKey<String> ldapMemberOfAttribute = new ConfigKey<>(
             "Advanced",
             String.class,
             "ldap.user.memberof.attribute",
@@ -72,7 +71,7 @@ public class LdapConfiguration implements Configurable{
             true,
             ConfigKey.Scope.Domain);
 
-    private static final ConfigKey<String> ldapProvider = new ConfigKey<String>(
+    private static final ConfigKey<String> ldapProvider = new ConfigKey<>(
             "Advanced",
             String.class,
             "ldap.provider",
@@ -81,7 +80,7 @@ public class LdapConfiguration implements Configurable{
             true,
             ConfigKey.Scope.Domain);
 
-    private static final ConfigKey<String> ldapBaseDn = new ConfigKey<String>(
+    private static final ConfigKey<String> ldapBaseDn = new ConfigKey<>(
             "Advanced",
             String.class,
             "ldap.basedn",
@@ -90,7 +89,7 @@ public class LdapConfiguration implements Configurable{
             true,
             ConfigKey.Scope.Domain);
 
-    private static final ConfigKey<String> ldapBindPassword = new ConfigKey<String>(
+    private static final ConfigKey<String> ldapBindPassword = new ConfigKey<>(
             "Secure",
             String.class,
             "ldap.bind.password",
@@ -98,7 +97,7 @@ public class LdapConfiguration implements Configurable{
             "Sets the bind password for LDAP",
             true,
             ConfigKey.Scope.Domain);
-    private static final ConfigKey<String> ldapBindPrincipal = new ConfigKey<String>(
+    private static final ConfigKey<String> ldapBindPrincipal = new ConfigKey<>(
             "Secure",
             String.class,
             "ldap.bind.principal",
@@ -106,7 +105,7 @@ public class LdapConfiguration implements Configurable{
             "Sets the bind principal for LDAP",
             true,
             ConfigKey.Scope.Domain);
-    private static final ConfigKey<String> ldapEmailAttribute = new ConfigKey<String>(
+    private static final ConfigKey<String> ldapEmailAttribute = new ConfigKey<>(
             "Advanced",
             String.class,
             "ldap.email.attribute",
@@ -114,7 +113,7 @@ public class LdapConfiguration implements Configurable{
             "Sets the email attribute used within LDAP",
             true,
             ConfigKey.Scope.Domain);
-    private static final ConfigKey<String> ldapFirstnameAttribute = new ConfigKey<String>(
+    private static final ConfigKey<String> ldapFirstnameAttribute = new ConfigKey<>(
             "Advanced",
             String.class,
             "ldap.firstname.attribute",
@@ -122,14 +121,14 @@ public class LdapConfiguration implements Configurable{
             "Sets the firstname attribute used within LDAP",
             true,
             ConfigKey.Scope.Domain);
-    private static final ConfigKey<String> ldapLastnameAttribute = new ConfigKey<String>(
+    private static final ConfigKey<String> ldapLastnameAttribute = new ConfigKey<>(
             "Advanced",
             String.class, "ldap.lastname.attribute",
             "sn",
             "Sets the lastname attribute used within LDAP",
             true,
             ConfigKey.Scope.Domain);
-    private static final ConfigKey<String> ldapUsernameAttribute = new ConfigKey<String>(
+    private static final ConfigKey<String> ldapUsernameAttribute = new ConfigKey<>(
             "Advanced",
             String.class,
             "ldap.username.attribute",
@@ -137,7 +136,7 @@ public class LdapConfiguration implements Configurable{
             "Sets the username attribute used within LDAP",
             true,
             ConfigKey.Scope.Domain);
-    private static final ConfigKey<String> ldapUserObject = new ConfigKey<String>(
+    private static final ConfigKey<String> ldapUserObject = new ConfigKey<>(
             "Advanced",
             String.class,
             "ldap.user.object",
@@ -145,7 +144,7 @@ public class LdapConfiguration implements Configurable{
             "Sets the object type of users within LDAP",
             true,
             ConfigKey.Scope.Domain);
-    private static final ConfigKey<String> ldapSearchGroupPrinciple = new ConfigKey<String>(
+    private static final ConfigKey<String> ldapSearchGroupPrinciple = new ConfigKey<>(
             "Advanced",
             String.class,
             "ldap.search.group.principle",
@@ -153,7 +152,7 @@ public class LdapConfiguration implements Configurable{
             "Sets the principle of the group that users must be a member of",
             true,
             ConfigKey.Scope.Domain);
-    private static final ConfigKey<String> ldapGroupObject = new ConfigKey<String>(
+    private static final ConfigKey<String> ldapGroupObject = new ConfigKey<>(
             "Advanced",
             String.class,
             "ldap.group.object",
@@ -161,7 +160,7 @@ public class LdapConfiguration implements Configurable{
             "Sets the object type of groups within LDAP",
             true,
             ConfigKey.Scope.Domain);
-    private static final ConfigKey<String> ldapGroupUniqueMemberAttribute = new ConfigKey<String>(
+    private static final ConfigKey<String> ldapGroupUniqueMemberAttribute = new ConfigKey<>(
             "Advanced",
             String.class,
             "ldap.group.user.uniquemember",
@@ -170,7 +169,7 @@ public class LdapConfiguration implements Configurable{
             true,
             ConfigKey.Scope.Domain);
 
-    private static final ConfigKey<String> ldapTrustStore = new ConfigKey<String>(
+    private static final ConfigKey<String> ldapTrustStore = new ConfigKey<>(
             "Advanced",
             String.class,
             "ldap.truststore",
@@ -178,7 +177,7 @@ public class LdapConfiguration implements Configurable{
             "Sets the path to the truststore to use for SSL",
             true,
             ConfigKey.Scope.Domain);
-    private static final ConfigKey<String> ldapTrustStorePassword = new ConfigKey<String>(
+    private static final ConfigKey<String> ldapTrustStorePassword = new ConfigKey<>(
             "Secure",
             String.class,
             "ldap.truststore.password",
@@ -199,11 +198,6 @@ public class LdapConfiguration implements Configurable{
         _ldapConfigurationDao = ldapConfigurationDao;
     }
 
-    @Deprecated
-    public LdapConfiguration(final ConfigurationDao configDao, final LdapConfigurationDao ldapConfigurationDao) {
-        _ldapConfigurationDao = ldapConfigurationDao;
-    }
-
     public String getAuthentication(final Long domainId) {
         if ((getBindPrincipal(domainId) == null) && (getBindPassword(domainId) == null)) {
             return "none";
@@ -212,36 +206,36 @@ public class LdapConfiguration implements Configurable{
         }
     }
 
-    public String getBaseDn(final Long domainId) {
+    public static String getBaseDn(final Long domainId) {
         return ldapBaseDn.valueIn(domainId);
     }
 
-    public String getBindPassword(final Long domainId) {
+    public static String getBindPassword(final Long domainId) {
         return ldapBindPassword.valueIn(domainId);
     }
 
-    public String getBindPrincipal(final Long domainId) {
+    public static String getBindPrincipal(final Long domainId) {
         return ldapBindPrincipal.valueIn(domainId);
     }
 
-    public String getEmailAttribute(final Long domainId) {
+    public static String getEmailAttribute(final Long domainId) {
         return ldapEmailAttribute.valueIn(domainId);
     }
 
-    public String getFactory() {
+    public static String getFactory() {
         return factory;
     }
 
-    public String getFirstnameAttribute(final Long domainId) {
+    public static String getFirstnameAttribute(final Long domainId) {
         return ldapFirstnameAttribute.valueIn(domainId);
     }
 
-    public String getLastnameAttribute(final Long domainId) {
+    public static String getLastnameAttribute(final Long domainId) {
         return ldapLastnameAttribute.valueIn(domainId);
     }
 
     public String getProviderUrl(final Long domainId) {
-        final String protocol = getSSLStatus(domainId) == true ? "ldaps://" : "ldap://";
+        final String protocol = getSSLStatus(domainId) ? "ldaps://" : "ldap://";
         final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(null, 0, domainId);
         final StringBuilder providerUrls = new StringBuilder();
         String delim = "";
@@ -273,40 +267,36 @@ public class LdapConfiguration implements Configurable{
         return ldapSearchGroupPrinciple.valueIn(domainId);
     }
 
-    public boolean getSSLStatus(Long domainId) {
-        boolean sslStatus = false;
-        if (getTrustStore(domainId) != null && getTrustStorePassword(domainId) != null) {
-            sslStatus = true;
-        }
-        return sslStatus;
+    public static boolean getSSLStatus(Long domainId) {
+        return getTrustStore(domainId) != null && getTrustStorePassword(domainId) != null;
     }
 
-    public String getTrustStore(Long domainId) {
+    public static String getTrustStore(Long domainId) {
         return ldapTrustStore.valueIn(domainId);
     }
 
-    public String getTrustStorePassword(Long domainId) {
+    public static String getTrustStorePassword(Long domainId) {
         return ldapTrustStorePassword.valueIn(domainId);
     }
 
-    public String getUsernameAttribute(final Long domainId) {
+    public static String getUsernameAttribute(final Long domainId) {
         return ldapUsernameAttribute.valueIn(domainId);
     }
 
-    public String getUserObject(final Long domainId) {
+    public static String getUserObject(final Long domainId) {
         return ldapUserObject.valueIn(domainId);
     }
 
-    public String getGroupObject(final Long domainId) {
+    public static String getGroupObject(final Long domainId) {
         return ldapGroupObject.valueIn(domainId);
     }
 
-    public String getGroupUniqueMemberAttribute(final Long domainId) {
+    public static String getGroupUniqueMemberAttribute(final Long domainId) {
         return ldapGroupUniqueMemberAttribute.valueIn(domainId);
     }
 
     // TODO remove hard-coding
-    public String getCommonNameAttribute() {
+    public static String getCommonNameAttribute() {
         return "cn";
     }
 
@@ -315,11 +305,11 @@ public class LdapConfiguration implements Configurable{
         return "userAccountControl";
     }
 
-    public Long getReadTimeout(final Long domainId) {
+    public static Long getReadTimeout(final Long domainId) {
         return ldapReadTimeout.valueIn(domainId);
     }
 
-    public Integer getLdapPageSize(final Long domainId) {
+    public static Integer getLdapPageSize(final Long domainId) {
         return ldapPageSize.valueIn(domainId);
     }
 
@@ -334,7 +324,7 @@ public class LdapConfiguration implements Configurable{
         return provider;
     }
 
-    public boolean isNestedGroupsEnabled(final Long domainId) {
+    public static boolean isNestedGroupsEnabled(final Long domainId) {
         return ldapEnableNestedGroups.valueIn(domainId);
     }
 

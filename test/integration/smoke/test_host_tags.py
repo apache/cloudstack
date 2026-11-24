@@ -63,7 +63,7 @@ class TestHostTags(cloudstackTestCase):
     def update_host_tags_via_api(cls, hosttags):
         cmd = updateHost.updateHostCmd()
         cmd.id = cls.host.id
-        cmd.hosttags = hosttags
+        cmd.hosttags = hosttags if hosttags is not None else ""
         cls.apiclient.updateHost(cmd)
 
     @classmethod

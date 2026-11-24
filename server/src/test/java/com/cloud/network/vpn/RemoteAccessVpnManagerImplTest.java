@@ -15,9 +15,23 @@
 package com.cloud.network.vpn;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.VpnUser.State;
+import com.cloud.network.VpnUserVO;
+import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.RemoteAccessVpnVO;
+import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.element.RemoteAccessVPNServiceProvider;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import junit.framework.TestCase;
+import org.apache.cloudstack.context.CallContext;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.Collections;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -221,5 +235,41 @@ public class RemoteAccessVpnManagerImplTest extends TestCase {
         });
 
         assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void applyVpnUsersHandlesNullProviderResultWithoutNpe() throws Exception {
+        RemoteAccessVpnManagerImpl mgr = new RemoteAccessVpnManagerImpl();
+
+        AccountDao accountDao = Mockito.mock(AccountDao.class);
+        AccountManager accountMgr = Mockito.mock(AccountManager.class);
+        VpnUserDao vpnUsersDao = Mockito.mock(VpnUserDao.class);
+        RemoteAccessVpnDao remoteAccessVpnDao = Mockito.mock(RemoteAccessVpnDao.class);
+        RemoteAccessVPNServiceProvider provider = Mockito.mock(RemoteAccessVPNServiceProvider.class);
+        ReflectionTestUtils.setField(mgr, "_accountDao", accountDao);
+        ReflectionTestUtils.setField(mgr, "_accountMgr", accountMgr);
+        ReflectionTestUtils.setField(mgr, "_vpnUsersDao", vpnUsersDao);
+        ReflectionTestUtils.setField(mgr, "_remoteAccessVpnDao", remoteAccessVpnDao);
+        ReflectionTestUtils.setField(mgr, "_vpnServiceProviders", Collections.singletonList(provider));
+
+        Mockito.when(accountDao.findById(1L)).thenReturn(Mockito.mock(AccountVO.class));
+
+        RemoteAccessVpnVO vpn = Mockito.mock(RemoteAccessVpnVO.class);
+        Mockito.when(vpn.getNetworkId()).thenReturn(null);
+        Mockito.when(remoteAccessVpnDao.findByAccount(1L)).thenReturn(Collections.singletonList(vpn));
+
+        VpnUserVO user = Mockito.mock(VpnUserVO.class);
+        Mockito.when(user.getState()).thenReturn(State.Revoke);
+        Mockito.when(vpnUsersDao.listByAccount(1L)).thenReturn(Collections.singletonList(user));
+
+        Mockito.when(provider.applyVpnUsers(Mockito.eq(vpn), Mockito.anyList())).thenReturn(null);
+
+        try (MockedStatic<CallContext> callContextMock = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContext = Mockito.mock(CallContext.class);
+            callContextMock.when(CallContext::current).thenReturn(callContext);
+            Mockito.when(callContext.getCallingAccount()).thenReturn(Mockito.mock(Account.class));
+
+            Assert.assertTrue(mgr.applyVpnUsers(1L, "someuser", false));
+        }
     }
 }

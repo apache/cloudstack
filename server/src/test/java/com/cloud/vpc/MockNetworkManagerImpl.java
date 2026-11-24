@@ -26,6 +26,9 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.network.AssociateNetworkToNicCmd;
+import org.apache.cloudstack.api.command.admin.network.ChangeNicPrimaryNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.DisassociateNetworkFromNicCmd;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.network.ListGuestVlansCmd;
@@ -228,6 +231,13 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     public Network createGuestNetwork(long networkOfferingId, String name, String displayText, Account owner,
           PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceAllocationException {
+        return null;
+    }
+
+    @Override
+    public Network createGuestNetwork(long networkOfferingId, String name, String displayText, Account owner,
+           PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Pair<Integer, Integer> vrIfaceMTUs)
+            throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
         return null;
     }
 
@@ -578,6 +588,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
         return null;
     }
 
+    @Override
+    public boolean isIsolationMethodNetworkExtension(Long networkOfferingId) {
+        return false;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#allocate(com.cloud.vm.VirtualMachineProfile, java.util.List)
      */
@@ -663,6 +678,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public void markNetworkImplemented(long networkId) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
     public Map<Integer, String> getExtraDhcpOptions(long nicId) {
         return null;
     }
@@ -697,8 +717,16 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, boolean bypassVlanOverlapCheck, String networkDomain,
                                       Account owner, Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String gatewayv6,
                                       String cidrv6, Boolean displayNetworkEnabled, String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId, String routerIp, String routerIpv6,
-                                      String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs, Integer networkCidrSize) throws ConcurrentOperationException, ResourceAllocationException {
+                                      String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs, Integer networkCidrSize) throws ConcurrentOperationException {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, boolean bypassVlanOverlapCheck, String networkDomain,
+                                      Account owner, Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String gatewayv6,
+                                      String cidrv6, Boolean displayNetworkEnabled, String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId, String routerIp, String routerIpv6,
+                                      String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs, Integer networkCidrSize, boolean keepMacAddressOnPublicNic) throws ConcurrentOperationException {
         return null;
     }
 
@@ -835,6 +863,12 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
 
     }
 
+    @Override
+    public void ensureRouterForLazilyImplementedAssociation(Network network, DeployDestination dest, ReservationContext context) {
+        // TODO Auto-generated method stub
+
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#finalizeServicesAndProvidersForNetwork(com.cloud.offering.NetworkOffering, java.lang.Long)
      */
@@ -889,7 +923,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public NicSecondaryIp allocateSecondaryGuestIP(long nicId, IpAddresses requestedIpPair) {
+    public NicSecondaryIp allocateSecondaryGuestIP(long nicId, IpAddresses requestedIpPair, String description) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -945,7 +979,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType) {
+    public boolean isResourceCountUpdateNeeded(NetworkOffering ntwkOff) {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
@@ -1046,6 +1080,25 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public Nic associateNetworkToNic(AssociateNetworkToNicCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public Nic disassociateNetworkFromNic(DisassociateNetworkFromNicCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public Nic changeNicPrimaryNetwork(ChangeNicPrimaryNetworkCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public void associateNetworksToNic(Nic nic, List<Long> networkIds, Map<Long, IpAddresses> requestedIps) {
+    }
+
+    @Override
     public boolean releasePodIp(ReleasePodIpCmdByAdmin ip) throws CloudRuntimeException {
         return true;
     }
@@ -1139,6 +1192,19 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
 
     @Override
     public String getNicVlanValueForExternalVm(NicTO nic) {
+        return null;
+    }
+
+    @Override
+    public void reapplyLiveVlanMembership(VirtualMachine vm) {
+    }
+
+    @Override
+    public void refreshTrunkNicsAssociatedToNetwork(Network network) {
+    }
+
+    @Override
+    public Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId) {
         return null;
     }
 }

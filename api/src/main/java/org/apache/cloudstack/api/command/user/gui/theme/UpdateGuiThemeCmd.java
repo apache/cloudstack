@@ -60,6 +60,10 @@ public class UpdateGuiThemeCmd extends BaseCmd {
             "wildcard) separated by comma that can retrieve the theme; e.g.: *acme.com,acme2.com")
     private String commonNames;
 
+    @Parameter(name = ApiConstants.LOGIN_BASE_DOMAIN, type = CommandType.STRING, length = 65535, description = "The ACS domain to be used as base for " +
+            "the login when accessing the GUI through the common name defined in the theme. If a common name is not defined, this parameter is ignored on the GUI.")
+    private String loginBaseDomain;
+
     @Parameter(name = ApiConstants.DOMAIN_IDS, type = CommandType.STRING, length = 65535, description = "A set of domain UUIDs (also known as ID for " +
             "the end-user) separated by comma that can retrieve the theme.")
     private String domainIds;
@@ -94,6 +98,10 @@ public class UpdateGuiThemeCmd extends BaseCmd {
 
     public String getJsonConfiguration() {
         return jsonConfiguration;
+    }
+
+    public String getLoginBaseDomain() {
+        return loginBaseDomain;
     }
 
     public String getCommonNames() {

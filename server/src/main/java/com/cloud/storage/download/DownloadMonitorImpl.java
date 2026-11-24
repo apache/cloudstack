@@ -87,11 +87,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         final Map<String, String> configs = _configDao.getConfiguration("management-server", params);
         _proxy = configs.get(Config.SecStorageProxy.key());
 
-        String cert = configs.get("secstorage.ssl.cert.domain");
-        if (!"realhostip.com".equalsIgnoreCase(cert)) {
-            logger.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
-        }
-
         _copyAuthPasswd = configs.get("secstorage.copy.password");
 
         DownloadListener dl = new DownloadListener(this);

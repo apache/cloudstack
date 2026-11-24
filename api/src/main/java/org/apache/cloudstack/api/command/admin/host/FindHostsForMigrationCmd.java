@@ -32,8 +32,9 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.host.Host;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "findHostsForMigration", description = "Find hosts suitable for migrating a virtual machine.", responseObject = HostForMigrationResponse.class,
+@APICommand(name = "findHostsForMigration", description = "Find hosts suitable for migrating an Instance.", responseObject = HostForMigrationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class FindHostsForMigrationCmd extends BaseListCmd {
 
@@ -46,7 +47,7 @@ public class FindHostsForMigrationCmd extends BaseListCmd {
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
                required = true,
-               description = "find hosts to which this VM can be migrated and flag the hosts with enough " + "CPU/RAM to host the VM")
+               description = "Find hosts to which this Instance can be migrated and flag the hosts with enough " + "CPU/RAM to host the Instance")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////
@@ -73,12 +74,14 @@ public class FindHostsForMigrationCmd extends BaseListCmd {
         List<? extends Host> hostsWithCapacity = hostsForMigration.second();
         hostsRequiringStorageMotion = hostsForMigration.third();
 
+        VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, getVirtualMachineId());
+
         response = new ListResponse<HostForMigrationResponse>();
         List<HostForMigrationResponse> hostResponses = new ArrayList<HostForMigrationResponse>();
         for (Host host : result.first()) {
             HostForMigrationResponse hostResponse = _responseGenerator.createHostForMigrationResponse(host);
             Boolean suitableForMigration = false;
-            if (hostsWithCapacity.contains(host)) {
+            if (hostsWithCapacity != null && hostsWithCapacity.contains(host)) {
                 suitableForMigration = true;
             }
             hostResponse.setSuitableForMigration(suitableForMigration);
@@ -89,6 +92,11 @@ public class FindHostsForMigrationCmd extends BaseListCmd {
             } else {
                 hostResponse.setRequiresStorageMotion(false);
             }
+
+            if (!suitableForMigration && vm != null) {
+                hostResponse.setUnsuitableReason(_mgr.getMultiNetworkNicUnsuitableReason(vm, host));
+            }
+            hostResponse.setMigrationCaution(_mgr.getGuestBridgeStpMigrationCaution(host));
 
             hostResponse.setObjectName("host");
             hostResponses.add(hostResponse);

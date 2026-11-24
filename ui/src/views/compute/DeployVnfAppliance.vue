@@ -272,7 +272,7 @@
                 </template>
               </a-step>
               <a-step
-                v-else-if="vm.templateid && template.templatetype !== 'VNF'"
+                v-else-if="vm.templateid && template && template.templatetype !== 'VNF'"
                 :title="imageType === 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
@@ -360,8 +360,12 @@
                   <div>
                     <vnf-nics-selection
                       :items="templateVnfNics"
+                      :templateNics="templateNics"
                       :networks="networks"
-                      @update-vnf-nic-networks="($event) => updateVnfNicNetworks($event)" />
+                      :canTrunkNics="canTrunkNics"
+                      :zoneId="zoneId"
+                      @update-vnf-nic-networks="($event) => updateVnfNicNetworks($event)"
+                      @update-vnf-trunk-groups="($event) => updateVnfTrunkGroups($event)" />
                   </div>
                   <div style="margin-top: 15px" v-if="showVnfConfigureManagement">
                     <a-form-item name="vnfconfiguremanagement" ref="vnfconfiguremanagement">
@@ -984,6 +988,7 @@ export default {
       templateProperties: {},
       templateVnfNics: [],
       vnfNicNetworks: {},
+      vnfTrunkGroups: {},
       selectedTemplateConfiguration: {},
       iso: {},
       hypervisor: '',
@@ -991,6 +996,8 @@ export default {
       diskOffering: {},
       affinityGroups: [],
       networks: [],
+      // networks seen across all pages, keyed by id - options.networks only holds the current page
+      networksCache: {},
       networksAdd: [],
       zone: {},
       sshKeyPairs: [],
@@ -1053,6 +1060,9 @@ export default {
   computed: {
     rootDiskSize () {
       return this.showRootDiskSizeChanger && this.rootDiskSizeFixed > 0
+    },
+    canTrunkNics () {
+      return this.hypervisor === 'KVM' && ('associateNetworkToNic' in this.$store.getters.apis)
     },
     isNormalAndDomainUser () {
       return ['DomainAdmin', 'User'].includes(this.$store.getters.userInfo.roletype)
@@ -1303,7 +1313,8 @@ export default {
       return tabList
     },
     showVnfNicsSection () {
-      return this.networks && this.networks.length > 0 && this.vm.templateid && this.templateVnfNics && this.templateVnfNics.length > 0
+      return ((this.networks && this.networks.length > 0) || (this.templateNics && this.templateNics.length > 0)) &&
+        this.vm.templateid && this.templateVnfNics && this.templateVnfNics.length > 0
     },
     showVnfConfigureManagement () {
       const managementDeviceIds = []
@@ -1313,9 +1324,14 @@ export default {
         }
       }
       for (const deviceId of managementDeviceIds) {
+        if (this.templateNics && this.templateNics[deviceId] &&
+          ((this.templateNics[deviceId].selectednetworktype === 'Isolated' && this.templateNics[deviceId].selectednetworkvpcid === undefined) ||
+            (this.templateNics[deviceId].selectednetworktype === 'Shared' && this.templateNics[deviceId].selectednetworkwithsg))) {
+          return true
+        }
         if (this.vnfNicNetworks && this.vnfNicNetworks[deviceId] &&
           ((this.vnfNicNetworks[deviceId].type === 'Isolated' && this.vnfNicNetworks[deviceId].vpcid === undefined) ||
-            (this.vnfNicNetworks[deviceId].type === 'Shared' && this.zone.securitygroupsenabled))) {
+            (this.vnfNicNetworks[deviceId].type === 'Shared' && this.vnfNicNetworks[deviceId].service.filter(svc => svc.name === 'SecurityGroupProvider')))) {
           return true
         }
       }
@@ -1427,7 +1443,7 @@ export default {
         }
         this.zone = _.find(this.options.zones, (option) => option.id === vnfAppConfig.zoneid)
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(vnfAppConfig.affinitygroupids, option.id))
-        this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(this.options.networks, (option) => _.includes(vnfAppConfig.networkids, option.id)))
+        this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(Object.values(this.networksCache), (option) => _.includes(vnfAppConfig.networkids, option.id)))
 
         this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === vnfAppConfig.diskofferingid)
         this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === vnfAppConfig.keypair)
@@ -1761,7 +1777,7 @@ export default {
       }
       this.fetchBootTypes()
       this.fetchBootModes()
-      this.fetchInstaceGroups()
+      this.fetchInstanceGroups()
       this.fetchIoPolicyTypes()
       nextTick().then(() => {
         ['name', 'keyboard', 'boottype', 'bootmode', 'userdata', 'iothreadsenabled', 'iodriverpolicy', 'nicmultiqueuenumber', 'nicpackedvirtqueues'].forEach(this.fillValue)
@@ -1816,7 +1832,7 @@ export default {
         { id: 'storage_specific', description: 'storage_specific' }
       ]
     },
-    fetchInstaceGroups () {
+    fetchInstanceGroups () {
       this.options.instanceGroups = []
       getAPI('listInstanceGroups', {
         account: this.$store.getters.userInfo.account,
@@ -1936,6 +1952,9 @@ export default {
     },
     updateVnfNicNetworks (vnfNicNetworks) {
       this.vnfNicNetworks = vnfNicNetworks || {}
+    },
+    updateVnfTrunkGroups (vnfTrunkGroups) {
+      this.vnfTrunkGroups = vnfTrunkGroups || {}
     },
     updateSshKeyPairs (names) {
       this.form.keypairs = names
@@ -2090,7 +2109,7 @@ export default {
         // All checked networks should be used and only once.
         // Required NIC must be associated to a network
         // DeviceID must be consequent
-        if (this.templateVnfNics && this.templateVnfNics.length > 0) {
+        if (this.templateVnfNics && this.templateVnfNics.length > 0 && (!this.templateNics || this.templateNics.length === 0)) {
           let nextDeviceId = 0
           const usedNetworkIds = []
           const keys = Object.keys(this.vnfNicNetworks)
@@ -2257,9 +2276,32 @@ export default {
             networkIds = values.networkids
             if (networkIds.length > 0) {
               if (this.templateVnfNics && this.templateVnfNics.length > 0) {
+                const hasVnfTrunkGroups = this.vnfTrunkGroups && Object.values(this.vnfTrunkGroups).some(ids => ids && ids.length > 0)
+                let k = 0
                 for (const templateVnfNic of this.templateVnfNics) {
                   const vnfNicNetworkId = this.vnfNicNetworks[String(templateVnfNic.deviceid)]?.id || null
-                  if (vnfNicNetworkId) {
+                  if (!vnfNicNetworkId) {
+                    continue
+                  }
+                  if (hasVnfTrunkGroups) {
+                    // one or more VNF nics group several networks onto a single nic (multi-VLAN trunk) -
+                    // mutually exclusive with iptonetworklist at the API level, so every nic (grouped or
+                    // not) goes through nicnetworkslist here instead.
+                    const assocIds = this.vnfTrunkGroups[String(templateVnfNic.deviceid)] || []
+                    createVnfAppData['nicnetworkslist[' + k + '].networkids'] = [vnfNicNetworkId, ...assocIds].join(',')
+                    if (this.networkConfig.length > 0) {
+                      const networkConfig = this.networkConfig.filter((item) => item.key === vnfNicNetworkId)
+                      if (networkConfig && networkConfig.length > 0) {
+                        if (networkConfig[0].ipAddress) {
+                          createVnfAppData['nicnetworkslist[' + k + '].ip4address'] = networkConfig[0].ipAddress
+                        }
+                        if (networkConfig[0].macAddress) {
+                          createVnfAppData['nicnetworkslist[' + k + '].macaddress'] = networkConfig[0].macAddress
+                        }
+                      }
+                    }
+                    k++
+                  } else {
                     const ipToNetwork = {
                       networkid: vnfNicNetworkId
                     }
@@ -2506,6 +2548,12 @@ export default {
                 param.opts = response
                 this.options[name] = response
 
+                if (name === 'networks') {
+                  for (const network of response) {
+                    this.networksCache[network.id] = network
+                  }
+                }
+
                 if (name === 'hypervisors') {
                   const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
                   this.dataPreFill.hypervisor = hypervisorFromResponse
@@ -2720,6 +2768,9 @@ export default {
             var network = this.options.networks[Math.min(i, this.options.networks.length - 1)]
             nic.selectednetworkid = network.id
             nic.selectednetworkname = network.name
+            nic.selectednetworktype = network.type
+            nic.selectednetworkvpcid = network.vpcid
+            nic.selectednetworkwithsg = network.service.filter(svc => svc.name === 'SecurityGroupProvider').length > 0
             this.nicToNetworkSelection.push({ nic: nic.id, network: network.id })
           }
         }
@@ -2767,12 +2818,12 @@ export default {
           configuration.cpunumber = 0
           configuration.cpuspeed = 0
           configuration.memory = 0
-          for (var harwareItem of configuration.hardwareItems) {
-            if (harwareItem.resourceType === 'Processor') {
-              configuration.cpunumber = harwareItem.virtualQuantity
-              configuration.cpuspeed = harwareItem.reservation
-            } else if (harwareItem.resourceType === 'Memory') {
-              configuration.memory = harwareItem.virtualQuantity
+          for (var hardwareItem of configuration.hardwareItems) {
+            if (hardwareItem.resourceType === 'Processor') {
+              configuration.cpunumber = hardwareItem.virtualQuantity
+              configuration.cpuspeed = hardwareItem.reservation
+            } else if (hardwareItem.resourceType === 'Memory') {
+              configuration.memory = hardwareItem.virtualQuantity
             }
           }
           configurations.push(configuration)

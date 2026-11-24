@@ -49,19 +49,19 @@ public class ListDedicatedPodsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "the ID of the pod")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "The ID of the pod")
     private Long podId;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the ID of the domain associated with the pod")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "The ID of the domain associated with the pod")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the name of the account associated with the pod. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "The name of the account associated with the pod. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.AFFINITY_GROUP_ID,
                type = CommandType.UUID,
                entityType = AffinityGroupResponse.class,
-               description = "list dedicated pods by affinity group")
+               description = "List dedicated pods by affinity group")
     private Long affinityGroupId;
 
     /////////////////////////////////////////////////////

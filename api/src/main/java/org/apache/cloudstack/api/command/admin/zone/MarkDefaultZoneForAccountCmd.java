@@ -95,7 +95,7 @@ public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Marking account with the default zone: " + getDefaultZoneId();
+        return  "Marking zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID) + " as default for account " + getResourceUuid(ApiConstants.ACCOUNT) + " in domain: " + getResourceUuid(ApiConstants.DOMAIN_ID);
     }
 
     @Override

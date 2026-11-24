@@ -41,8 +41,11 @@
   - optionValueKey (String, optional): Property to use as the value for options (e.g., 'name'). Default is 'id'
   - optionLabelKey (String, optional): Property to use as the label for options (e.g., 'name'). Default is 'name'
   - defaultOption (Object, optional): Preselected object to include initially
+  - allowClear (Boolean, optional): Whether to allow clearing the selection. Default is false
   - showIcon (Boolean, optional): Whether to show icon for the options. Default is true
   - defaultIcon (String, optional): Icon to be shown when there is no resource icon for the option. Default is 'cloud-outlined'
+  - autoSelectFirstOption (Boolean, optional): Whether to automatically select the first option when options are loaded. Default is false
+  - selectFirstOption (Boolean, optional): Whether to automatically select the first option when options are loaded. Default is false
 
   Events:
   - @change-option-value (Function): Emits the selected option value(s) when value(s) changes. Do not use @change as it will give warnings and may not work
@@ -58,6 +61,7 @@
     :filter-option="false"
     :loading="loading"
     show-search
+    :allowClear="allowClear"
     placeholder="Select"
     @search="onSearchTimed"
     @popupScroll="onScroll"
@@ -75,13 +79,13 @@
         </div>
       </div>
     </template>
-    <a-select-option v-for="option in options" :key="option.id" :value="option[optionValueKey]">
+    <a-select-option v-for="option in selectableOptions" :key="option.id" :value="option[optionValueKey]">
       <span>
-        <span v-if="showIcon && option.showicon !== false">
+        <span v-if="showIcon && option.showicon !== false && option.id !== null && option.id !== undefined">
           <resource-icon v-if="option.icon && option.icon.base64image" :image="option.icon.base64image" size="1x" style="margin-right: 5px"/>
           <render-icon v-else :icon="defaultIcon" style="margin-right: 5px" />
         </span>
-        <span>{{ option[optionLabelKey] }}</span>
+        <span>{{ optionLabelFn ? optionLabelFn(option) : option[optionLabelKey] }}</span>
       </span>
     </a-select-option>
   </a-select>
@@ -120,9 +124,17 @@ export default {
       type: String,
       default: 'name'
     },
+    optionLabelFn: {
+      type: Function,
+      default: null
+    },
     defaultOption: {
       type: Object,
       default: null
+    },
+    allowClear: {
+      type: Boolean,
+      default: false
     },
     showIcon: {
       type: Boolean,
@@ -135,6 +147,14 @@ export default {
     pageSize: {
       type: Number,
       default: null
+    },
+    autoSelectFirstOption: {
+      type: Boolean,
+      default: false
+    },
+    selectFirstOption: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -147,11 +167,13 @@ export default {
       searchTimer: null,
       scrollHandlerAttached: false,
       preselectedOptionValue: null,
-      successiveFetches: 0
+      successiveFetches: 0,
+      canSelectFirstOption: false,
+      hasAutoSelectedFirst: false
     }
   },
   created () {
-    this.addDefaultOptionIfNeeded(true)
+    this.addDefaultOptionIfNeeded()
   },
   mounted () {
     this.preselectedOptionValue = this.$attrs.value
@@ -166,6 +188,36 @@ export default {
     },
     formattedSearchFooterMessage () {
       return `${this.$t('label.showing.results.for').replace('%x', this.searchQuery)}`
+    },
+    selectableOptions () {
+      const currentValue = this.$attrs.value
+      // Only filter out null/empty options when the current value is also null/undefined/empty
+      // This prevents such options from being selected and allows the placeholder to show instead
+      if (currentValue === null || currentValue === undefined || currentValue === '') {
+        return this.options.filter(option => {
+          const optionValue = option[this.optionValueKey]
+          return optionValue !== null && optionValue !== undefined && optionValue !== ''
+        })
+      }
+      // When a valid value is selected, show all options
+      return this.options
+    },
+    apiOptionsCount () {
+      if (this.defaultOption) {
+        const defaultOptionValue = this.defaultOption[this.optionValueKey]
+        return this.options.filter(option => option[this.optionValueKey] !== defaultOptionValue).length
+      }
+      return this.options.length
+    },
+    preselectedMatchValue () {
+      // Extract the first value from preselectedOptionValue if it's an array, otherwise return the value itself
+      if (!this.preselectedOptionValue) return null
+      return Array.isArray(this.preselectedOptionValue) ? this.preselectedOptionValue[0] : this.preselectedOptionValue
+    },
+    preselectedMatch () {
+      // Find the matching option for the preselected value
+      if (!this.preselectedMatchValue) return null
+      return this.options.find(entry => entry[this.optionValueKey] === this.preselectedMatchValue) || null
     }
   },
   watch: {
@@ -208,8 +260,10 @@ export default {
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
+        this.canSelectFirstOption = true
         if (this.successiveFetches === 0) {
           this.loading = false
+          this.autoSelectFirstOptionIfNeeded()
         }
       })
     },
@@ -218,13 +272,18 @@ export default {
         (Array.isArray(this.preselectedOptionValue) && this.preselectedOptionValue.length === 0) ||
         this.successiveFetches >= this.maxSuccessiveFetches) {
         this.resetPreselectedOptionValue()
+        if (!this.canSelectFirstOption && this.autoSelectFirstOption && this.options.length > 0) {
+          this.$nextTick(() => {
+            this.preselectedOptionValue = this.options[0][this.optionValueKey]
+            this.onChange(this.preselectedOptionValue)
+          })
+        }
         return
       }
-      const matchValue = Array.isArray(this.preselectedOptionValue) ? this.preselectedOptionValue[0] : this.preselectedOptionValue
-      const match = this.options.find(entry => entry[this.optionValueKey] === matchValue)
-      if (!match) {
+      if (!this.preselectedMatch) {
         this.successiveFetches++
-        if (this.options.length < this.totalCount) {
+        // Exclude defaultOption from count when comparing with totalCount
+        if (this.apiOptionsCount < this.totalCount) {
           this.fetchItems()
         } else {
           this.resetPreselectedOptionValue()
@@ -232,19 +291,50 @@ export default {
         return
       }
       if (Array.isArray(this.preselectedOptionValue) && this.preselectedOptionValue.length > 1) {
-        this.preselectedOptionValue = this.preselectedOptionValue.filter(o => o !== match)
+        this.preselectedOptionValue = this.preselectedOptionValue.filter(o => o !== this.preselectedMatchValue)
       } else {
         this.resetPreselectedOptionValue()
       }
     },
     addDefaultOptionIfNeeded () {
       if (this.defaultOption) {
+        this.canSelectFirstOption = true
         this.options.push(this.defaultOption)
       }
     },
     resetPreselectedOptionValue () {
       this.preselectedOptionValue = null
       this.successiveFetches = 0
+    },
+    autoSelectFirstOptionIfNeeded () {
+      if (!this.selectFirstOption || this.hasAutoSelectedFirst) {
+        return
+      }
+      // Don't auto-select if there's a preselected value being fetched
+      if (this.preselectedOptionValue) {
+        return
+      }
+      const currentValue = this.$attrs.value
+      if (currentValue !== undefined && currentValue !== null && currentValue !== '') {
+        return
+      }
+      if (this.options.length === 0) {
+        return
+      }
+      if (this.searchQuery && this.searchQuery.length > 0) {
+        return
+      }
+      // Only auto-select after initial load is complete (no more successive fetches)
+      if (this.successiveFetches > 0) {
+        return
+      }
+      const firstOption = this.options[0]
+      if (firstOption) {
+        const firstValue = firstOption[this.optionValueKey]
+        this.hasAutoSelectedFirst = true
+        this.$emit('change-option-value', firstValue)
+        this.$emit('change-option', firstOption)
+      }
     },
     onSearchTimed (value) {
       clearTimeout(this.searchTimer)
@@ -264,7 +354,8 @@ export default {
     },
     onScroll (e) {
       const nearBottom = e.target.scrollTop + e.target.clientHeight >= e.target.scrollHeight - 10
-      const hasMore = this.options.length < this.totalCount
+      // Exclude defaultOption from count when comparing with totalCount
+      const hasMore = this.apiOptionsCount < this.totalCount
       if (nearBottom && hasMore && !this.loading) {
         this.fetchItems()
       }

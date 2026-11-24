@@ -59,23 +59,23 @@ public class RevokeTemplateDirectDownloadCertificateCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = DirectDownloadCertificateResponse.class,
-            description = "id of the certificate")
+            description = "ID of the certificate")
     private Long certificateId;
 
     @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING,
-            description = "(optional) alias of the SSL certificate")
+            description = "(Optional) alias of the SSL certificate")
     private String certificateAlias;
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = BaseCmd.CommandType.STRING,
-            description = "(optional) hypervisor type")
+            description = "(Optional) hypervisor type")
     private String hypervisor;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
-            description = "(optional) zone to revoke certificate", required = true)
+            description = "(Optional) zone to revoke certificate", required = true)
     private Long zoneId;
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
-            description = "(optional) the host ID to revoke certificate")
+            description = "(Optional) the host ID to revoke certificate")
     private Long hostId;
 
     private void createResponse(final List<HostCertificateStatus> hostsRevokeStatusList) {

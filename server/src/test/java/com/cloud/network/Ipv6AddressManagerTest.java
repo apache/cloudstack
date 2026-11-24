@@ -29,8 +29,12 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.dao.NicNetworkMapDaoImpl;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpDaoImpl;
 import com.cloud.vm.dao.NicSecondaryIpVO;
+import java.util.Collections;
+import java.util.List;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -48,6 +52,9 @@ public class Ipv6AddressManagerTest {
 
     @InjectMocks
     NicSecondaryIpDaoImpl nicSecondaryIpDao = Mockito.spy(new NicSecondaryIpDaoImpl());
+
+    @InjectMocks
+    NicNetworkMapDaoImpl nicNetworkMapDao = Mockito.spy(new NicNetworkMapDaoImpl());
 
     @InjectMocks
     UserIpv6AddressDaoImpl ipv6Dao = Mockito.spy(new UserIpv6AddressDaoImpl());
@@ -101,6 +108,31 @@ public class Ipv6AddressManagerTest {
         setIsIp6TakenTest(null, null);
         boolean result = ip6Manager.isIp6Taken(network, "requestedIpv6");
         assertAndVerifyIsIp6Taken(false, result);
+        Mockito.verify(nicNetworkMapDao).listByNetworkId(Mockito.anyLong());
+    }
+
+    @Test
+    public void isIp6TakenTestNicNetworkMapMatch() {
+        setIsIp6TakenTest(null, null);
+        NicNetworkMapVO association = Mockito.mock(NicNetworkMapVO.class);
+        Mockito.when(association.getIp6Address()).thenReturn("requestedIpv6");
+        Mockito.doReturn(Collections.singletonList(association)).when(nicNetworkMapDao).listByNetworkId(Mockito.anyLong());
+
+        boolean result = ip6Manager.isIp6Taken(network, "requestedIpv6");
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isIp6TakenTestNicNetworkMapNoMatch() {
+        setIsIp6TakenTest(null, null);
+        NicNetworkMapVO association = Mockito.mock(NicNetworkMapVO.class);
+        Mockito.when(association.getIp6Address()).thenReturn("someOtherIpv6");
+        Mockito.doReturn(Collections.singletonList(association)).when(nicNetworkMapDao).listByNetworkId(Mockito.anyLong());
+
+        boolean result = ip6Manager.isIp6Taken(network, "requestedIpv6");
+
+        Assert.assertFalse(result);
     }
 
     private void assertAndVerifyIsIp6Taken(boolean expected, boolean result) {
@@ -112,6 +144,8 @@ public class Ipv6AddressManagerTest {
     private void setIsIp6TakenTest(UserIpv6AddressVO userIpv6, NicSecondaryIpVO nicSecondaryIp) {
         Mockito.doReturn(userIpv6).when(ipv6Dao).findByNetworkIdAndIp(Mockito.anyLong(), Mockito.anyString());
         Mockito.doReturn(nicSecondaryIp).when(nicSecondaryIpDao).findByIp6AddressAndNetworkId(Mockito.anyString(), Mockito.anyLong());
+        List<NicNetworkMapVO> noAssociations = Collections.emptyList();
+        Mockito.doReturn(noAssociations).when(nicNetworkMapDao).listByNetworkId(Mockito.anyLong());
     }
 
     private Network mockNetwork() {
@@ -246,8 +280,10 @@ public class Ipv6AddressManagerTest {
 
         Mockito.when(network.getIp6Cidr()).thenReturn("2001:db8:100::/64");
         Mockito.when(network.getIp6Gateway()).thenReturn("2001:db8:100::1");
+        Mockito.when(network.getId()).thenReturn(1L);
 
         Mockito.when(networkModel.getNetworkIp6Dns(network, dc)).thenReturn(new Pair<>("2001:db8::53:1", "2001:db8::53:2"));
+        Mockito.when(networkModel.isMACUnique("1e:00:b1:00:0a:f6", 1L)).thenReturn(true);
 
         String expected = "2001:db8:100:0:1c00:b1ff:fe00:af6";
 

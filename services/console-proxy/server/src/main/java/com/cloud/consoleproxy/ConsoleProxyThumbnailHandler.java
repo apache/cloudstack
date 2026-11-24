@@ -197,7 +197,7 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
                 startx = 0;
             g.drawString(text, startx, h / 2);
         } catch (Throwable e) {
-            logger.warn("Problem in generating text to thumnail image, return blank image");
+            logger.warn("Problem in generating text to thumbnail image, return blank image");
         }
         return img;
     }

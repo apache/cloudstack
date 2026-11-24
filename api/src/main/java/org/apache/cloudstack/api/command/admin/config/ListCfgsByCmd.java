@@ -19,23 +19,23 @@ package org.apache.cloudstack.api.command.admin.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.commons.lang3.StringUtils;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
@@ -52,55 +52,62 @@ public class ListCfgsByCmd extends BaseListCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.CATEGORY, type = CommandType.STRING, description = "lists configurations by category")
+    @Parameter(name = ApiConstants.CATEGORY, type = CommandType.STRING, description = "Lists configurations by category")
     private String category;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists configuration by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Lists configuration by name")
     private String configName;
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
-               description = "the ID of the Zone to update the parameter value for corresponding zone")
+               description = "The ID of the Zone to update the parameter value for corresponding zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.CLUSTER_ID,
                type = CommandType.UUID,
                entityType = ClusterResponse.class,
-               description = "the ID of the Cluster to update the parameter value for corresponding cluster")
+               description = "The ID of the Cluster to update the parameter value for corresponding cluster")
     private Long clusterId;
 
     @Parameter(name = ApiConstants.STORAGE_ID,
                type = CommandType.UUID,
                entityType = StoragePoolResponse.class,
-               description = "the ID of the Storage pool to update the parameter value for corresponding storage pool")
+               description = "The ID of the Storage pool to update the parameter value for corresponding storage pool")
     private Long storagePoolId;
 
     @Parameter(name = ApiConstants.ACCOUNT_ID,
                type = CommandType.UUID,
                entityType = AccountResponse.class,
-               description = "the ID of the Account to update the parameter value for corresponding account")
+               description = "The ID of the Account to update the parameter value for corresponding account")
     private Long accountId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "the ID of the Domain to update the parameter value for corresponding domain")
+               description = "The ID of the Domain to update the parameter value for corresponding domain")
     private Long domainId;
 
     @Parameter(name = ApiConstants.IMAGE_STORE_UUID,
             type = CommandType.UUID,
             entityType = ImageStoreResponse.class,
-            description = "the ID of the Image Store to update the parameter value for corresponding image store")
+            description = "The ID of the Image Store to update the parameter value for corresponding image store")
     private Long imageStoreId;
 
-    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "lists configuration by group name (primarily used for UI)", since = "4.18.0")
+    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID,
+            type = CommandType.UUID,
+            entityType = ManagementServerResponse.class,
+            description = "the ID of the Management Server to update the parameter value for corresponding management server",
+            since = "4.23.0")
+    private Long managementServerId;
+
+    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "Lists configuration by group name (primarily used for UI)", since = "4.18.0")
     private String groupName;
 
-    @Parameter(name = ApiConstants.SUBGROUP, type = CommandType.STRING, description = "lists configuration by subgroup name (primarily used for UI)", since = "4.18.0")
+    @Parameter(name = ApiConstants.SUBGROUP, type = CommandType.STRING, description = "Lists configuration by subgroup name (primarily used for UI)", since = "4.18.0")
     private String subGroupName;
 
-    @Parameter(name = ApiConstants.PARENT, type = CommandType.STRING, description = "lists configuration by parent name (primarily used for UI)", since = "4.18.0")
+    @Parameter(name = ApiConstants.PARENT, type = CommandType.STRING, description = "Lists configuration by parent name (primarily used for UI)", since = "4.18.0")
     private String parentName;
 
     // ///////////////////////////////////////////////////
@@ -137,6 +144,10 @@ public class ListCfgsByCmd extends BaseListCmd {
 
     public Long getImageStoreId() {
         return imageStoreId;
+    }
+
+    public Long getManagementServerId() {
+        return managementServerId;
     }
 
     public String getGroupName() {
@@ -199,6 +210,9 @@ public class ListCfgsByCmd extends BaseListCmd {
         }
         if (getImageStoreId() != null){
             cfgResponse.setScope("imagestore");
+        }
+        if (getManagementServerId() != null){
+            cfgResponse.setScope("managementserver");
         }
     }
 

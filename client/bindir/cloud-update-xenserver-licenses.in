@@ -24,7 +24,10 @@ import glob
 from random import choice
 import string
 from optparse import OptionParser
-import mysql.connector
+try:
+    import mysql.connector as mysqldb
+except ImportError:
+    import pymysql as mysqldb
 import paramiko
 from threading import Thread
 
@@ -71,7 +74,7 @@ def e(msg):
 
 
 def getknownhosts(host, username, password):
-    conn = mysql.connector.connect(host=host, user=username, password=password)
+    conn = mysqldb.connect(host=host, user=username, password=password)
     cur = conn.cursor()
     cur.execute(
         "SELECT h.private_ip_address,d.value FROM cloud.host h inner join cloud.host_details d on (h.id = d.host_id) where d.name = 'username' and setup = 1"

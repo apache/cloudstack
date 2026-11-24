@@ -126,7 +126,7 @@ export default {
       collapseKey: undefined,
       loading: false,
       testDeliveryInterval: null,
-      testDeliveryIntervalCouter: 0
+      testDeliveryIntervalCounter: 0
     }
   },
   beforeCreate () {
@@ -154,8 +154,8 @@ export default {
       return (duration > 0 ? duration / 1000.0 : 0) + ''
     },
     computedOverlayStyle () {
-      var opacity = this.testDeliveryIntervalCouter <= 10.0 ? 0 : 0.3
-      var width = this.testDeliveryIntervalCouter
+      var opacity = this.testDeliveryIntervalCounter <= 10.0 ? 0 : 0.3
+      var width = this.testDeliveryIntervalCounter
       return 'opacity: ' + opacity + '; width: ' + width + '%;'
     }
   },
@@ -168,7 +168,7 @@ export default {
       if (this.testDeliveryInterval) {
         clearInterval(this.testDeliveryInterval)
       }
-      this.testDeliveryIntervalCouter = 0
+      this.testDeliveryIntervalCounter = 0
     },
     testWebhookDelivery () {
       this.resetTestDeliveryInterval()
@@ -186,7 +186,7 @@ export default {
         params.payloadUrl = this.payloadUrl
       }
       if (this.sslVerification) {
-        params.payload = this.sslVerification
+        params.sslVerification = this.sslVerification
       }
       if (this.secretKey) {
         params.secretKey = this.secretKey
@@ -223,8 +223,8 @@ export default {
           this.resetTestDeliveryInterval()
           return
         }
-        this.testDeliveryIntervalCouter = this.testDeliveryIntervalCouter + 1
-        if (this.testDeliveryIntervalCouter >= 100) {
+        this.testDeliveryIntervalCounter = this.testDeliveryIntervalCounter + 1
+        if (this.testDeliveryIntervalCounter >= 100) {
           this.executeTestWebhookDeliveryOrReset()
         }
       }, this.timedDeliveryWait / 100)

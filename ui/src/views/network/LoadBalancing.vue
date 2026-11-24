@@ -204,6 +204,11 @@
                   {{ instance.loadbalancerruleinstance.displayname }}
                 </router-link>
               </div>
+              <div v-if="this.vpcConserveMode">
+                <router-link :to="{ path: '/guestnetwork/' + instance.loadbalancerruleinstance.nic[0].networkid }">
+                  {{ instance.loadbalancerruleinstance.nic[0].networkname }}
+                </router-link>
+              </div>
               <div>{{ ip }}</div>
               <tooltip-button
                 :disabled='record.autoscalevmgroup'
@@ -467,6 +472,61 @@
             :placeholder="$t('label.sourcecidrlist')"
           />
         </div>
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
+          <p class="edit-rule__label">
+            {{ $t('label.keepalive') }}
+            <tooltip-label
+              :title="''"
+              bold
+              :tooltip="$t('label.keepalive.tooltip')"
+              :tooltip-placement="'right'"
+              style="display: inline; margin-left: 5px;"
+            />
+          </p>
+          <a-select
+            v-model:value="editRuleDetails.keepalive"
+            :placeholder="$t('label.inherit.default')">
+            <a-select-option :value="undefined" :label="$t('label.inherit.default')">{{ $t('label.inherit.default') }}</a-select-option>
+            <a-select-option :value="true" :label="$t('label.yes')">{{ $t('label.yes') }}</a-select-option>
+            <a-select-option :value="false" :label="$t('label.no')">{{ $t('label.no') }}</a-select-option>
+          </a-select>
+        </div>
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
+          <p class="edit-rule__label">
+            {{ $t('label.idletimeout') }}
+            <tooltip-label
+              :title="''"
+              bold
+              :tooltip="$t('label.idletimeout.tooltip')"
+              :tooltip-placement="'right'"
+              style="display: inline; margin-left: 5px;"
+            />
+          </p>
+          <a-input
+            v-model:value="editRuleDetails.idletimeout"
+            type="number"
+            min="0"
+            :placeholder="$t('label.inherit.default')"
+          />
+        </div>
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
+          <p class="edit-rule__label">
+            {{ $t('label.keepalivetimeout') }}
+            <tooltip-label
+              :title="''"
+              bold
+              :tooltip="$t('label.keepalivetimeout.tooltip')"
+              :tooltip-placement="'right'"
+              style="display: inline; margin-left: 5px;"
+            />
+          </p>
+          <a-input
+            v-model:value="editRuleDetails.keepalivetimeout"
+            type="number"
+            min="0"
+            :placeholder="$t('label.inherit.default')"
+          />
+        </div>
         <div :span="24" class="action-button">
           <a-button @click="() => editRuleModalVisible = false">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" @click="handleSubmitEditForm">{{ $t('label.ok') }}</a-button>
@@ -487,10 +547,10 @@
     >
       <div @keyup.ctrl.enter="handleAddNewRule">
         <span
-          v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
+          v-if="'vpcid' in resource && (!('associatednetworkid' in resource) || vpcConserveMode)">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
-            v-focus="'vpcid' in resource && !('associatednetworkid' in resource)"
+            v-focus="'vpcid' in resource && (!('associatednetworkid' in resource) || vpcConserveMode)"
             v-model:value="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')"
@@ -540,13 +600,15 @@
                 :filterOption="(input, option) => {
                   return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option
-                  v-for="(nic, nicIndex) in nics[index]"
-                  :key="nic"
-                  :value="nic"
-                  :label="nic + nicIndex === 0 ? ` (${$t('label.primary')})` : null">
-                  {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
-                </a-select-option>
+                <a-select-opt-group v-for="group in groupedNicIpOptionsFor(index)" :key="group.kind" :label="group.label">
+                  <a-select-option
+                    v-for="item in group.items"
+                    :key="item.ip"
+                    :value="item.ip"
+                    :label="item.ip + ' ' + item.networkname">
+                    {{ item.ip }} <span class="nic-select__network">({{ item.networkname }})</span>
+                  </a-select-option>
+                </a-select-opt-group>
               </a-select>
             </template>
 
@@ -807,6 +869,7 @@ import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
 import eventBus from '@/config/eventBus'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { buildNicIpOptions, groupNicIpOptionsByKind, resolveNetworkIdForIp } from '@/utils/multiNetworkNic'
 
 export default {
   name: 'LoadBalancing',
@@ -854,7 +917,10 @@ export default {
         name: '',
         algorithm: '',
         protocol: '',
-        cidrlist: ''
+        cidrlist: '',
+        keepalive: undefined,
+        idletimeout: undefined,
+        keepalivetimeout: undefined
       },
       newRule: {
         algorithm: 'roundrobin',
@@ -1022,7 +1088,8 @@ export default {
         urlpath: '/'
       },
       healthMonitorLoading: false,
-      isNetrisZone: false
+      isNetrisZone: false,
+      vpcConserveMode: false
     }
   },
   computed: {
@@ -1054,6 +1121,9 @@ export default {
     }
   },
   methods: {
+    groupedNicIpOptionsFor (index) {
+      return groupNicIpOptionsByKind(this.nics[index] || [], this.$t)
+    },
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
@@ -1079,9 +1149,23 @@ export default {
       })
     },
     fetchData () {
+      this.fetchVpc()
       this.fetchListTiers()
       this.fetchLBRules()
       this.fetchZone()
+    },
+    fetchVpc () {
+      if (!this.resource.vpcid) {
+        return
+      }
+      this.vpcConserveMode = false
+      getAPI('listVPCs', {
+        id: this.resource.vpcid
+      }).then(json => {
+        this.vpcConserveMode = json.listvpcsresponse?.vpc?.[0].vpcofferingconservemode || false
+      }).catch(error => {
+        this.$notifyError(error)
+      })
     },
     fetchListTiers () {
       this.tiers.loading = true
@@ -1642,6 +1726,9 @@ export default {
       this.editRuleDetails.name = this.selectedRule.name
       this.editRuleDetails.algorithm = this.lbProvider !== 'Netris' ? this.selectedRule.algorithm : undefined
       this.editRuleDetails.protocol = this.selectedRule.protocol
+      this.editRuleDetails.keepalive = this.selectedRule.keepalive
+      this.editRuleDetails.idletimeout = this.selectedRule.idletimeout
+      this.editRuleDetails.keepalivetimeout = this.selectedRule.keepalivetimeout
       // Normalize cidrlist: replace spaces with commas and clean up
       this.editRuleDetails.cidrlist = (this.selectedRule.cidrlist || '')
         .split(/[\s,]+/) // Split on spaces or commas
@@ -1660,11 +1747,19 @@ export default {
           cidrList: (this.editRuleDetails.cidrlist || '').split(',').map(c => c.trim()).filter(c => c)
         })
       }
-      postAPI('updateLoadBalancerRule', {
-        ...this.editRuleDetails,
-        id: this.selectedRule.id,
-        ...payload
-      }).then(response => {
+      // A blank field sends nothing, which the API reads as keep the current value. When a
+      // field the rule had set is now blank, ask the API to drop the rule's own settings;
+      // the ones still filled in are sent alongside and set again.
+      const isBlank = (value) => value === '' || value === null || value === undefined
+      for (const key of ['keepalive', 'idletimeout', 'keepalivetimeout']) {
+        if (isBlank(payload[key])) {
+          delete payload[key]
+          if (!isBlank(this.selectedRule[key])) {
+            payload.cleanupconnectionsettings = true
+          }
+        }
+      }
+      postAPI('updateLoadBalancerRule', payload).then(response => {
         this.$pollJob({
           jobId: response.updateloadbalancerruleresponse.jobid,
           successMessage: this.$t('message.success.edit.rule'),
@@ -1828,18 +1923,15 @@ export default {
       this.newRule.virtualmachineid[index] = e.target.value
       this.addVmModalNicLoading = true
 
+      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       getAPI('listNics', {
         virtualmachineid: e.target.value,
-        networkid: ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+        networkid: networkId
       }).then(response => {
         if (!response || !response.listnicsresponse || !response.listnicsresponse.nic[0]) return
-        const newItem = []
-        newItem.push(response.listnicsresponse.nic[0].ipaddress)
-        if (response.listnicsresponse.nic[0].secondaryip) {
-          newItem.push(...response.listnicsresponse.nic[0].secondaryip.map(ip => ip.ipaddress))
-        }
-        this.nics[index] = newItem
-        this.newRule.vmguestip[index] = [this.nics[index][0]]
+        const nicsReturned = response.listnicsresponse.nic || []
+        this.nics[index] = nicsReturned.flatMap(nic => buildNicIpOptions(nic, networkId))
+        this.newRule.vmguestip[index] = [this.nics[index][0]?.ip]
         this.addVmModalNicLoading = false
       }).catch(error => {
         this.$notifyError(error)
@@ -1850,7 +1942,7 @@ export default {
       this.vmCount = 0
       this.vms = []
       this.addVmModalLoading = true
-      const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       if (!networkId) {
         this.addVmModalLoading = false
         return
@@ -1935,11 +2027,17 @@ export default {
           ip.forEach(i => {
             vmIDIpMap[`vmidipmap[${innerCount}].vmid`] = this.newRule.virtualmachineid[count]
             vmIDIpMap[`vmidipmap[${innerCount}].vmip`] = i
+            if (this.vpcConserveMode) {
+              vmIDIpMap[`vmidipmap[${innerCount}].vmnetworkid`] = resolveNetworkIdForIp(this.nics[count], i, this.selectedTier)
+            }
             innerCount++
           })
         } else {
           vmIDIpMap[`vmidipmap[${innerCount}].vmid`] = this.newRule.virtualmachineid[count]
           vmIDIpMap[`vmidipmap[${innerCount}].vmip`] = ip
+          if (this.vpcConserveMode && ip != null) {
+            vmIDIpMap[`vmidipmap[${innerCount}].vmnetworkid`] = resolveNetworkIdForIp(this.nics[count], ip, this.selectedTier)
+          }
           innerCount++
         }
         if (this.newRule.virtualmachineid[count]) {
@@ -2536,5 +2634,9 @@ export default {
     margin-bottom: 10px;
     width: 50%;
     float: right;
+  }
+
+  .nic-select__network {
+    color: rgba(0, 0, 0, 0.45);
   }
 </style>

@@ -64,7 +64,7 @@ public class SequenceFetcher {
         try {
             return future.get();
         } catch (Exception e) {
-            logger.warn("Unable to get sequeunce for " + tg.table() + ":" + tg.pkColumnValue(), e);
+            logger.warn("Unable to get sequence for " + tg.table() + ":" + tg.pkColumnValue(), e);
             return null;
         }
     }

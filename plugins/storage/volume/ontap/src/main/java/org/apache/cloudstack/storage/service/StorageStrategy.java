@@ -1,0 +1,929 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.cloudstack.storage.service;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import org.apache.cloudstack.storage.feign.FeignClientFactory;
+import org.apache.cloudstack.storage.feign.client.AggregateFeignClient;
+import org.apache.cloudstack.storage.feign.client.JobFeignClient;
+import org.apache.cloudstack.storage.feign.client.NASFeignClient;
+import org.apache.cloudstack.storage.feign.client.NetworkFeignClient;
+import org.apache.cloudstack.storage.feign.client.SANFeignClient;
+import org.apache.cloudstack.storage.feign.client.SnapshotFeignClient;
+import org.apache.cloudstack.storage.feign.client.SvmFeignClient;
+import org.apache.cloudstack.storage.feign.client.VolumeFeignClient;
+import org.apache.cloudstack.storage.feign.model.Aggregate;
+import org.apache.cloudstack.storage.feign.model.IpInterface;
+import org.apache.cloudstack.storage.feign.model.IscsiService;
+import org.apache.cloudstack.storage.feign.model.Job;
+import org.apache.cloudstack.storage.feign.model.Nas;
+import org.apache.cloudstack.storage.feign.model.OntapStorage;
+import org.apache.cloudstack.storage.feign.model.Svm;
+import org.apache.cloudstack.storage.feign.model.Volume;
+import org.apache.cloudstack.storage.feign.model.response.JobResponse;
+import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
+import org.apache.cloudstack.storage.service.model.AccessGroup;
+import org.apache.cloudstack.storage.service.model.CloudStackVolume;
+import org.apache.cloudstack.storage.service.model.ProtocolType;
+import org.apache.cloudstack.storage.utils.OntapStorageConstants;
+import org.apache.cloudstack.storage.utils.OntapStorageUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+import feign.FeignException;
+
+/**
+ * Storage Strategy represents the communication path for all the ONTAP storage options
+ *
+ * ONTAP storage operation would vary based on
+ *      Supported protocols: NFS3.0, NFS4.1, FC, iSCSI, Nvme/TCP and Nvme/FC
+ *      Supported platform:  Unified and Disaggregated
+ */
+public abstract class StorageStrategy {
+    // Replace @Inject Feign clients with FeignClientFactory
+    protected FeignClientFactory feignClientFactory;
+    protected AggregateFeignClient aggregateFeignClient;
+    protected VolumeFeignClient volumeFeignClient;
+    protected SvmFeignClient svmFeignClient;
+    protected JobFeignClient jobFeignClient;
+    protected NetworkFeignClient networkFeignClient;
+    protected SANFeignClient sanFeignClient;
+    protected NASFeignClient nasFeignClient;
+    protected SnapshotFeignClient snapshotFeignClient;
+
+    protected OntapStorage storage;
+
+    /**
+     * Holds the node name of the aggregate chosen during createStorageVolume().
+     * Used by getNetworkInterface() to prefer a LIF homed on the same node.
+     */
+    private String chosenAggregateNode;
+
+    /**
+     * Presents aggregate object for the unified storage, not eligible for disaggregated
+     */
+    private List<Aggregate> aggregates;
+    private String resolvedSvmUuid;
+
+    private static final Logger logger = LogManager.getLogger(StorageStrategy.class);
+
+    public StorageStrategy(OntapStorage ontapStorage) {
+        storage = ontapStorage;
+        String baseURL = OntapStorageConstants.HTTPS + storage.getStorageIP();
+        logger.info("Initializing StorageStrategy with base URL: " + baseURL);
+        // Initialize FeignClientFactory and create clients
+        this.feignClientFactory = new FeignClientFactory();
+        this.aggregateFeignClient = feignClientFactory.createClient(AggregateFeignClient.class, baseURL);
+        this.volumeFeignClient = feignClientFactory.createClient(VolumeFeignClient.class, baseURL);
+        this.svmFeignClient = feignClientFactory.createClient(SvmFeignClient.class, baseURL);
+        this.jobFeignClient = feignClientFactory.createClient(JobFeignClient.class, baseURL);
+        this.networkFeignClient = feignClientFactory.createClient(NetworkFeignClient.class, baseURL);
+        this.sanFeignClient = feignClientFactory.createClient(SANFeignClient.class, baseURL);
+        this.nasFeignClient = feignClientFactory.createClient(NASFeignClient.class, baseURL);
+        this.snapshotFeignClient = feignClientFactory.createClient(SnapshotFeignClient.class, baseURL);
+    }
+
+    /**
+     * Validates ONTAP cluster reachability, credentials, SVM state, protocol, and aggregate capacity
+     * for new FlexVol creation (primary pool provisioning).
+     */
+    public boolean connect() {
+        return connect(true);
+    }
+
+    /**
+     * Validates ONTAP cluster reachability and SVM/protocol settings.
+     *
+     * <p>Aggregate free-space checks apply only when {@code validateAggregatesForVolumeCreation} is
+     * {@code true} (pool provisioning). Snapshot, delete, revert, and grant/revoke paths must use
+     * {@code false} — they operate on an existing FlexVol and must not compare aggregate space to
+     * the full pool capacity stored in pool details.</p>
+     */
+    public boolean connect(boolean validateAggregatesForVolumeCreation) {
+        logger.info("Attempting to connect to ONTAP cluster at " + storage.getStorageIP() + " and validate SVM " +
+                storage.getSvmName() + ", protocol " + storage.getProtocol()
+                + (validateAggregatesForVolumeCreation ? " (with aggregate validation)" : " (operations only)"));
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        String svmName = storage.getSvmName();
+        try {
+            // Call the SVM API to check if the SVM exists
+            Svm svm = new Svm();
+            logger.info("Fetching the SVM details...");
+            Map<String, Object> queryParams = Map.of(OntapStorageConstants.NAME, svmName, OntapStorageConstants.FIELDS, OntapStorageConstants.AGGREGATES +
+                    OntapStorageConstants.COMMA + OntapStorageConstants.STATE +
+                    OntapStorageConstants.COMMA +  OntapStorageConstants.NFS_ENABLED + OntapStorageConstants.COMMA + OntapStorageConstants.ISCSI_ENABLED);
+            OntapResponse<Svm> svms = svmFeignClient.getSvmResponse(queryParams, authHeader);
+            if (svms != null && svms.getRecords() != null && !svms.getRecords().isEmpty()) {
+                svm = svms.getRecords().get(0);
+            } else {
+                logger.error("No SVM found on the ONTAP cluster by the name " + svmName + ".");
+                throw new CloudRuntimeException("No SVM found on the ONTAP cluster by the name " + svmName + ".");
+            }
+
+            logger.info("Validating SVM state and protocol settings...");
+            if (!Objects.equals(svm.getState(), OntapStorageConstants.RUNNING)) {
+                logger.error("SVM " + svmName + " is not in running state.");
+                throw new CloudRuntimeException("SVM " + svmName + " is not in running state.");
+            }
+            if (Objects.equals(storage.getProtocol(), ProtocolType.NFS3) && !svm.getNfsEnabled()) {
+                logger.error("NFS protocol is not enabled on SVM " + svmName);
+                throw new CloudRuntimeException("NFS protocol is not enabled on SVM " + svmName);
+            } else if (Objects.equals(storage.getProtocol(), ProtocolType.ISCSI) && !svm.getIscsiEnabled()) {
+                logger.error("ISCSI protocol is not enabled on SVM " + svmName);
+                throw new CloudRuntimeException("ISCSI protocol is not enabled on SVM " + svmName);
+            }
+            this.resolvedSvmUuid = svm.getUuid();
+
+            if (validateAggregatesForVolumeCreation) {
+                validateAndSelectAggregatesForVolumeCreation(authHeader, svmName, svm.getAggregates());
+            } else {
+                logger.debug("Skipping aggregate capacity validation — not required for existing-volume operations");
+            }
+
+            logger.info("Successfully connected to ONTAP cluster and validated ONTAP details provided");
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (FeignException.Unauthorized e) {
+            String msg = "Authentication failed: Invalid credentials. Please verify the username and password.";
+            logger.error(msg, e);
+            throw new CloudRuntimeException(msg, e);
+        } catch (Exception e) {
+            logger.error("Failed to connect to ONTAP cluster: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to connect to ONTAP cluster: " + e.getMessage(), e);
+        }
+        return true;
+    }
+
+    /**
+     * ONTAP SVM UUID resolved during the last successful {@link #connect(boolean)} call.
+     */
+    public String getResolvedSvmUuid() {
+        return resolvedSvmUuid;
+    }
+
+    private void validateAndSelectAggregatesForVolumeCreation(String authHeader, String svmName, List<Aggregate> aggrs) {
+        if (aggrs == null || aggrs.isEmpty()) {
+            logger.error("No aggregates are assigned to SVM " + svmName);
+            throw new CloudRuntimeException("No aggregates are assigned to SVM " + svmName);
+        }
+        List<Aggregate> eligibleAggregates = new ArrayList<>();
+        for (Aggregate aggr : aggrs) {
+            logger.debug("Found aggregate: " + aggr.getName() + " with UUID: " + aggr.getUuid());
+            Aggregate aggrResp = aggregateFeignClient.getAggregateByUUID(authHeader, aggr.getUuid(),
+                        Map.of(OntapStorageConstants.FIELDS, OntapStorageConstants.AGGREGATE_NODE
+                                + OntapStorageConstants.COMMA + OntapStorageConstants.AGGREGATE_SPACE
+                                + OntapStorageConstants.COMMA + OntapStorageConstants.STATE));
+            if (aggrResp == null) {
+                logger.warn("Aggregate details response is null for aggregate " + aggr.getName() + ". Skipping.");
+                continue;
+            }
+            if (!Objects.equals(aggrResp.getState(), Aggregate.StateEnum.ONLINE)) {
+                logger.warn("Aggregate " + aggr.getName() + " is not in online state. Skipping this aggregate.");
+                continue;
+            } else if (aggrResp.getSpace() == null || aggrResp.getAvailableBlockStorageSpace() == null ||
+                    aggrResp.getAvailableBlockStorageSpace() <= storage.getSize().doubleValue()) {
+                logger.warn("Aggregate " + aggr.getName() + " does not have sufficient available space. Skipping this aggregate.");
+                continue;
+            }
+            logger.info("Selected aggregate: " + aggr.getName() + " for volume operations.");
+            eligibleAggregates.add(aggrResp);
+        }
+        if (eligibleAggregates.isEmpty()) {
+            logger.error("No suitable aggregates found on SVM " + svmName + " for volume creation.");
+            throw new CloudRuntimeException("No suitable aggregates found on SVM " + svmName + " for volume creation.");
+        }
+        this.aggregates = eligibleAggregates;
+    }
+
+    // Common methods like create/delete etc., should be here
+
+    /**
+     * Creates ONTAP Flex-Volume
+     * Eligible only for Unified ONTAP storage
+     * throw exception in case of disaggregated ONTAP storage
+     *
+     * @param volumeName the name of the volume to create
+     * @param size the size of the volume in bytes
+     * @return the created Volume object
+     */
+    public Volume createStorageVolume(String volumeName, Long size) {
+        logger.info("Creating volume: " + volumeName + " of size: " + size + " bytes");
+
+        this.chosenAggregateNode = null;
+
+        String svmName = storage.getSvmName();
+        if (aggregates == null || aggregates.isEmpty()) {
+            logger.error("No aggregates available to create volume on SVM " + svmName);
+            throw new CloudRuntimeException("No aggregates available to create volume on SVM " + svmName);
+        }
+        if (size == null || size <= 0) {
+            throw new CloudRuntimeException("Invalid volume size provided: " + size);
+        }
+
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+
+        // Generate the Create Volume Request
+        Volume volumeRequest = new Volume();
+        Svm svm = new Svm();
+        svm.setName(svmName);
+        Nas nas = new Nas();
+        nas.setPath(OntapStorageConstants.SLASH + volumeName);
+
+        volumeRequest.setName(volumeName);
+        volumeRequest.setSvm(svm);
+
+        // Pick the best aggregate for this specific request (largest available, online, and sufficient space).
+        long maxAvailableAggregateSpaceBytes = -1L;
+        Aggregate aggrChosen = null;
+        for (Aggregate aggr : aggregates) {
+            logger.debug("Found aggregate: " + aggr.getName() + " with UUID: " + aggr.getUuid());
+            Aggregate aggrResp = aggregateFeignClient.getAggregateByUUID(authHeader, aggr.getUuid(),
+                    Map.of(OntapStorageConstants.FIELDS, OntapStorageConstants.AGGREGATE_NODE
+                            + OntapStorageConstants.COMMA + OntapStorageConstants.AGGREGATE_SPACE
+                            + OntapStorageConstants.COMMA + OntapStorageConstants.STATE));
+
+            if (aggrResp == null) {
+                logger.warn("Aggregate details response is null for aggregate " + aggr.getName() + ". Skipping.");
+                continue;
+            }
+
+            if (!Objects.equals(aggrResp.getState(), Aggregate.StateEnum.ONLINE)) {
+                logger.warn("Aggregate " + aggr.getName() + " is not in online state. Skipping this aggregate.");
+                continue;
+            }
+
+            if (aggrResp.getSpace() == null || aggrResp.getAvailableBlockStorageSpace() == null) {
+                logger.warn("Aggregate " + aggr.getName() + " does not have space information. Skipping this aggregate.");
+                continue;
+            }
+
+            final long availableBytes = aggrResp.getAvailableBlockStorageSpace().longValue();
+            logger.debug("Aggregate " + aggr.getName() + " available bytes=" + availableBytes + ", requested=" + size);
+
+            if (availableBytes < size) {
+                logger.warn("Aggregate " + aggr.getName() + " does not have sufficient available space. Required=" +
+                        size + " bytes, available=" + availableBytes + " bytes. Skipping this aggregate.");
+                continue;
+            }
+
+            if (availableBytes > maxAvailableAggregateSpaceBytes) {
+                maxAvailableAggregateSpaceBytes = availableBytes;
+                aggrChosen = aggrResp;
+            }
+        }
+
+        if (aggrChosen == null) {
+            logger.error("No suitable aggregates found on SVM " + svmName + " for volume creation.");
+            throw new CloudRuntimeException("No suitable aggregates found on SVM " + svmName + " for volume operations.");
+        }
+        logger.info("Selected aggregate: " + aggrChosen.getName() + " for volume operations.");
+
+        this.chosenAggregateNode = aggrChosen.getNode() != null ? aggrChosen.getNode().getName() : null;
+
+        Aggregate aggr = new Aggregate();
+        aggr.setName(aggrChosen.getName());
+        aggr.setUuid(aggrChosen.getUuid());
+        volumeRequest.setAggregates(List.of(aggr));
+        volumeRequest.setSize(size);
+        volumeRequest.setNas(nas);
+        volumeRequest.setGuarantee(new Volume.Guarantee(Volume.Guarantee.TypeEnum.NONE));
+        try {
+            JobResponse jobResponse = volumeFeignClient.createVolumeWithJob(authHeader, volumeRequest);
+            if (jobResponse == null || jobResponse.getJob() == null) {
+                throw new CloudRuntimeException("Failed to initiate volume creation for " + volumeName);
+            }
+            String jobUUID = jobResponse.getJob().getUuid();
+
+            Boolean jobSucceeded = jobPollForSuccess(jobUUID,OntapStorageConstants.ONTAP_FLEXVOL_RESOLVE_MAX_RETRIES, OntapStorageConstants.ONTAP_FLEXVOL_JOB_POLL_INTERVAL_MS);
+            if (!jobSucceeded) {
+                logger.error("Volume creation job failed for volume: " + volumeName);
+                throw new CloudRuntimeException("Volume creation job failed for volume: " + volumeName);
+            }
+            logger.info("Volume creation job completed successfully for volume: " + volumeName);
+        } catch (Exception e) {
+            logger.error("Exception while creating volume: ", e);
+            throw new CloudRuntimeException("Failed to create volume: " + e.getMessage());
+        }
+        // Verify if the Volume has been created and set the Volume object
+        // Call the VolumeFeignClient to get the created volume details
+        OntapResponse<Volume> volumesResponse = volumeFeignClient.getAllVolumes(authHeader, Map.of(OntapStorageConstants.NAME, volumeName));
+        if (volumesResponse == null || volumesResponse.getRecords() == null || volumesResponse.getRecords().isEmpty()) {
+            logger.error("Volume " + volumeName + " not found after creation.");
+            throw new CloudRuntimeException("Volume " + volumeName + " not found after creation.");
+        }
+        Volume createdVolume = volumesResponse.getRecords().get(0);
+        if (createdVolume == null) {
+            logger.error("Failed to retrieve details of the created volume " + volumeName);
+            throw new CloudRuntimeException("Failed to retrieve details of the created volume " + volumeName);
+        } else if (createdVolume.getName() == null || !createdVolume.getName().equals(volumeName)) {
+            logger.error("Mismatch in created volume name. Expected: " + volumeName + ", Found: " + createdVolume.getName());
+            throw new CloudRuntimeException("Mismatch in created volume name. Expected: " + volumeName + ", Found: " + createdVolume.getName());
+        }
+        logger.info("Volume created successfully: " + volumeName);
+        try {
+            Map<String, Object> queryParams = Map.of(OntapStorageConstants.NAME, volumeName);
+            logger.debug("Fetching volume details for: " + volumeName);
+
+            OntapResponse<Volume> ontapVolume = volumeFeignClient.getVolume(authHeader, queryParams);
+            logger.debug("Feign call completed. Processing response...");
+
+            if (ontapVolume == null) {
+                logger.error("OntapResponse is null for volume: " + volumeName);
+                throw new CloudRuntimeException("Failed to fetch volume " + volumeName + ": Response is null");
+            }
+            logger.debug("OntapResponse is not null. Checking records field...");
+
+            if (ontapVolume.getRecords() == null) {
+                logger.error("OntapResponse.records is null for volume: " + volumeName);
+                throw new CloudRuntimeException("Failed to fetch volume " + volumeName + ": Records list is null");
+            }
+            logger.debug("Records field is not null. Size: " + ontapVolume.getRecords().size());
+
+            if (ontapVolume.getRecords().isEmpty()) {
+                logger.error("OntapResponse.records is empty for volume: " + volumeName);
+                throw new CloudRuntimeException("Failed to fetch volume " + volumeName + ": No records found");
+            }
+
+            Volume volume = ontapVolume.getRecords().get(0);
+            logger.info("Volume retrieved successfully: " + volumeName + ", UUID: " + volume.getUuid());
+            return volume;
+        } catch (Exception e) {
+            logger.error("Exception while retrieving volume details for: " + volumeName, e);
+            throw new CloudRuntimeException("Failed to fetch volume: " + volumeName + ". Error: " + e.getMessage(), e);
+        }
+    }
+
+     /**
+     * Updates ONTAP Flex-Volume
+     * Eligible only for Unified ONTAP storage
+     * throw exception in case of disaggregated ONTAP storage
+     *
+     * @param volume the volume to update
+     * @return the updated Volume object
+     */
+    public Volume updateStorageVolume(Volume volume) {
+        return null;
+    }
+
+    /**
+     * Delete ONTAP Flex-Volume
+     * Eligible only for Unified ONTAP storage
+     * throw exception in case of disaggregated ONTAP storage
+     *
+     * @param volume the volume to delete
+     */
+    public void deleteStorageVolume(Volume volume) {
+        logger.info("Deleting ONTAP volume by name: " + volume.getName() + " and uuid: " + volume.getUuid());
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        try {
+            JobResponse jobResponse = volumeFeignClient.deleteVolume(authHeader, volume.getUuid());
+            Boolean jobSucceeded = jobPollForSuccess(jobResponse.getJob().getUuid(), OntapStorageConstants.ONTAP_FLEXVOL_RESOLVE_MAX_RETRIES, OntapStorageConstants.ONTAP_FLEXVOL_JOB_POLL_INTERVAL_MS);
+            if (!jobSucceeded) {
+                logger.error("Volume deletion job failed for volume: " + volume.getName());
+                throw new CloudRuntimeException("Volume deletion job failed for volume: " + volume.getName());
+            }
+            logger.info("Volume deleted successfully: " + volume.getName());
+        } catch (FeignException e) {
+            if (OntapStorageUtils.isOntapObjectNotFoundError(e)) {
+                logger.warn("deleteStorageVolume: Volume '{}' not found in ONTAP, treating as no-op", volume.getName());
+                return;
+            }
+            logger.error("Exception while deleting volume: ", e);
+            throw new CloudRuntimeException("Failed to delete volume: " + e.getMessage());
+        }
+        logger.info("ONTAP volume deletion process completed for volume: " + volume.getName());
+    }
+
+    /**
+     * Gets ONTAP Flex-Volume
+     * Eligible only for Unified ONTAP storage
+     * throw exception in case of disaggregated ONTAP storage
+     *
+     * @param volume the volume to retrieve
+     * @return the retrieved Volume object
+     */
+    public Volume getStorageVolume(Volume volume) {
+        return null;
+    }
+
+    /**
+     * Get the storage path based on protocol.
+     * For iSCSI: Returns the iSCSI target IQN (e.g., iqn.1992-08.com.netapp:sn.xxx:vs.3)
+     * For NFS: Returns the mount path (to be implemented)
+     *
+     * @return the storage path as a String
+     */
+    public String getStoragePath() {
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        String targetIqn = null;
+        try {
+            if (storage.getProtocol() == ProtocolType.ISCSI) {
+                logger.info("Fetching iSCSI target IQN for SVM: {}", storage.getSvmName());
+
+                Map<String, Object> queryParams = new HashMap<>();
+                queryParams.put(OntapStorageConstants.SVM_DOT_NAME, storage.getSvmName());
+                queryParams.put("fields", "enabled,target");
+                queryParams.put("max_records", "1");
+
+                OntapResponse<IscsiService> response = sanFeignClient.getIscsiServices(authHeader, queryParams);
+
+                if (response == null || response.getRecords() == null || response.getRecords().isEmpty()) {
+                    throw new CloudRuntimeException("No iSCSI service found for SVM: " + storage.getSvmName());
+                }
+
+                IscsiService iscsiService = response.getRecords().get(0);
+
+                if (iscsiService.getTarget() == null || iscsiService.getTarget().getName() == null) {
+                    throw new CloudRuntimeException("iSCSI target IQN not found for SVM: " + storage.getSvmName());
+                }
+
+                targetIqn = iscsiService.getTarget().getName();
+                logger.info("Retrieved iSCSI target IQN: {}", targetIqn);
+                return targetIqn;
+
+            } else if (storage.getProtocol() == ProtocolType.NFS3) {
+                // TODO: Implement NFS path retrieval logic
+            } else {
+                throw new CloudRuntimeException("Unsupported protocol for path retrieval: " + storage.getProtocol());
+            }
+
+        } catch (FeignException.FeignClientException e) {
+            logger.error("Exception while retrieving storage path for protocol {}: {}", storage.getProtocol(), e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to retrieve storage path: " + e.getMessage());
+        }
+        return targetIqn;
+    }
+
+
+
+    /**
+     * Selects the best available data LIF for storage I/O, preferring one homed on the same node
+     * as the chosen aggregate to avoid inter-node traffic.
+     *
+     * <p>Selection order:</p>
+     * <ol>
+     *   <li>LIF whose {@code location.home_node} matches the chosen aggregate's node — no warning</li>
+     *   <li>LIF currently running on that node (e.g. after failover) — returned with a warning</li>
+     *   <li>Any UP and enabled LIF — returned with a warning when aggregate node is known</li>
+     * </ol>
+     *
+     * @return {@link Pair} where {@code first()} is the LIF's IP address and {@code second()} is
+     *         a warning message (null when no warning)
+     */
+    public Pair<String, String> getNetworkInterface() {
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        try {
+            Map<String, Object> queryParams = new HashMap<>();
+            queryParams.put(OntapStorageConstants.SVM_DOT_NAME, storage.getSvmName());
+            if (storage.getProtocol() != null) {
+                switch (storage.getProtocol()) {
+                    case NFS3:
+                        queryParams.put(OntapStorageConstants.SERVICES, OntapStorageConstants.DATA_NFS);
+                        break;
+                    case ISCSI:
+                        queryParams.put(OntapStorageConstants.SERVICES, OntapStorageConstants.DATA_ISCSI);
+                        break;
+                    default:
+                        logger.error("Unsupported protocol: " + storage.getProtocol());
+                        throw new CloudRuntimeException("Unsupported protocol: " + storage.getProtocol());
+                }
+            }
+            queryParams.put(OntapStorageConstants.FIELDS,
+                    OntapStorageConstants.IP_ADDRESS + OntapStorageConstants.COMMA
+                    + OntapStorageConstants.STATE + OntapStorageConstants.COMMA
+                    + OntapStorageConstants.LIF_ENABLED + OntapStorageConstants.COMMA
+                    + OntapStorageConstants.LIF_LOCATION_HOME_NODE + OntapStorageConstants.COMMA
+                    + OntapStorageConstants.LIF_LOCATION_NODE);
+            queryParams.put(OntapStorageConstants.RETURN_RECORDS, OntapStorageConstants.TRUE);
+            OntapResponse<IpInterface> response =
+                    networkFeignClient.getNetworkIpInterfaces(authHeader, queryParams);
+            if (response == null || response.getRecords() == null || response.getRecords().isEmpty()) {
+                throw new CloudRuntimeException("No network interfaces found for SVM " + storage.getSvmName() +
+                        " for protocol " + storage.getProtocol());
+            }
+
+            IpInterface currentNodeInterface = null;
+            IpInterface fallbackInterface = null;
+
+            for (IpInterface iface : response.getRecords()) {
+                if (iface == null || !Boolean.TRUE.equals(iface.getEnabled()) || !OntapStorageConstants.LIF_STATE_UP.equals(iface.getState())) {
+                    continue;
+                }
+                if (iface.getIp() == null || iface.getIp().getAddress() == null) {
+                    continue;
+                }
+                if (!isIPv4Address(iface.getIp().getAddress())) {
+                    continue;
+                }
+                if (chosenAggregateNode != null) {
+                    // LIF is homed on the aggregate's node
+                    String homeNode = iface.getLocation() != null && iface.getLocation().getHomeNode() != null
+                            ? iface.getLocation().getHomeNode().getName() : null;
+                    if (chosenAggregateNode.equals(homeNode)) {
+                        return new Pair<>(iface.getIp().getAddress(), null);
+                    }
+                    // LIF has failed over and is currently running on the aggregate's node
+                    // (home_node differs). Keep as a candidate; returned with a warning if no match is found earlier.
+                    if (currentNodeInterface == null) {
+                        String currentNode = iface.getLocation() != null && iface.getLocation().getNode() != null
+                                ? iface.getLocation().getNode().getName() : null;
+                        if (chosenAggregateNode.equals(currentNode)) {
+                            currentNodeInterface = iface;
+                        }
+                    }
+                }
+                if (fallbackInterface == null) {
+                    fallbackInterface = iface;
+                }
+            }
+
+            if (currentNodeInterface == null && fallbackInterface == null) {
+                throw new CloudRuntimeException("No operationally UP and enabled LIF found for SVM '"
+                        + storage.getSvmName() + "' with protocol " + storage.getProtocol()
+                        + " — all " + response.getRecords().size() + " LIF(s) are either administratively disabled or operationally down");
+            }
+
+            if (currentNodeInterface != null) {
+                String ip = currentNodeInterface.getIp().getAddress();
+                String warning = "No home-node LIF found for aggregate node '" + chosenAggregateNode
+                        + "'; using LIF '" + ip + "' currently running on that node (home node LIF may be down).";
+                logger.warn(warning);
+                return new Pair<>(ip, warning);
+            }
+
+            String ip = fallbackInterface.getIp().getAddress();
+            if (chosenAggregateNode == null) {
+                return new Pair<>(ip, null);
+            }
+            String warning = "No operational LIF found on aggregate's home node '" + chosenAggregateNode
+                    + "'; using fallback LIF '" + ip + "' on a different node."
+                    + " I/O will traverse an inter-node path, increasing latency.";
+            logger.warn(warning);
+            return new Pair<>(ip, warning);
+        } catch (Exception e) {
+            logger.error("Exception while retrieving network interfaces: ", e);
+            throw new CloudRuntimeException("Failed to retrieve network interfaces: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Returns true if the given IP address string is an IPv4 address.
+     * IPv6 addresses contain colons; IPv4 addresses do not.
+     * To extend LIF selection to support IPv6, update this method and its call site in getNetworkInterface().
+     */
+    private boolean isIPv4Address(String address) {
+        return address != null && !address.contains(":");
+    }
+
+    /**
+     * Method encapsulates the behavior based on the opted protocol in subclasses.
+     * it is going to mimic
+     * createLun       for iSCSI, FC protocols
+     * createFile      for NFS3.0 and NFS4.1 protocols
+     * createNameSpace for Nvme/TCP and Nvme/FC protocol
+     *
+     * @param cloudstackVolume the CloudStack volume to create
+     * @return the created CloudStackVolume object
+     */
+    abstract public CloudStackVolume createCloudStackVolume(CloudStackVolume cloudstackVolume);
+
+    /**
+     * Method encapsulates the behavior based on the opted protocol in subclasses.
+     * it is going to mimic
+     * updateLun       for iSCSI, FC protocols
+     * updateFile      for NFS3.0 and NFS4.1 protocols
+     * updateNameSpace for Nvme/TCP and Nvme/FC protocol
+     *
+     * @param cloudstackVolume the CloudStack volume to update
+     * @return the updated CloudStackVolume object
+     */
+    abstract CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume);
+
+    /**
+     * Method encapsulates the behavior based on the opted protocol in subclasses.
+     * it is going to mimic
+     * deleteLun       for iSCSI, FC protocols
+     * deleteFile      for NFS3.0 and NFS4.1 protocols
+     * deleteNameSpace for Nvme/TCP and Nvme/FC protocol
+     *
+     * @param cloudstackVolume the CloudStack volume to delete
+     */
+    abstract public void deleteCloudStackVolume(CloudStackVolume cloudstackVolume);
+
+    /**
+     * Method encapsulates the behavior based on the opted protocol in subclasses.
+     * it is going to mimic
+     *     cloneLun       for iSCSI, FC protocols
+     *     cloneFile      for NFS3.0 and NFS4.1 protocols
+     *     cloneNameSpace for Nvme/TCP and Nvme/FC protocol
+     * @param cloudstackVolume the CloudStack volume to copy
+     */
+    abstract public void copyCloudStackVolume(CloudStackVolume cloudstackVolume);
+
+    /**
+     * Method encapsulates the behavior based on the opted protocol in subclasses.
+     * it is going to mimic
+     *     getLun       for iSCSI, FC protocols
+     *     getFile      for NFS3.0 and NFS4.1 protocols
+     *     getNameSpace for Nvme/TCP and Nvme/FC protocol
+     * @param cloudStackVolumeMap the CloudStack volume to retrieve
+     * @return the retrieved CloudStackVolume object
+     */
+    abstract public CloudStackVolume getCloudStackVolume(Map<String, String> cloudStackVolumeMap);
+
+    /**
+     * Reverts a CloudStack volume to a snapshot using ONTAP CLI-based Single File Snap Restore (SFSR).
+     *
+     * <p>Both NFS and iSCSI use the CLI passthrough API:
+     * {@code POST /api/private/cli/volume/snapshot/restore-file}</p>
+     *
+     * <p>Callers should invoke {@link #executeCliSfsrRestore(JobResponse, String)} after this
+     * method returns to poll the async job when present, or treat a missing job as synchronous success.</p>
+     *
+     * @param snapshotName     The ONTAP FlexVolume snapshot name
+     * @param flexVolUuid      The FlexVolume UUID containing the snapshot
+     * @param snapshotUuid     The ONTAP snapshot UUID (used for NFS file restore)
+     * @param volumePath       The path of the file/LUN within the FlexVolume
+     * @param lunUuid          The LUN UUID (only for iSCSI, null for NFS)
+     * @param flexVolName      The FlexVolume name (only for iSCSI, for constructing destination path)
+     * @return JobResponse for the async restore operation
+     */
+    public abstract JobResponse revertSnapshotForCloudStackVolume(String snapshotName, String flexVolUuid,
+                                                                   String snapshotUuid, String volumePath,
+                                                                   String lunUuid, String flexVolName);
+
+
+    /**
+     * Method encapsulates the behavior based on the opted protocol in subclasses
+     *     createiGroup       for iSCSI and FC protocols
+     *     createExportPolicy for NFS 3.0 and NFS 4.1 protocols
+     *     createSubsystem    for Nvme/TCP and Nvme/FC protocols
+     * @param accessGroup the access group to create
+     * @return the created AccessGroup object
+     */
+    abstract public AccessGroup createAccessGroup(AccessGroup accessGroup);
+
+    /**
+     * Method encapsulates the behavior based on the opted protocol in subclasses
+     *     deleteiGroup       for iSCSI and FC protocols
+     *     deleteExportPolicy for NFS 3.0 and NFS 4.1 protocols
+     *     deleteSubsystem    for Nvme/TCP and Nvme/FC protocols
+     * @param accessGroup the access group to delete
+     */
+    abstract public void deleteAccessGroup(AccessGroup accessGroup);
+
+    /**
+     * Method encapsulates the behavior based on the opted protocol in subclasses
+     *     updateiGroup       example add/remove-Iqn   for iSCSI and FC protocols
+     *     updateExportPolicy example add/remove-Rule for NFS 3.0 and NFS 4.1 protocols
+     *     //TODO  for Nvme/TCP and Nvme/FC protocols
+     * @param accessGroup the access group to update
+     * @return the updated AccessGroup object
+     */
+    public abstract AccessGroup updateAccessGroup(AccessGroup accessGroup);
+
+    /**
+     * Method encapsulates the behavior based on the opted protocol in subclasses
+     *     e.g., getIGroup for iSCSI and FC protocols
+     *     e.g., getExportPolicy for NFS 3.0 and NFS 4.1 protocols
+     *     //TODO  for Nvme/TCP and Nvme/FC protocols
+      * @param values map to get access group values like name, svm name etc.
+     */
+    abstract public AccessGroup getAccessGroup(Map<String, String> values);
+
+    /**
+     * Method encapsulates the behavior based on the opted protocol in subclasses
+     *     lunMap  for iSCSI and FC protocols
+     *     //TODO  for NFS 3.0 and NFS 4.1 protocols (e.g., export rule management)
+     *     //TODO  for Nvme/TCP and Nvme/FC protocols
+     * @param values map including SVM name, LUN name, and igroup name (for SAN) or equivalent for NAS
+     * @return String containing logical unit number for the new/existing mapping (SAN) or relevant info for NAS
+     */
+    abstract public String enableLogicalAccess(Map<String,String> values);
+
+    /**
+     * Method encapsulates the behavior based on the opted protocol in subclasses
+     *     lunUnmap  for iSCSI and FC protocols
+     * @param values map including LUN UUID and iGroup UUID (for SAN) or equivalent for NAS
+     */
+    abstract public void disableLogicalAccess(Map<String, String> values);
+
+    /**
+     * Method encapsulates the behavior based on the opted protocol in subclasses
+     *     lunMap lookup for iSCSI/FC protocols (GET-only, no side-effects)
+     * @param values map with SVM name, LUN name, and igroup name (for SAN) or equivalent for NAS
+     * @return String containing logical unit number if mapping exists; otherwise null
+     */
+    abstract public String getLogicalAccess(Map<String, String> values);
+
+    // ── FlexVolume Snapshot accessors ────────────────────────────────────────
+
+    /**
+     * Returns the {@link SnapshotFeignClient} for ONTAP FlexVolume snapshot operations.
+     */
+    public SnapshotFeignClient getSnapshotFeignClient() {
+        return snapshotFeignClient;
+    }
+
+    /**
+     * Returns the {@link NASFeignClient} for ONTAP NAS file operations
+     * (including file clone for single-file SnapRestore).
+     */
+    public NASFeignClient getNasFeignClient() {
+        return nasFeignClient;
+    }
+
+    /**
+     * Generates the Basic-auth header for ONTAP REST calls.
+     */
+    public String getAuthHeader() {
+        return OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+    }
+
+    /**
+     * Polls an ONTAP async job for successful completion.
+     *
+     * @param jobUUID          UUID of the ONTAP job to poll
+     * @param maxRetries       maximum number of poll attempts
+     * @param sleepTimeInMilliSecs  sleep between poll attempts
+     * @return true if the job completed successfully
+     */
+    public Boolean jobPollForSuccess(String jobUUID, int maxRetries, int sleepTimeInMilliSecs) {
+        return jobPollUntilSuccess(jobUUID, maxRetries, sleepTimeInMilliSecs) != null;
+    }
+
+    /**
+     * Polls an ONTAP async job until it succeeds and returns the completed job record.
+     */
+    public Job jobPollUntilSuccess(String jobUUID, int maxRetries, int sleepTimeInMilliSecs) {
+        int jobRetryCount = 0;
+        Job jobResp = null;
+        try {
+            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+            while (jobResp == null || !jobResp.getState().equals(OntapStorageConstants.JOB_SUCCESS)) {
+                if (jobRetryCount >= maxRetries) {
+                    logger.error("Job did not complete within expected time.");
+                    throw new CloudRuntimeException("Job did not complete within expected time.");
+                }
+
+                try {
+                    jobResp = jobFeignClient.getJobByUUID(authHeader, jobUUID);
+                    if (jobResp == null) {
+                        logger.warn("Job with UUID " + jobUUID + " not found. Retrying...");
+                    } else if (jobResp.getState().equals(OntapStorageConstants.JOB_FAILURE)) {
+                        throw new CloudRuntimeException("Job failed with error: " + jobResp.getMessage());
+                    }
+                } catch (FeignException.FeignClientException e) {
+                    throw new CloudRuntimeException("Failed to fetch job status: " + e.getMessage());
+                }
+
+                jobRetryCount++;
+                Thread.sleep(sleepTimeInMilliSecs);
+            }
+            return jobResp;
+        } catch (FeignException.FeignClientException e) {
+            throw new CloudRuntimeException("Failed to fetch job status: " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CloudRuntimeException("Interrupted while polling ONTAP job " + jobUUID, e);
+        }
+    }
+
+    /**
+     * Polls an ONTAP async job when the API response includes a job reference.
+     *
+     * <p>When no job is returned (common for CLI passthrough SFSR on synchronous completion),
+     * the operation is treated as successful after HTTP 2xx.</p>
+     *
+     * @param response       ONTAP job response (may be null or without a job)
+     * @param operationName  label for logging and error messages
+     */
+    public void pollJobIfPresent(JobResponse response, String operationName) {
+        pollJobIfPresent(response, operationName,
+                OntapStorageConstants.ONTAP_CG_JOB_MAX_RETRIES,
+                OntapStorageConstants.ONTAP_CG_JOB_POLL_INTERVAL_MS);
+    }
+
+    /**
+     * Polls an ONTAP async job when present, using caller-supplied retry settings.
+     */
+    public void pollJobIfPresent(JobResponse response, String operationName,
+                                 int maxRetries, int pollIntervalMs) {
+        if (response == null || response.getJob() == null || response.getJob().getUuid() == null) {
+            logger.debug("pollJobIfPresent: No async job returned for operation [{}], continuing without polling",
+                    operationName);
+            return;
+        }
+        jobPollForSuccess(response.getJob().getUuid(), maxRetries, pollIntervalMs);
+    }
+
+    /**
+     * Polls an ONTAP async job when present and returns the completed job (for extracting created resource UUIDs).
+     */
+    public Job pollJobIfPresentAndGetCompletedJob(JobResponse response, String operationName) {
+        return pollJobIfPresentAndGetCompletedJob(response, operationName,
+                OntapStorageConstants.ONTAP_CG_JOB_MAX_RETRIES,
+                OntapStorageConstants.ONTAP_CG_JOB_POLL_INTERVAL_MS);
+    }
+
+    public Job pollJobIfPresentAndGetCompletedJob(JobResponse response, String operationName,
+                                                  int maxRetries, int pollIntervalMs) {
+        if (response == null || response.getJob() == null || response.getJob().getUuid() == null) {
+            logger.debug("pollJobIfPresentAndGetCompletedJob: No async job for operation [{}]", operationName);
+            return null;
+        }
+        return jobPollUntilSuccess(response.getJob().getUuid(), maxRetries, pollIntervalMs);
+    }
+
+    /**
+     * Completes CLI-based SFSR ({@code restore-file}) orchestration: poll job when returned,
+     * otherwise accept synchronous success.
+     */
+    public void executeCliSfsrRestore(JobResponse response, String operationName) {
+        pollJobIfPresent(response, operationName,
+                OntapStorageConstants.ONTAP_SFSR_JOB_MAX_RETRIES,
+                OntapStorageConstants.ONTAP_SFSR_JOB_POLL_INTERVAL_MS);
+    }
+
+    /**
+     * Deletes a FlexVolume snapshot on ONTAP for a CloudStack volume snapshot.
+     *
+     * <p>ONTAP volume snapshots (NFS and iSCSI) are FlexVol-level snapshots created by
+     * {@code POST /storage/volumes/{uuid}/snapshots} during take. Delete uses the matching
+     * REST {@code DELETE /storage/volumes/{uuid}/snapshots/{snapshot.uuid}} API regardless
+     * of whether the CloudStack volume is a file (NFS) or LUN (iSCSI). Protocol-specific
+     * subclasses ({@code UnifiedNASStrategy}, {@code UnifiedSANStrategy}) inherit this
+     * implementation; revert/restore remains protocol-specific via SFSR CLI.</p>
+     *
+     * <p>Called from {@link org.apache.cloudstack.storage.driver.OntapPrimaryDatastoreDriver}
+     * during the standard delete chain — not from a separate ONTAP snapshot strategy.</p>
+     *
+     * @param flexVolUuid   ONTAP FlexVolume UUID
+     * @param snapshotUuid  ONTAP FlexVolume snapshot UUID
+     * @param snapshotName  ONTAP FlexVolume snapshot name (for logging)
+     */
+    public void deleteFlexVolSnapshotForCloudStackVolume(String flexVolUuid, String snapshotUuid, String snapshotName) {
+        if (flexVolUuid == null || flexVolUuid.isEmpty() || snapshotUuid == null || snapshotUuid.isEmpty()) {
+            throw new CloudRuntimeException("FlexVolume UUID and snapshot UUID are required to delete an ONTAP snapshot");
+        }
+
+        logger.info("deleteFlexVolSnapshotForCloudStackVolume: issuing ONTAP REST delete for snapshot [{}] "
+                + "(uuid={}) on FlexVol [{}]", snapshotName, snapshotUuid, flexVolUuid);
+
+        try {
+            JobResponse jobResponse = snapshotFeignClient.deleteSnapshot(getAuthHeader(), flexVolUuid, snapshotUuid);
+
+            if (jobResponse == null || jobResponse.getJob() == null) {
+                logger.debug("deleteFlexVolSnapshotForCloudStackVolume: no async job returned for snapshot [{}] "
+                        + "(uuid={}); treating HTTP success as completion", snapshotName, snapshotUuid);
+            } else {
+                logger.debug("deleteFlexVolSnapshotForCloudStackVolume: polling ONTAP delete job [{}] for snapshot [{}]",
+                        jobResponse.getJob().getUuid(), snapshotName);
+            }
+
+            pollJobIfPresent(jobResponse, "delete FlexVol snapshot [" + snapshotName + "] uuid [" + snapshotUuid + "]",
+                    OntapStorageConstants.ONTAP_SNAPSHOT_DELETE_JOB_MAX_RETRIES,
+                    OntapStorageConstants.ONTAP_SNAPSHOT_DELETE_JOB_POLL_INTERVAL_MS);
+
+            logger.info("deleteFlexVolSnapshotForCloudStackVolume: ONTAP FlexVol snapshot [{}] (uuid={}) removed from [{}]",
+                    snapshotName, snapshotUuid, flexVolUuid);
+        } catch (Exception e) {
+            if (OntapStorageUtils.isOntapObjectNotFoundError(e)) {
+                logger.warn("deleteFlexVolSnapshotForCloudStackVolume: ONTAP snapshot [{}] (uuid={}) on FlexVol [{}] "
+                        + "already absent; treating delete as success: {}", snapshotName, snapshotUuid, flexVolUuid,
+                        e.getMessage());
+                return;
+            }
+            if (e instanceof CloudRuntimeException) {
+                throw (CloudRuntimeException) e;
+            }
+            throw new CloudRuntimeException("Failed to delete ONTAP FlexVol snapshot [" + snapshotName + "]: "
+                    + e.getMessage(), e);
+        }
+    }
+}

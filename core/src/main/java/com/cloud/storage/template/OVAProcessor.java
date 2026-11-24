@@ -68,7 +68,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
         String templateFilePath = templatePath + File.separator + templateName + "." + ImageFormat.OVA.getFileExtension();
         if (!_storage.exists(templateFilePath)) {
             if (logger.isInfoEnabled()) {
-                logger.info("Unable to find the vmware template file: " + templateFilePath);
+                logger.info("Unable to find the VMware Template file: " + templateFilePath);
             }
             return null;
         }
@@ -113,7 +113,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
         List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfoFromFile(ovfFilePath, doc, null);
         if (CollectionUtils.isNotEmpty(disks)) {
             if (logger.isTraceEnabled()) {
-                logger.trace(String.format("Found %d disks in template %s", disks.size(), ovfFilePath));
+                logger.trace(String.format("Found %d disks in Template %s", disks.size(), ovfFilePath));
             }
             ovfInformationTO.setDisks(disks);
         }
@@ -122,14 +122,14 @@ public class OVAProcessor extends AdapterBase implements Processor {
             logger.info("Found " + nets.size() + " prerequisite networks");
             ovfInformationTO.setNetworks(nets);
         } else if (logger.isTraceEnabled()) {
-            logger.trace(String.format("no net prerequisites found in template %s", ovfFilePath));
+            logger.trace(String.format("No net prerequisites found in Template %s", ovfFilePath));
         }
         List<OVFPropertyTO> ovfProperties = ovfHelper.getConfigurableOVFPropertiesFromDocument(doc);
         if (CollectionUtils.isNotEmpty(ovfProperties)) {
             logger.info("Found " + ovfProperties.size() + " configurable OVF properties");
             ovfInformationTO.setProperties(ovfProperties);
         } else if (logger.isTraceEnabled()) {
-            logger.trace(String.format("no ovf properties found in template %s", ovfFilePath));
+            logger.trace(String.format("No OVF properties found in Template %s", ovfFilePath));
         }
         OVFVirtualHardwareSectionTO hardwareSection = ovfHelper.getVirtualHardwareSectionFromDocument(doc);
         List<OVFConfigurationTO> configurations = hardwareSection.getConfigurations();
@@ -213,7 +213,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
             return size;
         } catch (Exception e) {
             logger.info("[ignored]"
-                    + "failed to get virtual template size for ova: " + e.getLocalizedMessage());
+                    + "failed to get virtual Template size for ova: " + e.getLocalizedMessage());
         }
         return file.length();
     }
@@ -231,7 +231,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
         String ovfFileName = getOVFFilePath(templateFileFullPath);
         OVFHelper ovfHelper = new OVFHelper();
         if (ovfFileName == null) {
-            String msg = "Unable to locate OVF file in template package directory: " + templatePath;
+            String msg = "Unable to locate OVF file in Template package directory: " + templatePath;
             logger.error(msg);
             throw new InternalErrorException(msg);
         }

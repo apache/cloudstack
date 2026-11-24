@@ -28,7 +28,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "lockAccount",
-            description = "This deprecated function used to locks an account. Look for the API DisableAccount instead",
+            description = "This deprecated function used to lock an Account. Look for the API DisableAccount instead",
             responseObject = AccountResponse.class,
             entityType = {Account.class},
             requestHasSensitiveInfo = false,
@@ -47,7 +47,7 @@ public class LockAccountCmd extends BaseCmd {
                type = CommandType.UUID,
                entityType = DomainResponse.class,
                required = true,
-               description = "Locks the specified account on this domain.")
+               description = "Locks the specified Account on this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////
@@ -78,6 +78,6 @@ public class LockAccountCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        throw new CloudRuntimeException("LockAccount does not lock accounts. Its implementation is disabled. Use DisableAccount instead");
+        throw new CloudRuntimeException("LockAccount does not lock Accounts. Its implementation is disabled. Use DisableAccount instead.");
     }
 }

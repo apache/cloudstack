@@ -143,7 +143,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
+            logger.debug("Deallocate Network: " + nic.getNetworkId() + ", IP: " + nic.getIPv4Address());
         }
 
         PrivateIpVO ip = _privateIpDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());
@@ -189,8 +189,12 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
             PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(network.getDataCenterId(), network.getId(), null);
             String vlanTag = BroadcastDomainType.getValue(network.getBroadcastUri());
             String netmask = NetUtils.getCidrNetmask(network.getCidr());
+            String macAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress(), networkModel.getMacIdentifier(network.getDataCenterId())));
+            if (!networkModel.isMACUnique(macAddress, network.getId())) {
+                macAddress = networkModel.getNextAvailableMacAddressInNetwork(network.getId());
+            }
             PrivateIpAddress ip =
-                new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress(), NetworkModel.MACIdentifier.value())));
+                new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, macAddress);
 
             nic.setIPv4Address(ip.getIpAddress());
             nic.setIPv4Gateway(ip.getGateway());

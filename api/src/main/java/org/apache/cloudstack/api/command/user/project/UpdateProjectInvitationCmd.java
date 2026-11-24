@@ -38,10 +38,10 @@ public class UpdateProjectInvitationCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to join")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "ID of the project to join")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account that is joining the project")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Account that is joining the project")
     private String accountName;
 
     @Parameter(name = ApiConstants.USER_ID, type = BaseCmd.CommandType.UUID, entityType = UserResponse.class,
@@ -50,10 +50,10 @@ public class UpdateProjectInvitationCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.TOKEN,
                type = CommandType.STRING,
-               description = "list invitations for specified account; this parameter has to be specified with domainId")
+               description = "List invitations for specified account; this parameter has to be specified with domainId")
     private String token;
 
-    @Parameter(name = ApiConstants.ACCEPT, type = CommandType.BOOLEAN, description = "if true, accept the invitation, decline if false. True by default")
+    @Parameter(name = ApiConstants.ACCEPT, type = CommandType.BOOLEAN, description = "If true, accept the invitation, decline if false. True by default")
     private Boolean accept;
 
     // ///////////////////////////////////////////////////
@@ -92,7 +92,7 @@ public class UpdateProjectInvitationCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        String eventDetails = "Project id: " + projectId + ";";
+        String eventDetails = "Project id: " + getResourceUuid(ApiConstants.PROJECT_ID) + ";";
         if (accountName != null) {
             eventDetails +=  " accountName: " + accountName + ";";
         } else if (userId != null) {
@@ -116,6 +116,6 @@ public class UpdateProjectInvitationCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating project invitation for projectId " + projectId;
+        return "Updating project invitation for project with ID: " + getResourceUuid(ApiConstants.PROJECT_ID);
     }
 }

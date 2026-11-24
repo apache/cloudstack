@@ -57,6 +57,13 @@ public interface VpcManager {
             true,
             ConfigKey.Scope.Global,
             null);
+    ConfigKey<Integer> VpcMaxNetworks = new ConfigKey<>("Advanced",
+            Integer.class,
+            "vpc.max.networks",
+            "3",
+            "Maximum number of networks per VPC",
+            true,
+            ConfigKey.Scope.Global);
 
     /**
      * Returns all the Guest networks that are part of VPC
@@ -211,4 +218,9 @@ public interface VpcManager {
     void reconfigStaticNatForVpcVr(Long vpcId);
 
     boolean applyStaticRouteForVpcVpnIfNeeded(Long vpcId, boolean updateAllVpn) throws ResourceUnavailableException;
+
+    /**
+     * Returns true if the network is part of a VPC, and the VPC is created from conserve mode enabled VPC offering
+     */
+    boolean isNetworkOnVpcEnabledConserveMode(Network network);
 }

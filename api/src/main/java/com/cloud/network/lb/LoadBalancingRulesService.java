@@ -70,6 +70,20 @@ public interface LoadBalancingRulesService {
 
     LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd);
 
+    /**
+     * Stores the optional per rule haproxy settings. A null leaves the current value alone.
+     *
+     * @param cleanup remove all three first, so the rule inherits again, then store any non null value given
+     * @return true if any value changed
+     */
+    boolean updateLoadBalancerConnectionSettings(long lbRuleId, Boolean keepAlive, Long idleTimeout, Long keepAliveTimeout, boolean cleanup);
+
+    /**
+     * Checks the per rule timeouts without storing them, so a create can refuse a bad value
+     * before the rule exists. A null is not checked.
+     */
+    void validateLoadBalancerConnectionSettings(Long idleTimeout, Long keepAliveTimeout);
+
     boolean deleteLoadBalancerRule(long lbRuleId, boolean apply);
 
     /**
@@ -108,7 +122,7 @@ public interface LoadBalancingRulesService {
     /**
      * Assign a virtual machine or list of virtual machines, or Map of <vmId vmIp> to a load balancer.
      */
-    boolean assignToLoadBalancer(long lbRuleId, List<Long> vmIds, Map<Long, List<String>> vmIdIpMap, boolean isAutoScaleVM);
+    boolean assignToLoadBalancer(long lbRuleId, List<Long> vmIds, Map<Long, List<String>> vmIdIpMap, Map<Long, Long> vmIdNetworkMap, boolean isAutoScaleVM);
 
     boolean assignSSLCertToLoadBalancerRule(Long lbRuleId, String certName, String publicCert, String privateKey);
 

@@ -29,7 +29,6 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-//import java.io.File;
 
 import com.cloud.agent.api.storage.StorPoolDownloadVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;

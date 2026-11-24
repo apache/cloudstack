@@ -42,6 +42,7 @@ public class DiskProfile {
     private Long iopsReadRate;
     private Long iopsWriteRate;
     private String cacheMode;
+    private String errorPolicy;
     private Long minIops;
     private Long maxIops;
     private boolean requiresEncryption;
@@ -82,7 +83,7 @@ public class DiskProfile {
             null);
         this.hyperType = hyperType;
         this.provisioningType = offering.getProvisioningType();
-        this.requiresEncryption = offering.getEncrypt() || vol.getPassphraseId() != null;
+        this.requiresEncryption = offering.getEncrypt() || vol.getPassphraseId() != null || vol.getKmsKeyId() != null;
     }
 
     public DiskProfile(DiskProfile dp) {
@@ -236,6 +237,14 @@ public class DiskProfile {
 
     public String getCacheMode() {
         return cacheMode;
+    }
+
+    public void setErrorPolicy(String errorPolicy) {
+        this.errorPolicy = errorPolicy;
+    }
+
+    public String getErrorPolicy() {
+        return errorPolicy;
     }
 
     public Long getMinIops() {

@@ -46,6 +46,10 @@ public class ModifyStoragePoolAnswer extends Answer {
         templateInfo = tInfo;
     }
 
+    public ModifyStoragePoolAnswer(final Command command, final boolean success, final String details) {
+        super(command, success, details);
+    }
+
     public ModifyStoragePoolAnswer(ModifyStoragePoolCommand cmd, boolean success, String details) {
         super(cmd, success, details);
     }

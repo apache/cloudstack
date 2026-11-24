@@ -54,6 +54,7 @@
       <volume-storage-pool-select-form
         :resource="selectedVolumeForStoragePoolSelection"
         :clusterId="storagePoolsClusterId"
+        :hostId="hostId"
         :autoAssignAllowed="storagePoolsClusterId != null"
         :isOpen="!(!selectedVolumeForStoragePoolSelection.id)"
         @close-action="closeVolumeStoragePoolSelector()"
@@ -77,6 +78,11 @@ export default {
       required: true
     },
     clusterId: {
+      type: String,
+      required: false,
+      default: null
+    },
+    hostId: {
       type: String,
       required: false,
       default: null
@@ -170,7 +176,8 @@ export default {
       this.volumes = []
       getAPI('listVolumes', {
         listAll: true,
-        virtualmachineid: this.resource.id
+        virtualmachineid: this.resource.id,
+        listsystemvms: true
       }).then(response => {
         var volumes = response.listvolumesresponse.volume
         if (volumes && volumes.length > 0) {
@@ -206,13 +213,19 @@ export default {
     closeVolumeStoragePoolSelector () {
       this.selectedVolumeForStoragePoolSelection = {}
     },
-    handleVolumeStoragePoolSelection (volumeId, storagePool) {
+    handleVolumeStoragePoolSelection (volumeId, storagePool, applyToAll) {
       for (const volume of this.volumes) {
-        if (volume.id === volumeId) {
+        if (applyToAll) {
           volume.selectedstorageid = storagePool.id
           volume.selectedstoragename = storagePool.name
           volume.selectedstorageclusterid = storagePool.clusterid
-          break
+        } else {
+          if (volume.id === volumeId) {
+            volume.selectedstorageid = storagePool.id
+            volume.selectedstoragename = storagePool.name
+            volume.selectedstorageclusterid = storagePool.clusterid
+            break
+          }
         }
       }
       this.updateVolumeToStoragePoolSelection()

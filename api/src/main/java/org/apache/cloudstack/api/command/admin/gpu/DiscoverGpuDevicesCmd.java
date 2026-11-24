@@ -46,7 +46,7 @@ public class DiscoverGpuDevicesCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Discovering GPU Devices on host id: " + getId());
+        CallContext.current().setEventDetails("Discovering GPU Devices on host with ID: " + getResourceUuid(ApiConstants.ID));
         ListResponse<GpuDeviceResponse> response = gpuService.discoverGpuDevices(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);

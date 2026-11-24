@@ -472,7 +472,7 @@ class TestEncryptedVolumes(cloudstackTestCase):
         self.assertEqual(
             self.random_data_0,
             result[0],
-            "Check the random data is equal with the ramdom file!"
+            "Check the random data is equal with the random file!"
         )
 
     # Delete VM snapshot

@@ -43,12 +43,15 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils.SupersetOrSubset;
+import com.cloud.utils.script.Script;
 import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6Network;
 
@@ -131,6 +134,10 @@ public class NetUtilsTest {
         assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-md5;modp1024"));
         assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1;modp3072,aes128-sha1;modp1536"));
         assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha256;modp3072,aes128-sha512;modp1536"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "aes256-sha256;modp1024s160"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "aes256-sha256;modp2048s224"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "aes256-sha256;modp2048s256"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "aes256-sha256;curve25519"));
         assertFalse(NetUtils.isValidS2SVpnPolicy("ike", "aes128-sha1"));
         assertFalse(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1"));
         assertFalse(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1,aes256-sha1"));
@@ -741,6 +748,41 @@ public class NetUtilsTest {
         final String defaultHostIp = NetUtils.getDefaultHostIp();
         if (defaultHostIp != null) {
             assertTrue(NetUtils.getAllDefaultNicIps().stream().anyMatch(defaultHostIp::contains));
+        }
+    }
+
+    @Test
+    public void testAllIpsOfDefaultNicWhenDeviceDoesNotExist() {
+        try (MockedStatic<Script> scriptMocked = Mockito.mockStatic(Script.class)) {
+            scriptMocked.when(() -> Script.runSimpleBashScript(Mockito.anyString())).thenReturn("nonexistent0");
+            Assert.assertTrue(NetUtils.getAllDefaultNicIps().isEmpty());
+        }
+    }
+
+    @Test
+    public void testAllIpsOfDefaultNicWithoutDefaultRoute() {
+        try (MockedStatic<Script> scriptMocked = Mockito.mockStatic(Script.class)) {
+            scriptMocked.when(() -> Script.runSimpleBashScript(Mockito.anyString())).thenReturn(null);
+            Assert.assertTrue(NetUtils.getAllDefaultNicIps().isEmpty());
+        }
+    }
+
+    @Test
+    public void testGetDefaultEthDeviceFallsBackToIpv6() {
+        Assume.assumeFalse(SystemUtils.IS_OS_MAC);
+        try (MockedStatic<Script> scriptMocked = Mockito.mockStatic(Script.class)) {
+            scriptMocked.when(() -> Script.runSimpleBashScript(Mockito.contains("ip -4"))).thenReturn(null);
+            scriptMocked.when(() -> Script.runSimpleBashScript(Mockito.contains("ip -6"))).thenReturn("eth0");
+            Assert.assertEquals("eth0", NetUtils.getDefaultEthDevice());
+        }
+    }
+
+    @Test
+    public void testGetDefaultEthDevicePrefersIpv4() {
+        Assume.assumeFalse(SystemUtils.IS_OS_MAC);
+        try (MockedStatic<Script> scriptMocked = Mockito.mockStatic(Script.class)) {
+            scriptMocked.when(() -> Script.runSimpleBashScript(Mockito.contains("ip -4"))).thenReturn("eth0");
+            Assert.assertEquals("eth0", NetUtils.getDefaultEthDevice());
         }
     }
 

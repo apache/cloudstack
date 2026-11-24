@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -66,7 +67,10 @@ import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.Source;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.agent.api.to.NetworkTO;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.network.Networks;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
@@ -658,7 +662,7 @@ public class LibvirtMigrateCommandWrapperTest {
     @Test
     public void testReplaceIpForVNCInDescFile() {
         final String targetIp = "192.168.22.21";
-        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(fullfile, targetIp, null, "");
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(fullfile, targetIp, "vncSecretPwd", "");
         assertEquals("transformation does not live up to expectation:\n" + result, targetfile, result);
     }
 
@@ -956,6 +960,160 @@ public class LibvirtMigrateCommandWrapperTest {
         Assert.assertFalse(replaced.contains("csdpdk-1"));
     }
 
+    private static final String vlanNicMac = "02:00:00:00:00:01";
+    private static final String vlanNicDomainXml =
+            "<domain type='kvm' id='7'>\n" +
+            "  <name>i-2-4-VM</name>\n" +
+            "  <devices>\n" +
+            "    <interface type='bridge'>\n" +
+            "      <mac address='" + vlanNicMac + "'/>\n" +
+            "      <source bridge='cloudbr0'/>\n" +
+            "      <target dev='vnet0'/>\n" +
+            "    </interface>\n" +
+            "  </devices>\n" +
+            "</domain>";
+
+    private NicTO buildVlanNicTO(boolean trunk, int primaryVlan, List<Integer> associatedVlans) {
+        NicTO nic = new NicTO();
+        nic.setBroadcastType(Networks.BroadcastDomainType.Vlan);
+        nic.setBroadcastUri(Networks.BroadcastDomainType.Vlan.toUri(primaryVlan));
+        nic.setMac(vlanNicMac);
+        nic.setTrunkVlan(trunk);
+        if (associatedVlans != null) {
+            List<NetworkTO> associated = new ArrayList<>();
+            for (Integer vlan : associatedVlans) {
+                NetworkTO associatedTo = new NetworkTO();
+                associatedTo.setBroadcastType(Networks.BroadcastDomainType.Vlan);
+                associatedTo.setBroadcastUri(Networks.BroadcastDomainType.Vlan.toUri(vlan));
+                associated.add(associatedTo);
+            }
+            nic.setAssociatedNetworks(associated);
+        }
+        return nic;
+    }
+
+    @Test
+    public void replaceVlanTrunkInterfacesLeavesOrdinaryVlanNicUntouchedOnNonFilteringSource()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(false, 100, null);
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(false).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+
+        String result = libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+
+        assertEquals(vlanNicDomainXml, result);
+    }
+
+    @Test
+    public void replaceVlanTrunkInterfacesRewritesOrdinaryNicBridgeWhenOnlyDestIsFilteringEnabled()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        // legacy (non-filtering) source -> shared-bridge destination: the source's own per-VLAN bridge name
+        // doesn't exist on the destination, so the rewrite must fire even though the source isn't shared-bridge
+        NicTO nic = buildVlanNicTO(false, 100, null);
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(false).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+        Mockito.doReturn(true).when(migrateCommandMock).getDestVlanFilteringEnabled();
+        Mockito.doReturn(false).when(migrateCommandMock).getDestVlanTrunkXmlSupported();
+        Mockito.doReturn(Map.of(vlanNicMac, "destcloudbr0")).when(migrateCommandMock).getNicBridgeMapping();
+
+        String result = libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+
+        assertTrue(result.contains("bridge=\"destcloudbr0\""));
+    }
+
+    @Test
+    public void replaceVlanTrunkInterfacesInsertsTrunkVlanBlockWhenDestSupportsTrunkXml()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(true, 100, Collections.singletonList(200));
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+        Mockito.doReturn(true).when(migrateCommandMock).getDestVlanFilteringEnabled();
+        Mockito.doReturn(true).when(migrateCommandMock).getDestVlanTrunkXmlSupported();
+        Mockito.doReturn(Map.of(vlanNicMac, "destcloudbr0")).when(migrateCommandMock).getNicBridgeMapping();
+
+        String result = libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+
+        assertTrue(result.contains("bridge=\"destcloudbr0\""));
+        assertTrue(result.contains("trunk=\"yes\""));
+        assertTrue(result.contains("id=\"100\""));
+        assertTrue(result.contains("nativeMode=\"untagged\""));
+        assertTrue(result.contains("id=\"200\""));
+    }
+
+    @Test
+    public void replaceVlanTrunkInterfacesSkipsTrunkVlanBlockForUntaggedOrdinaryNicWhenDestSupportsTrunkXml()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(false, 100, null);
+        nic.setBroadcastUri(java.net.URI.create("vlan://untagged"));
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+        Mockito.doReturn(true).when(migrateCommandMock).getDestVlanFilteringEnabled();
+        Mockito.doReturn(true).when(migrateCommandMock).getDestVlanTrunkXmlSupported();
+        Mockito.doReturn(Map.of(vlanNicMac, "destcloudbr0")).when(migrateCommandMock).getNicBridgeMapping();
+
+        String result = libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+
+        assertTrue(result.contains("bridge=\"destcloudbr0\""));
+        assertFalse(result.contains("trunk=\"yes\""));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void replaceVlanTrunkInterfacesRefusesVlanNicWithoutBroadcastUriOnFilteringHost()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(false, 100, null);
+        nic.setBroadcastUri(null);
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+
+        libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void replaceVlanTrunkInterfacesRefusesNicWithAssociatedNetworkWithoutBroadcastUri()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(true, 100, Collections.singletonList(200));
+        nic.getAssociatedNetworks().get(0).setBroadcastUri(null);
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+
+        libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+    }
+
+    @Test
+    public void replaceVlanTrunkInterfacesStripsVlanBlockWhenDestDoesNotSupportTrunkXml()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(true, 100, Collections.singletonList(200));
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+        Mockito.doReturn(true).when(migrateCommandMock).getDestVlanFilteringEnabled();
+        Mockito.doReturn(false).when(migrateCommandMock).getDestVlanTrunkXmlSupported();
+        Mockito.doReturn(Map.of(vlanNicMac, "destcloudbr0")).when(migrateCommandMock).getNicBridgeMapping();
+
+        String result = libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+
+        assertTrue(result.contains("bridge=\"destcloudbr0\""));
+        assertFalse(result.contains("<vlan"));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void replaceVlanTrunkInterfacesFailsClosedWhenDestCapabilityUnknown()
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO nic = buildVlanNicTO(true, 100, null);
+        Mockito.doReturn(new NicTO[]{nic}).when(virtualMachineTOMock).getNics();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(true).when(libvirtComputingResourceMock).hostSupportsVlanFiltering();
+        Mockito.doReturn(Map.of()).when(migrateCommandMock).getNicBridgeMapping();
+
+        libvirtMigrateCmdWrapper.replaceVlanTrunkInterfaces(vlanNicDomainXml, migrateCommandMock, libvirtComputingResourceMock);
+    }
+
     @Test
     public void updateVmSharesIfNeededTestNewCpuSharesEqualCurrentSharesShouldNotUpdateVmShares() throws ParserConfigurationException, IOException, TransformerException,
             SAXException {
@@ -1087,6 +1245,30 @@ public class LibvirtMigrateCommandWrapperTest {
         String finalXml = libvirtMigrateCmdWrapper.replaceCdromIsoPath(fullfile, null, oldIsoVolumePath, newIsoVolumePath);
 
         Assert.assertTrue(finalXml.contains(newIsoVolumePath));
+    }
+
+    @Test
+    public void testMaskVncPwdDomain() {
+        // Test case 1: Single quotes
+        String xml1 = "<graphics type='vnc' port='5900' passwd='secret123'/>";
+        String expected1 = "<graphics type='vnc' port='5900' passwd='*****'/>";
+        assertEquals(expected1, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml1));
+
+        // Test case 2: Double quotes
+        String xml2 = "<graphics type=\"vnc\" port=\"5901\" passwd=\"mypassword\"/>";
+        String expected2 = "<graphics type=\"vnc\" port=\"5901\" passwd=\"*****\"/>";
+        assertEquals(expected2, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml2));
+
+        // Test case 3: Non-VNC graphics (should remain unchanged)
+        String xml3 = "<graphics type='spice' port='5902' passwd='notvnc'/>";
+        assertEquals(xml3, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml3));
+
+        // Test case 4: Multiple VNC entries in one string
+        String xml4 = "<graphics type='vnc' port='5900' passwd='a'/>\n" +
+                "<graphics type='vnc' port='5901' passwd='b'/>";
+        String expected4 = "<graphics type='vnc' port='5900' passwd='*****'/>\n" +
+                "<graphics type='vnc' port='5901' passwd='*****'/>";
+        assertEquals(expected4, LibvirtMigrateCommandWrapper.maskSensitiveInfoInXML(xml4));
     }
 
     @Test

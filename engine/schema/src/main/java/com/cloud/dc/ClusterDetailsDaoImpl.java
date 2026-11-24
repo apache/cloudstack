@@ -171,7 +171,7 @@ public class ClusterDetailsDaoImpl extends ResourceDetailsDaoBase<ClusterDetails
     @Override
     public String getConfigValue(long id, String key) {
         ClusterDetailsVO vo = findDetail(id, key);
-        return vo == null ? null : vo.getValue();
+        return vo == null ? null : getActualValue(vo);
     }
 
     @Override

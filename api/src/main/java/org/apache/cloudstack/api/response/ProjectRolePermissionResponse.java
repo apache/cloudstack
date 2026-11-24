@@ -27,19 +27,19 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = ProjectRolePermission.class)
 public class ProjectRolePermissionResponse extends BaseRolePermissionResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the project role permission")
+    @Param(description = "The ID of the project role permission")
     private String id;
 
     @SerializedName(ApiConstants.PROJECT_ROLE_ID)
-    @Param(description = "the ID of the project role to which the role permission belongs")
+    @Param(description = "The ID of the project role to which the role permission belongs")
     private String projectRoleId;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the ID of the project")
+    @Param(description = "The ID of the project")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT_ROLE_NAME)
-    @Param(description = "the name of the project role to which the role permission belongs")
+    @Param(description = "The name of the project role to which the role permission belongs")
     private String projectRoleName;
 
     public String getId() {

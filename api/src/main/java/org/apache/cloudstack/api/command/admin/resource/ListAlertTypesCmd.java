@@ -16,7 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.resource;
 
-import com.cloud.user.Account;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
@@ -24,9 +27,7 @@ import org.apache.cloudstack.api.response.AlertResponse;
 import org.apache.cloudstack.api.response.AlertTypeResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import com.cloud.user.Account;
 
 @APICommand(name = "listAlertTypes", description = "Lists all alerts types", responseObject = AlertResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -43,7 +44,8 @@ public class ListAlertTypesCmd extends BaseCmd {
         ListResponse<AlertTypeResponse> response = new ListResponse<>();
         List<AlertTypeResponse> typeResponseList = new ArrayList<>();
         for (AlertService.AlertType alertType : result) {
-            AlertTypeResponse alertResponse = new AlertTypeResponse(alertType.getType(), alertType.getName());
+            AlertTypeResponse alertResponse = new AlertTypeResponse(alertType.getType(), alertType.getName(),
+                    alertType.isRepetitionAllowed());
             alertResponse.setObjectName("alerttype");
             typeResponseList.add(alertResponse);
         }

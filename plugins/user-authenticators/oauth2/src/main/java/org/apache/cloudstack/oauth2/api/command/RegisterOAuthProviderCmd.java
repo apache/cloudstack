@@ -14,25 +14,34 @@
 // limitations under the License.
 package org.apache.cloudstack.oauth2.api.command;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
-import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.oauth2.OAuth2AuthManager;
-import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
-import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
-import org.apache.commons.collections.MapUtils;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.oauth2.OAuth2AuthManager;
+import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
+import org.apache.cloudstack.oauth2.keycloak.KeycloakOAuth2Provider;
+import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
-
-import java.util.Collection;
-import java.util.Map;
 
 @APICommand(name = "registerOauthProvider", responseObject = SuccessResponse.class, description = "Register the OAuth2 provider in CloudStack", since = "4.19.0")
 public class RegisterOAuthProviderCmd extends BaseCmd {
@@ -55,6 +64,23 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.REDIRECT_URI, type = CommandType.STRING, description = "Redirect URI pre-registered in the specific OAuth provider", required = true)
     private String redirectUri;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "Domain ID for domain-specific OAuth provider. If not provided, registers as global provider", since = "4.23.0")
+    private Long domainId;
+
+    @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING,
+            description = "Domain path for domain-specific OAuth provider. Ignored when Domain ID is passed.", since = "4.23.0")
+    private String domainPath;
+
+    @Parameter(name = ApiConstants.AUTHORIZE_URL, type = CommandType.STRING, description = "Authorize URL for OAuth initialization (only required for keycloak provider)", since = "4.23.0")
+    private String authorizeUrl;
+
+    @Parameter(name = ApiConstants.TOKEN_URL, type = CommandType.STRING, description = "Token URL for OAuth finalization (only required for keycloak provider)", since = "4.23.0")
+    private String tokenUrl;
+
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "OAuth provider will be enabled or disabled based on this value, defaults to true if not specified", since = "24.0.0")
+    private Boolean enabled;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
             description = "Any OAuth provider details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].clientsecret=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")
@@ -85,6 +111,29 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
         return redirectUri;
     }
 
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getDomainPath() {
+        return domainPath;
+    }
+
+    public String getAuthorizeUrl() {
+        return authorizeUrl;
+    }
+
+    public String getTokenUrl() {
+        return tokenUrl;
+    }
+
+    public Boolean getEnabled() {
+        if (enabled == null) {
+            enabled = true; // default to enabled if not specified
+        }
+        return enabled;
+    }
+
     public Map getDetails() {
         if (MapUtils.isEmpty(details)) {
             return null;
@@ -98,12 +147,39 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException, EntityExistsException {
+        if (StringUtils.equals(KeycloakOAuth2Provider.KEYCLOAK_PROVIDER, getProvider())) {
+            if (StringUtils.isBlank(getAuthorizeUrl())) {
+                throw new ServerApiException(ApiErrorCode.BAD_REQUEST, "Parameter authorizeurl is mandatory for keycloak OAuth Provider");
+            }
+            if (StringUtils.isBlank(getTokenUrl())) {
+                throw new ServerApiException(ApiErrorCode.BAD_REQUEST, "Parameter tokenurl is mandatory for keycloak OAuth Provider");
+            }
+        }
+
         OauthProviderVO provider = _oauth2mgr.registerOauthProvider(this);
 
+        Domain domain = provider.getDomainId() != null ? ApiDBUtils.findDomainById(provider.getDomainId()) : null;
         OauthProviderResponse response = new OauthProviderResponse(provider.getUuid(), provider.getProvider(),
-                provider.getDescription(), provider.getClientId(), provider.getSecretKey(), provider.getRedirectUri());
+                provider.getDescription(), provider.getClientId(), provider.getSecretKey(), provider.getRedirectUri(),
+                provider.getAuthorizeUrl(), provider.getTokenUrl(), domain);
         response.setResponseName(getCommandName());
         response.setObjectName(ApiConstants.OAUTH_PROVIDER);
+
+        List<UserOAuth2Authenticator> userOAuth2AuthenticatorPlugins = _oauth2mgr.listUserOAuth2AuthenticationProviders();
+        List<String> authenticatorPluginNames = new ArrayList<>();
+
+        for (UserOAuth2Authenticator authenticator : userOAuth2AuthenticatorPlugins) {
+            String name = authenticator.getName();
+            authenticatorPluginNames.add(name);
+        }
+
+        boolean oauthEnabled = OAuth2AuthManager.isPluginEnabledForDomain(provider.getDomainId());
+        if (oauthEnabled && authenticatorPluginNames.contains(provider.getProvider()) && provider.isEnabled()) {
+            response.setEnabled(true);
+        } else {
+            response.setEnabled(false);
+        }
+
         setResponseObject(response);
     }
 }

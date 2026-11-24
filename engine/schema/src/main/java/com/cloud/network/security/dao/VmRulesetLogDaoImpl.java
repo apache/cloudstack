@@ -76,7 +76,6 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
 
     @Override
     public int createOrUpdate(Set<Long> workItems) {
-        //return createOrUpdateUsingBatch(workItems);
         return createOrUpdateUsingMultiInsert(workItems);
     }
 

@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @APICommand(name = "uploadTemplateDirectDownloadCertificate",
-        description = "Upload a certificate for HTTPS direct template download on KVM hosts",
+        description = "Upload a certificate for HTTPS direct Template download on KVM hosts",
         responseObject = DirectDownloadCertificateResponse.class,
         since = "4.11.0",
         authorized = {RoleType.Admin})
@@ -65,7 +65,7 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
     private Long zoneId;
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
-            description = "(optional) the host ID to upload certificate")
+            description = "(Optional) the host ID to upload certificate")
     private Long hostId;
 
     private void createResponse(DirectDownloadCertificate certificate, final List<HostCertificateStatus> hostStatusList) {
@@ -95,7 +95,7 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
         }
 
         try {
-            logger.debug("Uploading certificate " + name + " to agents for Direct Download");
+            logger.debug("Uploading certificate {} to agents for Direct Download", name);
             Pair<DirectDownloadCertificate, List<HostCertificateStatus>> uploadStatus =
                     directDownloadManager.uploadCertificateToHosts(certificate, name, hypervisor, zoneId, hostId);
             DirectDownloadCertificate certificate = uploadStatus.first();

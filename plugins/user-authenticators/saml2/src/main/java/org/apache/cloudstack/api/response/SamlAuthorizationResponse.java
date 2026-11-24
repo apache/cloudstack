@@ -25,15 +25,15 @@ import org.apache.cloudstack.api.EntityReference;
 @EntityReference(value = User.class)
 public class SamlAuthorizationResponse extends BaseResponse {
     @SerializedName("userid")
-    @Param(description = "the user ID")
+    @Param(description = "The user ID")
     private String userId;
 
     @SerializedName("status")
-    @Param(description = "the SAML authorization status")
+    @Param(description = "The SAML authorization status")
     private Boolean status;
 
     @SerializedName("idpid")
-    @Param(description = "the authorized Identity Provider ID")
+    @Param(description = "The authorized Identity Provider ID")
     private String idpId;
 
     public SamlAuthorizationResponse(String userId, Boolean status, String idpId) {

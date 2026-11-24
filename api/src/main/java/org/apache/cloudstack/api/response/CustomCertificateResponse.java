@@ -25,7 +25,7 @@ import com.cloud.serializer.Param;
 public class CustomCertificateResponse extends BaseResponse {
 
     @SerializedName("message")
-    @Param(description = "message of the certificate upload operation")
+    @Param(description = "Message of the certificate upload operation")
     private String message;
 
     public String getResultMessage() {

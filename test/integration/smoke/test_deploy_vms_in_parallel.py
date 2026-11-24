@@ -18,6 +18,8 @@
 """ P1 for Deploy VM from ISO
 """
 # Import Local Modules
+import time
+
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (Account,
@@ -123,6 +125,40 @@ class TestDeployVMsInParallel(cloudstackTestCase):
         )
 
     def tearDown(self):
+        # Deleting the account only soft-deletes it; the account row (and
+        # its "needs cleanup" state) is purged asynchronously by the
+        # account.cleanup.interval background task. Deleting the domain
+        # right after the account can therefore race with that task and
+        # fail with "Can't delete the domain yet because it has N
+        # accounts to cleanup". Delete the account first, then retry the
+        # domain deletion for a bit to ride out that race.
+        try:
+            self.cleanup_resources(self.apiclient, [self.account])
+        except Exception as e:
+            self.debug("Warning: Exception during account cleanup : %s" % e)
+
+        retries_left = 15
+        while True:
+            try:
+                self.domain.delete(self.apiclient)
+                break
+            except Exception as e:
+                retries_left -= 1
+                if "accounts to cleanup" not in str(e):
+                    raise Exception("Warning: Exception during cleanup : %s" % e)
+                if retries_left <= 0:
+                    # The account cleanup task can get permanently stuck detaching
+                    # the account's data volume from an already-expunged VM (a
+                    # known server-side race between VM expunge and account
+                    # cleanup, unrelated to what this test verifies). Don't fail
+                    # the test on that; just leave the domain/account behind for
+                    # cleanup to retry indefinitely, and log it for visibility.
+                    self.debug("Warning: giving up on domain cleanup, leaving it "
+                               "behind for a later cleanup attempt: %s" % e)
+                    break
+                time.sleep(5)
+
+        self.cleanup = []
         super(TestDeployVMsInParallel, self).tearDown()
 
     @attr(

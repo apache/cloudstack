@@ -33,8 +33,12 @@ public class NicTO extends NetworkTO {
     boolean dpdkEnabled;
     Integer mtu;
     Long networkId;
+    boolean enabled;
 
     String networkSegmentName;
+
+    boolean trunkVlan;
+    List<NetworkTO> associatedNetworks;
 
     public NicTO() {
         super();
@@ -153,5 +157,30 @@ public class NicTO extends NetworkTO {
 
     public void setNetworkSegmentName(String networkSegmentName) {
         this.networkSegmentName = networkSegmentName;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    // trunkVlan/associatedNetworks carry the additional networks for a multi-VLAN trunk nic; unset for ordinary nics
+    public boolean isTrunkVlan() {
+        return trunkVlan;
+    }
+
+    public void setTrunkVlan(boolean trunkVlan) {
+        this.trunkVlan = trunkVlan;
+    }
+
+    public List<NetworkTO> getAssociatedNetworks() {
+        return associatedNetworks;
+    }
+
+    public void setAssociatedNetworks(List<NetworkTO> associatedNetworks) {
+        this.associatedNetworks = associatedNetworks;
     }
 }

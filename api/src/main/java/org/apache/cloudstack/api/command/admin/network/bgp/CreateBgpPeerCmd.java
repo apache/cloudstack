@@ -145,7 +145,7 @@ public class CreateBgpPeerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating Bgp Peer " + getAsNumber() + " for zone=" + getZoneId();
+        return "Creating BGP Peer " + getAsNumber() + " for zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID);
     }
 
     @Override

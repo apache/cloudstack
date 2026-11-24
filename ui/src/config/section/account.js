@@ -104,10 +104,21 @@ export default {
     {
       api: 'createAccount',
       icon: 'plus-outlined',
-      label: 'label.add.account',
+      label: 'label.add.tenant.account',
       listView: true,
       popup: true,
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/AddAccount.vue')))
+    },
+    {
+      api: 'createUser',
+      icon: 'user-add-outlined',
+      label: 'label.add.user',
+      dataView: true,
+      popup: true,
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && record.state === 'enabled'
+      },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/AddUser.vue')))
     },
     {
       api: 'ldapCreateAccount',
@@ -120,6 +131,34 @@ export default {
         return store.isLdapEnabled
       },
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/AddLdapAccount.vue')))
+    },
+    {
+      api: 'linkAccountToLdap',
+      icon: 'LinkOutlined',
+      label: 'label.link.account.to.ldap',
+      docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
+      dataView: true,
+      show: (record, store) => {
+        return store.isLdapEnabled
+      },
+      args: ['type', 'domainid', 'ldapdomain', 'account', 'accounttype', 'roleid', 'admin'],
+      mapping: {
+        type: {
+          options: ['GROUP', 'OU']
+        },
+        accounttype: {
+          options: [
+            { id: '0', description: 'label.account.type.normal' },
+            { id: '2', description: 'label.account.type.domain.admin' }
+          ]
+        },
+        domainid: {
+          value: (record) => { return record.domainid }
+        },
+        account: {
+          value: (record) => { return record.name }
+        }
+      }
     },
     {
       api: 'updateAccount',

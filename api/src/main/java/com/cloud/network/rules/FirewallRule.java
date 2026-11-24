@@ -69,7 +69,9 @@ public interface FirewallRule extends ControlledEntity, Identity, InternalIdenti
 
     State getState();
 
-    long getNetworkId();
+    Long getNetworkId();
+
+    Long getVpcId();
 
     Long getSourceIpAddressId();
 

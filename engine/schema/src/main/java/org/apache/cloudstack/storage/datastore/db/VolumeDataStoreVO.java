@@ -209,10 +209,8 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 
     public VolumeDataStoreVO(long hostId, long volumeId, Date lastUpdated, int downloadPercent, Status downloadState, String localDownloadPath, String errorString,
             String jobId, String installPath, String downloadUrl, String checksum) {
-        // super();
         dataStoreId = hostId;
         this.volumeId = volumeId;
-        // this.zoneId = zoneId;
         this.lastUpdated = lastUpdated;
         this.downloadPercent = downloadPercent;
         this.downloadState = downloadState;

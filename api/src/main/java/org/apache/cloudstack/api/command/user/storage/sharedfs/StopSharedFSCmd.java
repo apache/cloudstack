@@ -92,7 +92,7 @@ public class StopSharedFSCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Stopping Shared FileSystem " + id;
+        return "Stopping Shared FileSystem with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

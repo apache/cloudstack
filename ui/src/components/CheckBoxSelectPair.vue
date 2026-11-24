@@ -24,6 +24,9 @@
           :disabled="forExternalNetProvider"
           @change="handleCheckChange">
           {{ checkBoxLabel }}
+          <a-tooltip v-if="checkBoxTooltip" :title="checkBoxTooltip">
+            <info-circle-outlined class="tooltip-icon" />
+          </a-tooltip>
         </a-checkbox>
       </a-col>
       <a-col :md="24" :lg="layout === 'horizontal' ? 12 : 24">
@@ -70,9 +73,17 @@ export default {
       type: String,
       required: true
     },
+    checkBoxTooltip: {
+      type: String,
+      default: null
+    },
     defaultCheckBoxValue: {
       type: Boolean,
       default: false
+    },
+    defaultSelectValue: {
+      type: String,
+      default: null
     },
     selectOptions: {
       type: Array,
@@ -100,6 +111,9 @@ export default {
   },
   created () {
     this.checked = this.defaultCheckBoxValue
+    if (this.defaultSelectValue) {
+      this.selectedOption = this.defaultSelectValue
+    }
   },
   watch: {
     selectOptions () {
@@ -158,5 +172,10 @@ export default {
 <style lang="less" scoped>
 .ant-list-split .ant-list-item div {
   width: 100%;
+}
+
+.tooltip-icon {
+  color: rgba(0,0,0,.45);
+  margin-left: 2px;
 }
 </style>

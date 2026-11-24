@@ -1,0 +1,61 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package com.cloud.upgrade.dao;
+
+import java.sql.Connection;
+
+public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
+
+    @Override
+    public String[] getUpgradableVersionRange() {
+        return new String[]{"4.23.0.0", "24.0.0"};
+    }
+
+    @Override
+    public String getUpgradedVersion() {
+        return "24.0.0";
+    }
+
+    @Override
+    public void performDataMigration(Connection conn) {
+        addIndexes(conn);
+        dropOldIndexes(conn);
+    }
+
+    private void addIndexes(Connection conn) {
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__archived__created",
+                "archived", "created");
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__account_id__archived__created",
+                "account_id", "archived", "created");
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__domain_id__archived__created",
+                "domain_id", "archived", "created");
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__resource_type__resource_id__archived__created",
+                "resource_type", "resource_id", "archived", "created");
+    }
+
+    private void dropOldIndexes(Connection conn) {
+        if (DbUpgradeUtils.indexExists(conn, "event", "i_event__archived__created")) {
+            DbUpgradeUtils.dropIndexIfExists(conn, "event", "archived");
+        }
+        if (DbUpgradeUtils.indexExists(conn, "event", "i_event__account_id__archived__created")) {
+            DbUpgradeUtils.dropIndexIfExists(conn, "event", "i_event__account_id");
+        }
+        if (DbUpgradeUtils.indexExists(conn, "event", "i_event__resource_type__resource_id__archived__created")) {
+            DbUpgradeUtils.dropIndexIfExists(conn, "event", "i_event__resource_type__resource_id");
+        }
+    }
+}

@@ -43,23 +43,23 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ALGORITHM, type = CommandType.STRING, description = "load balancer algorithm (source, roundrobin, leastconn)")
+    @Parameter(name = ApiConstants.ALGORITHM, type = CommandType.STRING, description = "Load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the load balancer rule", length = 4096)
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "The description of the load balancer rule", length = 4096)
     private String description;
 
     @Parameter(name = ApiConstants.ID,
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the load balancer rule to update")
+               description = "The ID of the load balancer rule to update")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the load balancer rule")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the load balancer rule")
     private String loadBalancerName;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "The protocol for the LB")
@@ -68,6 +68,31 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from", since = "4.22")
     private List<String> cidrList;
 
+    @Parameter(name = ApiConstants.KEEPALIVE, type = CommandType.BOOLEAN, since = "24.0",
+            description = "Whether the load balancer keeps client connections open between requests. "
+                    + "Only applies to rules the router serves in HTTP mode. If not set, the rule's current value is kept; "
+                    + "use cleanupconnectionsettings to go back to the network offering's setting.")
+    private Boolean keepAlive;
+
+    @Parameter(name = ApiConstants.IDLE_TIMEOUT, type = CommandType.LONG, since = "24.0",
+            description = "How long an idle connection is held open, in milliseconds. Use 0 for infinite. "
+                    + "If not set, the rule's current value is kept; use cleanupconnectionsettings to go back to "
+                    + "the global setting network.loadbalancer.haproxy.idle.timeout.")
+    private Long idleTimeout;
+
+    @Parameter(name = ApiConstants.KEEPALIVE_TIMEOUT, type = CommandType.LONG, since = "24.0",
+            description = "How long an idle keepalive connection is held open waiting for the next request, "
+                    + "in milliseconds. Only applies to rules the router serves in HTTP mode. "
+                    + "If not set, the rule's current value is kept; use cleanupconnectionsettings to go back to "
+                    + "following idletimeout.")
+    private Long keepAliveTimeout;
+
+    @Parameter(name = ApiConstants.CLEAN_UP_CONNECTION_SETTINGS, type = CommandType.BOOLEAN, since = "24.0",
+            description = "If true, the rule's own keepalive, idletimeout and keepalivetimeout are removed, so the rule goes back "
+                    + "to the network offering and global settings. Any of the three passed in the same call are then set again, "
+                    + "so a single call can reset one and keep the others. If false or not set, no action.")
+    private Boolean cleanupConnectionSettings;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -75,6 +100,22 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
     public String getAlgorithm() {
         return algorithm;
     }
+    public Boolean getKeepAlive() {
+        return keepAlive;
+    }
+
+    public Long getIdleTimeout() {
+        return idleTimeout;
+    }
+    public Long getKeepAliveTimeout() {
+        return keepAliveTimeout;
+    }
+
+    public boolean isCleanupConnectionSettings() {
+        return Boolean.TRUE.equals(cleanupConnectionSettings);
+    }
+
+
 
     public String getDescription() {
         return description;
@@ -119,12 +160,12 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public String getEventDescription() {
-        return "updating load balancer rule";
+        return "Updating load balancer rule with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Load balancer ID: " + getId());
+        CallContext.current().setEventDetails("Load balancer ID: " + getResourceUuid(ApiConstants.ID));
         LoadBalancer result = _lbService.updateLoadBalancerRule(this);
         if (result != null) {
             LoadBalancerResponse response = _responseGenerator.createLoadBalancerResponse(result);

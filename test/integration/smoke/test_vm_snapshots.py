@@ -47,6 +47,11 @@ class TestVmSnapshot(cloudstackTestCase):
             cls.unsupportedHypervisor = True
             return
 
+        list_volume_pool_response = list_storage_pools(cls.apiclient)
+        volume_pool = list_volume_pool_response[0]
+        if volume_pool.type == "RBD":
+            cls.skipTest(cls, reason="VM snapshot is unsupported for VMs on RBD storage pool")
+
         cls.services = testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
@@ -262,7 +267,7 @@ class TestVmSnapshot(cloudstackTestCase):
         self.assertEqual(
             self.random_data_0,
             result[0],
-            "Check the random data is equal with the ramdom file!"
+            "Check the random data is equal with the random file!"
         )
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")

@@ -27,7 +27,9 @@ import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
 import com.cloud.agent.api.ModifyTargetsAnswer;
 import com.cloud.agent.api.ModifyTargetsCommand;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.VlanTrunkMigrationHelper;
 import com.cloud.agent.api.storage.StorPoolBackupTemplateFromSnapshotCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -37,6 +39,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
@@ -54,6 +57,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -119,6 +123,10 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
     private ClusterDao _clusterDao;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    private HostDetailsDao hostDetailsDao;
+    @Inject
+    private NicDao nicDao;
     @Inject
     private SnapshotDetailsDao _snapshotDetailsDao;
     @Inject
@@ -224,7 +232,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
                     if (answer != null && answer.getResult()) {
                         SpApiResponse resSnapshot = StorPoolUtil.volumeSnapshot(volumeName, template.getUuid(), null, "template", null, conn);
                         if (resSnapshot.getError() != null) {
-                            logger.debug(String.format("Could not snapshot volume with ID={}", snapshot.getId()));
+                            logger.debug("Could not snapshot volume with ID={}", snapshot.getId());
                             StorPoolUtil.spLog("VolumeSnapshot failed with error=%s", resSnapshot.getError().getDescr());
                             err = resSnapshot.getError().getDescr();
                         } else {
@@ -298,7 +306,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
 
             for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
                 VolumeInfo srcVolumeInfo = entry.getKey();
-                if (srcVolumeInfo.getPassphraseId() != null) {
+                if (srcVolumeInfo.getPassphraseId() != null || srcVolumeInfo.getKmsKeyId() != null) {
                     throw new CloudRuntimeException(String.format("Cannot live migrate encrypted volume [%s] to StorPool", srcVolumeInfo.getVolume()));
                 }
                 DataStore destDataStore = entry.getValue();
@@ -342,8 +350,9 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
 
             PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(vmTO);
 
+            Answer pfma;
             try {
-                Answer pfma = _agentManager.send(destHost.getId(), pfmc);
+                pfma = _agentManager.send(destHost.getId(), pfmc);
 
                 if (pfma == null || !pfma.getResult()) {
                     String details = pfma != null ? pfma.getDetails() : "null answer returned";
@@ -371,11 +380,17 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
 
             migrateCommand.setAutoConvergence(kvmAutoConvergence);
 
+            VlanTrunkMigrationHelper.populateVlanTrunkMigrationDetails(migrateCommand, (PrepareForMigrationAnswer) pfma, hostDetailsDao, destHost.getId());
+
             MigrateAnswer migrateAnswer = (MigrateAnswer) _agentManager.send(srcHost.getId(), migrateCommand);
 
             boolean success = migrateAnswer != null && migrateAnswer.getResult();
 
             handlePostMigration(success, srcVolumeInfoToDestVolumeInfo, vmTO, destHost);
+
+            if (success) {
+                VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, destHost.getId(), nicDao, hostDetailsDao, _agentManager::send, logger);
+            }
 
             if (migrateAnswer == null) {
                 throw new CloudRuntimeException("Unable to get an answer to the migrate command");
@@ -457,8 +472,8 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
             VolumeInfo destVolumeInfo = entry.getValue();
 
             if (success) {
-                srcVolumeInfo.processEvent(Event.OperationSuccessed);
-                destVolumeInfo.processEvent(Event.OperationSuccessed);
+                srcVolumeInfo.processEvent(Event.OperationSucceeded);
+                destVolumeInfo.processEvent(Event.OperationSucceeded);
 
                 _volumeDao.updateUuid(srcVolumeInfo.getId(), destVolumeInfo.getId());
 

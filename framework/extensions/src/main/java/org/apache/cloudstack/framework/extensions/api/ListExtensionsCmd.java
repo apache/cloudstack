@@ -70,6 +70,11 @@ public class ListExtensionsCmd extends BaseListCmd {
                     + " When no parameters are passed, all the details are returned.")
     private List<String> details;
 
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING,
+            description = "Type of the extension (e.g. Orchestrator, NetworkOrchestrator)",
+            since = "4.23.0")
+    private String type;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -80,6 +85,10 @@ public class ListExtensionsCmd extends BaseListCmd {
 
     public Long getExtensionId() {
         return extensionId;
+    }
+
+    public String getType() {
+        return type;
     }
 
     public EnumSet<ApiConstants.ExtensionDetails> getDetails() throws InvalidParameterValueException {

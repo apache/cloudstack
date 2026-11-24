@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
@@ -39,7 +38,6 @@ import org.apache.cloudstack.mom.webhook.api.response.WebhookResponse;
 @APICommand(name = "listWebhookDeliveries",
         description = "Lists Webhook deliveries",
         responseObject = WebhookResponse.class,
-        responseView = ResponseObject.ResponseView.Restricted,
         entityType = {WebhookDelivery.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.20.0")

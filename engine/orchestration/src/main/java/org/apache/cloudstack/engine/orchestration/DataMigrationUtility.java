@@ -22,13 +22,19 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.InternalBackupJoinVO;
+import org.apache.cloudstack.backup.dao.InternalBackupJoinDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -40,6 +46,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.ImageStoreService;
+import org.apache.cloudstack.storage.backup.BackupObject;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -87,12 +94,15 @@ public class DataMigrationUtility {
     HostDao hostDao;
     @Inject
     SnapshotDao snapshotDao;
+
+    @Inject
+    InternalBackupJoinDao internalBackupJoinDao;
     /**
      *  This function verifies if the given image store contains data objects that are not in any of the following states:
      *  "Ready" "Allocated", "Destroying", "Destroyed", "Failed". If this is the case, and if the migration policy is complete,
      *  the migration is terminated.
      */
-    public boolean filesReadyToMigrate(Long srcDataStoreId, List<TemplateDataStoreVO> templates, List<SnapshotDataStoreVO> snapshots, List<VolumeDataStoreVO> volumes) {
+    public boolean filesReadyToMigrate(Long srcDataStoreId, List<TemplateDataStoreVO> templates, List<SnapshotDataStoreVO> snapshots, List<VolumeDataStoreVO> volumes, List<InternalBackupJoinVO> backups) {
         State[] validStates = {State.Ready, State.Allocated, State.Destroying, State.Destroyed, State.Failed};
         boolean isReady = true;
         for (TemplateDataStoreVO template : templates) {
@@ -107,14 +117,48 @@ public class DataMigrationUtility {
             isReady &= (Arrays.asList(validStates).contains(volume.getState()));
             logger.trace("volume state: {}", volume.getState());
         }
+        isReady &= checkIfBackupsMigrationIsPossible(backups);
         return isReady;
+    }
+
+    private boolean checkIfBackupsMigrationIsPossible(List<InternalBackupJoinVO> backups) {
+        List<Backup.Status> invalidBackupStates = Arrays.asList(Backup.Status.BackingUp, Backup.Status.Restoring);
+        List<Backup.CompressionStatus> invalidBackupCompressionStatus = Arrays.asList(Backup.CompressionStatus.Compressing, Backup.CompressionStatus.FinalizingCompression);
+
+        List<List<BackupObject>> backupChains;
+        Set<Long> backupIdsAlreadyInChain = new HashSet<>();
+
+        for (InternalBackupJoinVO backup : backups) {
+            if (backup.getStatus() == Backup.Status.BackedUp && !backupIdsAlreadyInChain.contains(backup.getId())) {
+                backupChains = createBackupChain(backup);
+                backupChains.forEach(list -> backupIdsAlreadyInChain.add(list.stream().map(BackupObject::getId).findFirst().get()));
+
+                for (List<BackupObject> backupVolumeChain : backupChains) {
+                    BackupObject backupObject = backupVolumeChain.get(0);
+
+                    if (invalidBackupStates.contains(backupObject.getStatus())) {
+                        logger.debug("Migration is not possible because backup {} is in {} state.", backupObject.getUuid(), backupObject.getStatus());
+                        return false;
+                    }
+
+                    if (invalidBackupCompressionStatus.contains(backupObject.getCompressionStatus())) {
+                        logger.debug("Migration is not possible because backup {} is currently being compressed. Current compression status: {}.", backupObject.getUuid(), backupObject.getCompressionStatus());
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
     private boolean filesReadyToMigrate(Long srcDataStoreId) {
         List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStoreId);
         List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStoreId, DataStoreRole.Image);
         List<VolumeDataStoreVO> volumes = volumeDataStoreDao.listByStoreId(srcDataStoreId);
-        return filesReadyToMigrate(srcDataStoreId, templates, snapshots, volumes);
+        List<InternalBackupJoinVO> backups = internalBackupJoinDao.listByImageStoreId(srcDataStoreId);
+
+        return filesReadyToMigrate(srcDataStoreId, templates, snapshots, volumes, backups);
     }
 
     protected void checkIfCompleteMigrationPossible(ImageStoreService.MigrationPolicy policy, Long srcDataStoreId) {
@@ -173,17 +217,56 @@ public class DataMigrationUtility {
 
         return files;
     }
-
     protected List<DataObject> getSortedValidSourcesList(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains,
-            Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates) {
+            Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates, Map<DataObject, Pair<List<List<BackupObject>>, Long>> backupChains) {
         List<DataObject> files = new ArrayList<>();
         files.addAll(getAllReadyTemplates(srcDataStore, childTemplates));
         files.addAll(getAllReadySnapshotsAndChains(srcDataStore, snapshotChains));
         files.addAll(getAllReadyVolumes(srcDataStore));
+        files.addAll(getAllReadyBackupsAndChains(srcDataStore, backupChains));
 
         files = sortFilesOnSize(files, snapshotChains);
 
         return files;
+    }
+
+    protected List<DataObject> getAllReadyBackupsAndChains(DataStore srcDataStore, Map<DataObject, Pair<List<List<BackupObject>>, Long>> backupChains) {
+        List<InternalBackupJoinVO> backups = internalBackupJoinDao.listByImageStoreId(srcDataStore.getId());
+        return getAllReadyBackupsAndChains(backupChains, backups);
+    }
+
+    private List<DataObject> getAllReadyBackupsAndChains(Map<DataObject, Pair<List<List<BackupObject>>, Long>> backupsChains, List<InternalBackupJoinVO> backups) {
+        Set<Long> backupIdsToMigrate = backups.stream().map(InternalBackupJoinVO::getId).collect(Collectors.toSet());
+        List<List<BackupObject>> backupChains;
+        Set<Long> backupIdsAlreadyInChain = new HashSet<>();
+        List<BackupObject> files = new LinkedList<>();
+
+        for (InternalBackupJoinVO backup : backups) {
+            long backupId = backup.getId();
+
+            if (backup.getStatus() == Backup.Status.BackedUp && !backupIdsAlreadyInChain.contains(backupId)) {
+                backupChains = createBackupChain(backup);
+                backupChains.forEach(list -> backupIdsAlreadyInChain.add(list.stream().map(BackupObject::getId).findFirst().get()));
+                BackupObject parent = backupChains.get(0).get(0);
+                files.add(parent);
+                backupsChains.put(parent, new Pair<>(backupChains, backupChains.stream().map(list -> getTotalChainSize(list.stream()
+                        .filter(back -> backupIdsToMigrate.contains(parent.getId())).collect(Collectors.toList()))
+                ).reduce(Long::sum).get()));
+            }
+        }
+
+        return (List<DataObject>) (List<?>) files;
+    }
+
+    private List<List<BackupObject>> createBackupChain(InternalBackupJoinVO backup) {
+        List<List<BackupObject>> chain = new LinkedList<>();
+        BackupObject backupObject = BackupObject.getBackupObject(backup);
+
+        chain.addAll(backupObject.getParents(backup.getParentId()));
+        chain.add(internalBackupJoinDao.listById(backup.getId()).stream().map(BackupObject::getBackupObject).collect(Collectors.toList()));
+        chain.addAll(backupObject.getChildren());
+
+        return chain;
     }
 
     protected List<DataObject> sortFilesOnSize(List<DataObject> files, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains) {
@@ -206,12 +289,22 @@ public class DataMigrationUtility {
 
     protected List<DataObject> getAllReadyTemplates(DataStore srcDataStore, Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates, List<TemplateDataStoreVO> templates) {
         List<TemplateInfo> files = new LinkedList<>();
+        Set<Long> idsForMigration = new HashSet<>();
+
         for (TemplateDataStoreVO template : templates) {
-            VMTemplateVO templateVO = templateDao.findById(template.getTemplateId());
-            if (shouldMigrateTemplate(template, templateVO)) {
-                files.add(templateFactory.getTemplate(template.getTemplateId(), srcDataStore));
+            long templateId = template.getTemplateId();
+            if (idsForMigration.contains(templateId)) {
+                logger.warn("Template store reference [{}] is duplicated; not considering it for migration.", template);
+                continue;
             }
+            VMTemplateVO templateVO = templateDao.findById(templateId);
+            if (!shouldMigrateTemplate(template, templateVO)) {
+                continue;
+            }
+            files.add(templateFactory.getTemplate(template.getTemplateId(), srcDataStore));
+            idsForMigration.add(templateId);
         }
+
         for (TemplateInfo template: files) {
             List<VMTemplateVO> children = templateDao.listByParentTemplatetId(template.getId());
             List<TemplateInfo> temps = new ArrayList<>();
@@ -221,6 +314,7 @@ public class DataMigrationUtility {
             }
             childTemplates.put(template, new Pair<>(temps, getTotalChainSize(temps)));
         }
+
         return (List<DataObject>) (List<?>) files;
     }
 
@@ -263,16 +357,37 @@ public class DataMigrationUtility {
      */
     protected List<DataObject> getAllReadySnapshotsAndChains(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains, List<SnapshotDataStoreVO> snapshots) {
         List<SnapshotInfo> files = new LinkedList<>();
+        Set<Long> idsForMigration = new HashSet<>();
+
         for (SnapshotDataStoreVO snapshot : snapshots) {
-            SnapshotVO snapshotVO = snapshotDao.findById(snapshot.getSnapshotId());
-            if (snapshot.getState() == ObjectInDataStoreStateMachine.State.Ready &&
-                    snapshotVO != null && snapshotVO.getHypervisorType() != Hypervisor.HypervisorType.Simulator
-                    && snapshot.getParentSnapshotId() == 0 ) {
-                SnapshotInfo snap = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), snapshot.getDataStoreId(), snapshot.getRole());
-                if (snap != null) {
-                    files.add(snap);
-                }
+            long snapshotId = snapshot.getSnapshotId();
+            if (idsForMigration.contains(snapshotId)) {
+                logger.warn("Snapshot store reference [{}] is duplicated; not considering it for migration.", snapshot);
+                continue;
             }
+            if (snapshot.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+                logger.warn("Not migrating snapshot [{}] because its state is not ready.", snapshot);
+                continue;
+            }
+            SnapshotVO snapshotVO = snapshotDao.findById(snapshotId);
+            if (snapshotVO == null) {
+                logger.debug("Not migrating snapshot [{}] because we could not find its database entry.", snapshot);
+                continue;
+            }
+            if (snapshotVO.getHypervisorType() == Hypervisor.HypervisorType.Simulator) {
+                logger.debug("Not migrating snapshot [{}] because its hypervisor type is simulator.", snapshot);
+                continue;
+            }
+            if (snapshot.getParentSnapshotId() != 0) {
+                continue; // The child snapshot will be migrated in the for loop below.
+            }
+            SnapshotInfo snap = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), snapshot.getDataStoreId(), snapshot.getRole());
+            if (snap == null) {
+                logger.debug("Not migrating snapshot [{}] because we could not get its information.", snapshot);
+                continue;
+            }
+            files.add(snap);
+            idsForMigration.add(snapshotId);
         }
 
         for (SnapshotInfo parent : files) {
@@ -285,7 +400,7 @@ public class DataMigrationUtility {
                     chain.addAll(children);
                 }
             }
-            snapshotChains.put(parent, new Pair<List<SnapshotInfo>, Long>(chain, getTotalChainSize(chain)));
+            snapshotChains.put(parent, new Pair<>(chain, getTotalChainSize(chain)));
         }
 
         return (List<DataObject>) (List<?>) files;
@@ -306,14 +421,31 @@ public class DataMigrationUtility {
 
     protected List<DataObject> getAllReadyVolumes(DataStore srcDataStore, List<VolumeDataStoreVO> volumes) {
         List<DataObject> files = new LinkedList<>();
+        Set<Long> idsForMigration = new HashSet<>();
+
         for (VolumeDataStoreVO volume : volumes) {
-            if (volume.getState() == ObjectInDataStoreStateMachine.State.Ready) {
-                VolumeInfo volumeInfo = volumeFactory.getVolume(volume.getVolumeId(), srcDataStore);
-                if (volumeInfo != null && volumeInfo.getHypervisorType() != Hypervisor.HypervisorType.Simulator) {
-                    files.add(volumeInfo);
-                }
+            long volumeId = volume.getVolumeId();
+            if (idsForMigration.contains(volumeId)) {
+                logger.warn("Volume store reference [{}] is duplicated; not considering it for migration.", volume);
+                continue;
             }
+            if (volume.getState() != ObjectInDataStoreStateMachine.State.Ready) {
+                logger.debug("Not migrating volume [{}] because its state is not ready.", volume);
+                continue;
+            }
+            VolumeInfo volumeInfo = volumeFactory.getVolume(volume.getVolumeId(), srcDataStore);
+            if (volumeInfo == null) {
+                logger.debug("Not migrating volume [{}] because we could not get its information.", volume);
+                continue;
+            }
+            if (volumeInfo.getHypervisorType() == Hypervisor.HypervisorType.Simulator) {
+                logger.debug("Not migrating volume [{}] because its hypervisor type is simulator.", volume);
+                continue;
+            }
+            files.add(volumeInfo);
+            idsForMigration.add(volumeId);
         }
+
         return files;
     }
 
@@ -325,10 +457,9 @@ public class DataMigrationUtility {
     /** Returns the count of active SSVMs - SSVM with agents in connected state, so as to dynamically increase the thread pool
      * size when SSVMs scale
      */
-    protected int activeSSVMCount(DataStore dataStore) {
-        long datacenterId = dataStore.getScope().getScopeId();
+    protected int activeSSVMCount(Long zoneId) {
         List<SecondaryStorageVmVO> ssvms =
-                secStorageVmDao.getSecStorageVmListInStates(null, datacenterId, VirtualMachine.State.Running, VirtualMachine.State.Migrating);
+                secStorageVmDao.getSecStorageVmListInStates(null, zoneId, VirtualMachine.State.Running, VirtualMachine.State.Migrating);
         int activeSSVMs = 0;
         for (SecondaryStorageVmVO vm : ssvms) {
             String name = "s-"+vm.getId()+"-VM";

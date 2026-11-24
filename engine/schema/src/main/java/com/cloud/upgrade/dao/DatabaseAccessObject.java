@@ -128,7 +128,7 @@ public class DatabaseAccessObject {
                 return true;
             }
         } catch (SQLException e) {
-            logger.debug(String.format("Index %s doesn't exist, ignoring exception:", indexName, e.getMessage()));
+            logger.debug("Index {} doesn't exist, ignoring exception: {}", indexName, e.getMessage());
         }
         return false;
     }
@@ -141,6 +141,20 @@ public class DatabaseAccessObject {
             logger.debug(String.format("Created index %s", indexName));
         } catch (SQLException e) {
             logger.warn(String.format("Unable to create index %s", indexName), e);
+        }
+    }
+
+    public void dropIndexIfExists(Connection conn, String tableName, String indexName) {
+        if (!indexExists(conn, tableName, indexName)) {
+            return;
+        }
+        String stmt = String.format("DROP INDEX %s ON %s", indexName, tableName);
+        logger.debug("Statement: {}", stmt);
+        try (PreparedStatement pstmt = conn.prepareStatement(stmt)) {
+            pstmt.execute();
+            logger.debug("Dropped index {}", indexName);
+        } catch (SQLException e) {
+            logger.warn("Unable to drop index {}", indexName, e);
         }
     }
 

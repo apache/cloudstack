@@ -117,11 +117,25 @@ public class AgentProperties{
 
     /**
      * Local storage path.<br>
-     * This property allows multiple values to be entered in a single String. The differente values must be separated by commas.<br>
+     * This property allows multiple values to be entered in a single String. The different values must be separated by commas.<br>
      * Data type: String.<br>
      * Default value: <code>/var/lib/libvirt/images/</code>
      */
     public static final Property<String> LOCAL_STORAGE_PATH = new Property<>("local.storage.path", "/var/lib/libvirt/images/");
+
+    /**
+     * Enables TLS on the KVM image server transfer endpoint.<br>
+     * Data type: Boolean.<br>
+     * Default value: <code>true</code>
+     */
+    public static final Property<Boolean> IMAGE_SERVER_TLS_ENABLED = new Property<>("image.server.tls.enabled", true);
+
+    /**
+     * The IP address that the KVM image server listens on.<br>
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> IMAGE_SERVER_LISTEN_ADDRESS = new Property<>("image.server.listen.address", null, String.class);
 
     /**
      * Directory where Qemu sockets are placed.<br>
@@ -134,7 +148,7 @@ public class AgentProperties{
 
     /**
      * MANDATORY: The UUID for the local storage pool.<br>
-     * This property allows multiple values to be entered in a single String. The differente values must be separated by commas.<br>
+     * This property allows multiple values to be entered in a single String. The different values must be separated by commas.<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
@@ -156,7 +170,8 @@ public class AgentProperties{
     public static final Property<Integer> CMDS_TIMEOUT = new Property<>("cmds.timeout", 7200);
 
     /**
-     * The timeout (in seconds) for the snapshot merge operation, mainly used for classic volume snapshots and disk-only VM snapshots on file-based storage.<br>
+     * The timeout (in seconds) for QCOW2 delta merge operations, mainly used for classic volume snapshots, disk-only VM snapshots on file-based storage, and the KBOSS plugin.
+     * If a value of 0 or less is informed, the default will be used.<br>
      * This configuration is only considered if libvirt.events.enabled is also true. <br>
      * Data type: Integer.<br>
      * Default value: <code>259200</code>
@@ -303,6 +318,15 @@ public class AgentProperties{
      * Default value: <code>native</code>
      */
     public static final Property<String> NETWORK_BRIDGE_TYPE = new Property<>("network.bridge.type", "native");
+
+    /**
+     * Sets the VXLAN networking mode used by the BridgeVifDriver.<br>
+     * Possible values: multicast | evpn <br>
+     * When set to <code>evpn</code>, the driver will use modifyvxlan-evpn.sh instead of modifyvxlan.sh.<br>
+     * Data type: String.<br>
+     * Default value: <code>multicast</code>
+     */
+    public static final Property<String> NETWORK_VXLAN_MODE = new Property<>("network.vxlan.mode", "multicast");
 
     /**
      * Sets the driver used to plug and unplug NICs from the bridges.<br>
@@ -593,10 +617,100 @@ public class AgentProperties{
     /**
      * This parameter specifies if the host must be rebooted when something goes wrong with the heartbeat.<br>
      * Data type: Boolean.<br>
-     * Default value: <code>true</code>
+     * Default value: <code>false</code>
      */
     public static final Property<Boolean> REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT
-        = new Property<>("reboot.host.and.alert.management.on.heartbeat.timeout", true);
+        = new Property<>("reboot.host.and.alert.management.on.heartbeat.timeout", false);
+
+    /**
+     * Action taken by the KVM agent's storage heartbeat scripts (kvmheartbeat.sh, kvmspheartbeat.sh
+     * and kvmsmpheartbeat.sh) when a heartbeat write fails persistently. Only consulted when
+     * {@link #REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT} is true: that boolean remains the
+     * on/off switch for fencing, this setting only chooses what the fence does. Allowed values:
+     * <ul>
+     *   <li>{@code hard-reboot} (default): immediate sysrq-trigger reboot. Required default for setups
+     *       where a stale NFSv3 mount can prevent a graceful shutdown from completing.</li>
+     *   <li>{@code graceful-reboot}: {@code systemctl reboot} instead of sysrq; allows VMs
+     *       to stop cleanly. Use only if a stale storage mount cannot block shutdown.</li>
+     *   <li>{@code restart-agent}: stop every VM on the host, then restart cloudstack-agent; the host stays up. If it
+     *       already fired within {@link #KVM_HEARTBEAT_FENCE_RESTART_AGENT_COOLDOWN}, hard-reboot instead.</li>
+     *   <li>{@code log-only}: stop every VM on the host, then only write a message to the host's syslog (no
+     *       reboot, no agent restart, no management server alert); the operator must investigate.</li>
+     * </ul>
+     * Any other value falls back to {@code hard-reboot}. {@code restart-agent} and {@code graceful-reboot} need
+     * systemctl; if it is missing or the systemctl call fails, the fence hard-reboots.<br>
+     * {@code restart-agent} and {@code log-only} stop the VMs because, once the heartbeat is stale, the management
+     * server may declare the host Down and HA may start the same VMs on another host, where both copies would write
+     * to the same disks. If any VM cannot be stopped the fence falls back to {@code hard-reboot}. See
+     * {@link #KVM_HEARTBEAT_FENCE_KEEP_VMS_RUNNING}.<br>
+     * The non-default values are recommended for setups using LINSTOR/DRBD or other replicated
+     * local storage, where transient I/O contention can cause a heartbeat write to time out
+     * without the host actually being unhealthy.<br>
+     * Read by the heartbeat shell scripts directly from agent.properties.<br>
+     * Data type: String.<br>
+     * Default value: {@code hard-reboot}
+     */
+    public static final Property<String> KVM_HEARTBEAT_FENCE_ACTION
+        = new Property<>("kvm.heartbeat.fence.action", "hard-reboot");
+
+    /**
+     * When true, the {@code restart-agent} and {@code log-only} fence actions leave the host's VMs running instead of
+     * stopping them first. Only safe when no VM on the host can be started on another host by HA (VM HA off for all
+     * of them and host HA not enabled); otherwise a host the management server declares Down can end up with the
+     * same VM running twice, writing to the same disks. No effect on {@code hard-reboot} and {@code graceful-reboot}.
+     * This is the master opt-out: when true nothing is stopped and {@link #KVM_HEARTBEAT_FENCE_INCLUDE_SYSTEM_VMS}
+     * is ignored.<br>
+     * Read by the heartbeat shell scripts directly from agent.properties.<br>
+     * Data type: Boolean.<br>
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> KVM_HEARTBEAT_FENCE_KEEP_VMS_RUNNING
+        = new Property<>("kvm.heartbeat.fence.keep.vms.running", false);
+
+    /**
+     * Whether the {@code restart-agent} and {@code log-only} fence actions also stop system VMs (virtual routers,
+     * console proxy, secondary storage and internal LB VMs, recognised by their {@code r-}, {@code v-}, {@code s-} and
+     * {@code b-} instance names). When true every VM on the host is stopped. When false only user VMs are stopped;
+     * system VMs keep running and do not trigger the {@code hard-reboot} fallback. Risk of false: if the management
+     * server declares the host Down it restarts the system VMs on another host, so a virtual router could run twice
+     * with the same IP and MAC addresses. Ignored when {@link #KVM_HEARTBEAT_FENCE_KEEP_VMS_RUNNING} is true. No
+     * effect on {@code hard-reboot} and {@code graceful-reboot}.
+     * Read by the heartbeat shell scripts directly from agent.properties.<br>
+     * Data type: Boolean.<br>
+     * Default value: <code>true</code>
+     */
+    public static final Property<Boolean> KVM_HEARTBEAT_FENCE_INCLUDE_SYSTEM_VMS
+        = new Property<>("kvm.heartbeat.fence.include.system.vms", true);
+
+    /**
+     * Seconds the {@code restart-agent} and {@code log-only} fence actions may spend stopping VMs before the host is
+     * hard-rebooted instead. Before stopping any VM the fence arms a detached deadman that keeps running even if the
+     * agent kills the heartbeat script when {@link #HEARTBEAT_UPDATE_TIMEOUT} runs out (stopping a VM can block for a
+     * long time on hung storage). If the VMs are not all confirmed stopped within this budget, the deadman
+     * hard-reboots the host. Each virsh call is also limited to 10 seconds, or this value if lower, when coreutils
+     * {@code timeout} is installed. Keep it below {@link #HEARTBEAT_UPDATE_TIMEOUT}. A value that is not a positive
+     * integer falls back to the default. No effect on {@code hard-reboot} and {@code graceful-reboot}, or when
+     * {@link #KVM_HEARTBEAT_FENCE_KEEP_VMS_RUNNING} is true.<br>
+     * Read by the heartbeat shell scripts directly from agent.properties.<br>
+     * Data type: Integer.<br>
+     * Default value: <code>30</code>
+     */
+    public static final Property<Integer> KVM_HEARTBEAT_FENCE_STOP_VMS_TIMEOUT
+        = new Property<>("kvm.heartbeat.fence.stop.vms.timeout", 30);
+
+    /**
+     * Loop guard for the {@code restart-agent} fence action, in seconds. While storage keeps failing, the restarted
+     * agent runs the heartbeat again, it fails again and {@code restart-agent} would restart the agent again, over and
+     * over. Each {@code restart-agent} fence records its time under /run (kept across agent restarts, cleared by a
+     * reboot); if {@code restart-agent} already fired less than this many seconds ago, the fence hard-reboots the host
+     * instead. 0 turns the guard off. A value that is not a whole number of seconds falls back to the default. No
+     * effect on {@code hard-reboot}, {@code graceful-reboot} and {@code log-only}.<br>
+     * Read by the heartbeat shell scripts directly from agent.properties.<br>
+     * Data type: Integer.<br>
+     * Default value: <code>600</code>
+     */
+    public static final Property<Integer> KVM_HEARTBEAT_FENCE_RESTART_AGENT_COOLDOWN
+        = new Property<>("kvm.heartbeat.fence.restart.agent.cooldown", 600);
 
     /**
      * Enables manually setting CPU's topology on KVM's VM. <br>
@@ -809,6 +923,43 @@ public class AgentProperties{
     public static final Property<String> CONVERT_ENV_VIRTV2V_TMPDIR = new Property<>("convert.instance.env.virtv2v.tmpdir", null, String.class);
 
     /**
+     * Path to the VDDK library directory on the KVM conversion host, used when converting VMs from VMware to KVM via VDDK.
+     * This directory is passed to virt-v2v as <code>-io vddk-libdir=&lt;path&gt;</code>.
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> VDDK_LIB_DIR = new Property<>("vddk.lib.dir", null, String.class);
+
+    /**
+     * Ordered list of VDDK transports for virt-v2v, passed as <code>-io vddk-transports=&lt;value&gt;</code>.
+     * Example: <code>nbd:nbdssl</code>.
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> VDDK_TRANSPORTS = new Property<>("vddk.transports", null, String.class);
+
+    /**
+     * NBD-transport compression used between the VDDK and the VMware server for the
+     * agent-driven nbdkit full-disk copies (cold direct import and CBT initial full
+     * sync). Passed to the nbdkit vddk plugin as <code>compression=&lt;value&gt;</code>.
+     * Valid values: <code>none</code>, <code>zlib</code>, <code>fastlz</code>,
+     * <code>skipz</code> (nbdkit &ge; 1.24, vSphere &ge; 6.5). <code>fastlz</code>
+     * compresses both zero regions and real data at low CPU cost; <code>skipz</code>
+     * only elides zero blocks. Does not affect the staged virt-v2v conversion path.
+     * Data type: String.<br>
+     * Default value: <code>fastlz</code>
+     */
+    public static final Property<String> VDDK_NBD_COMPRESSION = new Property<>("vddk.nbd.compression", "fastlz", String.class);
+
+    /**
+     * vCenter TLS certificate thumbprint used by virt-v2v VDDK mode, passed as <code>-io vddk-thumbprint=&lt;value&gt;</code>.
+     * If unset, the KVM host computes it at runtime from the vCenter endpoint.
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> VDDK_THUMBPRINT = new Property<>("vddk.thumbprint", null, String.class);
+
+    /**
      * BGP controll CIDR
      * Data type: String.<br>
      * Default value: <code>169.254.0.0/16</code>
@@ -885,6 +1036,38 @@ public class AgentProperties{
      */
     public static final Property<Boolean> CREATE_FULL_CLONE = new Property<>("create.full.clone", false);
 
+    /**
+     * Time, in seconds, to wait before retrying to rebase during the incremental snapshot process.
+     * */
+    public static final Property<Integer> INCREMENTAL_SNAPSHOT_RETRY_REBASE_WAIT = new Property<>("incremental.snapshot.retry.rebase.wait", 60);
+
+    /**
+     * When set to <code>true</code>, executes <code>modifymacip.sh</code> (resolved via the
+     * network scripts directory) on VM NIC plug (VM start) and unplug (VM stop) to manage static
+     * ARP/NDP entries and host routes for VM interfaces.<br>
+     * The script is invoked with:<br>
+     * &nbsp;&nbsp;add:    <code>-o add -b &lt;bridge&gt; -m &lt;mac&gt; [-4 &lt;ipv4&gt;] [-6 &lt;ipv6&gt;]</code><br>
+     * &nbsp;&nbsp;delete: <code>-o delete -b &lt;bridge&gt; -m &lt;mac&gt;</code><br>
+     * A bundled reference implementation is available at
+     * <code>scripts/vm/network/vnet/modifymacip.sh</code>.<br>
+     * Set to <code>false</code> or leave unset to disable this feature.<br>
+     * Data type: Boolean.<br>
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> VM_NETWORK_MACIP_STATIC = new Property<>("vm.network.macip.static", false, Boolean.class);
+
+
+    /**
+     * Maximum number of backup validation jobs that can be executed at the same time. Values lower than 0 remove the limit, meaning that as many validations as possible will be done at
+     * the same time.
+     */
+    public static final Property<Integer> BACKUP_VALIDATION_MAX_CONCURRENT_OPERATIONS_PER_HOST = new Property<>("backup.validation.max.concurrent.operations.per.host", null, Integer.class);
+
+    /**
+     * Maximum number of backup compression jobs that can be executed at the same time. Values lower than 0 remove the limit, meaning that as many compressions as possible will be
+     * done at the same time.
+     */
+    public static final Property<Integer> BACKUP_COMPRESSION_MAX_CONCURRENT_OPERATIONS_PER_HOST = new Property<>("backup.compression.max.concurrent.operations.per.host", null, Integer.class);
 
     public static class Property <T>{
         private String name;

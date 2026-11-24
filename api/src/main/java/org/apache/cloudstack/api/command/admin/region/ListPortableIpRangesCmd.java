@@ -32,7 +32,7 @@ import org.apache.cloudstack.region.PortableIpRange;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "listPortableIpRanges", description = "list portable IP ranges", responseObject = PortableIpRangeResponse.class,
+@APICommand(name = "listPortableIpRanges", description = "List portable IP ranges", responseObject = PortableIpRangeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPortableIpRangesCmd extends BaseListCmd {
 

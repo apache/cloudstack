@@ -213,7 +213,7 @@ export default {
           this.$emit('refresh-data')
           this.$notification.success({
             message: 'Import Role',
-            description: 'Sucessfully imported role ' + params.name
+            description: 'Successfully imported role ' + params.name
           })
         }
         this.closeAction()

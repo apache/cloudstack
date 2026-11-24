@@ -62,7 +62,6 @@ public class Upgrade302to40 extends Upgrade30xBase {
 
     @Override
     public void performDataMigration(Connection conn) {
-        //updateVmWareSystemVms(conn); This is not required as system template update is handled during 4.2 upgrade
         correctVRProviders(conn);
         correctMultiplePhysicaNetworkSetups(conn);
         addHostDetailsUniqueKey(conn);

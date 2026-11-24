@@ -167,7 +167,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
 
         LdapUser ldapUser = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null);
 
-        boolean result = ldapListUsersCmd.isACloudstackUser(ldapUser);
+        boolean result = ldapListUsersCmd.isACloudStackUser(ldapUser);
 
         assertTrue(result);
     }
@@ -183,7 +183,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
 
         LdapUser ldapUser = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null);
 
-        boolean result = ldapListUsersCmd.isACloudstackUser(ldapUser);
+        boolean result = ldapListUsersCmd.isACloudStackUser(ldapUser);
 
         assertFalse(result);
     }

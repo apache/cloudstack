@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.sql.DataSource;
@@ -56,14 +57,12 @@ import com.zaxxer.hikari.HikariDataSource;
 /**
  * Transaction abstracts away the Connection object in JDBC.  It allows the
  * following things that the Connection object does not.
- *
  *   1. Transaction can be started at an entry point and whether the DB
  *      actions should be auto-commit or not determined at that point.
  *   2. DB Connection is allocated only when it is needed.
  *   3. Code does not need to know if a transaction has been started or not.
  *      It just starts/ends a transaction and we resolve it correctly with
  *      the previous actions.
- *
  * Note that this class is not synchronous but it doesn't need to be because
  * it is stored with TLS and is one per thread.  Use appropriately.
  */
@@ -73,7 +72,7 @@ public class TransactionLegacy implements Closeable {
     protected Logger lockLogger = LogManager.getLogger(Transaction.class.getName() + "." + "Lock");
     protected static Logger CONN_LOGGER = LogManager.getLogger(Transaction.class.getName() + "." + "Connection");
 
-    private static final ThreadLocal<TransactionLegacy> tls = new ThreadLocal<TransactionLegacy>();
+    private static final ThreadLocal<TransactionLegacy> tls = new ThreadLocal<>();
     private static final String START_TXN = "start_txn";
     private static final String CURRENT_TXN = "current_txn";
     private static final String CREATE_TXN = "create_txn";
@@ -103,7 +102,7 @@ public class TransactionLegacy implements Closeable {
     private final LinkedList<StackElement> _stack;
     private long _id;
 
-    private final LinkedList<Pair<String, Long>> _lockTimes = new LinkedList<Pair<String, Long>>();
+    private final LinkedList<Pair<String, Long>> _lockTimes = new LinkedList<>();
 
     private String _name;
     private Connection _conn;
@@ -160,7 +159,7 @@ public class TransactionLegacy implements Closeable {
         TransactionLegacy txn = tls.get();
         if (txn == null) {
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Creating the transaction: " + name);
+                LOGGER.trace("Creating the transaction: {}", name);
             }
             txn = new TransactionLegacy(name, false, databaseId);
             tls.set(txn);
@@ -206,7 +205,7 @@ public class TransactionLegacy implements Closeable {
 
     public void registerLock(String sql) {
         if (_txn && lockLogger.isDebugEnabled()) {
-            Pair<String, Long> time = new Pair<String, Long>(sql, System.currentTimeMillis());
+            Pair<String, Long> time = new Pair<>(sql, System.currentTimeMillis());
             _lockTimes.add(time);
         }
     }
@@ -218,7 +217,7 @@ public class TransactionLegacy implements Closeable {
     public static Connection getStandaloneConnectionWithException() throws SQLException {
         Connection conn = s_ds.getConnection();
         if (CONN_LOGGER.isTraceEnabled()) {
-            CONN_LOGGER.trace("Retrieving a standalone connection: dbconn" + System.identityHashCode(conn));
+            CONN_LOGGER.trace("Retrieving a standalone connection: dbconn{}", System.identityHashCode(conn));
         }
         return conn;
     }
@@ -236,7 +235,7 @@ public class TransactionLegacy implements Closeable {
         try {
             Connection conn = s_usageDS.getConnection();
             if (CONN_LOGGER.isTraceEnabled()) {
-                CONN_LOGGER.trace("Retrieving a standalone connection for usage: dbconn" + System.identityHashCode(conn));
+                CONN_LOGGER.trace("Retrieving a standalone connection for usage: dbconn{}", System.identityHashCode(conn));
             }
             return conn;
         } catch (SQLException e) {
@@ -249,7 +248,7 @@ public class TransactionLegacy implements Closeable {
         try {
             Connection conn = s_simulatorDS.getConnection();
             if (CONN_LOGGER.isTraceEnabled()) {
-                CONN_LOGGER.trace("Retrieving a standalone connection for simulator: dbconn" + System.identityHashCode(conn));
+                CONN_LOGGER.trace("Retrieving a standalone connection for simulator: dbconn{}", System.identityHashCode(conn));
             }
             return conn;
         } catch (SQLException e) {
@@ -266,7 +265,7 @@ public class TransactionLegacy implements Closeable {
         Iterator<StackElement> it = _stack.descendingIterator();
         while (it.hasNext()) {
             StackElement element = it.next();
-            if (element.type == ATTACHMENT) {
+            if (Objects.equals(element.type, ATTACHMENT)) {
                 TransactionAttachment att = (TransactionAttachment)element.ref;
                 if (name.equals(att.getName())) {
                     it.remove();
@@ -308,7 +307,7 @@ public class TransactionLegacy implements Closeable {
         }
 
         // relax stack structure for several places that @DB required injection is not in place
-        LOGGER.warn("Non-standard stack context that Transaction context is manaully placed into the calling chain. Stack chain: " + sb);
+        LOGGER.warn("Non-standard stack context that Transaction context is manaully placed into the calling chain. Stack chain: {}", sb);
         return true;
     }
 
@@ -344,7 +343,7 @@ public class TransactionLegacy implements Closeable {
     private TransactionLegacy(final String name, final boolean forLocking, final short databaseId) {
         _name = name;
         _conn = null;
-        _stack = new LinkedList<StackElement>();
+        _stack = new LinkedList<>();
         _txn = false;
         _dbId = databaseId;
         _id = s_id.incrementAndGet();
@@ -372,7 +371,7 @@ public class TransactionLegacy implements Closeable {
         final StringBuilder str = new StringBuilder((_name != null ? _name : ""));
         str.append(" : ");
         for (final StackElement se : _stack) {
-            if (se.type == CURRENT_TXN) {
+            if (Objects.equals(se.type, CURRENT_TXN)) {
                 str.append(se.ref).append(", ");
             }
         }
@@ -406,7 +405,7 @@ public class TransactionLegacy implements Closeable {
     @Deprecated
     public void start() {
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("txn: start requested by: " + buildName());
+            LOGGER.trace("txn: start requested by: {}", buildName());
         }
 
         _stack.push(new StackElement(START_TXN, null));
@@ -434,7 +433,7 @@ public class TransactionLegacy implements Closeable {
         if (_stmt != null) {
             try {
                 if (stmtLogger.isTraceEnabled()) {
-                    stmtLogger.trace("Closing: " + _stmt.toString());
+                    stmtLogger.trace("Closing: {}", _stmt.toString());
                 }
                 try {
                     ResultSet rs = _stmt.getResultSet();
@@ -446,7 +445,7 @@ public class TransactionLegacy implements Closeable {
                 }
                 _stmt.close();
             } catch (final SQLException e) {
-                stmtLogger.trace("Unable to close statement: " + _stmt.toString());
+                stmtLogger.trace("Unable to close statement: {}", _stmt.toString());
             } finally {
                 _stmt = null;
             }
@@ -474,7 +473,7 @@ public class TransactionLegacy implements Closeable {
         final Connection conn = getConnection();
         final PreparedStatement pstmt = conn.prepareStatement(sql);
         if (stmtLogger.isTraceEnabled()) {
-            stmtLogger.trace("Preparing: " + sql);
+            stmtLogger.trace("Preparing: {}", sql);
         }
         return pstmt;
     }
@@ -494,7 +493,7 @@ public class TransactionLegacy implements Closeable {
         final Connection conn = getConnection();
         final PreparedStatement pstmt = conn.prepareStatement(sql, autoGeneratedKeys);
         if (stmtLogger.isTraceEnabled()) {
-            stmtLogger.trace("Preparing: " + sql);
+            stmtLogger.trace("Preparing: {}", sql);
         }
         closePreviousStatement();
         _stmt = pstmt;
@@ -516,7 +515,7 @@ public class TransactionLegacy implements Closeable {
         final Connection conn = getConnection();
         final PreparedStatement pstmt = conn.prepareStatement(sql, columnNames);
         if (stmtLogger.isTraceEnabled()) {
-            stmtLogger.trace("Preparing: " + sql);
+            stmtLogger.trace("Preparing: {}", sql);
         }
         closePreviousStatement();
         _stmt = pstmt;
@@ -537,7 +536,7 @@ public class TransactionLegacy implements Closeable {
         final Connection conn = getConnection();
         final PreparedStatement pstmt = conn.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
         if (stmtLogger.isTraceEnabled()) {
-            stmtLogger.trace("Preparing: " + sql);
+            stmtLogger.trace("Preparing: {}", sql);
         }
         closePreviousStatement();
         _stmt = pstmt;
@@ -546,7 +545,6 @@ public class TransactionLegacy implements Closeable {
 
     /**
      * Returns the db connection.
-     *
      * Note: that you can call getConnection() but beaware that
      * all prepare statements from the Connection are not garbage
      * collected!
@@ -595,8 +593,7 @@ public class TransactionLegacy implements Closeable {
             //
             _stack.push(new StackElement(CREATE_CONN, null));
             if (CONN_LOGGER.isTraceEnabled()) {
-                CONN_LOGGER.trace("Creating a DB connection with " + (_txn ? " txn: " : " no txn: ") + " for " + _dbId + ": dbconn" + System.identityHashCode(_conn) +
-                        ". Stack: " + buildName());
+                CONN_LOGGER.trace("Creating a DB connection with {} for {}: dbconn{}. Stack: {}", _txn ? " txn: " : " no txn: ", _dbId, System.identityHashCode(_conn), buildName());
             }
         } else {
             LOGGER.trace("conn: Using existing DB connection");
@@ -615,33 +612,33 @@ public class TransactionLegacy implements Closeable {
     }
 
     protected boolean takeOver(final String name, final boolean create) {
-        if (_stack.size() != 0) {
+        if (!_stack.isEmpty()) {
             if (!create) {
                 // If it is not a create transaction, then let's just use the current one.
                 if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("Using current transaction: " + toString());
+                    LOGGER.trace("Using current transaction: {}", this);
                 }
                 mark(name);
                 return false;
             }
 
             final StackElement se = _stack.getFirst();
-            if (se.type == CREATE_TXN) {
+            if (Objects.equals(se.type, CREATE_TXN)) {
                 // This create is called inside of another create.  Which is ok?
                 // We will let that create be responsible for cleaning up.
                 if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("Create using current transaction: " + toString());
+                    LOGGER.trace("Create using current transaction: {}", this);
                 }
                 mark(name);
                 return false;
             }
 
-            LOGGER.warn("Encountered a transaction that has leaked.  Cleaning up. " + toString());
+            LOGGER.warn("Encountered a transaction that has leaked.  Cleaning up. {}", this);
             cleanup();
         }
 
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Took over the transaction: " + name);
+            LOGGER.trace("Took over the transaction: {}", name);
         }
         _stack.push(new StackElement(create ? CREATE_TXN : CURRENT_TXN, name));
         _name = name;
@@ -671,7 +668,7 @@ public class TransactionLegacy implements Closeable {
     public void close() {
         removeUpTo(CURRENT_TXN, null);
 
-        if (_stack.size() == 0) {
+        if (_stack.isEmpty()) {
             LOGGER.trace("Transaction is done");
             cleanup();
         }
@@ -687,7 +684,7 @@ public class TransactionLegacy implements Closeable {
     public boolean close(final String name) {
         if (_name == null) {    // Already cleaned up.
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Already cleaned up." + buildName());
+                LOGGER.trace("Already cleaned up.{}", buildName());
             }
             return true;
         }
@@ -698,7 +695,7 @@ public class TransactionLegacy implements Closeable {
         }
 
         if (LOGGER.isDebugEnabled() && _stack.size() > 2) {
-            LOGGER.debug("Transaction is not closed properly: " + toString() + ".  Called by " + buildName());
+            LOGGER.debug("Transaction is not closed properly: {}.  Called by {}", this, buildName());
         }
 
         cleanup();
@@ -714,7 +711,7 @@ public class TransactionLegacy implements Closeable {
     protected void clearLockTimes() {
         if (lockLogger.isDebugEnabled()) {
             for (Pair<String, Long> time : _lockTimes) {
-                lockLogger.trace("SQL " + time.first() + " took " + (System.currentTimeMillis() - time.second()));
+                lockLogger.trace("SQL {} took {}", time.first(), System.currentTimeMillis() - time.second());
             }
             _lockTimes.clear();
         }
@@ -722,14 +719,14 @@ public class TransactionLegacy implements Closeable {
 
     public boolean commit() {
         if (!_txn) {
-            LOGGER.warn("txn: Commit called when it is not a transaction: " + buildName());
+            LOGGER.warn("txn: Commit called when it is not a transaction: {}", buildName());
             return false;
         }
 
         Iterator<StackElement> it = _stack.iterator();
         while (it.hasNext()) {
             StackElement st = it.next();
-            if (st.type == START_TXN) {
+            if (Objects.equals(st.type, START_TXN)) {
                 it.remove();
                 break;
             }
@@ -737,7 +734,7 @@ public class TransactionLegacy implements Closeable {
 
         if (hasTxnInStack()) {
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("txn: Not committing because transaction started elsewhere: " + buildName() + " / " + toString());
+                LOGGER.trace("txn: Not committing because transaction started elsewhere: {} / {}", buildName(), this);
             }
             return false;
         }
@@ -746,7 +743,7 @@ public class TransactionLegacy implements Closeable {
         try {
             if (_conn != null) {
                 _conn.commit();
-                LOGGER.trace("txn: DB Changes committed. Time = " + (System.currentTimeMillis() - _txnTime));
+                LOGGER.trace("txn: DB Changes committed. Time = {}", System.currentTimeMillis() - _txnTime);
                 clearLockTimes();
                 closeConnection();
             }
@@ -773,7 +770,7 @@ public class TransactionLegacy implements Closeable {
             // we should only close db connection when it is not user managed
             if (_dbId != CONNECTED_DB) {
                 if (CONN_LOGGER.isTraceEnabled()) {
-                    CONN_LOGGER.trace("Closing DB connection: dbconn" + System.identityHashCode(_conn));
+                    CONN_LOGGER.trace("Closing DB connection: dbconn{}", System.identityHashCode(_conn));
                 }
                 _conn.close();
                 _conn = null;
@@ -797,13 +794,13 @@ public class TransactionLegacy implements Closeable {
                     break;
                 }
 
-                if (item.type == CURRENT_TXN) {
+                if (Objects.equals(item.type, CURRENT_TXN)) {
                     if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("Releasing the current txn: " + (item.ref != null ? item.ref : ""));
+                        LOGGER.trace("Releasing the current txn: {}", item.ref != null ? item.ref : "");
                     }
-                } else if (item.type == CREATE_CONN) {
+                } else if (Objects.equals(item.type, CREATE_CONN)) {
                     closeConnection();
-                } else if (item.type == START_TXN) {
+                } else if (Objects.equals(item.type, START_TXN)) {
                     if (item.ref == null) {
                         rollback = true;
                     } else {
@@ -814,10 +811,10 @@ public class TransactionLegacy implements Closeable {
                             LOGGER.warn("Unable to rollback Txn.", e);
                         }
                     }
-                } else if (item.type == STATEMENT) {
+                } else if (Objects.equals(item.type, STATEMENT)) {
                     try {
                         if (stmtLogger.isTraceEnabled()) {
-                            stmtLogger.trace("Closing: " + ref.toString());
+                            stmtLogger.trace("Closing: {}", ref.toString());
                         }
                         Statement stmt = (Statement)ref;
                         try {
@@ -830,17 +827,17 @@ public class TransactionLegacy implements Closeable {
                         }
                         stmt.close();
                     } catch (final SQLException e) {
-                        stmtLogger.trace("Unable to close statement: " + item);
+                        stmtLogger.trace("Unable to close statement: {}", item);
                     }
-                } else if (item.type == ATTACHMENT) {
+                } else if (Objects.equals(item.type, ATTACHMENT)) {
                     TransactionAttachment att = (TransactionAttachment)item.ref;
                     if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("Cleaning up " + att.getName());
+                        LOGGER.trace("Cleaning up {}", att.getName());
                     }
                     att.cleanup();
                 }
             } catch (Exception e) {
-                LOGGER.error("Unable to clean up " + item, e);
+                LOGGER.error("Unable to clean up {}", item, e);
             }
         }
 
@@ -853,7 +850,7 @@ public class TransactionLegacy implements Closeable {
         closePreviousStatement();
         if (!_txn) {
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Rollback called for " + _name + " when there's no transaction: " + buildName());
+                LOGGER.trace("Rollback called for {} when there's no transaction: {}", _name, buildName());
             }
             return;
         }
@@ -862,7 +859,7 @@ public class TransactionLegacy implements Closeable {
         try {
             if (_conn != null) {
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Rolling back the transaction: Time = " + (System.currentTimeMillis() - _txnTime) + " Name =  " + _name + "; called by " + buildName());
+                    LOGGER.debug("Rolling back the transaction: Time = {} Name =  {}; called by {}", System.currentTimeMillis() - _txnTime, _name, buildName());
                 }
                 _conn.rollback();
             }
@@ -879,7 +876,7 @@ public class TransactionLegacy implements Closeable {
                 _conn.rollback(sp);
             }
         } catch (SQLException e) {
-            LOGGER.warn("Unable to rollback to savepoint " + sp);
+            LOGGER.warn("Unable to rollback to savepoint {}", sp);
         }
 
         if (!hasTxnInStack()) {
@@ -892,7 +889,7 @@ public class TransactionLegacy implements Closeable {
         Iterator<StackElement> it = _stack.iterator();
         while (it.hasNext()) {
             StackElement st = it.next();
-            if (st.type == START_TXN) {
+            if (Objects.equals(st.type, START_TXN)) {
                 if (st.ref == null) {
                     it.remove();
                 } else {
@@ -943,7 +940,7 @@ public class TransactionLegacy implements Closeable {
         Iterator<StackElement> it = _stack.iterator();
         while (it.hasNext()) {
             StackElement se = it.next();
-            if (se.type == START_TXN && se.ref == sp) {
+            if (Objects.equals(se.type, START_TXN) && se.ref == sp) {
                 return true;
             }
         }
@@ -960,7 +957,7 @@ public class TransactionLegacy implements Closeable {
         Iterator<StackElement> it = _stack.iterator();
         while (it.hasNext()) {
             StackElement se = it.next();
-            if (se.type == START_TXN) {
+            if (Objects.equals(se.type, START_TXN)) {
                 it.remove();
                 if (se.ref == sp) {
                     return;
@@ -993,7 +990,7 @@ public class TransactionLegacy implements Closeable {
 
     @Override
     protected void finalize() throws Throwable {
-        if (!(_conn == null && (_stack == null || _stack.size() == 0))) {
+        if (!(_conn == null && (_stack == null || _stack.isEmpty()))) {
             assert (false) : "Oh Alex oh alex...something is wrong with how we're doing this";
             LOGGER.error("Something went wrong that a transaction is orphaned before db connection is closed");
             cleanup();
@@ -1052,11 +1049,11 @@ public class TransactionLegacy implements Closeable {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static void initDataSource(Properties dbProps) {
         try {
-            if (dbProps.size() == 0)
+            if (dbProps.isEmpty())
                 return;
 
-            s_dbHAEnabled = Boolean.valueOf(dbProps.getProperty("db.ha.enabled"));
-            LOGGER.info("Is Data Base High Availiability enabled? Ans : " + s_dbHAEnabled);
+            s_dbHAEnabled = Boolean.parseBoolean(dbProps.getProperty("db.ha.enabled"));
+            LOGGER.info("Is Data Base High Availiability enabled? Ans : {}", s_dbHAEnabled);
             String loadBalanceStrategy = dbProps.getProperty("db.ha.loadBalanceStrategy");
             // FIXME:  If params are missing...default them????
             final Integer cloudMaxActive = parseNumber(dbProps.getProperty("db.cloud.maxActive"), Integer.class);
@@ -1082,7 +1079,7 @@ public class TransactionLegacy implements Closeable {
             } else if (cloudIsolationLevel.equalsIgnoreCase("readuncommitted")) {
                 isolationLevel = Connection.TRANSACTION_READ_UNCOMMITTED;
             } else {
-                LOGGER.warn("Unknown isolation level " + cloudIsolationLevel + ".  Using read uncommitted");
+                LOGGER.warn("Unknown isolation level {}.  Using read uncommitted", cloudIsolationLevel);
             }
 
             final boolean cloudTestOnBorrow = Boolean.parseBoolean(dbProps.getProperty("db.cloud.testOnBorrow"));
@@ -1190,16 +1187,16 @@ public class TransactionLegacy implements Closeable {
             driver = dbProps.getProperty(String.format("db.%s.driver", schema));
             connectionUri = getPropertiesAndBuildConnectionUri(dbProps, loadBalanceStrategy, driver, useSSL, schema);
         } else {
-            LOGGER.warn(String.format("db.%s.uri was set, ignoring the following properties for schema %s of db.properties: [host, port, name, driver, autoReconnect, url.params,"
+            LOGGER.warn("db.{}.uri was set, ignoring the following properties for schema {} of db.properties: [host, port, name, driver, autoReconnect, url.params,"
                     + " replicas, ha.loadBalanceStrategy, ha.enable, failOverReadOnly, reconnectAtTxEnd, autoReconnectForPools, secondsBeforeRetrySource, queriesBeforeRetrySource, "
-                    + "initialTimeout].", schema, schema));
+                    + "initialTimeout].", schema, schema);
 
             String[] splitUri = propertyUri.split(":");
             driver = String.format("%s:%s", splitUri[0], splitUri[1]);
 
             connectionUri = propertyUri;
         }
-        LOGGER.info(String.format("Using the following URI to connect to %s database [%s].", schema, connectionUri));
+        LOGGER.info("Using the following URI to connect to {} database [{}].", schema, connectionUri);
         return new Pair<>(connectionUri, driver);
     }
 
@@ -1215,7 +1212,7 @@ public class TransactionLegacy implements Closeable {
         if (s_dbHAEnabled) {
             dbHaParams = getDBHAParams(schema, dbProps);
             replicas = dbProps.getProperty(String.format("db.%s.replicas", schema));
-            LOGGER.info(String.format("The replicas configured for %s data base are %s.", schema, replicas));
+            LOGGER.info("The replicas configured for {} data base are {}.", schema, replicas);
         }
 
         return buildConnectionUri(loadBalanceStrategy, driver, useSSL, host, replicas, port, dbName, autoReconnect, urlParams, dbHaParams);
@@ -1322,8 +1319,7 @@ public class TransactionLegacy implements Closeable {
         config.addDataSourceProperty("elideSetAutoCommits", "true");
         config.addDataSourceProperty("maintainTimeStats", "false");
 
-        HikariDataSource dataSource = new HikariDataSource(config);
-        return dataSource;
+        return new HikariDataSource(config);
     }
 
     private static DataSource createDbcpDataSource(String uri, String username, String password,
@@ -1411,19 +1407,19 @@ public class TransactionLegacy implements Closeable {
 
     private static String getDBHAParams(String dbName, Properties dbProps) {
         StringBuilder sb = new StringBuilder();
-        sb.append("failOverReadOnly=" + dbProps.getProperty("db." + dbName + ".failOverReadOnly"));
-        sb.append("&").append("reconnectAtTxEnd=" + dbProps.getProperty("db." + dbName + ".reconnectAtTxEnd"));
-        sb.append("&").append("autoReconnectForPools=" + dbProps.getProperty("db." + dbName + ".autoReconnectForPools"));
-        sb.append("&").append("secondsBeforeRetrySource=" + dbProps.getProperty("db." + dbName + ".secondsBeforeRetrySource"));
-        sb.append("&").append("queriesBeforeRetrySource=" + dbProps.getProperty("db." + dbName + ".queriesBeforeRetrySource"));
-        sb.append("&").append("initialTimeout=" + dbProps.getProperty("db." + dbName + ".initialTimeout"));
+        sb.append("failOverReadOnly=").append(dbProps.getProperty("db." + dbName + ".failOverReadOnly"));
+        sb.append("&").append("reconnectAtTxEnd=").append(dbProps.getProperty("db." + dbName + ".reconnectAtTxEnd"));
+        sb.append("&").append("autoReconnectForPools=").append(dbProps.getProperty("db." + dbName + ".autoReconnectForPools"));
+        sb.append("&").append("secondsBeforeRetrySource=").append(dbProps.getProperty("db." + dbName + ".secondsBeforeRetrySource"));
+        sb.append("&").append("queriesBeforeRetrySource=").append(dbProps.getProperty("db." + dbName + ".queriesBeforeRetrySource"));
+        sb.append("&").append("initialTimeout=").append(dbProps.getProperty("db." + dbName + ".initialTimeout"));
         return sb.toString();
     }
 
     /**
      * Used for unit testing primarily
      *
-     * @param conn
+     * @param conn connection to use
      */
     protected void setConnection(Connection conn) {
         _conn = conn;
@@ -1433,7 +1429,7 @@ public class TransactionLegacy implements Closeable {
      * Receives a list of {@link PreparedStatement} and quietly closes all of them, which
      * triggers also closing their dependent objects, like a {@link ResultSet}
      *
-     * @param pstmt2Close
+     * @param pstmt2Close list of PreparedStatement to close
      */
     public static void closePstmts(List<PreparedStatement> pstmt2Close) {
         for (PreparedStatement pstmt : pstmt2Close) {

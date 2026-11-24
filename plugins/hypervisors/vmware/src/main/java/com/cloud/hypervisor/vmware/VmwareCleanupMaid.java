@@ -65,15 +65,6 @@ public class VmwareCleanupMaid {
         _vmName = vmName;
     }
 
-//    @Override
-//    public int cleanup(CheckPointManager checkPointMgr) {
-//
-//        // save a check-point in case we crash at current run so that we won't lose it
-//        _checkPoint = checkPointMgr.pushCheckPoint(new VmwareCleanupMaid(_vCenterAddress, _dcMorValue, _vmName));
-//        addLeftOverVM(this);
-//        return 0;
-//    }
-
     public String getCleanupProcedure() {
         return null;
     }

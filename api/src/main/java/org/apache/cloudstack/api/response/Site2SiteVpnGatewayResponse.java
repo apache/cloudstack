@@ -31,39 +31,39 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class Site2SiteVpnGatewayResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the vpn gateway ID")
+    @Param(description = "The VPN gateway ID")
     private String id;
 
     @SerializedName(ApiConstants.PUBLIC_IP)
-    @Param(description = "the public IP address")
+    @Param(description = "The public IP address")
     private String ip;
 
     @SerializedName(ApiConstants.VPC_ID)
-    @Param(description = "the vpc id of this gateway")
+    @Param(description = "The VPC id of this gateway")
     private String vpcId;
 
     @SerializedName(ApiConstants.VPC_NAME)
-    @Param(description = "the vpc name of this gateway", since = "4.13.2")
+    @Param(description = "The VPC name of this gateway", since = "4.13.2")
     private String vpcName;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the owner")
+    @Param(description = "The owner")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id")
+    @Param(description = "The project id")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name")
+    @Param(description = "The project name")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain id of the owner")
+    @Param(description = "The domain id of the owner")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the owner")
+    @Param(description = "The domain name of the owner")
     private String domain;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
@@ -71,11 +71,11 @@ public class Site2SiteVpnGatewayResponse extends BaseResponse implements Control
     private String domainPath;
 
     @SerializedName(ApiConstants.REMOVED)
-    @Param(description = "the date and time the host was removed")
+    @Param(description = "The date and time the host was removed")
     private Date removed;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is vpn gateway for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    @Param(description = "Is VPN gateway for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     public void setId(String id) {

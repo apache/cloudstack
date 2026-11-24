@@ -45,7 +45,7 @@ public class DeleteIpv6FirewallRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the IPv6 firewall rule")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "The ID of the IPv6 firewall rule")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -66,7 +66,7 @@ public class DeleteIpv6FirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting IPv6 firewall rule ID=" + id);
+        return "Deleting IPv6 firewall rule with ID:" + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -81,7 +81,7 @@ public class DeleteIpv6FirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("IPv6 firewall rule ID: " + id);
+        CallContext.current().setEventDetails("IPv6 firewall rule ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = ipv6Service.revokeIpv6FirewallRule(id);
 
         if (result) {

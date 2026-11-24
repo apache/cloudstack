@@ -18,6 +18,19 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { isZoneCreated } from '@/utils/zone'
+import { getAPI, postAPI, getBaseUrl } from '@/api'
+import { getLatestKubernetesIsoParams } from '@/utils/acsrepo'
+import kubernetesIcon from '@/assets/icons/kubernetes.svg?inline'
+import { escapeHtml } from '@/utils/util'
+
+const attachedIsoCount = (record) => (record.isos && record.isos.length) || (record.isoid ? 1 : 0)
+// Server pre-computes the effective cap (cluster-scoped vm.iso.max.count clamped to the
+// hypervisor's own limit). Fall back to the hypervisor floor for older servers.
+const isoMaxCount = (record) => record.isomaxcount != null
+  ? record.isomaxcount
+  : (record.hypervisor === 'KVM' ? 2 : 1)
+const isoActionAvailable = (record) =>
+  record.hypervisor !== 'External' && ['Running', 'Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm'
 
 export default {
   name: 'compute',
@@ -190,6 +203,7 @@ export default {
           api: 'createVMSnapshot',
           icon: 'camera-outlined',
           label: 'label.action.vmsnapshot.create',
+          message: 'message.action.vmsnapshot.create',
           docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
           dataView: true,
           args: (record, store) => {
@@ -290,13 +304,28 @@ export default {
           }
         },
         {
+          api: 'finishBackupChain',
+          icon: 'vertical-align-middle-outlined',
+          label: 'label.backup.chain.finish',
+          dataView: true,
+          args: ['virtualmachineid'],
+          show: (record) => {
+            return ['Running', 'Stopped', 'BackupError'].includes(record.state) && record.backupofferingid && record.backupprovider === 'kboss'
+          },
+          mapping: {
+            virtualmachineid: {
+              value: (record, params) => { return record.id }
+            }
+          }
+        },
+        {
           api: 'attachIso',
           icon: 'paper-clip-outlined',
           label: 'label.action.attach.iso',
           docHelp: 'adminguide/templates.html#attaching-an-iso-to-a-vm',
           dataView: true,
           popup: true,
-          show: (record) => { return record.hypervisor !== 'External' && ['Running', 'Stopped'].includes(record.state) && !record.isoid && record.vmtype !== 'sharedfsvm' },
+          show: (record) => isoActionAvailable(record) && attachedIsoCount(record) < isoMaxCount(record),
           disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AttachIso.vue')))
         },
@@ -304,22 +333,11 @@ export default {
           api: 'detachIso',
           icon: 'link-outlined',
           label: 'label.action.detach.iso',
-          message: 'message.detach.iso.confirm',
           dataView: true,
-          args: (record, store) => {
-            var args = ['virtualmachineid']
-            if (record && record.hypervisor && record.hypervisor === 'VMware') {
-              args.push('forced')
-            }
-            return args
-          },
-          show: (record) => { return record.hypervisor !== 'External' && ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid && record.vmtype !== 'sharedfsvm' },
+          popup: true,
+          show: (record) => isoActionAvailable(record) && attachedIsoCount(record) > 0,
           disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
-          mapping: {
-            virtualmachineid: {
-              value: (record, params) => { return record.id }
-            }
-          }
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/DetachIso.vue')))
         },
         {
           api: 'updateVMAffinityGroup',
@@ -328,7 +346,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#change-affinity-group-for-an-existing-vm',
           dataView: true,
           args: ['affinitygroupids'],
-          show: (record) => { return record.hypervisor !== 'External' && ['Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm' },
+          show: (record) => { return record.hypervisor !== 'External' && ['Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm' && record.vmtype !== 'cksnode' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ChangeAffinity'))),
           popup: true
         },
@@ -376,7 +394,7 @@ export default {
           show: (record) => { return record.hypervisor !== 'External' && ['Stopped'].includes(record.state) && record.passwordenabled },
           response: (result) => {
             return {
-              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null,
+              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${escapeHtml(result.virtualmachine.displayname)}</b> is <b>${result.virtualmachine.password}</b>` : null,
               copybuttontext: result.virtualmachine.password ? 'label.copy.password' : null,
               copytext: result.virtualmachine.password ? result.virtualmachine.password : null
             }
@@ -533,7 +551,12 @@ export default {
           api: 'deleteVMSnapshot',
           icon: 'delete-outlined',
           label: 'label.action.vmsnapshot.delete',
-          message: 'message.action.vmsnapshot.delete',
+          message: (record) => {
+            if (record.hypervisor !== 'KVM' || record.type === 'Disk') {
+              return 'message.action.vmsnapshot.disk-only.delete'
+            }
+            return 'message.action.vmsnapshot.delete'
+          },
           dataView: true,
           show: (record) => { return ['Ready', 'Expunging', 'Error'].includes(record.state) },
           args: ['vmsnapshotid'],
@@ -551,7 +574,7 @@ export default {
     {
       name: 'kubernetes',
       title: 'label.kubernetes',
-      icon: ['fa-solid', 'fa-dharmachakra'],
+      icon: kubernetesIcon,
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
       searchFilters: ['name', 'domainid', 'account', 'state'],
       permission: ['listKubernetesClusters'],
@@ -573,7 +596,7 @@ export default {
         const filters = ['cloud.managed', 'external.managed']
         return filters
       },
-      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'csienabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'etcdnodes', 'cpunumber', 'memory', 'keypair', 'cniconfigname', 'associatednetworkname', 'account', 'domain', 'zonename', 'clustertype', 'created'],
+      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'csienabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'controlaffinitygroupnames', 'etcdnodes', 'etcdaffinitygroupnames', 'workeraffinitygroupnames', 'cpunumber', 'memory', 'keypair', 'cniconfigname', 'associatednetworkname', 'account', 'domain', 'zonename', 'clustertype', 'created'],
       tabs: [
         {
           name: 'k8s',
@@ -581,6 +604,182 @@ export default {
         }
       ],
       resourceType: 'KubernetesCluster',
+      advisories: [
+        {
+          id: 'cks-min-offering',
+          severity: 'warning',
+          message: 'message.advisory.cks.min.offering',
+          docsHelp: 'plugins/cloudstack-kubernetes-service.html',
+          dismissOnConditionFail: true,
+          condition: async (store) => {
+            if (!('listServiceOfferings' in store.getters.apis)) {
+              return false
+            }
+            const params = {
+              cpunumber: 2,
+              memory: 2048,
+              issystem: false
+            }
+            try {
+              const json = await getAPI('listServiceOfferings', params)
+              const offerings = json?.listserviceofferingsresponse?.serviceoffering || []
+              return !offerings.some(o => !o.iscustomized)
+            } catch (error) {}
+            return false
+          },
+          actions: [
+            {
+              primary: true,
+              label: 'label.add.minimum.required.compute.offering',
+              loadingLabel: 'message.adding.minimum.required.compute.offering.kubernetes.cluster',
+              show: (store) => { return ('createServiceOffering' in store.getters.apis) },
+              run: async () => {
+                const params = {
+                  name: 'CKS Instance',
+                  cpunumber: 2,
+                  cpuspeed: 1000,
+                  memory: 2048,
+                  iscustomized: false,
+                  issystem: false
+                }
+                try {
+                  const json = await postAPI('createServiceOffering', params)
+                  if (json?.createserviceofferingresponse?.serviceoffering) {
+                    return true
+                  }
+                } catch (error) {}
+                return false
+              },
+              successMessage: 'message.added.minimum.required.compute.offering.kubernetes.cluster',
+              errorMessage: 'message.add.minimum.required.compute.offering.kubernetes.cluster.failed'
+            },
+            {
+              label: 'label.go.to.compute.offerings',
+              show: (store) => { return ('listServiceOfferings' in store.getters.apis) },
+              run: (store, router) => {
+                router.push({ name: 'computeoffering' })
+                return false
+              }
+            }
+          ]
+        },
+        {
+          id: 'cks-version-check',
+          severity: 'warning',
+          message: 'message.advisory.cks.version.check',
+          docsHelp: 'plugins/cloudstack-kubernetes-service.html',
+          dismissOnConditionFail: true,
+          condition: async (store) => {
+            const api = 'listKubernetesSupportedVersions'
+            if (!(api in store.getters.apis)) {
+              return false
+            }
+            try {
+              const json = await getAPI(api, {})
+              const versions = json?.listkubernetessupportedversionsresponse?.kubernetessupportedversion || []
+              return versions.length === 0
+            } catch (error) {}
+            return false
+          },
+          actions: [
+            {
+              primary: true,
+              label: 'label.add.latest.kubernetes.iso',
+              loadingLabel: 'message.adding.latest.kubernetes.iso',
+              show: (store) => { return ('addKubernetesSupportedVersion' in store.getters.apis) },
+              run: async () => {
+                let arch = 'x86_64'
+                if ('listClusters' in store.getters.apis) {
+                  try {
+                    const json = await getAPI('listClusters', { allocationstate: 'Enabled', page: 1, pagesize: 1 })
+                    const cluster = json?.listclustersresponse?.cluster?.[0] || {}
+                    arch = cluster.architecture || 'x86_64'
+                  } catch (error) {}
+                }
+                const params = await getLatestKubernetesIsoParams(arch)
+                try {
+                  const json = await postAPI('addKubernetesSupportedVersion', params)
+                  if (json?.addkubernetessupportedversionresponse?.kubernetessupportedversion) {
+                    return true
+                  }
+                } catch (error) {}
+                return false
+              },
+              successMessage: 'message.added.latest.kubernetes.iso',
+              errorMessage: 'message.add.latest.kubernetes.iso.failed'
+            },
+            {
+              label: 'label.go.to.kubernetes.isos',
+              show: true,
+              run: (store, router) => {
+                router.push({ name: 'kubernetesiso' })
+                return false
+              }
+            }
+          ]
+        },
+        {
+          id: 'cks-endpoint-url',
+          severity: 'warning',
+          message: 'message.advisory.cks.endpoint.url.not.configured',
+          docsHelp: 'plugins/cloudstack-kubernetes-service.html',
+          dismissOnConditionFail: true,
+          condition: async (store) => {
+            if (!['Admin'].includes(store.getters.userInfo.roletype)) {
+              return false
+            }
+            let url = ''
+            const baseUrl = getBaseUrl()
+            if (baseUrl.startsWith('/')) {
+              url = window.location.origin + baseUrl
+            }
+            if (!url || url.startsWith('http://localhost')) {
+              return false
+            }
+            const params = {
+              name: 'endpoint.url'
+            }
+            const json = await getAPI('listConfigurations', params)
+            const configuration = json?.listconfigurationsresponse?.configuration?.[0] || {}
+            return !configuration.value || configuration.value.startsWith('http://localhost')
+          },
+          actions: [
+            {
+              primary: true,
+              label: 'label.fix.global.setting',
+              show: (store) => { return ('updateConfiguration' in store.getters.apis) },
+              run: async () => {
+                let url = ''
+                const baseUrl = getBaseUrl()
+                if (baseUrl.startsWith('/')) {
+                  url = window.location.origin + baseUrl
+                }
+                const params = {
+                  name: 'endpoint.url',
+                  value: url
+                }
+                try {
+                  const json = await postAPI('updateConfiguration', params)
+                  if (json?.updateconfigurationresponse?.configuration) {
+                    return true
+                  }
+                } catch (error) {}
+                return false
+              },
+              successMessage: 'message.global.setting.updated',
+              errorMessage: 'message.global.setting.update.failed'
+            },
+            {
+              label: 'label.go.to.global.settings',
+              show: (store) => { return ('listConfigurations' in store.getters.apis) },
+              run: (store, router) => {
+                router.push({ name: 'globalsetting' })
+                return false
+              }
+            }
+          ]
+        }
+      ],
       actions: [
         {
           api: 'createKubernetesCluster',
@@ -618,7 +817,7 @@ export default {
         },
         {
           api: 'scaleKubernetesCluster',
-          icon: 'swap-outlined',
+          icon: 'arrows-alt-outlined',
           label: 'label.kubernetes.cluster.scale',
           message: 'message.kubernetes.cluster.scale',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#scaling-kubernetes-cluster',
@@ -626,6 +825,15 @@ export default {
           show: (record) => { return ['Created', 'Running', 'Stopped'].includes(record.state) && record.clustertype === 'CloudManaged' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleKubernetesCluster.vue')))
+        },
+        {
+          api: 'updateKubernetesClusterAffinityGroups',
+          icon: 'swap-outlined',
+          label: 'label.change.affinity',
+          dataView: true,
+          show: (record) => { return ['Stopped'].includes(record.state) && record.clustertype === 'CloudManaged' },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ChangeKubernetesClusterAffinity.vue')))
         },
         {
           api: 'upgradeKubernetesCluster',
@@ -722,6 +930,12 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleDownPolicyTab.vue')))
         },
         {
+          name: 'schedules',
+          resourceType: 'AutoScaleVmGroup',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ResourceSchedules.vue'))),
+          show: () => { return 'listResourceSchedule' in store.getters.apis }
+        },
+        {
           name: 'events',
           resourceType: 'AutoScaleVmGroup',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
@@ -770,9 +984,9 @@ export default {
           dataView: true,
           args: (record, store) => {
             var args = ['name']
+            args.push('maxmembers')
+            args.push('minmembers')
             if (record.state === 'DISABLED') {
-              args.push('maxmembers')
-              args.push('minmembers')
               args.push('interval')
             }
             return args
@@ -844,6 +1058,99 @@ export default {
           icon: 'delete-outlined',
           label: 'label.delete.instance.group',
           message: 'message.action.delete.instance.group',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
+    },
+    {
+      name: 'instancebootgroup',
+      title: 'label.instance.boot.groups',
+      icon: 'ordered-list-outlined',
+      resourceType: 'InstanceBootGroup',
+      permission: ['listInstanceBootGroups'],
+      searchFilters: ['name', 'domainid', 'account'],
+      columns: (store) => {
+        var fields = ['name', 'description', 'account']
+        if (store.listAllProjects) {
+          fields.push('project')
+        }
+        fields.push('domain')
+        fields.push('created')
+        return fields
+      },
+      details: ['name', 'id', 'description', 'account', 'domain', 'created'],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'members',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/InstanceBootGroupMembersTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'InstanceBootGroup',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue')))
+        }
+      ],
+      actions: [
+        {
+          api: 'createInstanceBootGroup',
+          icon: 'plus-outlined',
+          label: 'label.add.instance.boot.group',
+          listView: true,
+          args: (record, store) => {
+            var fields = ['name', 'description']
+            if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
+              fields.push('domainid')
+              fields.push('account')
+            }
+            fields.push('readinessattempttimeoutseconds', 'readinessmaxretryattempts', 'readinessrebootonretry', 'readinessinitialdelayseconds')
+            return fields
+          }
+        },
+        {
+          api: 'updateInstanceBootGroup',
+          icon: 'edit-outlined',
+          label: 'label.update.instance.boot.group',
+          dataView: true,
+          args: ['name', 'description', 'readinessattempttimeoutseconds', 'readinessmaxretryattempts', 'readinessrebootonretry', 'readinessinitialdelayseconds']
+        },
+        {
+          api: 'startInstanceBootGroup',
+          icon: 'caret-right-outlined',
+          label: 'label.action.start.instance.boot.group',
+          message: 'message.action.start.instance.boot.group',
+          dataView: true,
+          popup: true
+        },
+        {
+          api: 'stopInstanceBootGroup',
+          icon: 'poweroff-outlined',
+          label: 'label.action.stop.instance.boot.group',
+          message: 'message.action.stop.instance.boot.group',
+          dataView: true,
+          popup: true,
+          args: ['forced']
+        },
+        {
+          api: 'rebootInstanceBootGroup',
+          icon: 'reload-outlined',
+          label: 'label.action.reboot.instance.boot.group',
+          message: 'message.action.reboot.instance.boot.group',
+          dataView: true,
+          popup: true,
+          args: ['forced']
+        },
+        {
+          api: 'deleteInstanceBootGroup',
+          icon: 'delete-outlined',
+          label: 'label.delete.instance.boot.group',
+          message: 'message.action.delete.instance.boot.group',
           dataView: true,
           groupAction: true,
           popup: true,
@@ -1146,12 +1453,8 @@ export default {
           label: 'label.add.affinity.group',
           docHelp: 'adminguide/virtual_machines.html#creating-a-new-affinity-group',
           listView: true,
-          args: ['name', 'description', 'type'],
-          mapping: {
-            type: {
-              options: ['host anti-affinity (Strict)', 'host affinity (Strict)', 'host anti-affinity (Non-Strict)', 'host affinity (Non-Strict)']
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/CreateAffinityGroup.vue')))
         },
         {
           api: 'deleteAffinityGroup',

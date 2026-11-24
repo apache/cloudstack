@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.iso;
 
 
-import com.cloud.dc.DataCenter;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -44,20 +43,20 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the ID of the ISO file")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "The ID of the ISO file")
     private Long id;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, length = 2048, description = "the URL to which the ISO would be extracted")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, length = 2048, description = "The URL to which the ISO would be extracted")
     private String url;
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
                required = false,
-               description = "the ID of the zone where the ISO is originally located")
+               description = "The ID of the zone where the ISO is originally located")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.MODE, type = CommandType.STRING, required = true, description = "the mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
+    @Parameter(name = ApiConstants.MODE, type = CommandType.STRING, required = true, description = "The mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
     private String mode;
 
     /////////////////////////////////////////////////////
@@ -102,15 +101,13 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        String isoId = this._uuidMgr.getUuid(VirtualMachineTemplate.class, getId());
-        String baseDescription = String.format("Extracting ISO: %s", isoId);
+        String description = "Extracting ISO: " +  getResourceUuid(ApiConstants.ID);
 
-        Long zoneId = getZoneId();
-        if (zoneId == null) {
-            return baseDescription;
+        if (getZoneId() == null) {
+            description += "from zone: " + getResourceUuid(ApiConstants.ZONE_ID);
         }
 
-        return String.format("%s from zone: %s", baseDescription, this._uuidMgr.getUuid(DataCenter.class, zoneId));
+        return description;
     }
 
     @Override

@@ -50,4 +50,6 @@ public @interface APICommand {
     RoleType[] authorized() default {};
 
     Class<?>[] entityType() default {};
+
+    String httpMethod() default "";
 }

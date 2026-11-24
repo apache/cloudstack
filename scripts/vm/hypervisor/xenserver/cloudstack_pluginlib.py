@@ -409,7 +409,7 @@ def create_tunnel(bridge, remote_ip, gre_key, src_host, dst_host, network_uuid):
         key_validation = do_cmd(verify_interface_key)
         ip_validation = do_cmd(verify_interface_ip)
 
-        if not gre_key in key_validation or not remote_ip in ip_validation:
+        if gre_key not in key_validation or remote_ip not in ip_validation:
             logging.debug("WARNING: Unexpected output while verifying " +
                           "interface %s on bridge %s" % (name, bridge))
             return "FAILURE:VERIFY_INTERFACE_FAILED"

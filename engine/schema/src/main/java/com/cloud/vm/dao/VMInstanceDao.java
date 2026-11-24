@@ -21,9 +21,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 import com.cloud.vm.VMInstanceVO;
@@ -130,6 +132,18 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     List<Long> listHostIdsByVmCount(long dcId, Long podId, Long clusterId, long accountId);
 
+    /**
+     * Counts the VMs occupying each host in a zone, pod or cluster, in one query.
+     *
+     * @param changedStateAfter
+     *         cut-off for the second count: VMs whose state last changed after this. Approximates
+     *         the VMs still working through their startup load, which neither allocation nor a
+     *         utilisation average has caught up with yet.
+     * @return host id to {total VMs, VMs that changed state recently, VMs still in Starting}. Every
+     *         host in scope appears, including hosts with no VMs.
+     */
+    Map<Long, Ternary<Long, Long, Long>> countVmsByHost(long dcId, Long podId, Long clusterId, Date changedStateAfter);
+
     Long countRunningAndStartingByAccount(long accountId);
 
     Long countByZoneAndState(long zoneId, State state);
@@ -187,5 +201,17 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     Map<String, Long> getNameIdMapForVmIds(Collection<Long> ids);
 
+    int getVmCountByOfferingId(Long serviceOfferingId);
+
+    int getVmCountByOfferingNotInDomain(Long serviceOfferingId, List<Long> domainIds);
+
     List<VMInstanceVO> listByIdsIncludingRemoved(List<Long> ids);
+
+    List<VMInstanceVO> listDeleteProtectedVmsByAccountId(long accountId);
+
+    List<VMInstanceVO> listDeleteProtectedVmsByDomainIds(Set<Long> domainIds);
+
+    List<Long> listIdsByHostIdForVolumeStats(long hostIds);
+
+    List<VMInstanceVO> listByIds(List<Long> ids);
 }

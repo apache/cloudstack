@@ -37,6 +37,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
@@ -139,6 +140,18 @@ public class DefaultHostListener implements HypervisorHostListener {
         Map<String, String> nfsMountOpts = storageManager.getStoragePoolNFSMountOpts(pool, null).first();
 
         Optional.ofNullable(nfsMountOpts).ifPresent(detailsMap::putAll);
+
+        // Propagate CLVM secure zero-fill setting to the host
+        // Note: This is done during host connection (agent start, MS restart, host reconnection)
+        // so the setting is non-dynamic. Changes require host reconnection to take effect.
+        if (ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            Boolean clvmSecureZeroFill = ClvmPoolManager.CLVMSecureZeroFill.valueIn(poolId);
+            if (clvmSecureZeroFill != null) {
+                detailsMap.put("clvmsecurezerofill", String.valueOf(clvmSecureZeroFill));
+                logger.debug("Added CLVM secure zero-fill setting: {} for storage pool: {}", clvmSecureZeroFill, pool);
+            }
+        }
+
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool, detailsMap);
         cmd.setWait(modifyStoragePoolCommandWait);
         HostVO host = hostDao.findById(hostId);

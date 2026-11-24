@@ -27,6 +27,7 @@
   >
     <a-tabs
       class="tab-center"
+      :key="$i18n.locale"
       :activeKey="customActiveKey"
       size="large"
       :tabBarStyle="{ textAlign: 'center', borderBottom: 'unset' }"
@@ -150,9 +151,82 @@
           </a-select>
         </a-form-item>
       </a-tab-pane>
+      <a-tab-pane key="oauth" :disabled="!socialLogin">
+        <template #tab>
+          <span style="display: inline-flex; align-items: center; gap: 4px; color: inherit;">
+            <img src="/assets/github.svg" alt="GitHub" class="oauth-tab-icon" :class="{ 'oauth-tab-icon--disabled': !socialLogin }" style="width: 16px; height: 16px; display: block;" />
+            <img src="/assets/google.svg" alt="Google" class="oauth-tab-icon" :class="{ 'oauth-tab-icon--disabled': !socialLogin }" style="width: 16px; height: 16px; display: block;" />
+            <span>{{ $t('label.login.external') }}</span>
+          </span>
+        </template>
+        <a-form-item name="oauthDomain">
+          <a-input
+            size="large"
+            type="text"
+            :placeholder="$t('label.domain')"
+            v-model:value="form.oauthDomain"
+            @pressEnter="handleOauthDomainSubmit"
+            @blur="handleOauthDomainSubmit"
+          >
+            <template #prefix>
+              <project-outlined />
+            </template>
+          </a-input>
+        </a-form-item>
+        <div
+          v-if="(oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider) && !form.oauthDomain"
+          style="text-align: center; color: #999; font-size: 12px; margin-bottom: 8px;">
+          Enter your domain to see domain-specific providers
+        </div>
+        <div class="center" v-if="oauthGithubProvider || oauthGoogleProvider || oauthKeycloakProvider">
+          <div class="social-auth" v-if="oauthGithubProvider">
+            <a-button
+              @click="handleGithubProviderAndDomain"
+              tag="a"
+              color="primary"
+              :href="getGitHubUrl(from)"
+              class="auth-btn github-auth"
+              style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
+              <img src="/assets/github.svg" alt="GitHub" style="width: 32px; padding: 5px" />
+              <a-typography-text>Sign in with GitHub</a-typography-text>
+            </a-button>
+          </div>
+          <div class="social-auth" v-if="oauthGoogleProvider">
+            <a-button
+              @click="handleGoogleProviderAndDomain"
+              tag="a"
+              color="primary"
+              :href="getGoogleUrl(from)"
+              class="auth-btn google-auth"
+              style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
+              <img src="/assets/google.svg" alt="Google" style="width: 32px; padding: 5px" />
+              <a-typography-text>Sign in with Google</a-typography-text>
+            </a-button>
+          </div>
+          <div class="social-auth" v-if="oauthKeycloakProvider">
+            <a-button
+              @click="handleKeycloakProviderAndDomain"
+              tag="a"
+              color="primary"
+              :href="getKeycloakUrl(from)"
+              class="auth-btn keycloak-auth"
+              style="height: 38px; width: 185px; padding: 0" >
+              <img src="/assets/keycloak.svg" alt="Keycloak" style="width: 32px; padding: 5px" />
+              <a-typography-text>Sign in with Keycloak</a-typography-text>
+            </a-button>
+          </div>
+        </div>
+        <div v-else-if="oauthLoading" style="text-align: center; padding: 20px 0;">
+          <a-spin />
+        </div>
+        <div v-else style="text-align: center; color: #999; padding: 20px 0;">
+          <span v-if="oauthDomainQueried && form.oauthDomain">No OAuth providers configured for this domain</span>
+          <span v-else>Enter your domain to see available providers</span>
+        </div>
+      </a-tab-pane>
     </a-tabs>
 
-    <a-form-item>
+    <a-form-item v-if="customActiveKey !== 'oauth'">
       <a-button
         size="large"
         type="primary"
@@ -174,35 +248,6 @@
         </router-link>
       </a-col>
     </a-row>
-    <div class="content" v-if="socialLogin">
-      <p class="or">or</p>
-    </div>
-    <div class="center">
-      <div class="social-auth" v-if="githubprovider">
-        <a-button
-          @click="handleGithubProviderAndDomain"
-          tag="a"
-          color="primary"
-          :href="getGitHubUrl(from)"
-          class="auth-btn github-auth"
-          style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
-          <img src="/assets/github.svg" style="width: 32px; padding: 5px" />
-          <a-typography-text>Sign in with Github</a-typography-text>
-        </a-button>
-      </div>
-      <div class="social-auth" v-if="googleprovider">
-        <a-button
-          @click="handleGoogleProviderAndDomain"
-          tag="a"
-          color="primary"
-          :href="getGoogleUrl(from)"
-          class="auth-btn google-auth"
-          style="height: 38px; width: 185px; padding: 0" >
-          <img src="/assets/google.svg" style="width: 32px; padding: 5px" />
-          <a-typography-text>Sign in with Google</a-typography-text>
-        </a-button>
-      </div>
-    </div>
   </a-form>
 </template>
 
@@ -231,10 +276,26 @@ export default {
       socialLogin: false,
       googleprovider: false,
       githubprovider: false,
+      keycloakprovider: false,
       googleredirecturi: '',
       githubredirecturi: '',
+      keycloakredirecturi: '',
       googleclientid: '',
       githubclientid: '',
+      keycloakclientid: '',
+      keycloakauthorizeurl: '',
+      oauthGoogleProvider: false,
+      oauthGithubProvider: false,
+      oauthKeycloakProvider: false,
+      oauthGoogleClientId: '',
+      oauthGithubClientId: '',
+      oauthKeycloakClientId: '',
+      oauthGoogleRedirectUri: '',
+      oauthGithubRedirectUri: '',
+      oauthKeycloakRedirectUri: '',
+      oauthKeycloakAuthorizeUrl: '',
+      oauthLoading: false,
+      oauthDomainQueried: false,
       loginType: 0,
       state: {
         time: 60,
@@ -269,6 +330,7 @@ export default {
         server: (this.server.apiHost || '') + this.server.apiBase,
         username: this.$route.query?.username || '',
         domain: this.$route.query?.domain || '',
+        oauthDomain: '',
         project: null
       })
       this.rules = reactive({})
@@ -311,24 +373,7 @@ export default {
           this.form.idp = this.idps[0].id || ''
         }
       })
-      getAPI('listOauthProvider', {}).then(response => {
-        if (response) {
-          const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
-          oauthproviders.forEach(item => {
-            if (item.provider === 'google') {
-              this.googleprovider = item.enabled
-              this.googleclientid = item.clientid
-              this.googleredirecturi = item.redirecturi
-            }
-            if (item.provider === 'github') {
-              this.githubprovider = item.enabled
-              this.githubclientid = item.clientid
-              this.githubredirecturi = item.redirecturi
-            }
-          })
-          this.socialLogin = this.googleprovider || this.githubprovider
-        }
-      })
+      this.fetchOauthProviders()
       postAPI('forgotPassword', {}).then(response => {
         this.forgotPasswordEnabled = response.forgotpasswordresponse.enabled
       }).catch((err) => {
@@ -337,6 +382,74 @@ export default {
         } else {
           this.forgotPasswordEnabled = false
         }
+      })
+    },
+    fetchOauthProviders (domain) {
+      const params = {}
+      if (domain) {
+        params.domain = domain
+        this.oauthLoading = true
+      }
+      getAPI('listOauthProvider', params).then(response => {
+        if (response) {
+          const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
+          if (!domain) {
+            oauthproviders.forEach(item => {
+              if (item.provider === 'google') {
+                this.googleprovider = item.enabled
+                this.googleclientid = item.clientid
+                this.googleredirecturi = item.redirecturi
+              }
+              if (item.provider === 'github') {
+                this.githubprovider = item.enabled
+                this.githubclientid = item.clientid
+                this.githubredirecturi = item.redirecturi
+              }
+              if (item.provider === 'keycloak') {
+                this.keycloakprovider = item.enabled
+                this.keycloakclientid = item.clientid
+                this.keycloakredirecturi = item.redirecturi
+                this.keycloakauthorizeurl = item.authorizeurl
+              }
+            })
+            const totalCount = response.listoauthproviderresponse.count || 0
+            this.socialLogin = totalCount > 0
+            this.oauthGithubProvider = this.githubprovider
+            this.oauthGoogleProvider = this.googleprovider
+            this.oauthKeycloakProvider = this.keycloakprovider
+            this.oauthGithubClientId = this.githubclientid
+            this.oauthGoogleClientId = this.googleclientid
+            this.oauthKeycloakClientId = this.keycloakclientid
+            this.oauthGithubRedirectUri = this.githubredirecturi
+            this.oauthGoogleRedirectUri = this.googleredirecturi
+            this.oauthKeycloakRedirectUri = this.keycloakredirecturi
+            this.oauthKeycloakAuthorizeUrl = this.keycloakauthorizeurl
+          } else {
+            this.oauthGithubProvider = false
+            this.oauthGoogleProvider = false
+            this.oauthKeycloakProvider = false
+            oauthproviders.forEach(item => {
+              if (item.provider === 'google') {
+                this.oauthGoogleProvider = item.enabled
+                this.oauthGoogleClientId = item.clientid
+                this.oauthGoogleRedirectUri = item.redirecturi
+              }
+              if (item.provider === 'github') {
+                this.oauthGithubProvider = item.enabled
+                this.oauthGithubClientId = item.clientid
+                this.oauthGithubRedirectUri = item.redirecturi
+              }
+              if (item.provider === 'keycloak') {
+                this.oauthKeycloakProvider = item.enabled
+                this.oauthKeycloakClientId = item.clientid
+                this.oauthKeycloakRedirectUri = item.redirecturi
+                this.oauthKeycloakAuthorizeUrl = item.authorizeurl
+              }
+            })
+          }
+        }
+      }).finally(() => {
+        this.oauthLoading = false
       })
     },
     // handler
@@ -352,7 +465,38 @@ export default {
     },
     handleTabClick (key) {
       this.customActiveKey = key
+      if (key === 'oauth') {
+        this.oauthGithubProvider = this.githubprovider
+        this.oauthGoogleProvider = this.googleprovider
+        this.oauthKeycloakProvider = this.keycloakprovider
+        this.oauthGithubClientId = this.githubclientid
+        this.oauthGoogleClientId = this.googleclientid
+        this.oauthKeycloakClientId = this.keycloakclientid
+        this.oauthGithubRedirectUri = this.githubredirecturi
+        this.oauthGoogleRedirectUri = this.googleredirecturi
+        this.oauthKeycloakRedirectUri = this.keycloakredirecturi
+        this.oauthKeycloakAuthorizeUrl = this.keycloakauthorizeurl
+      }
       this.setRules()
+    },
+    handleOauthDomainSubmit () {
+      const domain = this.form.oauthDomain
+      if (domain) {
+        this.oauthDomainQueried = true
+        this.fetchOauthProviders(domain)
+      } else {
+        this.oauthDomainQueried = false
+        this.oauthGithubProvider = this.githubprovider
+        this.oauthGoogleProvider = this.googleprovider
+        this.oauthKeycloakProvider = this.keycloakprovider
+        this.oauthGithubClientId = this.githubclientid
+        this.oauthGoogleClientId = this.googleclientid
+        this.oauthKeycloakClientId = this.keycloakclientid
+        this.oauthGithubRedirectUri = this.githubredirecturi
+        this.oauthGoogleRedirectUri = this.googleredirecturi
+        this.oauthKeycloakRedirectUri = this.keycloakredirecturi
+        this.oauthKeycloakAuthorizeUrl = this.keycloakauthorizeurl
+      }
     },
     handleGithubProviderAndDomain () {
       this.handleDomain()
@@ -362,18 +506,32 @@ export default {
       this.handleDomain()
       this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'google')
     },
+    handleKeycloakProviderAndDomain () {
+      this.handleDomain()
+      this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'keycloak')
+    },
     handleDomain () {
       const values = toRaw(this.form)
-      if (!values.domain) {
-        this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', '/')
-      } else {
-        this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', values.domain)
+      const domain = this.customActiveKey === 'oauth' ? values.oauthDomain : values.domain
+      this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', this.getLoginDomain(domain))
+    },
+    getLoginDomain (domain) {
+      if (this.$config.loginBaseDomain) {
+        if (domain) {
+          return this.$config.loginBaseDomain + '/' + domain
+        }
+        return this.$config.loginBaseDomain
       }
+      if (domain) {
+        return domain
+      }
+      return '/'
     },
     getGitHubUrl (from) {
       const rootURl = 'https://github.com/login/oauth/authorize'
+      const clientId = this.customActiveKey === 'oauth' ? this.oauthGithubClientId : this.githubclientid
       const options = {
-        client_id: this.githubclientid,
+        client_id: clientId,
         scope: 'user:email',
         state: 'cloudstack'
       }
@@ -384,9 +542,11 @@ export default {
     },
     getGoogleUrl (from) {
       const rootUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
+      const redirectUri = this.customActiveKey === 'oauth' ? this.oauthGoogleRedirectUri : this.googleredirecturi
+      const clientId = this.customActiveKey === 'oauth' ? this.oauthGoogleClientId : this.googleclientid
       const options = {
-        redirect_uri: this.googleredirecturi,
-        client_id: this.googleclientid,
+        redirect_uri: redirectUri,
+        client_id: clientId,
         access_type: 'offline',
         response_type: 'code',
         prompt: 'consent',
@@ -400,6 +560,22 @@ export default {
       const qs = new URLSearchParams(options)
 
       return `${rootUrl}?${qs.toString()}`
+    },
+    getKeycloakUrl (from) {
+      const rootURl = this.customActiveKey === 'oauth' ? this.oauthKeycloakAuthorizeUrl : this.keycloakauthorizeurl
+      const redirectUri = this.customActiveKey === 'oauth' ? this.oauthKeycloakRedirectUri : this.keycloakredirecturi
+      const clientId = this.customActiveKey === 'oauth' ? this.oauthKeycloakClientId : this.keycloakclientid
+      const options = {
+        redirect_uri: redirectUri,
+        client_id: clientId,
+        response_type: 'code',
+        scope: 'openid email',
+        state: 'cloudstack'
+      }
+
+      const qs = new URLSearchParams(options)
+
+      return `${rootURl}?${qs.toString()}`
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -417,10 +593,7 @@ export default {
           delete loginParams.username
           loginParams[!this.state.loginType ? 'email' : 'username'] = values.username
           loginParams.password = values.password
-          loginParams.domain = values.domain
-          if (!loginParams.domain) {
-            loginParams.domain = '/'
-          }
+          loginParams.domain = this.getLoginDomain(values.domain)
           this.Login(loginParams)
             .then((res) => this.loginSuccess(res))
             .catch(err => {
@@ -449,10 +622,7 @@ export default {
         loginParams.email = this.email
         loginParams.provider = provider
         loginParams.secretcode = this.secretcode
-        loginParams.domain = values.domain
-        if (!loginParams.domain) {
-          loginParams.domain = '/'
-        }
+        loginParams.domain = this.getLoginDomain(values.domain)
         this.OauthLogin(loginParams)
           .then((res) => this.loginSuccess(res))
           .catch(err => {
@@ -519,12 +689,21 @@ export default {
 
 <style lang="less" scoped>
 .user-layout-login {
-  min-width: 260px;
-  width: 368px;
+  min-width: 300px;
+  width: 500px;
   margin: 0 auto;
 
+  :deep(.tab-center .ant-tabs-tab) {
+    margin: 0 16px 0 0;
+  }
+
+  .oauth-tab-icon--disabled {
+    filter: grayscale(100%);
+    opacity: 0.45;
+  }
+
   .mobile & {
-    max-width: 368px;
+    max-width: 500px;
     width: 98%;
   }
 

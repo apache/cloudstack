@@ -26,7 +26,7 @@ import com.cloud.serializer.Param;
 
 public class UcsProfileResponse extends BaseResponse {
     @SerializedName(ApiConstants.UCS_DN)
-    @Param(description = "ucs profile dn")
+    @Param(description = "UCS profile dn")
     private String dn;
 
     public String getDn() {

@@ -59,6 +59,8 @@ import com.cloud.utils.fsm.NoTransitionException;
  */
 public interface VirtualMachineManager extends Manager {
 
+    String KVM_BLANK_VM_TEMPLATE_NAME = "kvm-blank-vm-template";
+
     ConfigKey<Boolean> ExecuteInSequence = new ConfigKey<>("Advanced", Boolean.class, "execute.in.sequence.hypervisor.commands", "false",
             "If set to true, start, stop, reboot, copy and migrate commands will be serialized on the agent side. If set to false the commands are executed in parallel. Default value is false.", false);
 
@@ -86,6 +88,10 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> AllowExposeDomainInMetadata = new ConfigKey<>("Advanced", Boolean.class, "metadata.allow.expose.domain",
             "false", "If set to true, it allows the VM's domain to be seen in metadata.", true, ConfigKey.Scope.Domain);
 
+    ConfigKey<Boolean> AllowExposeNicVlanMapping = new ConfigKey<>("Advanced", Boolean.class, "account.allow.expose.nic.vlan.mapping",
+            "false", "If set to true, exposes a VM's trunk NIC associated-network VLAN tag mappings via the metadata service, " +
+            "for guest/VNF boot scripts to configure VLAN sub-interfaces. Has no effect on VMs without trunk NICs.", true, ConfigKey.Scope.Account);
+
     ConfigKey<String> MetadataCustomCloudName = new ConfigKey<>("Advanced", String.class, "metadata.custom.cloud.name", "",
             "If provided, a custom cloud-name in cloud-init metadata", true, ConfigKey.Scope.Zone);
 
@@ -112,6 +118,8 @@ public interface VirtualMachineManager extends Manager {
 
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
+        String VM_LIFECYCLE_STATE = "vm.lifecycle.state";
+        String VM_ACTION = "vm.action";
     }
 
     /**
@@ -181,15 +189,6 @@ public interface VirtualMachineManager extends Manager {
     void advanceReboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException,
         ConcurrentOperationException, OperationTimedoutException;
 
-    /**
-     * Check to see if a virtual machine can be upgraded to the given service offering
-     *
-     * @param vm
-     * @param offering
-     * @return true if the host can handle the upgrade, false otherwise
-     */
-    boolean isVirtualMachineUpgradable(final VirtualMachine vm, final ServiceOffering offering);
-
     VirtualMachine findById(long vmId);
 
     void storageMigration(String vmUuid, Map<Long, Long> volumeToPool);
@@ -229,6 +228,8 @@ public interface VirtualMachineManager extends Manager {
     boolean removeNicFromVm(VirtualMachine vm, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException;
 
     Boolean updateDefaultNicForVM(VirtualMachine vm, Nic nic, Nic defaultNic);
+
+    boolean updateVmNic(VirtualMachine vm, Nic nic, Boolean enabled) throws ResourceUnavailableException;
 
     /**
      * @param vm
@@ -318,5 +319,14 @@ public interface VirtualMachineManager extends Manager {
     void checkDeploymentPlan(VirtualMachine virtualMachine, VirtualMachineTemplate template,
                 ServiceOffering serviceOffering, Account systemAccount, DeploymentPlan plan)
             throws InsufficientServerCapacityException;
+
+    /**
+     * Removes the volumes and NICs allocated for a VM, so it can be allocated again with another template.
+     */
+    void cleanupAllocatedResources(VirtualMachine vm);
+
+    boolean isBlankInstanceDefaultTemplate(VirtualMachineTemplate template);
+
+    boolean isBlankInstance(VirtualMachineTemplate template);
 
 }

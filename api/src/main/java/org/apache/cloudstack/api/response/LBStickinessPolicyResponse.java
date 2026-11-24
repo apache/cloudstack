@@ -32,27 +32,27 @@ import com.cloud.utils.Pair;
 
 public class LBStickinessPolicyResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "the LB Stickiness policy ID")
+    @Param(description = "The LB Stickiness policy ID")
     private String id;
 
     @SerializedName("name")
-    @Param(description = "the name of the Stickiness policy")
+    @Param(description = "The name of the Stickiness policy")
     private String name;
 
     @SerializedName("methodname")
-    @Param(description = "the method name of the Stickiness policy")
+    @Param(description = "The method name of the Stickiness policy")
     private String methodName;
 
     @SerializedName("description")
-    @Param(description = "the description of the Stickiness policy")
+    @Param(description = "The description of the Stickiness policy")
     private String description;;
 
     @SerializedName("state")
-    @Param(description = "the state of the policy")
+    @Param(description = "The state of the policy")
     private String state;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is policy for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    @Param(description = "Is policy for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     // FIXME : if params with the same name exist more than once then values are concatenated with ":" as delimiter .
@@ -60,7 +60,7 @@ public class LBStickinessPolicyResponse extends BaseResponse {
     // Example: <params>{indirect=null, name=testcookie, nocache=null, domain=www.yahoo.com:www.google.com, postonly=null}</params>
     // in the above there are two domains with values www.yahoo.com and www.google.com
     @SerializedName("params")
-    @Param(description = "the params of the policy")
+    @Param(description = "The params of the policy")
     private Map<String, String> params;
 
     public Map<String, String> getParams() {

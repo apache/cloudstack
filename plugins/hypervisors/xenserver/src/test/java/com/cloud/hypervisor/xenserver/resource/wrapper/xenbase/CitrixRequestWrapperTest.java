@@ -576,37 +576,6 @@ public class CitrixRequestWrapperTest {
             fail(e.getMessage());
         }
 
-        // try {
-        // PowerMockito.mockStatic(Host.class);
-        // //BDDMockito.given(Host.getByUuid(conn,
-        // xsHost.getUuid())).willReturn(host);
-        // PowerMockito.when(Host.getByUuid(conn,
-        // xsHost.getUuid())).thenReturn(host);
-        // PowerMockito.verifyStatic(times(1));
-        // } catch (final BadServerResponse e) {
-        // fail(e.getMessage());
-        // } catch (final XenAPIException e) {
-        // fail(e.getMessage());
-        // } catch (final XmlRpcException e) {
-        // fail(e.getMessage());
-        // }
-        //
-        // PowerMockito.mockStatic(Types.class);
-        // PowerMockito.when(Types.toHostRecord(spiedMap)).thenReturn(hr);
-        // PowerMockito.verifyStatic(times(1));
-        //
-        // try {
-        // PowerMockito.mockStatic(Host.Record.class);
-        // when(host.getRecord(conn)).thenReturn(hr);
-        // verify(host, times(1)).getRecord(conn);
-        // } catch (final BadServerResponse e) {
-        // fail(e.getMessage());
-        // } catch (final XenAPIException e) {
-        // fail(e.getMessage());
-        // } catch (final XmlRpcException e) {
-        // fail(e.getMessage());
-        // }
-
         final Answer answer = wrapper.execute(maintainCommand, citrixResourceBase);
 
         assertFalse(answer.getResult());
