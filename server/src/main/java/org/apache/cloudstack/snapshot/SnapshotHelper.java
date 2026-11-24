@@ -99,6 +99,12 @@ public class SnapshotHelper {
     protected final Set<StoragePoolType> storagePoolTypesToValidateWithBackupSnapshotAfterTakingSnapshot = new HashSet<>(Arrays.asList(StoragePoolType.RBD,
             StoragePoolType.PowerFlex));
 
+    /**
+     * Storage pool types whose driver creates a volume from a volume snapshot kept on the pool by itself (see
+     * {@link DataStoreCapabilities#CAN_CREATE_VOLUME_FROM_SNAPSHOT}), so the snapshot never has to be copied to secondary storage first.
+     */
+    protected final Set<StoragePoolType> storagePoolTypesCreatingVolumesFromPrimarySnapshots = new HashSet<>(Arrays.asList(StoragePoolType.PowerFlex));
+
      /**
      * If the snapshot is a backup from a KVM snapshot that should be kept only in primary storage, expunges it from secondary storage.
      * @param snapInfo the snapshot info to delete.
@@ -151,6 +157,23 @@ public class SnapshotHelper {
             storeId = imageStoreSnapInfo.getDataStore().getId();
         }
         snapshotDataStoreDao.expungeReferenceBySnapshotIdAndDataStoreRole(snapInfo.getId(), storeId, DataStoreRole.Image);
+    }
+
+    /**
+     * Verifies if the snapshot is on a primary storage that creates volumes from its snapshots itself (see
+     * {@link #storagePoolTypesCreatingVolumesFromPrimarySnapshots}).
+     * @return true if the snapshot info is on primary storage of such a type, else false.
+     */
+    public boolean isStorageSupportSnapshotToVolume(SnapshotInfo snapInfo) {
+        if (snapInfo == null || snapInfo.getDataStore() == null || !DataStoreRole.Primary.equals(snapInfo.getDataStore().getRole())) {
+            return false;
+        }
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(snapInfo.getDataStore().getId());
+        if (storagePoolVO == null || !storagePoolTypesCreatingVolumesFromPrimarySnapshots.contains(storagePoolVO.getPoolType())) {
+            return false;
+        }
+        Map<String, String> capabilities = snapInfo.getDataStore().getDriver().getCapabilities();
+        return MapUtils.isNotEmpty(capabilities) && BooleanUtils.toBoolean(capabilities.get(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT.toString()));
     }
 
     public boolean isStorageSupportSnapshotToTemplate(SnapshotInfo snapInfo) {
