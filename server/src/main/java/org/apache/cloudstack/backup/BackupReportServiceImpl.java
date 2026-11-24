@@ -56,7 +56,6 @@ import org.apache.cloudstack.utils.mailing.MailAddress;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
 import org.apache.logging.log4j.ThreadContext;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
