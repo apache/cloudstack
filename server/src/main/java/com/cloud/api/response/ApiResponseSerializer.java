@@ -50,6 +50,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -338,6 +339,23 @@ public class ApiResponseSerializer {
                 } else if (fieldValue instanceof Date) {
                     sb.append("<").append(serializedName.value()).append(">").append(BaseCmd.getDateString((Date)fieldValue)).append("</").append(serializedName.value()).append(">");
                     log.append("<").append(serializedName.value()).append(">").append(BaseCmd.getDateString((Date)fieldValue)).append("</").append(serializedName.value()).append(">");
+                } else if (fieldValue instanceof Map<?, ?>) {
+                    sb.append("<").append(serializedName.value()).append(">");
+                    if (logField) {
+                        log.append("<").append(serializedName.value()).append(">");
+                    }
+                    for (Map.Entry<?, ?> entry : ((Map<?, ?>)fieldValue).entrySet()) {
+                        String entryKey = escapeSpecialXmlChars(String.valueOf(entry.getKey()));
+                        String entryValue = escapeSpecialXmlChars(String.valueOf(entry.getValue()));
+                        sb.append("<").append(entryKey).append(">").append(entryValue).append("</").append(entryKey).append(">");
+                        if (logField) {
+                            log.append("<").append(entryKey).append(">").append(entryValue).append("</").append(entryKey).append(">");
+                        }
+                    }
+                    sb.append("</").append(serializedName.value()).append(">");
+                    if (logField) {
+                        log.append("</").append(serializedName.value()).append(">");
+                    }
                 } else {
                     String resultString = escapeSpecialXmlChars(fieldValue.toString());
                     if (!(obj instanceof ExceptionResponse)) {
