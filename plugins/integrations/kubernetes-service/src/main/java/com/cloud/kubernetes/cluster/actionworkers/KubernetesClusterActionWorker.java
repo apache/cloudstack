@@ -27,6 +27,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -427,19 +428,32 @@ public class KubernetesClusterActionWorker {
         if (controlVm != null) {
             return controlVm;
         }
-        Long etcdNodeCount = kubernetesCluster.getEtcdNodeCount();
         List<KubernetesClusterVmMapVO> clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         if (CollectionUtils.isEmpty(clusterVMs)) {
             logger.warn(String.format("Unable to retrieve VMs for Kubernetes cluster : %s", kubernetesCluster.getName()));
             return null;
         }
-        List<Long> vmIds = new ArrayList<>();
-        for (KubernetesClusterVmMapVO vmMap : clusterVMs) {
-            vmIds.add(vmMap.getVmId());
+        List<KubernetesClusterVmMapVO> nodeVMs = clusterVMs.stream()
+                .filter(vmMap -> !vmMap.isEtcdNode() && !vmMap.isExternalNode())
+                .sorted(Comparator.comparingLong(KubernetesClusterVmMapVO::getVmId))
+                .collect(Collectors.toList());
+        List<Long> controlVmIds = nodeVMs.stream()
+                .filter(KubernetesClusterVmMapVO::isControlNode)
+                .map(KubernetesClusterVmMapVO::getVmId)
+                .collect(Collectors.toList());
+        if (controlVmIds.isEmpty() && !nodeVMs.isEmpty()) {
+            // No row flagged: clusters created before the control_node column existed, or
+            // ExternalManaged clusters whose VMs were added without isControlNode: keep the old lowest-id pick
+            controlVmIds = List.of(nodeVMs.get(0).getVmId());
         }
-        Collections.sort(vmIds);
-        int controlNodeIndex = Objects.nonNull(etcdNodeCount) ? etcdNodeCount.intValue() : 0;
-        return userVmDao.findById(vmIds.get(controlNodeIndex));
+        for (Long vmId : controlVmIds) {
+            UserVm vm = userVmDao.findById(vmId);
+            if (vm != null) {
+                return vm;
+            }
+        }
+        logger.warn(String.format("Unable to find a control node VM for Kubernetes cluster : %s", kubernetesCluster.getName()));
+        return null;
     }
 
     protected String getControlVmPrivateIp() {

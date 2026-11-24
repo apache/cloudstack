@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,6 +31,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
@@ -38,6 +40,8 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesClusterActionWorkerTest {
@@ -60,6 +64,9 @@ public class KubernetesClusterActionWorkerTest {
     @Mock
     IPAddressDao ipAddressDao;
 
+    @Mock
+    UserVmDao userVmDao;
+
     KubernetesClusterActionWorker actionWorker = null;
 
     final static Long DEFAULT_ID = 1L;
@@ -74,6 +81,7 @@ public class KubernetesClusterActionWorkerTest {
         Mockito.when(kubernetesCluster.getId()).thenReturn(DEFAULT_ID);
         actionWorker = new KubernetesClusterActionWorker(kubernetesCluster, kubernetesClusterManager);
         actionWorker.ipAddressDao = ipAddressDao;
+        actionWorker.userVmDao = userVmDao;
     }
 
     @Test
@@ -129,5 +137,112 @@ public class KubernetesClusterActionWorkerTest {
         Mockito.when(ipAddressDao.findByUuid(uuid)).thenReturn(address);
         IpAddress result = actionWorker.getVpcTierKubernetesPublicIp(mockNetworkForGetVpcTierKubernetesPublicIpTest());
         Assert.assertNotNull(result);
+    }
+
+    private KubernetesClusterVmMapVO mockClusterVm(long vmId, boolean control, boolean etcd, boolean external, String ip) {
+        KubernetesClusterVmMapVO vmMap = new KubernetesClusterVmMapVO(DEFAULT_ID, vmId, control);
+        vmMap.setEtcdNode(etcd);
+        vmMap.setExternalNode(external);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.lenient().when(vm.getPrivateIpAddress()).thenReturn(ip);
+        Mockito.lenient().when(userVmDao.findById(vmId)).thenReturn(vm);
+        return vmMap;
+    }
+
+    @Test
+    public void testGetControlVmPrivateIpIgnoresExternalNodeWithLowerVmId() {
+        List<KubernetesClusterVmMapVO> vmMaps = List.of(
+                mockClusterVm(7L, true, false, false, "10.0.0.7"),
+                mockClusterVm(8L, false, false, false, "10.0.0.8"),
+                mockClusterVm(4L, false, false, true, "10.0.0.4"));
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(DEFAULT_ID)).thenReturn(vmMaps);
+        Assert.assertEquals("10.0.0.7", actionWorker.getControlVmPrivateIp());
+    }
+
+    @Test
+    public void testGetControlVmPrivateIpPicksLowestControlVmIdOverEtcdNodes() {
+        Mockito.lenient().when(actionWorker.kubernetesCluster.getEtcdNodeCount()).thenReturn(2L);
+        List<KubernetesClusterVmMapVO> vmMaps = List.of(
+                mockClusterVm(2L, false, true, false, "10.0.0.2"),
+                mockClusterVm(3L, false, true, false, "10.0.0.3"),
+                mockClusterVm(6L, true, false, false, "10.0.0.6"),
+                mockClusterVm(4L, true, false, false, "10.0.0.4"),
+                mockClusterVm(5L, false, false, false, "10.0.0.5"),
+                mockClusterVm(1L, false, false, true, "10.0.0.1"));
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(DEFAULT_ID)).thenReturn(vmMaps);
+        Assert.assertEquals("10.0.0.4", actionWorker.getControlVmPrivateIp());
+    }
+
+    @Test
+    public void testGetControlVmPrivateIpSkipsRemovedControlVm() {
+        List<KubernetesClusterVmMapVO> vmMaps = List.of(
+                mockClusterVm(3L, true, false, false, "10.0.0.3"),
+                mockClusterVm(5L, true, false, false, "10.0.0.5"));
+        Mockito.when(userVmDao.findById(3L)).thenReturn(null);
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(DEFAULT_ID)).thenReturn(vmMaps);
+        Assert.assertEquals("10.0.0.5", actionWorker.getControlVmPrivateIp());
+    }
+
+    @Test
+    public void testGetControlVmPrivateIpLegacyClusterWithoutControlFlag() {
+        List<KubernetesClusterVmMapVO> vmMaps = List.of(
+                mockClusterVm(9L, false, false, false, "10.0.0.9"),
+                mockClusterVm(7L, false, false, false, "10.0.0.7"),
+                mockClusterVm(4L, false, false, true, "10.0.0.4"));
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(DEFAULT_ID)).thenReturn(vmMaps);
+        Assert.assertEquals("10.0.0.7", actionWorker.getControlVmPrivateIp());
+    }
+
+    @Test
+    public void testGetControlVmPrivateIpUnflaggedFallbackSkipsEtcdNodes() {
+        List<KubernetesClusterVmMapVO> vmMaps = List.of(
+                mockClusterVm(1L, false, true, false, "10.0.0.1"),
+                mockClusterVm(6L, false, false, false, "10.0.0.6"),
+                mockClusterVm(3L, false, false, false, "10.0.0.3"));
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(DEFAULT_ID)).thenReturn(vmMaps);
+        Assert.assertEquals("10.0.0.3", actionWorker.getControlVmPrivateIp());
+    }
+
+    @Test
+    public void testGetControlVmPrivateIpUnflaggedFallbackDoesNotPickNextVm() {
+        List<KubernetesClusterVmMapVO> vmMaps = List.of(
+                mockClusterVm(3L, false, false, false, "10.0.0.3"),
+                mockClusterVm(6L, false, false, false, "10.0.0.6"));
+        Mockito.when(userVmDao.findById(3L)).thenReturn(null);
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(DEFAULT_ID)).thenReturn(vmMaps);
+        Assert.assertNull(actionWorker.getControlVmPrivateIp());
+    }
+
+    @Test
+    public void testGetControlVmPrivateIpFlaggedControlGoneDoesNotFallBack() {
+        List<KubernetesClusterVmMapVO> vmMaps = List.of(
+                mockClusterVm(5L, true, false, false, "10.0.0.5"),
+                mockClusterVm(3L, false, false, false, "10.0.0.3"));
+        Mockito.when(userVmDao.findById(5L)).thenReturn(null);
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(DEFAULT_ID)).thenReturn(vmMaps);
+        Assert.assertNull(actionWorker.getControlVmPrivateIp());
+    }
+
+    @Test
+    public void testGetKubernetesClusterServerIpSshPortForSharedNetworkUsesControlVm() {
+        List<KubernetesClusterVmMapVO> vmMaps = List.of(
+                mockClusterVm(7L, true, false, false, "10.0.0.7"),
+                mockClusterVm(4L, false, false, true, "10.0.0.4"));
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(DEFAULT_ID)).thenReturn(vmMaps);
+        Assert.assertEquals("10.0.0.7", actionWorker.getKubernetesClusterServerIpSshPortForSharedNetwork(null).first());
+    }
+
+    @Test
+    public void testGetControlVmPrivateIpNoClusterVms() {
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(DEFAULT_ID)).thenReturn(List.of());
+        Assert.assertNull(actionWorker.getControlVmPrivateIp());
+    }
+
+    @Test
+    public void testGetControlVmPrivateIpOnlyExternalNodes() {
+        List<KubernetesClusterVmMapVO> vmMaps = List.of(
+                mockClusterVm(1L, false, false, true, "10.0.0.1"));
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(DEFAULT_ID)).thenReturn(vmMaps);
+        Assert.assertNull(actionWorker.getControlVmPrivateIp());
     }
 }
