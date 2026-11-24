@@ -55,6 +55,10 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
     // nasbackup.sh prints this on stdout when it could not proceed as an incremental and
     // completed a full backup instead; the orchestrator then records the backup as a full.
     private static final String INCREMENTAL_FALLBACK_MARKER = "INCREMENTAL_FALLBACK=true";
+    // nasbackup.sh always reports the backup's total size this way, regardless of whether it took
+    // the live or cold path — the two paths' other stdout (e.g. virsh domjobinfo) differ in shape,
+    // so a single unambiguous marker is used instead of inferring size from output position/shape.
+    private static final String BACKUP_SIZE_MARKER_PREFIX = "BACKUP_SIZE_TOTAL=";
 
     private static final String MODE_FULL = "full";
     private static final String MODE_INCREMENTAL = "incremental";
@@ -73,6 +77,15 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
 
     @Override
     public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
+        try {
+            return takeBackup(command, libvirtComputingResource);
+        } catch (RuntimeException e) {
+            logger.error("Failed to take VM backup: " + e.getMessage(), e);
+            return new BackupAnswer(command, false, e.getMessage());
+        }
+    }
+
+    private Answer takeBackup(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
         List<PrimaryDataStoreTO> volumePools = command.getVolumePools();
         final List<String> volumePaths = command.getVolumePaths();
@@ -91,13 +104,18 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             for (int idx = 0; idx < volumePaths.size(); idx++) {
                 PrimaryDataStoreTO volumePool = volumePools.get(idx);
                 String volumePath = volumePaths.get(idx);
-                if (volumePool.getPoolType() != Storage.StoragePoolType.RBD) {
-                    diskPaths.add(volumePath);
-                } else {
+                if (volumePool.getPoolType() == Storage.StoragePoolType.RBD) {
                     KVMStoragePool volumeStoragePool = storagePoolMgr.getStoragePool(volumePool.getPoolType(), volumePool.getUuid());
                     String rbdDestVolumeFile = KVMPhysicalDisk.RBDStringBuilder(volumeStoragePool, volumePath);
                     diskPaths.add(rbdDestVolumeFile);
+                    continue;
                 }
+                // StorPool (among others) is passed through as-is: nasbackup.sh checks the
+                // VM's actual liveness itself right before acting, and only then — if the VM
+                // turns out to be stopped — clones this into a point-in-time backup source
+                // volume. Doing that here instead would rely on the same stale state read
+                // nasbackup.sh's own check exists to correct for.
+                diskPaths.add(volumePath);
             }
         }
 
@@ -172,11 +190,12 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
 
         // The script self-heals to a full backup when an incremental can't proceed (e.g. the
         // parent checkpoint can't be re-registered) and signals it with INCREMENTAL_FALLBACK
-        // on stdout. Detect it, then strip the marker line before parsing the backup size.
+        // on stdout. Detect it and the reported size from the raw output, then strip both
+        // marker lines before using stdout as the answer's human-facing details.
         String rawStdout = result.second();
         boolean incrementalFallback = StringUtils.contains(rawStdout, INCREMENTAL_FALLBACK_MARKER);
+        long backupSize = extractBackupSize(rawStdout);
         String stdout = stripMarkerLines(rawStdout).trim();
-        long backupSize = parseBackupSize(stdout, diskPaths);
 
         BackupAnswer answer = new BackupAnswer(command, true, stdout);
         answer.setSize(backupSize);
@@ -285,14 +304,14 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         return diskSize + diskSize / 4096 + SCRATCH_EXTRA_BYTES;
     }
 
-    /** Remove nasbackup.sh's stdout signalling marker lines so they don't pollute size parsing. */
+    /** Remove nasbackup.sh's stdout signalling marker lines so they don't pollute the answer details. */
     private String stripMarkerLines(String stdout) {
         if (StringUtils.isBlank(stdout)) {
             return "";
         }
         StringBuilder sb = new StringBuilder();
         for (String line : stdout.split("\n", -1)) {
-            if (line.contains(INCREMENTAL_FALLBACK_MARKER)) {
+            if (line.contains(INCREMENTAL_FALLBACK_MARKER) || line.startsWith(BACKUP_SIZE_MARKER_PREFIX)) {
                 continue;
             }
             if (sb.length() > 0) {
@@ -301,6 +320,33 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             sb.append(line);
         }
         return sb.toString();
+    }
+
+    /**
+     * Find nasbackup.sh's {@code BACKUP_SIZE_TOTAL=<bytes>} marker line. Unlike the old
+     * position/shape-based parsing this replaced, it doesn't need to know or guess which of
+     * nasbackup.sh's code paths actually ran.
+     * <p>
+     * The marker is only metadata: a missing/unparseable marker does not mean the backup (which
+     * already exited 0) failed, so this logs a warning and reports an unknown size (0) rather
+     * than throwing — the caller's generic RuntimeException handler would otherwise turn an
+     * on-disk-successful backup into a reported failure.
+     */
+    private long extractBackupSize(String rawStdout) {
+        if (rawStdout != null) {
+            for (String line : rawStdout.split("\n", -1)) {
+                if (line.startsWith(BACKUP_SIZE_MARKER_PREFIX)) {
+                    try {
+                        return Long.parseLong(line.substring(BACKUP_SIZE_MARKER_PREFIX.length()).trim());
+                    } catch (NumberFormatException e) {
+                        logger.warn("nasbackup.sh reported an unparseable {} marker: {}", BACKUP_SIZE_MARKER_PREFIX, line);
+                        return 0L;
+                    }
+                }
+            }
+        }
+        logger.warn("nasbackup.sh did not report a {} marker in its output; backup succeeded but its size is unknown", BACKUP_SIZE_MARKER_PREFIX);
+        return 0L;
     }
 
     /**
@@ -410,25 +456,5 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             return null;
         }
         return "Unsupported mode for the content backup method: " + mode;
-    }
-
-    /**
-     * Sum the per-disk size lines emitted by nasbackup.sh. Single-volume mode emits one
-     * line containing just the byte count; multi-volume mode emits one line per disk
-     * whose first whitespace-separated token is the byte count.
-     */
-    private long parseBackupSize(String stdout, List<String> diskPaths) {
-        long backupSize = 0L;
-        if (CollectionUtils.isEmpty(diskPaths)) {
-            List<String> outputLines = Arrays.asList(stdout.split("\n"));
-            if (!outputLines.isEmpty()) {
-                backupSize = Long.parseLong(outputLines.get(outputLines.size() - 1).trim());
-            }
-        } else {
-            for (String line : stdout.split("\n")) {
-                backupSize = backupSize + Long.parseLong(line.split(" ")[0].trim());
-            }
-        }
-        return backupSize;
     }
 }
