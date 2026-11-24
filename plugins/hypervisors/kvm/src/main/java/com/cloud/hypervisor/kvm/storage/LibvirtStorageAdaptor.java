@@ -1736,25 +1736,30 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             ioContext = radosConnection.ioCtxCreate(destPool.getSourceDir());
             rbdClient = new Rbd(ioContext);
             templateImage = rbdClient.open(template.getName());
-            Long luksSnapshotSize = null;
-            for (RbdSnapInfo snapshotInfo : templateImage.snapList()) {
-                if (luksReservedSnapshotName.equals(snapshotInfo.name)) {
-                    luksSnapshotSize = snapshotInfo.size;
-                    break;
-                }
-            }
+            RbdSnapInfo existingSnapshot = findRbdSnapshot(templateImage, luksReservedSnapshotName);
+            Long luksSnapshotSize = existingSnapshot != null ? existingSnapshot.size : null;
             if (luksSnapshotSize == null) {
                 // The template is grown by the size of the header only for the snapshot the encrypted clones are made of,
                 // and shrunk back right after: its unencrypted clones are made of its base snapshot, which may not exist
                 // yet, and must keep the size of the template.
                 RbdImageInfo templateInfo = templateImage.stat();
-                luksSnapshotSize = templateInfo.size + getRbdLuks2HeaderSize(templateInfo.obj_size);
+                long templateSize = templateInfo.size;
+                luksSnapshotSize = templateSize + getRbdLuks2HeaderSize(templateInfo.obj_size);
                 templateImage.resize(luksSnapshotSize);
                 try {
                     templateImage.snapCreate(luksReservedSnapshotName);
                     templateImage.snapProtect(luksReservedSnapshotName);
+                } catch (RbdException e) {
+                    // Another deployment may have prepared the template in the meantime, possibly from the size this one
+                    // saw while that one had the template grown: the size of its snapshot tells the size of the template
+                    RbdSnapInfo preparedSnapshot = findRbdSnapshot(templateImage, luksReservedSnapshotName);
+                    if (preparedSnapshot == null) {
+                        throw e;
+                    }
+                    luksSnapshotSize = preparedSnapshot.size;
+                    templateSize = luksSnapshotSize - getRbdLuks2HeaderSize(templateInfo.obj_size);
                 } finally {
-                    templateImage.resize(templateInfo.size);
+                    templateImage.resize(templateSize);
                 }
                 logger.debug("Prepared LUKS-reserved template snapshot {}@{}", template.getName(), luksReservedSnapshotName);
             }
@@ -1781,14 +1786,24 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
         }
         formatRbdImageEncryption(destPool, newUuid, passphrase);
-        if (disk.getVirtualSize() > cloneSize) {
-            // grow the clone to the requested root size (encryption-aware)
+        if (disk.getVirtualSize() != cloneSize) {
+            // the header of the clone follows its own object size, which may differ from the one the snapshot was
+            // sized with: grow or shrink the clone to the requested root size (encryption-aware)
             new RbdEncryption().resize(destPool.getSourceHost(), destPool.getSourcePort(),
                     destPool.getAuthUserName(), destPool.getAuthSecret(), destPool.getSourceDir(),
-                    newUuid, disk.getVirtualSize(), false, passphrase);
+                    newUuid, disk.getVirtualSize(), disk.getVirtualSize() < cloneSize, passphrase);
         }
         disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS2);
         return disk;
+    }
+
+    private static RbdSnapInfo findRbdSnapshot(RbdImage image, String snapshotName) throws RbdException {
+        for (RbdSnapInfo snapshotInfo : image.snapList()) {
+            if (snapshotName.equals(snapshotInfo.name)) {
+                return snapshotInfo;
+            }
+        }
+        return null;
     }
 
     /**
