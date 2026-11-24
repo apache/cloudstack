@@ -187,9 +187,10 @@ class TestCsBgpPeers(unittest.TestCase):
         ]
         self.assertEqual(self._frr_conf(), expected)
 
+    @mock.patch('cs.CsBgpPeers.CsBgpPeers._ip_forwarding', return_value=True)
     @mock.patch('cs.CsBgpPeers.CsBgpPeers._ipv6_forwarding', return_value=True)
     @mock.patch('cs.CsBgpPeers.CsHelper.get_hostname')
-    def test_full_frr_conf(self, mock_hostname, mock_ipv6_forwarding):
+    def test_full_frr_conf(self, mock_hostname, mock_ipv6_forwarding, mock_ip_forwarding):
         mock_hostname.return_value = "r-1001-VM"
         self.csbgppeers._process_dbag_item(self._peer(ip4_address='100.64.0.1',
                                                       guest_ip4_cidr='10.1.1.0/24',

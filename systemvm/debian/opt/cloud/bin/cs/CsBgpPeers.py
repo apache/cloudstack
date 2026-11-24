@@ -28,6 +28,7 @@ FRR_DIR = "/etc/frr/"
 FRR_DAEMONS = "/etc/frr/daemons"
 FRR_CONFIG = "/etc/frr/frr.conf"
 FRR_RELOAD = "/usr/lib/frr/frr-reload.py"
+IP_FORWARDING = "/proc/sys/net/ipv4/ip_forward"
 IPV6_FORWARDING = "/proc/sys/net/ipv6/conf/all/forwarding"
 # A copy of frr.conf without passwords, which getDiagnosticsData collects.
 MASKED_COPY = "/var/cache/cloud/frr.conf.masked"
@@ -98,13 +99,19 @@ class CsBgpPeers(CsDataBag):
         except IOError as e:
             logging.error("Unable to write %s: %s" % (MASKED_COPY, e))
 
-    def _ipv6_forwarding(self):
-        # State the kernel's current setting, so that frr-reload.py never changes it.
+    @staticmethod
+    def _kernel_forwarding(path):
         try:
-            with open(IPV6_FORWARDING) as f:
+            with open(path) as f:
                 return f.read().strip() == "1"
         except IOError:
             return False
+
+    def _ip_forwarding(self):
+        return self._kernel_forwarding(IP_FORWARDING)
+
+    def _ipv6_forwarding(self):
+        return self._kernel_forwarding(IPV6_FORWARDING)
 
     def _process_dbag_item(self, item):
         as_number = item['network_as_number']
@@ -118,11 +125,13 @@ class CsBgpPeers(CsDataBag):
             self.peers[as_number]['ip6_peers'].append(item)
 
     def _pre_set(self):
-        # frr-reload.py changes every setting the file leaves out, so the file states them.
         self.frr_conf.add("frr defaults traditional")
         self.frr_conf.add("hostname {}".format(CsHelper.get_hostname()))
         self.frr_conf.add("service integrated-vtysh-config")
-        self.frr_conf.add("ip forwarding")
+        # zebra shows the kernel's forwarding state in the running config, and frr-reload.py
+        # deletes running lines the file leaves out. Stating the current state keeps a reload
+        # from switching forwarding on or off.
+        self.frr_conf.add("ip forwarding" if self._ip_forwarding() else "no ip forwarding")
         self.frr_conf.add("ipv6 forwarding" if self._ipv6_forwarding() else "no ipv6 forwarding")
         self.frr_conf.add("ip nht resolve-via-default")
         self.frr_conf.add("ipv6 nht resolve-via-default")

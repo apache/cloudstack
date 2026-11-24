@@ -22,8 +22,8 @@ bgppeers databag, which cs_bgppeers.merge keeps beside the peer entries.
 
 Once bgpd runs, changes are applied with frr-reload.py and frr is not
 restarted, so sessions to unchanged peers stay up. Because frr-reload.py
-changes any setting the file leaves out, the file states the BGP defaults
-it relies on and the forwarding setting for both address families.
+deletes any running line the file leaves out, the file states the BGP defaults
+it relies on and the kernel's forwarding setting for both address families.
 
 CsBgpPeers also writes a copy of frr.conf with every password value replaced
 by <masked> (MASKED_COPY), so the copy can be collected by getDiagnosticsData.
@@ -56,7 +56,8 @@ OPERATOR_PASSWORD = "0p3rator-Key"
 class OperatorFrrTestCase(unittest.TestCase):
     """Runs CsBgpPeers.process() in a sandbox and records the shell commands."""
 
-    def run_operator(self, min_holdtime=None, peer=None, bgpd_running=True, frr_reload=True, reload_returncode=0):
+    def run_operator(self, min_holdtime=None, peer=None, bgpd_running=True, frr_reload=True, reload_returncode=0,
+                     ip_forwarding=True, ipv6_forwarding=False):
         # Only the minimum hold time tests send min_holdtime.
         bag = {"id": "bgppeers", "1-100": dict(peer or OPERATOR_PEER)}
         if min_holdtime is not None:
@@ -80,7 +81,9 @@ class OperatorFrrTestCase(unittest.TestCase):
                    mock.patch.object(bgppeers_module, "FRR_CONFIG", self.conf),
                    mock.patch.object(bgppeers_module, "FRR_DAEMONS", daemons),
                    mock.patch.object(bgppeers_module, "FRR_RELOAD", reload_script, create=True),
-                   mock.patch.object(bgppeers_module, "MASKED_COPY", self.masked, create=True)]
+                   mock.patch.object(bgppeers_module, "MASKED_COPY", self.masked, create=True),
+                   mock.patch.object(CsBgpPeers, "_ip_forwarding", return_value=ip_forwarding),
+                   mock.patch.object(CsBgpPeers, "_ipv6_forwarding", return_value=ipv6_forwarding)]
         for p in patches:
             p.start()
             self.addCleanup(p.stop)
@@ -176,11 +179,22 @@ class TestCsBgpPeersFrrReload(OperatorFrrTestCase):
         self.assertIn(" bgp network import-check", block)
         self.assertEqual(lines[-1], "line vty")
 
-    def test_operator_forwarding_stated_for_both_families(self):
-        lines = self.run_operator()
+    def test_operator_states_forwarding_off_from_kernel(self):
+        # zebra shows "no ipv6 forwarding" while the kernel has it off, and frr-reload.py
+        # deletes running lines the file leaves out. Stating it keeps a reload from
+        # switching forwarding on.
+        lines = self.run_operator(ip_forwarding=False, ipv6_forwarding=False)
+        self.assertIn("no ip forwarding", lines)
+        self.assertIn("no ipv6 forwarding", lines)
+        self.assertNotIn("ip forwarding", lines)
+        self.assertNotIn("ipv6 forwarding", lines)
+
+    def test_operator_states_forwarding_on_from_kernel(self):
+        lines = self.run_operator(ip_forwarding=True, ipv6_forwarding=True)
         self.assertIn("ip forwarding", lines)
+        self.assertIn("ipv6 forwarding", lines)
         self.assertNotIn("no ip forwarding", lines)
-        self.assertEqual(len([x for x in lines if x in ("ipv6 forwarding", "no ipv6 forwarding")]), 1, lines)
+        self.assertNotIn("no ipv6 forwarding", lines)
 
     def test_operator_render_is_deterministic(self):
         self.assertEqual(self.run_operator(), self.run_operator())
