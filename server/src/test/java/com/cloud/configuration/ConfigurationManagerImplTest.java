@@ -17,6 +17,7 @@
 package com.cloud.configuration;
 
 import com.cloud.alert.AlertManager;
+import com.cloud.bgp.BGPService;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.VlanVO;
@@ -71,7 +72,6 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
-import org.apache.cloudstack.network.bgp.TenantBgpConfig;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -865,14 +865,14 @@ public class ConfigurationManagerImplTest {
     @Test
     public void validateValueRangeTestAcceptsBgpMinHoldtimeWithinRange() {
         for (String value : new String[] {"0", "3", "65535"}) {
-            Assert.assertNull(configurationManagerImplSpy.validateValueRange(TenantBgpConfig.MinHoldtime.key(), value, Integer.class, null));
+            Assert.assertNull(configurationManagerImplSpy.validateValueRange(BGPService.MinHoldtime.key(), value, Integer.class, null));
         }
     }
 
     @Test
     public void validateValueRangeTestRejectsBgpMinHoldtimeOutsideRange() {
         for (String value : new String[] {"-1", "65536"}) {
-            Assert.assertNotNull(configurationManagerImplSpy.validateValueRange(TenantBgpConfig.MinHoldtime.key(), value, Integer.class, null));
+            Assert.assertNotNull(configurationManagerImplSpy.validateValueRange(BGPService.MinHoldtime.key(), value, Integer.class, null));
         }
     }
 

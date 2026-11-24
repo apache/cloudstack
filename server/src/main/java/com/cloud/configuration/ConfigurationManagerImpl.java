@@ -124,7 +124,6 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
-import org.apache.cloudstack.network.bgp.TenantBgpConfig;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
@@ -161,6 +160,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.NetworkOfferingJoinDao;
 import com.cloud.api.query.vo.NetworkOfferingJoinVO;
+import com.cloud.bgp.BGPService;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ManagementServerHostVO;
@@ -1532,7 +1532,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     return String.format("[%s] value should be between 0 and 255. 0 value will disable this feature.", name);
                 }
             }
-            if (TenantBgpConfig.MinHoldtime.key().equalsIgnoreCase(name) && (val < 0 || val > 65535)) {
+            if (BGPService.MinHoldtime.key().equalsIgnoreCase(name) && (val < 0 || val > 65535)) {
                 return String.format("[%s] value should be between 0 and 65535. 0 turns off the minimum.", name);
             }
             if (UnmanagedVMsManager.ThreadsOnMSToImportVMwareVMFiles.key().equalsIgnoreCase(name) ||

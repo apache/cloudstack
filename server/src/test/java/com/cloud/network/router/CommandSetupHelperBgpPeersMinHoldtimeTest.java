@@ -54,7 +54,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 /**
  * The BGP peers command carries the minimum hold time to the router, so a network or
  * VPC with BGP peers gets bgp minimum-holdtime. The value is the setting
- * vpc.gateway.bgp.min.holdtime (TenantBgpConfig.MinHoldtime).
+ * vpc.gateway.bgp.min.holdtime (BGPService.MinHoldtime).
  */
 @RunWith(MockitoJUnitRunner.class)
 public class CommandSetupHelperBgpPeersMinHoldtimeTest {
