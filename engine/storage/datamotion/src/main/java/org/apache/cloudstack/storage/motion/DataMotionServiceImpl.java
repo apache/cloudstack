@@ -106,10 +106,11 @@ public class DataMotionServiceImpl implements DataMotionService {
         destinationVO.setPassphraseId(null);
         volDao.update(destinationVO.getId(), destinationVO);
 
-        if (passphraseId != null) {
+        // the destination shares the source's passphrase, so keep it while the source still needs it
+        if (passphraseId != null && !passphraseId.equals(sourceVO.getPassphraseId())) {
+            logger.debug("Deleting passphrase {}", passphraseId);
             passphraseDao.remove(passphraseId);
         }
-
     }
 
     @Override
