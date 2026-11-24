@@ -118,6 +118,11 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
             "(?<join>kubeadm join )(?<ip>[^\\s:]+)(?<port>:[0-9]+ --token )\\S+ (?:--discovery-token-unsafe-skip-ca-verification|--discovery-token-ca-cert-hash \\S+)");
     protected static final int DRAIN_ATTEMPTS = 3;
     protected static final long POLL_WAIT = 15000;
+    /**
+     * How long a stopped node may take to be seen NotReady. Kubernetes marks it so after its node-monitor-grace-period
+     * (40s, 50s since 1.32) without a kubelet heartbeat, so much longer means the controller manager is not doing it
+     */
+    protected static final long NOT_READY_TIMEOUT = 300000;
     protected static final int MAX_ERROR_LENGTH = 1024;
 
     /** A Kubernetes node as kubectl reports it */
@@ -921,11 +926,16 @@ public class KubernetesClusterRollingUpdateWorker extends KubernetesClusterResou
                 NodeStatus status = getNodeStatuses().get(name);
                 return status == null || !status.ready;
             } catch (CloudRuntimeException e) {
+                logger.debug("Unable to read the status of node {} of Kubernetes cluster {}: {}", name, kubernetesCluster, e.getMessage());
                 return false;
             }
         };
-        if (!pollUntil(deadline, notReady)) {
-            throw new CloudRuntimeException(String.format("node %s did not report NotReady while its VM was stopped, or its status could not be read", name));
+        final long until = Math.min(deadline, System.currentTimeMillis() + NOT_READY_TIMEOUT);
+        if (!pollUntil(until, notReady)) {
+            throw new CloudRuntimeException(until == deadline
+                    ? String.format("node %s did not report NotReady before the node timeout, or its status could not be read", name)
+                    : String.format("node %s did not report NotReady after %d seconds of waiting, or its status could not be read; Kubernetes "
+                    + "marks a stopped node NotReady within about a minute unless kube-controller-manager is down", name, NOT_READY_TIMEOUT / 1000));
         }
     }
 

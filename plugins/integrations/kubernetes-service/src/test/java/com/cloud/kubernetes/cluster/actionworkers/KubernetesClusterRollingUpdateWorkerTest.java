@@ -38,6 +38,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -968,14 +969,45 @@ public class KubernetesClusterRollingUpdateWorkerTest {
             throw new RuntimeException(e);
         }
 
+        long start = System.currentTimeMillis();
         CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, worker::rollout);
 
-        Assert.assertTrue(e.getMessage(), e.getMessage().contains("did not report NotReady"));
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("did not report NotReady after 300 seconds of waiting"));
+        // bounded by the NotReady timeout, not by the node timeout of the batch
+        ArgumentCaptor<Long> until = ArgumentCaptor.forClass(Long.class);
+        Mockito.verify(worker, Mockito.atLeastOnce()).pollUntil(until.capture(), Mockito.any());
+        Assert.assertTrue(until.getAllValues().stream().anyMatch(t -> t >= start + KubernetesClusterRollingUpdateWorker.NOT_READY_TIMEOUT
+                && t <= System.currentTimeMillis() + KubernetesClusterRollingUpdateWorker.NOT_READY_TIMEOUT));
+        Assert.assertTrue(KubernetesClusterRollingUpdateWorker.NOT_READY_TIMEOUT < worker.getNodeTimeout() * 1000);
         Assert.assertFalse(calls.contains("start:w1"));
         // the ISO stays for the VM to install from once started; the node stays cordoned, and the detail has the next rollout recreate it
         Assert.assertFalse(calls.contains("detachIso:w1"));
         Assert.assertTrue(kube.get("w1").unschedulable);
         Assert.assertEquals(1, recreating.size());
+    }
+
+    @Test
+    public void theNotReadyWaitEndsWithTheBatchIfThatIsSooner() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        addNode("w1", WORKER, NEW_OFFERING);
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+        Mockito.doReturn(60L).when(worker).getNodeTimeout();
+        try {
+            Mockito.doAnswer(i -> calls.add("restore:" + name(i.getArgument(0))) ? null : null).when(itMgr)
+                    .restoreVirtualMachine(Mockito.anyLong(), Mockito.anyLong(), Mockito.isNull(), Mockito.eq(false), Mockito.anyMap());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        long start = System.currentTimeMillis();
+        CloudRuntimeException e = Assert.assertThrows(CloudRuntimeException.class, worker::rollout);
+
+        Assert.assertTrue(e.getMessage(), e.getMessage().contains("before the node timeout"));
+
+        ArgumentCaptor<Long> until = ArgumentCaptor.forClass(Long.class);
+        Mockito.verify(worker, Mockito.atLeastOnce()).pollUntil(until.capture(), Mockito.any());
+        Assert.assertTrue(until.getAllValues().stream().allMatch(t -> t <= System.currentTimeMillis() + 60000 && t >= start + 60000));
     }
 
     @Test
