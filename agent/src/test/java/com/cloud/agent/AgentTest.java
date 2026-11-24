@@ -22,10 +22,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -253,5 +255,33 @@ public class AgentTest {
         verify(mockConnection).stop();
         verify(mockConnection).cleanUp();
         verify(mockBackoff, times(3)).waitBeforeRetry();
+    }
+
+    @Test
+    public void testWaitForCommandsAndReconnectNoCommandsInProgress() throws ConfigurationException {
+        Agent spyAgent = spy(new Agent(shell, 1, serverResource));
+        ReflectionTestUtils.setField(spyAgent, "logger", logger);
+        doNothing().when(spyAgent).reconnect(any(Link.class));
+
+        Link mockLink = mock(Link.class);
+        spyAgent.commandsInProgress.set(0);
+        spyAgent.waitForCommandsAndReconnect(mockLink);
+
+        verify(spyAgent).reconnect(mockLink);
+    }
+
+    @Test
+    public void testWaitForCommandsAndReconnectWithCommandsInProgress() throws ConfigurationException {
+        Agent spyAgent = spy(new Agent(shell, 1, serverResource));
+        ReflectionTestUtils.setField(spyAgent, "logger", logger);
+        doNothing().when(spyAgent).reconnect(any(Link.class));
+
+        Link mockLink = mock(Link.class);
+        spyAgent.commandsInProgress.set(3);
+        spyAgent.waitForCommandsAndReconnect(mockLink);
+
+        verify(spyAgent).reconnect(mockLink);
+        verify(logger).warn(eq("Agent disconnected with {} command(s) still in progress. Reconnecting — local operations (e.g. blockcommit) will continue in their threads."),
+                eq(3));
     }
 }
