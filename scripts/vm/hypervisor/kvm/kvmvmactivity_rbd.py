@@ -132,6 +132,8 @@ def check(ceph, pool, host, volumes, suspect_time, interval, write_timeout):
 
     # the reason why the heartbeat did not show that the host is alive, added to the messages about a DEAD host
     heartbeat_note = ""
+    # whether the heartbeat was read and is stale, which is a proof that the host does not write it
+    heartbeat_stale = False
 
     def dead(reason):
         print("=====> Considering host as DEAD due to %s.%s <======" % (reason, heartbeat_note))
@@ -148,10 +150,15 @@ def check(ceph, pool, host, volumes, suspect_time, interval, write_timeout):
             if age <= heartbeat_max_age(interval, write_timeout):
                 alive()
             heartbeat_note = " The heartbeat in RADOS object [%s] is [%d] seconds old." % (heartbeat_object, age)
+            heartbeat_stale = True
     except CephError:
         heartbeat_note = " The RADOS object [%s] could not be read, it does not exist or Ceph can not be reached." % heartbeat_object
 
     if not volumes.strip():
+        # without volumes there is no activity to look at, so the heartbeat decides: if it is not known (Ceph can not be
+        # reached, or the object does not exist or is not valid), it is not known whether the host is alive
+        if not heartbeat_stale:
+            fail("Unable to tell whether the host is alive, there are no volumes to check and the heartbeat is not known.%s" % heartbeat_note)
         dead("empty UUIDList")
 
     # Second check: RBD watcher based disk activity check.

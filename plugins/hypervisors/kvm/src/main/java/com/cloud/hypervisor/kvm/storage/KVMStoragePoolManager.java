@@ -473,8 +473,9 @@ public class KVMStoragePoolManager {
      * so none is on going when the pool is unregistered, and none is written while the pool is removed, which could fail
      * and fence the host. If the pool is not deleted (the delete does not succeed or throws) it is still there, so it is
      * monitored for HA again: the heartbeat of the host on it must go on, and it stays known to the manager as well.
-     * The types with HA support are libvirt storage pools, which are only not deleted if they are still there. For the
-     * other types a delete which does not succeed means that the adaptor has no such pool, so it is forgotten as before.
+     * The types with HA support are libvirt storage pools: the delete of the libvirt adaptor returns true if libvirt has no such
+     * pool (it is already removed) and throws if the pool can not be removed, so for these types a delete which is not
+     * successful means that the pool is still there. For the other types a delete which does not succeed means that the adaptor has no such pool, so it is forgotten as before.
      */
     private boolean deleteStoragePoolWithoutHaMonitoring(StoragePoolType type, String uuid, BooleanSupplier delete) {
         boolean haSupported = HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type);
