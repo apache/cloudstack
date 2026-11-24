@@ -120,7 +120,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
                     final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
                     final Connect conn = libvirtUtilitiesHelper.getConnection();
-                    final StorageVol v = conn.storageVolLookupByPath(path);
+                    final StorageVol v = libvirtUtilitiesHelper.getStorageVolumeByPath(conn, pool, path);
                     int flags = 0;
 
                     if (conn.getLibVirVersion() > 1001000 && vol.getFormat() == PhysicalDiskFormat.RAW && pool.getType() != StoragePoolType.RBD) {

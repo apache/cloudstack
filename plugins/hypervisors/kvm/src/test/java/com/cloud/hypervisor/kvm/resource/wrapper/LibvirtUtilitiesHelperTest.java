@@ -20,12 +20,17 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.Connect;
+import org.libvirt.Error.ErrorNumber;
 import org.libvirt.LibvirtException;
+import org.libvirt.StorageVol;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.VMSnapshotTO;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.Pair;
 
 import junit.framework.TestCase;
@@ -37,6 +42,12 @@ public class LibvirtUtilitiesHelperTest extends TestCase {
 
     @Mock
     Connect connectMock;
+
+    @Mock
+    KVMStoragePool storagePoolMock;
+
+    @Mock
+    StorageVol storageVolMock;
 
     @Test
     public void validateIsLibvirtVersionEqualOrHigherThanVersionInParameterExceptionOnRetrievingLibvirtVersionReturnsFalse() throws LibvirtException {
@@ -101,5 +112,124 @@ public class LibvirtUtilitiesHelperTest extends TestCase {
 
         Assert.assertTrue(xml.contains("<parent><name>parent&lt;/name&gt;&lt;disks/&gt;</name></parent>"));
         Assert.assertFalse(xml.contains("<disks/>"));
+    }
+
+    private static final String RBD_VOLUME_PATH = "cloudstack/0d3c2bd6-cb39-4c8b-a1d9-0e7fbd3b8a5b";
+
+    // Not a spy: a spy rewrites the stack trace of exceptions passing through it, which a mocked LibvirtException does not have.
+    private final LibvirtUtilitiesHelper libvirtUtilitiesHelper = new LibvirtUtilitiesHelper();
+
+    private static LibvirtException libvirtException(final ErrorNumber code) {
+        final org.libvirt.Error error = Mockito.mock(org.libvirt.Error.class);
+        Mockito.when(error.getCode()).thenReturn(code);
+        final LibvirtException e = Mockito.mock(LibvirtException.class);
+        Mockito.when(e.getError()).thenReturn(error);
+        return e;
+    }
+
+    @Test
+    public void getStorageVolumeByPathVolumeInLibvirtPoolCacheDoesNotRefresh() throws LibvirtException {
+        Mockito.when(connectMock.storageVolLookupByPath(RBD_VOLUME_PATH)).thenReturn(storageVolMock);
+
+        Assert.assertSame(storageVolMock, libvirtUtilitiesHelper.getStorageVolumeByPath(connectMock, storagePoolMock, RBD_VOLUME_PATH));
+
+        Mockito.verify(connectMock, Mockito.times(1)).storageVolLookupByPath(RBD_VOLUME_PATH);
+        Mockito.verify(storagePoolMock, Mockito.never()).refresh();
+    }
+
+    /**
+     * An RBD volume created through librbd is not in libvirt's cache of the pool until the pool is
+     * refreshed, so the first lookup by path misses. The pool is refreshed and the volume is
+     * looked up once more.
+     */
+    @Test
+    public void getStorageVolumeByPathRbdVolumeNotInLibvirtPoolCacheRefreshesPool() throws LibvirtException {
+        final LibvirtException notFound = libvirtException(ErrorNumber.VIR_ERR_NO_STORAGE_VOL);
+        Mockito.when(storagePoolMock.getType()).thenReturn(StoragePoolType.RBD);
+        Mockito.when(connectMock.storageVolLookupByPath(RBD_VOLUME_PATH)).thenThrow(notFound).thenReturn(storageVolMock);
+        Mockito.when(storagePoolMock.refresh()).thenReturn(true);
+
+        Assert.assertSame(storageVolMock, libvirtUtilitiesHelper.getStorageVolumeByPath(connectMock, storagePoolMock, RBD_VOLUME_PATH));
+
+        InOrder inOrder = Mockito.inOrder(connectMock, storagePoolMock);
+        inOrder.verify(connectMock).storageVolLookupByPath(RBD_VOLUME_PATH);
+        inOrder.verify(storagePoolMock).refresh();
+        inOrder.verify(connectMock).storageVolLookupByPath(RBD_VOLUME_PATH);
+    }
+
+    /**
+     * If the RBD volume is still missing after the pool is refreshed, the lookup fails after a
+     * single refresh and a single retry.
+     */
+    @Test
+    public void getStorageVolumeByPathRbdVolumeNotFoundAfterRefreshThrows() throws LibvirtException {
+        assertRbdLookupRetriedOnce(true);
+    }
+
+    /**
+     * A refresh that fails does not stop the retry.
+     */
+    @Test
+    public void getStorageVolumeByPathRbdVolumeRetriedAfterFailedRefresh() throws LibvirtException {
+        assertRbdLookupRetriedOnce(false);
+    }
+
+    private void assertRbdLookupRetriedOnce(final boolean refreshSucceeds) throws LibvirtException {
+        final LibvirtException notFound = libvirtException(ErrorNumber.VIR_ERR_NO_STORAGE_VOL);
+        Mockito.when(storagePoolMock.getType()).thenReturn(StoragePoolType.RBD);
+        Mockito.when(connectMock.storageVolLookupByPath(RBD_VOLUME_PATH)).thenThrow(notFound);
+        Mockito.when(storagePoolMock.refresh()).thenReturn(refreshSucceeds);
+
+        try {
+            libvirtUtilitiesHelper.getStorageVolumeByPath(connectMock, storagePoolMock, RBD_VOLUME_PATH);
+            Assert.fail("Expected the lookup to fail");
+        } catch (final LibvirtException e) {
+            Assert.assertSame(notFound, e);
+        }
+
+        Mockito.verify(connectMock, Mockito.times(2)).storageVolLookupByPath(RBD_VOLUME_PATH);
+        Mockito.verify(storagePoolMock, Mockito.times(1)).refresh();
+    }
+
+    /**
+     * A lookup on an RBD pool that fails for another reason than the volume not being found
+     * fails without refreshing the pool.
+     */
+    @Test
+    public void getStorageVolumeByPathRbdOtherLookupErrorDoesNotRefresh() throws LibvirtException {
+        assertLookupFailsWithoutRefresh(StoragePoolType.RBD, RBD_VOLUME_PATH, libvirtException(ErrorNumber.VIR_ERR_INVALID_CONN));
+    }
+
+    /**
+     * A LibvirtException without an error attached is not taken for a missing volume.
+     */
+    @Test
+    public void getStorageVolumeByPathRbdLookupErrorWithoutCodeDoesNotRefresh() throws LibvirtException {
+        assertLookupFailsWithoutRefresh(StoragePoolType.RBD, RBD_VOLUME_PATH, Mockito.mock(LibvirtException.class));
+    }
+
+    /**
+     * A missing volume on a pool that is not RBD fails without refreshing the pool.
+     */
+    @Test
+    public void getStorageVolumeByPathNonRbdVolumeNotFoundDoesNotRefresh() throws LibvirtException {
+        assertLookupFailsWithoutRefresh(StoragePoolType.NetworkFilesystem, "/mnt/0d3c2bd6-cb39-4c8b-a1d9-0e7fbd3b8a5b/volume",
+                libvirtException(ErrorNumber.VIR_ERR_NO_STORAGE_VOL));
+    }
+
+    private void assertLookupFailsWithoutRefresh(final StoragePoolType poolType, final String path, final LibvirtException lookupError)
+            throws LibvirtException {
+        Mockito.when(storagePoolMock.getType()).thenReturn(poolType);
+        Mockito.when(connectMock.storageVolLookupByPath(path)).thenThrow(lookupError);
+
+        try {
+            libvirtUtilitiesHelper.getStorageVolumeByPath(connectMock, storagePoolMock, path);
+            Assert.fail("Expected the lookup to fail");
+        } catch (final LibvirtException e) {
+            Assert.assertSame(lookupError, e);
+        }
+
+        Mockito.verify(connectMock, Mockito.times(1)).storageVolLookupByPath(path);
+        Mockito.verify(storagePoolMock, Mockito.never()).refresh();
     }
 }
