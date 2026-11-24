@@ -1090,7 +1090,8 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         ListFilesCommand cmd = new ListFilesCommand(volumeVO.getId(), filesystem, directory, internalBackupDataStoreVO.getBackupPath(), (NfsTO) dataStoreTO, isSymlink,
                 secondaryStorageUrls);
 
-        String errorMessage = String.format("Unable to list files of backup [%s]. Please check the logs.", backup.getUuid());
+        String errorMessage = String.format("Unable to list files of backup [%s]. Please check if the filesystem and dir path are correct; otherwise, please check the logs.",
+         backup.getUuid());
         EndPoint endPoint = getRandomEndpointToListBackupFilesOrFilesystems(backup, errorMessage, "files");
 
         Answer answer = endPoint.sendMessage(cmd);
@@ -1147,7 +1148,8 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         ExtractBackupFileCommand cmd = new ExtractBackupFileCommand(volumeVO.getId(), filesystem, file, extractedFileFullPath, backupPath, (NfsTO) dataStoreTO, secondaryStorageUrls);
 
         EndPoint endPoint = endPointSelector.selectRandom(backup.getZoneId(), Hypervisor.HypervisorType.KVM);
-        String errorMessage = String.format("Unable to download files of backup [%s]. Please check the logs.", backup.getUuid());
+        String errorMessage = String.format("Unable to download files of backup [%s]. Please check if the filesystem and dir path are correct; otherwise, please check the logs.",
+                backup.getUuid());
         if (endPoint == null) {
             logger.error("Unable to find KVM host to download files of backup [{}]. Check if there is any KVM host that is is UP for the zone.", backup);
             throw new CloudRuntimeException(errorMessage);
