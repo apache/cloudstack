@@ -541,6 +541,16 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
                         "snapshots taken after snapshot [%s] before reverting it.", volumeInfo.getUuid(), snapshotVO.getUuid()));
             }
 
+            String volumePath = ((VolumeObjectTO) volumeInfo.getTO()).getPath();
+            for (SnapshotVO chainSnapshot : chain) {
+                SnapshotDataStoreVO chainStoreRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(chainSnapshot.getId(), DataStoreRole.Primary);
+                if (chainStoreRef != null && volumePath != null && volumePath.equals(chainStoreRef.getInstallPath())) {
+                    // Reverting replaces (and deletes) the current file of the volume, which here is also the file of a snapshot.
+                    throw new CloudRuntimeException(String.format("Volume [%s] is on [%s], which is also the file of snapshot [%s]: delete snapshot [%s] (which completes " +
+                            "an earlier merge) before reverting.", volumeInfo.getUuid(), volumePath, chainSnapshot.getUuid(), chainSnapshot.getUuid()));
+                }
+            }
+
             VMInstanceVO vm = getAttachedVm(volumeInfo);
             if (vm != null && !VirtualMachine.State.Stopped.equals(vm.getState())) {
                 throw new InvalidParameterValueException(String.format("The Instance [%s] of volume [%s] must be stopped to revert snapshot [%s]; it is [%s].", vm.getUuid(),
@@ -807,12 +817,26 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
             logger.info("Deleting KVM file-based no-copy snapshot [{}] of volume [{}] by merging [{}] into it.", snapshotVO.getUuid(), volumeVO.getUuid(),
                     deltaMergeTree.getChild().getPath());
 
+            if (deltaMergeTree.getChild().getPath().equals(parentTO.getPath())) {
+                // A previous merge completed on the host but its metadata was not updated, and the child was then set to the merged file: only the metadata is left.
+                logger.info("The child of KVM file-based no-copy snapshot [{}] is already its merged file [{}]; updating the metadata only.", snapshotVO.getUuid(),
+                        parentTO.getPath());
+                updateMetadataAfterMerge(snapshotVO, snapshotStoreRef, childSnapshot, volumeVO);
+                succeeded = true;
+                return true;
+            }
+
             MergeDiskOnlyVmSnapshotCommand command = new MergeDiskOnlyVmSnapshotCommand(List.of(deltaMergeTree), vmRunning, vm != null ? vm.getInstanceName() : null);
             command.setWait(MERGE_COMMAND_WAIT_SECONDS);
-            Answer answer = sendToHost(getHostIdForOperation(volumeInfo, vm), command);
-            if (answer == null || !answer.getResult()) {
-                // The merge may have started: the file of this snapshot may already hold data of its child, so it is no longer a valid point in time.
-                snapshotDetailsDao.addDetail(snapshotVO.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE, Boolean.TRUE.toString(), false);
+            // Recorded before the host acts: once the merge starts, the file of this snapshot may hold data of its child, so it is no longer a valid point in time.
+            // This also holds if the management server stops before an answer comes back.
+            snapshotDetailsDao.addDetail(snapshotVO.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE, Boolean.TRUE.toString(), false);
+            Answer answer;
+            try {
+                answer = sendToHost(getHostIdForOperation(volumeInfo, vm), command);
+            } catch (CommandNotSentException e) {
+                snapshotDetailsDao.removeDetail(snapshotVO.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE);
+                throw e;
             }
             if (answer == null) {
                 // The host may still complete the merge and delete the child file: releasing the volume could leave it pointing to a deleted file.
@@ -834,7 +858,8 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
                 // The child file is merged and deleted on the host, but the DB may still point to it.
                 keepVolumeReserved = true;
                 throw new CloudRuntimeException(String.format("Snapshot [%s] was merged on the host, but its metadata could not be updated. Volume [%s] stays in state " +
-                        "[%s]: set [%s] as the path of %s (if it is not already), set the volume state to Ready and delete the snapshot again.", snapshotVO.getUuid(),
+                        "[%s]: set [%s] as the path of %s (if it is not already), set the volume state to Ready and delete the snapshot again, which then only updates " +
+                        "the metadata.", snapshotVO.getUuid(),
                         volumeVO.getUuid(), Volume.State.Snapshotting, parentTO.getPath(), childSnapshot == null ? "the volume" : "snapshot " + childSnapshot.getUuid()), e);
             }
             succeeded = true;

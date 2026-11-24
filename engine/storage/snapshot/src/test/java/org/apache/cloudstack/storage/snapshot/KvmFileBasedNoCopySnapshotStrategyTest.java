@@ -891,8 +891,42 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
         assertThrows(CloudRuntimeException.class, () -> strategy.deleteSnapshot(SNAPSHOT_ID, null));
 
         verify(volumeInfo).stateTransit(Volume.Event.OperationFailed);
-        verify(snapshotDetailsDao, never()).addDetail(eq(SNAPSHOT_ID), eq(KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE),
-                any(), Mockito.anyBoolean());
+        // Recorded before sending, and removed again as nothing was sent.
+        verify(snapshotDetailsDao).removeDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE);
+    }
+
+    @Test
+    public void mergeIsMarkedIncompleteBeforeTheHostIsAsked() {
+        mockChain(SNAPSHOT_ID);
+        deleteAndCaptureMerge();
+
+        InOrder inOrder = Mockito.inOrder(snapshotDetailsDao, strategy);
+        inOrder.verify(snapshotDetailsDao).addDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE, "true", false);
+        inOrder.verify(strategy).sendToHost(eq(HOST_ID), any());
+    }
+
+    @Test
+    public void deleteWhoseChildIsAlreadyTheMergedFileOnlyUpdatesTheMetadata() {
+        mockChain(SNAPSHOT_ID);
+        volumeTO.setPath("frozen-" + SNAPSHOT_ID);
+
+        assertTrue(strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        verify(strategy, never()).sendToHost(anyLong(), any());
+        verify(volumeVO).setPath("frozen-" + SNAPSHOT_ID);
+        verify(snapshotVO).setState(Snapshot.State.Destroyed);
+        verify(volumeInfo).stateTransit(Volume.Event.OperationSucceeded);
+    }
+
+    @Test
+    public void revertIsRefusedWhenTheVolumeIsOnTheFileOfASnapshot() {
+        mockChain(SNAPSHOT_ID);
+        volumeTO.setPath("frozen-" + SNAPSHOT_ID);
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.revertSnapshot(snapshotInfo));
+
+        verify(strategy, never()).sendToHost(anyLong(), any());
+        verify(volumeInfo).stateTransit(Volume.Event.OperationFailed);
     }
 
     @Test
