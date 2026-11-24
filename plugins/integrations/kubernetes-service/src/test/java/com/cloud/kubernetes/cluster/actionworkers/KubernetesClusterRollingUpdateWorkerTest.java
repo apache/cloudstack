@@ -1265,12 +1265,93 @@ public class KubernetesClusterRollingUpdateWorkerTest {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         Mockito.when(vm.getUserData()).thenReturn(org.apache.commons.codec.binary.Base64.encodeBase64String(("a\n" + OLD_JOIN + "\n").getBytes()));
 
-        String userData = KubernetesClusterRollingUpdateWorker.getJoinUserData(vm, "fresh1.0123456789abcdef", JOIN_HASH);
+        String userData = KubernetesClusterRollingUpdateWorker.getJoinUserData(vm, null, "fresh1.0123456789abcdef", JOIN_HASH);
 
         Assert.assertEquals("a\nkubeadm join 10.1.1.1:6443 --token fresh1.0123456789abcdef --discovery-token-ca-cert-hash " + JOIN_HASH + "\n",
                 new String(org.apache.commons.codec.binary.Base64.decodeBase64(userData)));
         Mockito.when(vm.getUserData()).thenReturn(org.apache.commons.codec.binary.Base64.encodeBase64String("#!/bin/bash\necho".getBytes()));
-        Assert.assertNull(KubernetesClusterRollingUpdateWorker.getJoinUserData(vm, "fresh1.0123456789abcdef", JOIN_HASH));
+        Assert.assertNull(KubernetesClusterRollingUpdateWorker.getJoinUserData(vm, null, "fresh1.0123456789abcdef", JOIN_HASH));
+    }
+
+    @Test
+    public void userDataJoinGetsTheGivenApiServerAddress() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getUserData()).thenReturn(org.apache.commons.codec.binary.Base64.encodeBase64String(("a\n" + OLD_JOIN
+                + "\nExecStartPre=/usr/bin/curl -k https://10.1.1.1:6443/version\ncurl https://10.1.1.1:5000/v2/\n").getBytes()));
+
+        String userData = KubernetesClusterRollingUpdateWorker.getJoinUserData(vm, "203.0.113.5", "fresh1.0123456789abcdef", JOIN_HASH);
+
+        Assert.assertEquals("a\nkubeadm join 203.0.113.5:6443 --token fresh1.0123456789abcdef --discovery-token-ca-cert-hash " + JOIN_HASH
+                + "\nExecStartPre=/usr/bin/curl -k https://203.0.113.5:6443/version\ncurl https://10.1.1.1:5000/v2/\n",
+                new String(org.apache.commons.codec.binary.Base64.decodeBase64(userData)));
+    }
+
+    private KubernetesClusterRollingUpdateWorker workerPrinting(String endpoint, String certificateCheck) {
+        KubernetesClusterRollingUpdateWorker worker = newWorker(1);
+        Mockito.doReturn("kubeadm join " + endpoint + ":6443 --token fresh1.0123456789abcdef --discovery-token-ca-cert-hash " + JOIN_HASH + " \n")
+                .when(worker).runKubectl(Mockito.startsWith("sudo /opt/bin/kubeadm token create"));
+        Mockito.doReturn(certificateCheck).when(worker).runKubectl(Mockito.startsWith("echo | timeout 10 openssl s_client -connect 10.1.1.1:6443 "));
+        return worker;
+    }
+
+    @Test
+    public void aRecreatedWorkerJoinsOnThePrintedEndpointIfTheCertificateDoesNotCoverItsAddress() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        UserVmVO w1 = addNode("w1", WORKER, NEW_OFFERING);
+
+        Assert.assertTrue(workerPrinting("203.0.113.5", "IP 10.1.1.1 does NOT match certificate\n").rollout());
+
+        Assert.assertTrue(vmUserData.get(w1.getId()), vmUserData.get(w1.getId()).contains(
+                "kubeadm join 203.0.113.5:6443 --token fresh1.0123456789abcdef --discovery-token-ca-cert-hash " + JOIN_HASH));
+    }
+
+    @Test
+    public void aRecreatedWorkerKeepsItsAddressIfTheCertificateCoversIt() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        UserVmVO w1 = addNode("w1", WORKER, NEW_OFFERING);
+
+        Assert.assertTrue(workerPrinting("203.0.113.5", "IP 10.1.1.1 does match certificate\n").rollout());
+
+        Assert.assertTrue(vmUserData.get(w1.getId()), vmUserData.get(w1.getId()).contains("kubeadm join 10.1.1.1:6443 --token fresh1.0123456789abcdef"));
+    }
+
+    @Test
+    public void aRecreatedWorkerKeepsItsAddressIfTheCertificateCanNotBeChecked() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        UserVmVO w1 = addNode("w1", WORKER, NEW_OFFERING);
+
+        Assert.assertTrue(workerPrinting("203.0.113.5", null).rollout());
+
+        Assert.assertTrue(vmUserData.get(w1.getId()), vmUserData.get(w1.getId()).contains("kubeadm join 10.1.1.1:6443 --token fresh1.0123456789abcdef"));
+    }
+
+    @Test
+    public void aRecreatedWorkerKeepsItsAddressIfTheEndpointIsNotAnAddress() {
+        setUpNewWorkerTemplate(Storage.TemplateType.USER);
+        addStackedControlPlane(1);
+        UserVmVO w1 = addNode("w1", WORKER, NEW_OFFERING);
+        KubernetesClusterRollingUpdateWorker worker = workerPrinting("api.example.com", "IP 10.1.1.1 does NOT match certificate\n");
+
+        Assert.assertTrue(worker.rollout());
+
+        Assert.assertTrue(vmUserData.get(w1.getId()), vmUserData.get(w1.getId()).contains("kubeadm join 10.1.1.1:6443 --token fresh1.0123456789abcdef"));
+    }
+
+    @Test
+    public void joinEndpointParsing() {
+        Assert.assertEquals("203.0.113.5", KubernetesClusterRollingUpdateWorker.parseJoinEndpointIp(
+                "kubeadm join 203.0.113.5:6443 --token fresh1.0123456789abcdef --discovery-token-ca-cert-hash " + JOIN_HASH + " \n"));
+        Assert.assertNull(KubernetesClusterRollingUpdateWorker.parseJoinEndpointIp("kubeadm join api.example.com:6443 --token fresh1.0123456789abcdef"));
+        Assert.assertNull(KubernetesClusterRollingUpdateWorker.parseJoinEndpointIp("kubeadm join 999.1.1.1:6443 --token fresh1.0123456789abcdef"));
+        Assert.assertNull(KubernetesClusterRollingUpdateWorker.parseJoinEndpointIp("kubeadm join 10.1.1.1:6443;id --token fresh1.0123456789abcdef"));
+        for (String ip : List.of("127.0.0.1", "0.0.0.0", "169.254.1.1", "224.0.0.1", "255.255.255.255")) {
+            Assert.assertNull(ip, KubernetesClusterRollingUpdateWorker.parseJoinEndpointIp("kubeadm join " + ip + ":6443 --token fresh1.0123456789abcdef"));
+        }
+        Assert.assertNull(KubernetesClusterRollingUpdateWorker.parseJoinEndpointIp("e.g. kubeadm join 10.9.9.9:6443\n"));
+        Assert.assertNull(KubernetesClusterRollingUpdateWorker.parseJoinEndpointIp(null));
     }
 
     @Test
