@@ -947,6 +947,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             // check snapshot permissions
             _accountMgr.checkAccess(caller, null, true, snapshotCheck);
 
+            snapshotHelper.validateVolumeFromSnapshotOnStorageCreatingVolumes(snapshotCheck, zoneId, kmsKeyId != null || diskOffering.getEncrypt());
+
             // one step operation - create volume in VM's cluster and attach it
             // to the VM
             if (vmId != null) {

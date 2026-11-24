@@ -4525,6 +4525,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         kmsManager.checkKmsKeyForVolumeEncryption(owner, rootDiskKmsKeyId, zone.getId());
+        if (snapshot != null) {
+            snapshotHelper.validateVolumeFromSnapshotOnStorageCreatingVolumes(snapshot, zone.getId(), rootDiskKmsKeyId != null || rootDiskOffering.getEncrypt());
+        }
         if (dataDiskInfoList != null) {
             for (VmDiskInfo diskInfo : dataDiskInfoList) {
                 kmsManager.checkKmsKeyForVolumeEncryption(owner, diskInfo.getKmsKeyId(), zone.getId());

@@ -20,15 +20,17 @@
 package org.apache.cloudstack.snapshot;
 
 import com.cloud.api.query.dao.SnapshotJoinDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -52,7 +54,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -93,6 +94,8 @@ public class SnapshotHelperTest {
     SnapshotJoinDao snapshotJoinDao;
     @Mock
     PrimaryDataStoreDao primaryDataStoreDaoMock;
+    @Mock
+    VolumeDao volumeDaoMock;
 
     List<DataStoreRole> dataStoreRoles = Arrays.asList(DataStoreRole.values());
 
@@ -106,59 +109,135 @@ public class SnapshotHelperTest {
         snapshotHelperSpy.dataStorageManager = dataStoreManager;
         snapshotHelperSpy.snapshotJoinDao = snapshotJoinDao;
         snapshotHelperSpy.primaryDataStoreDao = primaryDataStoreDaoMock;
+        snapshotHelperSpy.volumeDao = volumeDaoMock;
     }
 
-    private void mockSnapshotOnStore(DataStoreRole role, StoragePoolType poolType, Map<String, String> capabilities) {
+    private void mockSnapshotOnStore(DataStoreRole role, StoragePoolType poolType) {
         DataStore store = Mockito.mock(DataStore.class);
         Mockito.lenient().when(store.getRole()).thenReturn(role);
         Mockito.lenient().when(store.getId()).thenReturn(7L);
-        DataStoreDriver driver = Mockito.mock(DataStoreDriver.class);
-        Mockito.lenient().when(driver.getCapabilities()).thenReturn(capabilities);
-        Mockito.lenient().when(store.getDriver()).thenReturn(driver);
         Mockito.when(snapshotInfoMock.getDataStore()).thenReturn(store);
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         Mockito.lenient().when(pool.getPoolType()).thenReturn(poolType);
         Mockito.lenient().when(primaryDataStoreDaoMock.findById(7L)).thenReturn(pool);
     }
 
-    private static Map<String, String> canCreateVolumeFromSnapshot(boolean value) {
-        return Map.of(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT.toString(), String.valueOf(value));
+    @Test
+    public void isSnapshotOnStorageCreatingVolumesFromItPowerFlexSnapshotOnPrimary() {
+        mockSnapshotOnStore(DataStoreRole.Primary, StoragePoolType.PowerFlex);
+        Assert.assertTrue(snapshotHelperSpy.isSnapshotOnStorageCreatingVolumesFromIt(snapshotInfoMock));
     }
 
     @Test
-    public void isStorageSupportSnapshotToVolumePowerFlexSnapshotOnPrimary() {
-        mockSnapshotOnStore(DataStoreRole.Primary, StoragePoolType.PowerFlex, canCreateVolumeFromSnapshot(true));
-        Assert.assertTrue(snapshotHelperSpy.isStorageSupportSnapshotToVolume(snapshotInfoMock));
+    public void isSnapshotOnStorageCreatingVolumesFromItSnapshotOnSecondary() {
+        mockSnapshotOnStore(DataStoreRole.Image, StoragePoolType.PowerFlex);
+        Assert.assertFalse(snapshotHelperSpy.isSnapshotOnStorageCreatingVolumesFromIt(snapshotInfoMock));
     }
 
     @Test
-    public void isStorageSupportSnapshotToVolumeSnapshotOnSecondary() {
-        mockSnapshotOnStore(DataStoreRole.Image, StoragePoolType.PowerFlex, canCreateVolumeFromSnapshot(true));
-        Assert.assertFalse(snapshotHelperSpy.isStorageSupportSnapshotToVolume(snapshotInfoMock));
-    }
-
-    @Test
-    public void isStorageSupportSnapshotToVolumeOtherPoolTypes() {
+    public void isSnapshotOnStorageCreatingVolumesFromItOtherPoolTypes() {
         for (StoragePoolType type : StoragePoolType.values()) {
             if (type == StoragePoolType.PowerFlex) {
                 continue;
             }
-            mockSnapshotOnStore(DataStoreRole.Primary, type, canCreateVolumeFromSnapshot(true));
-            Assert.assertFalse(type.toString(), snapshotHelperSpy.isStorageSupportSnapshotToVolume(snapshotInfoMock));
+            mockSnapshotOnStore(DataStoreRole.Primary, type);
+            Assert.assertFalse(type.toString(), snapshotHelperSpy.isSnapshotOnStorageCreatingVolumesFromIt(snapshotInfoMock));
         }
     }
 
     @Test
-    public void isStorageSupportSnapshotToVolumeWithoutCapability() {
-        mockSnapshotOnStore(DataStoreRole.Primary, StoragePoolType.PowerFlex, canCreateVolumeFromSnapshot(false));
-        Assert.assertFalse(snapshotHelperSpy.isStorageSupportSnapshotToVolume(snapshotInfoMock));
-        mockSnapshotOnStore(DataStoreRole.Primary, StoragePoolType.PowerFlex, null);
-        Assert.assertFalse(snapshotHelperSpy.isStorageSupportSnapshotToVolume(snapshotInfoMock));
+    public void isSnapshotOnStorageCreatingVolumesFromItNullSnapshot() {
+        Assert.assertFalse(snapshotHelperSpy.isSnapshotOnStorageCreatingVolumesFromIt(null));
+    }
+
+    private Snapshot mockSnapshotStoreRef(Long poolId, StoragePoolType poolType) {
+        return mockSnapshotStoreRef(poolId, poolType, 1L);
+    }
+
+    private Snapshot mockSnapshotStoreRef(Long poolId, StoragePoolType poolType, long poolZoneId) {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        Mockito.when(snapshot.getId()).thenReturn(42L);
+        if (poolId == null) {
+            Mockito.when(snapshotDataStoreDaoMock.findOneBySnapshotAndDatastoreRole(42L, DataStoreRole.Primary)).thenReturn(null);
+            return snapshot;
+        }
+        SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(ref.getDataStoreId()).thenReturn(poolId);
+        Mockito.when(snapshotDataStoreDaoMock.findOneBySnapshotAndDatastoreRole(42L, DataStoreRole.Primary)).thenReturn(ref);
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(pool.getPoolType()).thenReturn(poolType);
+        Mockito.lenient().when(pool.getId()).thenReturn(poolId);
+        Mockito.lenient().when(pool.getDataCenterId()).thenReturn(poolZoneId);
+        Mockito.when(primaryDataStoreDaoMock.findById(poolId)).thenReturn(pool);
+        return snapshot;
     }
 
     @Test
-    public void isStorageSupportSnapshotToVolumeNullSnapshot() {
-        Assert.assertFalse(snapshotHelperSpy.isStorageSupportSnapshotToVolume(null));
+    public void getStoragePoolIdRequiredToCreateVolumeFromSnapshotPowerFlex() {
+        Assert.assertEquals(Long.valueOf(7L), snapshotHelperSpy.getStoragePoolIdRequiredToCreateVolumeFromSnapshot(mockSnapshotStoreRef(7L, StoragePoolType.PowerFlex), 1L));
+    }
+
+    @Test
+    public void getStoragePoolIdRequiredToCreateVolumeFromSnapshotOtherPoolType() {
+        Assert.assertNull(snapshotHelperSpy.getStoragePoolIdRequiredToCreateVolumeFromSnapshot(mockSnapshotStoreRef(7L, StoragePoolType.RBD), 1L));
+    }
+
+    @Test
+    public void getStoragePoolIdRequiredToCreateVolumeFromSnapshotPoolInAnotherZone() {
+        Assert.assertNull(snapshotHelperSpy.getStoragePoolIdRequiredToCreateVolumeFromSnapshot(mockSnapshotStoreRef(7L, StoragePoolType.PowerFlex, 2L), 1L));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateVolumeFromSnapshotOnStorageCreatingVolumesRefusesAnotherZone() {
+        snapshotHelperSpy.validateVolumeFromSnapshotOnStorageCreatingVolumes(mockSnapshotStoreRef(7L, StoragePoolType.PowerFlex, 2L), 1L, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateVolumeFromSnapshotOnStorageCreatingVolumesRefusesEncryption() {
+        snapshotHelperSpy.validateVolumeFromSnapshotOnStorageCreatingVolumes(mockSnapshotStoreRef(7L, StoragePoolType.PowerFlex, 1L), 1L, true);
+    }
+
+    private Snapshot mockSnapshotOfVolume(Long passphraseId, Long kmsKeyId) {
+        Snapshot snapshot = mockSnapshotStoreRef(7L, StoragePoolType.PowerFlex, 1L);
+        Mockito.when(snapshot.getVolumeId()).thenReturn(99L);
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.lenient().when(volume.getPassphraseId()).thenReturn(passphraseId);
+        Mockito.lenient().when(volume.getKmsKeyId()).thenReturn(kmsKeyId);
+        Mockito.when(volumeDaoMock.findByIdIncludingRemoved(99L)).thenReturn(volume);
+        return snapshot;
+    }
+
+    @Test
+    public void validateVolumeFromSnapshotOnStorageCreatingVolumesAllowsAnUnencryptedVolumeInTheZone() {
+        snapshotHelperSpy.validateVolumeFromSnapshotOnStorageCreatingVolumes(mockSnapshotOfVolume(null, null), 1L, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateVolumeFromSnapshotOnStorageCreatingVolumesRefusesASnapshotOfAnEncryptedVolume() {
+        snapshotHelperSpy.validateVolumeFromSnapshotOnStorageCreatingVolumes(mockSnapshotOfVolume(3L, null), 1L, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateVolumeFromSnapshotOnStorageCreatingVolumesRefusesASnapshotOfAKmsEncryptedVolume() {
+        snapshotHelperSpy.validateVolumeFromSnapshotOnStorageCreatingVolumes(mockSnapshotOfVolume(null, 4L), 1L, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateVolumeFromSnapshotOnStorageCreatingVolumesRefusesWhenTheSnapshotVolumeIsGone() {
+        Snapshot snapshot = mockSnapshotStoreRef(7L, StoragePoolType.PowerFlex, 1L);
+        Mockito.when(snapshot.getVolumeId()).thenReturn(99L);
+        snapshotHelperSpy.validateVolumeFromSnapshotOnStorageCreatingVolumes(snapshot, 1L, false);
+    }
+
+    @Test
+    public void validateVolumeFromSnapshotOnStorageCreatingVolumesIgnoresOtherStorage() {
+        snapshotHelperSpy.validateVolumeFromSnapshotOnStorageCreatingVolumes(mockSnapshotStoreRef(7L, StoragePoolType.RBD, 2L), 1L, true);
+        snapshotHelperSpy.validateVolumeFromSnapshotOnStorageCreatingVolumes(mockSnapshotStoreRef(null, null), 1L, true);
+    }
+
+    @Test
+    public void getStoragePoolIdRequiredToCreateVolumeFromSnapshotNotOnPrimary() {
+        Assert.assertNull(snapshotHelperSpy.getStoragePoolIdRequiredToCreateVolumeFromSnapshot(mockSnapshotStoreRef(null, null), 1L));
     }
 
     @Test

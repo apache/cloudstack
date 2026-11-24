@@ -20,6 +20,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.lang.reflect.Field;
@@ -35,7 +36,9 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
@@ -49,12 +52,15 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
@@ -113,6 +119,11 @@ public class VolumeOrchestratorTest {
     @Mock
     private ImageStoreDao imageStoreDaoMock;
 
+    @Mock
+    private SnapshotHelper snapshotHelperMock;
+
+    @Mock
+    private SnapshotDataFactory snapshotDataFactoryMock;
 
     @Spy
     @InjectMocks
@@ -970,4 +981,93 @@ public class VolumeOrchestratorTest {
         return null;
     }
 
+    @Test
+    public void avoidPoolsOtherThanRequiredForSnapshotAvoidsEveryOtherPoolOfTheZone() {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        Mockito.when(snapshotHelperMock.getStoragePoolIdRequiredToCreateVolumeFromSnapshot(snapshot, 1L)).thenReturn(7L);
+        StoragePoolVO required = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(required.getId()).thenReturn(7L);
+        StoragePoolVO other1 = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(other1.getId()).thenReturn(8L);
+        StoragePoolVO other2 = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(other2.getId()).thenReturn(9L);
+        Mockito.when(storagePoolDao.listByDataCenterId(1L)).thenReturn(List.of(other1, required, other2));
+        Set<StoragePool> avoid = new HashSet<>();
+
+        Assert.assertEquals(Long.valueOf(7L), volumeOrchestrator.avoidPoolsOtherThanRequiredForSnapshot(snapshot, 1L, avoid));
+        Assert.assertEquals(Set.of(other1, other2), avoid);
+    }
+
+    @Test
+    public void avoidPoolsOtherThanRequiredForSnapshotNoRequiredPool() {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        Mockito.when(snapshotHelperMock.getStoragePoolIdRequiredToCreateVolumeFromSnapshot(snapshot, 1L)).thenReturn(null);
+        Set<StoragePool> avoid = new HashSet<>();
+
+        Assert.assertNull(volumeOrchestrator.avoidPoolsOtherThanRequiredForSnapshot(snapshot, 1L, avoid));
+        Assert.assertTrue(avoid.isEmpty());
+        Mockito.verify(storagePoolDao, Mockito.never()).listByDataCenterId(Mockito.anyLong());
+    }
+
+    @Test
+    public void prepareSnapshotForVolumeCreationStorageSupportingSnapshotToTemplateUsesTheSnapshotAsIs() {
+        SnapshotInfo snapInfo = Mockito.mock(SnapshotInfo.class);
+        VolumeOrchestrator.SnapshotForVolume current = new VolumeOrchestrator.SnapshotForVolume(snapInfo, DataStoreRole.Primary, true);
+
+        Assert.assertSame(current, volumeOrchestrator.prepareSnapshotForVolumeCreation(Mockito.mock(Snapshot.class), current, true, 1L));
+        Mockito.verifyNoInteractions(snapshotHelperMock);
+    }
+
+    @Test
+    public void prepareSnapshotForVolumeCreationPowerFlexSnapshotIsNotStagedOnSecondary() {
+        SnapshotInfo snapInfo = Mockito.mock(SnapshotInfo.class);
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        Mockito.when(snapshotHelperMock.isSnapshotOnStorageCreatingVolumesFromIt(snapInfo)).thenReturn(true);
+
+        VolumeOrchestrator.SnapshotForVolume result = volumeOrchestrator.prepareSnapshotForVolumeCreation(snapshot,
+                new VolumeOrchestrator.SnapshotForVolume(snapInfo, DataStoreRole.Primary, true), false, 1L);
+
+        Assert.assertSame(snapInfo, result.snapInfo);
+        Assert.assertEquals(DataStoreRole.Primary, result.dataStoreRole);
+        Assert.assertFalse("no temporary secondary copy to expunge or sync", result.kvmSnapshotOnlyInPrimaryStorage);
+        Mockito.verify(snapshotHelperMock, Mockito.never()).backupSnapshotToSecondaryStorageIfNotExists(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
+        Mockito.verify(snapshotHelperMock, Mockito.never()).getDataStoreRole(Mockito.any());
+    }
+
+    @Test
+    public void prepareSnapshotForVolumeCreationOtherStorageIsStagedAsBefore() {
+        SnapshotInfo snapInfo = Mockito.mock(SnapshotInfo.class);
+        SnapshotInfo primaryInfo = Mockito.mock(SnapshotInfo.class);
+        SnapshotInfo secondaryInfo = Mockito.mock(SnapshotInfo.class);
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        Mockito.when(snapshot.getId()).thenReturn(42L);
+        Mockito.when(snapshotHelperMock.isSnapshotOnStorageCreatingVolumesFromIt(snapInfo)).thenReturn(false);
+        Mockito.when(snapshotHelperMock.getDataStoreRole(snapshot)).thenReturn(DataStoreRole.Primary);
+        Mockito.when(snapshotDataFactoryMock.getSnapshotWithRoleAndZone(42L, DataStoreRole.Primary, 1L)).thenReturn(primaryInfo);
+        Mockito.when(snapshotHelperMock.isKvmSnapshotOnlyInPrimaryStorage(snapshot, DataStoreRole.Primary)).thenReturn(true);
+        Mockito.when(snapshotHelperMock.backupSnapshotToSecondaryStorageIfNotExists(primaryInfo, DataStoreRole.Primary, snapshot, true)).thenReturn(secondaryInfo);
+
+        VolumeOrchestrator.SnapshotForVolume result = volumeOrchestrator.prepareSnapshotForVolumeCreation(snapshot,
+                new VolumeOrchestrator.SnapshotForVolume(snapInfo, DataStoreRole.Primary, true), false, 1L);
+
+        Assert.assertSame(secondaryInfo, result.snapInfo);
+        Assert.assertTrue(result.kvmSnapshotOnlyInPrimaryStorage);
+    }
+
+    @Test
+    public void prepareSnapshotForVolumeCreationStagingFailureExpungesTheTemporaryCopy() {
+        SnapshotInfo snapInfo = Mockito.mock(SnapshotInfo.class);
+        SnapshotInfo primaryInfo = Mockito.mock(SnapshotInfo.class);
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        Mockito.when(snapshot.getId()).thenReturn(42L);
+        Mockito.when(snapshotHelperMock.getDataStoreRole(snapshot)).thenReturn(DataStoreRole.Primary);
+        Mockito.when(snapshotDataFactoryMock.getSnapshotWithRoleAndZone(42L, DataStoreRole.Primary, 1L)).thenReturn(primaryInfo);
+        Mockito.when(snapshotHelperMock.isKvmSnapshotOnlyInPrimaryStorage(snapshot, DataStoreRole.Primary)).thenReturn(true);
+        Mockito.when(snapshotHelperMock.backupSnapshotToSecondaryStorageIfNotExists(primaryInfo, DataStoreRole.Primary, snapshot, true))
+                .thenThrow(new CloudRuntimeException("Could not find snapshot [42] in Image storage"));
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> volumeOrchestrator.prepareSnapshotForVolumeCreation(snapshot,
+                new VolumeOrchestrator.SnapshotForVolume(snapInfo, DataStoreRole.Primary, true), false, 1L));
+        Mockito.verify(snapshotHelperMock).expungeTemporarySnapshot(true, primaryInfo);
+    }
 }

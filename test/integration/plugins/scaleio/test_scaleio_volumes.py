@@ -44,6 +44,9 @@ from nose.plugins.attrib import attr
 #  Only KVM hypervisor is supported for PowerFlex/ScaleIO storage pool
 #  KVM host(s) with ScaleIO Data Client (SDC) installed and connected to Metadata Manager (MDM)
 #
+#  For test_13 (data check of a volume created from a snapshot), the test must reach the Instance over SSH (a shared or
+#  basic network routed to the test host) with the template credentials set in TestData.virtualMachineSsh
+#
 #  For volume migration tests, additional storage pool(s) are required
 #  One PowerFlex/ScaleIO storage pool on the same ScaleIO storage cluster/instance
 #  One PowerFlex/ScaleIO storage pool on different ScaleIO storage cluster/instance
@@ -84,6 +87,7 @@ class TestData():
     virtualMachine = "virtualmachine"
     virtualMachine2 = "virtualmachine2"
     virtualMachine3 = "virtualmachine3"
+    virtualMachineSsh = "virtualmachinessh"
     virtualMachine4 = "virtualmachine4"
     volume_1 = "volume_1"
     volume_2 = "volume_2"
@@ -138,6 +142,14 @@ class TestData():
             TestData.virtualMachine2: {
                 "name": "TestVM2",
                 "displayname": "Test VM 2"
+            },
+            # an Instance the test can log in to (set the template's credentials), used to check volume data
+            TestData.virtualMachineSsh: {
+                "name": "TestVMSsh",
+                "displayname": "Test VM SSH",
+                "username": "root",
+                "password": "password",
+                "ssh_port": 22
             },
             TestData.virtualMachine3: {
                 "name": "TestVM3",
@@ -1387,6 +1399,146 @@ class TestScaleIOVolumes(cloudstackTestCase):
         #######################################
 
         test_virtual_machine.delete(self.apiClient, True)
+
+    # md5 of 16 MiB of zeros, and of empty input
+    _md5_16_mib_of_zeros = "2c7ab85a893283e98c931e9511add182"
+    _md5_of_nothing = "d41d8cd98f00b204e9800998ecf8427e"
+
+    @attr(tags=['basic'], required_hardware=True)
+    def test_13_create_volume_from_snapshot_keeps_the_data(self):
+        '''Create a volume from a volume snapshot and check it holds the data written before the snapshot'''
+
+        test_virtual_machine = VirtualMachine.create(
+            self.apiClient,
+            self.testdata[TestData.virtualMachineSsh],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            serviceofferingid=self.compute_offering.id,
+            templateid=self.template.id,
+            domainid=self.domain.id,
+            startvm=True
+        )
+        resources = [test_virtual_machine]
+        try:
+            time.sleep(90)
+            try:
+                ssh = test_virtual_machine.get_ssh_client()
+            except Exception as e:
+                self.skipTest("The Instance is not reachable over SSH (see the prerequisites): %s" % e)
+
+            source_volume = Volume.create(
+                self.apiClient,
+                self.testdata[TestData.volume_1],
+                account=self.account.name,
+                domainid=self.domain.id,
+                zoneid=self.zone.id,
+                diskofferingid=self.disk_offering.id
+            )
+            resources.append(source_volume)
+            disks_before = self._disks(ssh)
+            test_virtual_machine.attach_volume(self.apiClient, source_volume)
+            time.sleep(10)
+            source_device = "/dev/" + self._new_disk(ssh, disks_before)
+
+            # data before the snapshot
+            self._run(ssh, "dd if=/dev/urandom of=%s bs=1M count=16 oflag=direct" % source_device)
+            checksum_at_snapshot = self._md5_16_mib(ssh, source_device)
+            self.assertNotIn(checksum_at_snapshot, (self._md5_16_mib_of_zeros, self._md5_of_nothing), "The test data was not written")
+
+            snapshot = Snapshot.create(self.apiClient, source_volume.id, account=self.account.name, domainid=self.domain.id)
+            resources.append(snapshot)
+
+            # data after the snapshot, which the new volume must not have
+            self._run(ssh, "dd if=/dev/zero of=%s bs=1M count=16 oflag=direct" % source_device)
+            self.assertEqual(self._md5_16_mib(ssh, source_device), self._md5_16_mib_of_zeros, "The source volume was not overwritten")
+
+            new_volume = Volume.create_from_snapshot(
+                self.apiClient,
+                snapshot.id,
+                {"diskname": "vol-from-snapshot"},
+                account=self.account.name,
+                domainid=self.domain.id,
+                zoneid=self.zone.id
+            )
+            resources.append(new_volume)
+            new_volume = self._get_volume(new_volume.id)
+            self.assertEqual(new_volume.state.lower(), "ready", "The volume created from the snapshot is not Ready")
+            self.assertEqual(new_volume.storageid, self._get_volume(source_volume.id).storageid,
+                             "The volume created from the snapshot is not on the snapshot's storage pool")
+
+            disks_before = self._disks(ssh)
+            test_virtual_machine.attach_volume(self.apiClient, new_volume)
+            time.sleep(10)
+            new_device = "/dev/" + self._new_disk(ssh, disks_before)
+
+            self.assertEqual(self._md5_16_mib(ssh, new_device), checksum_at_snapshot,
+                             "The volume created from the snapshot does not hold the data written before the snapshot")
+
+            test_virtual_machine.detach_volume(self.apiClient, new_volume)
+            test_virtual_machine.detach_volume(self.apiClient, source_volume)
+        finally:
+            # newest first: the new volume and the snapshot before the source volume, the Instance last
+            self.cleanup.extend(reversed(resources))
+
+    @attr(tags=['basic'], required_hardware=False)
+    def test_14_deploy_vm_from_root_volume_snapshot(self):
+        '''Deploy an Instance from a snapshot of a ROOT volume on PowerFlex'''
+
+        source_vm = VirtualMachine.create(
+            self.apiClient,
+            self.testdata[TestData.virtualMachine2],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            serviceofferingid=self.compute_offering.id,
+            templateid=self.template.id,
+            domainid=self.domain.id,
+            startvm=True
+        )
+        resources = [source_vm]
+        try:
+            root_volume = list_volumes(self.apiClient, virtualmachineid=source_vm.id, type="ROOT", listall=True)[0]
+            snapshot = Snapshot.create(self.apiClient, root_volume.id, account=self.account.name, domainid=self.domain.id)
+            resources.append(snapshot)
+
+            new_vm = VirtualMachine.create(
+                self.apiClient,
+                self.testdata[TestData.virtualMachine3],
+                accountid=self.account.name,
+                zoneid=self.zone.id,
+                serviceofferingid=self.compute_offering.id,
+                snapshotid=snapshot.id,
+                domainid=self.domain.id,
+                startvm=True
+            )
+            resources.append(new_vm)
+
+            self.assertEqual(self._get_vm(new_vm.id).state.lower(), "running", TestScaleIOVolumes._vm_not_in_running_state_err_msg)
+            new_root = list_volumes(self.apiClient, virtualmachineid=new_vm.id, type="ROOT", listall=True)[0]
+            self.assertEqual(new_root.storageid, root_volume.storageid, "The new ROOT volume is not on the snapshot's storage pool")
+            self.assertNotEqual(new_root.id, root_volume.id, "The new Instance must have its own ROOT volume")
+        finally:
+            self.cleanup.extend(reversed(resources))
+
+    def _run(self, ssh, command):
+        out = ssh.execute(command + " >/dev/null 2>&1 && echo CMD-OK")
+        self.assertIn("CMD-OK", [l.strip() for l in out], "Command failed in the Instance: %s" % command)
+
+    def _md5_16_mib(self, ssh, device):
+        out = ssh.execute("set -o pipefail; dd if=%s bs=1M count=16 iflag=direct 2>/dev/null | md5sum && echo CMD-OK" % device)
+        self.assertIn("CMD-OK", [l.strip() for l in out], "Could not read %s in the Instance" % device)
+        return out[0].split()[0]
+
+    @staticmethod
+    def _disks(ssh):
+        # whole virtio/SCSI disks (vda, sdb) from /proc/partitions, which old guests without lsblk also have;
+        # names ending in a digit are partitions here (NVMe-style disk names are not expected in these guests)
+        return set(l.split()[3] for l in ssh.execute("cat /proc/partitions")[1:]
+                   if len(l.split()) == 4 and not l.split()[3][-1].isdigit())
+
+    def _new_disk(self, ssh, disks_before):
+        new_disks = self._disks(ssh) - disks_before
+        self.assertEqual(len(new_disks), 1, "Could not identify the attached disk in the Instance")
+        return new_disks.pop()
 
     def _create_vm_using_template_and_destroy_vm(self, template):
         vm_name = "VM-%d" % random.randint(0, 100)
