@@ -919,6 +919,45 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
     }
 
     @Test
+    public void deleteOfAnOlderSnapshotIsRefusedWhileANewerOneSharesItsFileWithTheVolume() {
+        mockChain(SNAPSHOT_ID, 11L);
+        volumeTO.setPath("frozen-11");
+
+        CloudRuntimeException e = assertThrows(CloudRuntimeException.class, () -> strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        assertTrue(e.getMessage().contains("snapshot-11"));
+        verify(strategy, never()).sendToHost(anyLong(), any());
+        verify(snapshotDetailsDao, never()).addDetail(eq(SNAPSHOT_ID), eq(KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE),
+                any(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void takeIsRefusedWhileTheVolumeSharesItsFileWithASnapshot() {
+        mockChain(5L);
+        volumeTO.setPath("frozen-5");
+        mockSnapshotOnPrimary();
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.takeSnapshot(snapshotInfo));
+
+        verify(strategy, never()).sendToHost(anyLong(), any());
+        verify(volumeInfo).stateTransit(Volume.Event.OperationFailed);
+    }
+
+    @Test
+    public void completingAnEarlierMiddleMergeDoesNotCountThePhysicalSizeTwice() {
+        mockChain(SNAPSHOT_ID, 11L);
+        SnapshotDataStoreVO childStoreRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(11L, DataStoreRole.Primary);
+        when(childStoreRef.getInstallPath()).thenReturn("frozen-" + SNAPSHOT_ID);
+        ((SnapshotObjectTO) snapshotDataFactory.getSnapshot(11L, POOL_ID, DataStoreRole.Primary).getTO()).setPath("frozen-" + SNAPSHOT_ID);
+
+        assertTrue(strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        verify(strategy, never()).sendToHost(anyLong(), any());
+        verify(childStoreRef, never()).setPhysicalSize(Mockito.anyLong());
+        verify(childStoreRef).setInstallPath("frozen-" + SNAPSHOT_ID);
+    }
+
+    @Test
     public void revertIsRefusedWhenTheVolumeIsOnTheFileOfASnapshot() {
         mockChain(SNAPSHOT_ID);
         volumeTO.setPath("frozen-" + SNAPSHOT_ID);

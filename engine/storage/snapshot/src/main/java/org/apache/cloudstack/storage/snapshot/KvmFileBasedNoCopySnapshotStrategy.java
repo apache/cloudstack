@@ -361,7 +361,9 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
 
             // The position of the snapshot in the backing chain, which follows the order of the takes and not the order of the snapshot ids (allocated before
             // the work is queued). Computed while the volume is reserved.
-            long sequence = listNoCopySnapshotsOfVolume(volumeInfo.getId()).stream().mapToLong(this::getChainSequence).max().orElse(0L) + 1;
+            List<SnapshotVO> currentChain = listNoCopySnapshotsOfVolume(volumeInfo.getId());
+            validateChainFilesAreDistinct(currentChain, ((VolumeObjectTO) volumeInfo.getTO()).getPath(), volumeInfo.getUuid());
+            long sequence = currentChain.stream().mapToLong(this::getChainSequence).max().orElse(0L) + 1;
             snapshotOnPrimary = createSnapshotOnPrimary(snapshot);
             VolumeObjectTO volumeTO = (VolumeObjectTO) volumeInfo.getTO();
             String oldVolumePath = volumeTO.getPath();
@@ -541,15 +543,8 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
                         "snapshots taken after snapshot [%s] before reverting it.", volumeInfo.getUuid(), snapshotVO.getUuid()));
             }
 
-            String volumePath = ((VolumeObjectTO) volumeInfo.getTO()).getPath();
-            for (SnapshotVO chainSnapshot : chain) {
-                SnapshotDataStoreVO chainStoreRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(chainSnapshot.getId(), DataStoreRole.Primary);
-                if (chainStoreRef != null && volumePath != null && volumePath.equals(chainStoreRef.getInstallPath())) {
-                    // Reverting replaces (and deletes) the current file of the volume, which here is also the file of a snapshot.
-                    throw new CloudRuntimeException(String.format("Volume [%s] is on [%s], which is also the file of snapshot [%s]: delete snapshot [%s] (which completes " +
-                            "an earlier merge) before reverting.", volumeInfo.getUuid(), volumePath, chainSnapshot.getUuid(), chainSnapshot.getUuid()));
-                }
-            }
+            // Reverting replaces (and deletes) the current file of the volume, which must not also be the file of a snapshot.
+            validateChainFilesAreDistinct(chain, ((VolumeObjectTO) volumeInfo.getTO()).getPath(), volumeInfo.getUuid());
 
             VMInstanceVO vm = getAttachedVm(volumeInfo);
             if (vm != null && !VirtualMachine.State.Stopped.equals(vm.getState())) {
@@ -656,6 +651,28 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
             return deleteSnapshotInternal(current);
         } finally {
             snapshotDao.releaseFromLockTable(snapshotId);
+        }
+    }
+
+    /**
+     * The files of the snapshots of a volume and of the volume itself are distinct, except while an earlier merge is completed on storage but not in the
+     * metadata (the child was then set to the merged file). Until that snapshot is deleted again, which only updates the metadata, any other operation on the
+     * chain could delete or replace a file that is still in use.
+     */
+    protected void validateChainFilesAreDistinct(List<SnapshotVO> chain, String volumePath, String volumeUuid) {
+        List<String> files = new ArrayList<>();
+        for (SnapshotVO chainSnapshot : chain) {
+            SnapshotDataStoreVO storeRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(chainSnapshot.getId(), DataStoreRole.Primary);
+            files.add(storeRef == null ? null : storeRef.getInstallPath());
+        }
+        files.add(volumePath);
+        for (int i = 0; i < chain.size(); i++) {
+            String file = files.get(i);
+            if (file != null && files.subList(i + 1, files.size()).contains(file)) {
+                throw new CloudRuntimeException(String.format("The file [%s] of KVM file-based no-copy snapshot [%s] of volume [%s] is also used by its child: an " +
+                        "earlier merge was not completed in the metadata. Delete snapshot [%s] first, which completes it.", file, chain.get(i).getUuid(), volumeUuid,
+                        chain.get(i).getUuid()));
+            }
         }
     }
 
@@ -826,14 +843,18 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
                 return true;
             }
 
+            // Any other shared file means an earlier merge is not completed in the metadata: merging now could delete a file that is still in use.
+            validateChainFilesAreDistinct(chain, volumeTO.getPath(), volumeVO.getUuid());
+
             MergeDiskOnlyVmSnapshotCommand command = new MergeDiskOnlyVmSnapshotCommand(List.of(deltaMergeTree), vmRunning, vm != null ? vm.getInstanceName() : null);
             command.setWait(MERGE_COMMAND_WAIT_SECONDS);
+            long hostId = getHostIdForOperation(volumeInfo, vm);
             // Recorded before the host acts: once the merge starts, the file of this snapshot may hold data of its child, so it is no longer a valid point in time.
             // This also holds if the management server stops before an answer comes back.
             snapshotDetailsDao.addDetail(snapshotVO.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE, Boolean.TRUE.toString(), false);
             Answer answer;
             try {
-                answer = sendToHost(getHostIdForOperation(volumeInfo, vm), command);
+                answer = sendToHost(hostId, command);
             } catch (CommandNotSentException e) {
                 snapshotDetailsDao.removeDetail(snapshotVO.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE);
                 throw e;
@@ -940,8 +961,11 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
         } else {
             SnapshotDataStoreVO childStoreRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(childSnapshot.getId(), DataStoreRole.Primary);
             logger.debug("Snapshot [{}] is now on [{}].", childSnapshot.getUuid(), mergedPath);
+            if (!mergedPath.equals(childStoreRef.getInstallPath())) {
+                // Not when completing an earlier merge whose child was already updated.
+                childStoreRef.setPhysicalSize(childStoreRef.getPhysicalSize() + snapshotStoreRef.getPhysicalSize());
+            }
             childStoreRef.setInstallPath(mergedPath);
-            childStoreRef.setPhysicalSize(childStoreRef.getPhysicalSize() + snapshotStoreRef.getPhysicalSize());
             snapshotStoreDao.update(childStoreRef.getId(), childStoreRef);
         }
         removeSnapshotMetadata(snapshotVO);
