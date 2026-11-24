@@ -984,7 +984,7 @@ public class VolumeOrchestratorTest {
         for (Volume.State state : List.of(Volume.State.Snapshotting, Volume.State.RevertSnapshotting)) {
             VolumeVO volume = Mockito.mock(VolumeVO.class);
             Mockito.when(volume.getState()).thenReturn(state);
-            Assert.assertThrows(CloudRuntimeException.class, () -> volumeOrchestrator.checkVolumeIsNotUnderSnapshotOperation(volume, "vol"));
+            Assert.assertThrows(CloudRuntimeException.class, () -> volumeOrchestrator.checkVolumeIsNotUnderSnapshotOperation(volume));
         }
     }
 
@@ -994,7 +994,7 @@ public class VolumeOrchestratorTest {
         for (Volume.State state : List.of(Volume.State.Snapshotting, Volume.State.RevertSnapshotting)) {
             VolumeVO volume = Mockito.mock(VolumeVO.class);
             Mockito.when(volume.getState()).thenReturn(state);
-            volumeOrchestrator.checkVolumeIsNotUnderSnapshotOperation(volume, "vol");
+            volumeOrchestrator.checkVolumeIsNotUnderSnapshotOperation(volume);
         }
     }
 
@@ -1082,7 +1082,7 @@ public class VolumeOrchestratorTest {
         for (Volume.State state : List.of(Volume.State.Ready, Volume.State.Allocated, Volume.State.Creating)) {
             VolumeVO volume = Mockito.mock(VolumeVO.class);
             Mockito.when(volume.getState()).thenReturn(state);
-            volumeOrchestrator.checkVolumeIsNotUnderSnapshotOperation(volume, "vol");
+            volumeOrchestrator.checkVolumeIsNotUnderSnapshotOperation(volume);
         }
     }
 }

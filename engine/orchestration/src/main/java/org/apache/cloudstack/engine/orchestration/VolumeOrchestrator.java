@@ -1894,10 +1894,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
      * A KVM file-based no-copy snapshot operation that is not serialized with the Instance (deleting or reverting a snapshot of a stopped Instance) may be
      * replacing or merging the files of the volume: starting the Instance meanwhile would open files that are about to be removed.
      */
-    protected void checkVolumeIsNotUnderSnapshotOperation(VolumeVO vol, String volToString) {
+    protected void checkVolumeIsNotUnderSnapshotOperation(VolumeVO vol) {
         if ((Volume.State.Snapshotting.equals(vol.getState()) || Volume.State.RevertSnapshotting.equals(vol.getState())) && volumeHasKvmFileBasedNoCopySnapshots(vol.getId())) {
-            throw new CloudRuntimeException(String.format("Volume %s is in state %s: the Instance cannot be started until the snapshot operation on it finishes.",
-                    volToString, vol.getState()));
+            throw new CloudRuntimeException(String.format("Volume %s is in state %s: the Instance cannot be started until the snapshot operation on it finishes. If " +
+                    "no operation is running, a KVM file-based no-copy snapshot operation on it did not complete: check the error of that operation if there is one, " +
+                    "otherwise the details of the volume's snapshots and its backing chain on the storage; set the paths and the volume state as needed, and start " +
+                    "the Instance again.", getReflectOnlySelectedFields(vol), vol.getState()));
         }
     }
 
@@ -2307,7 +2309,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         // Checked on all the volumes of the Instance: the usable volumes below leave out the volumes reserved by a snapshot operation, so the Instance would
         // otherwise start without them.
         for (VolumeVO vol : _volsDao.findByInstance(vm.getId())) {
-            checkVolumeIsNotUnderSnapshotOperation(vol, getReflectOnlySelectedFields(vol));
+            checkVolumeIsNotUnderSnapshotOperation(vol);
         }
 
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
