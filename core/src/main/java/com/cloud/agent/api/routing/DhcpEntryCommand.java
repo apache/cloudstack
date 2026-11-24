@@ -34,6 +34,10 @@ public class DhcpEntryCommand extends NetworkElementCommand {
     String ip6Gateway;
     String duid;
     private boolean isDefault;
+    // True only for a nic's associated-network entry (multi-VLAN trunk nics) - distinct from isDefault,
+    // which reflects whether the nic is the VM's default nic, not whether this entry may coexist with
+    // other entries sharing the same MAC. See cs_dhcp.py's merge() on the VR for how this is consumed.
+    private boolean associatedNetwork;
     boolean executeInSequence = false;
     boolean remove;
     Long leaseTime;
@@ -152,6 +156,14 @@ public class DhcpEntryCommand extends NetworkElementCommand {
 
     public void setDefault(boolean isDefault) {
         this.isDefault = isDefault;
+    }
+
+    public boolean isAssociatedNetwork() {
+        return associatedNetwork;
+    }
+
+    public void setAssociatedNetwork(boolean associatedNetwork) {
+        this.associatedNetwork = associatedNetwork;
     }
 
     public Long getLeaseTime() {

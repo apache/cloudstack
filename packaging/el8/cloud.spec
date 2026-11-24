@@ -130,6 +130,12 @@ Requires: sysstat
 Requires: python3-libnbd
 Suggests: ceph-common
 Requires: socat
+Requires: file
+Requires: openssl
+Requires: bzip2
+Requires: gzip
+Requires: unzip
+Requires: xz
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent

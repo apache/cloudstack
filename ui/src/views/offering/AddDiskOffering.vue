@@ -74,6 +74,7 @@ export default {
           displaytext: values.displaytext,
           storageType: values.storagetype,
           cacheMode: values.writecachetype,
+          errorpolicy: values.errorpolicy,
           provisioningType: values.provisioningtype,
           customized: values.customdisksize,
           disksizestrictness: values.disksizestrictness,
