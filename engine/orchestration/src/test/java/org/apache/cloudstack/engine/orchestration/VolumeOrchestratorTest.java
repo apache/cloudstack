@@ -1039,6 +1039,25 @@ public class VolumeOrchestratorTest {
     }
 
     @Test
+    public void cleanupVolumeDuringSnapshotFailureKeepsAVolumeWithKvmFileBasedNoCopySnapshotsReserved() {
+        SnapshotDetailsDao snapshotDetailsDao = Mockito.mock(SnapshotDetailsDao.class);
+        SnapshotService snapshotService = Mockito.mock(SnapshotService.class);
+        volumeOrchestrator.snapshotDetailsDao = snapshotDetailsDao;
+        volumeOrchestrator._snapshotSrv = snapshotService;
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getState()).thenReturn(Volume.State.Snapshotting);
+        Mockito.doReturn(volume).when(volumeDao).findById(1L);
+        // The failed job is of another (regular) snapshot of the volume; a no-copy snapshot operation may hold the volume.
+        Mockito.doReturn(true).when(volumeOrchestrator).volumeHasKvmFileBasedNoCopySnapshots(1L);
+
+        volumeOrchestrator.cleanupVolumeDuringSnapshotFailure(1L, 3L);
+
+        Mockito.verify(snapshotService).cleanupVolumeDuringSnapshotFailure(1L, 3L);
+        Mockito.verify(volume, Mockito.never()).setState(Mockito.any());
+        Mockito.verify(volumeDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
     public void checkVolumeIsNotUnderSnapshotOperationAllowsOtherStates() {
         for (Volume.State state : List.of(Volume.State.Ready, Volume.State.Allocated, Volume.State.Creating)) {
             VolumeVO volume = Mockito.mock(VolumeVO.class);

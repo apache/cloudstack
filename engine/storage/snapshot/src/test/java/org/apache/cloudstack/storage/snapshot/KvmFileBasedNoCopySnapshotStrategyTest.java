@@ -27,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -1098,6 +1099,72 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
 
         verify(creating).setState(Snapshot.State.Destroyed);
         verify(strategy, never()).sendToHost(anyLong(), any());
+    }
+
+    // the host acted, but saving the outcome in the DB failed
+
+    @Test
+    public void takeSnapshotOfRunningVmWhoseNewPathCannotBeSavedKeepsTheVolumeReserved() {
+        attachVolumeToVm();
+        mockSnapshotOnPrimary();
+        CreateDiskOnlyVmSnapshotAnswer answer = mock(CreateDiskOnlyVmSnapshotAnswer.class);
+        when(answer.getResult()).thenReturn(true);
+        doReturn(answer).when(strategy).sendToHost(eq(HOST_ID), any());
+        when(volumeDao.update(Mockito.eq(VOLUME_ID), any())).thenThrow(new CloudRuntimeException("database error"));
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.takeSnapshot(snapshotInfo));
+
+        verify(volumeInfo, never()).stateTransit(Volume.Event.OperationFailed);
+        verify(volumeInfo, never()).stateTransit(Volume.Event.OperationSucceeded);
+        verify(strategy, never()).markSnapshotOnPrimaryAsFailed(any());
+        verify(snapshotDetailsDao, never()).removeDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH);
+    }
+
+    @Test
+    public void revertWhoseNewPathCannotBeSavedKeepsTheVolumeReserved() {
+        mockChain(SNAPSHOT_ID);
+        RevertDiskOnlyVmSnapshotAnswer answer = mock(RevertDiskOnlyVmSnapshotAnswer.class);
+        when(answer.getResult()).thenReturn(true);
+        VolumeObjectTO revertedTO = new VolumeObjectTO();
+        revertedTO.setPath("reverted-delta");
+        when(answer.getVolumeObjectTos()).thenReturn(List.of(revertedTO));
+        doReturn(answer).when(strategy).sendToHost(anyLong(), any());
+        when(volumeDao.update(Mockito.eq(VOLUME_ID), any())).thenThrow(new CloudRuntimeException("database error"));
+
+        CloudRuntimeException e = assertThrows(CloudRuntimeException.class, () -> strategy.revertSnapshot(snapshotInfo));
+
+        assertTrue(e.getMessage().contains("reverted-delta"));
+        verify(volumeInfo, never()).stateTransit(Volume.Event.OperationFailed);
+        verify(volumeInfo, never()).stateTransit(Volume.Event.OperationSucceeded);
+    }
+
+    @Test
+    public void mergeWhoseMetadataCannotBeSavedKeepsTheVolumeReserved() {
+        mockChain(SNAPSHOT_ID);
+        doReturn(new Answer(null, true, null)).when(strategy).sendToHost(anyLong(), any());
+        when(volumeDao.update(Mockito.eq(VOLUME_ID), any())).thenThrow(new CloudRuntimeException("database error"));
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        verify(volumeInfo, never()).stateTransit(Volume.Event.OperationFailed);
+        verify(volumeInfo, never()).stateTransit(Volume.Event.OperationSucceeded);
+    }
+
+    @Test
+    public void deleteOfAnIncompleteTakeOfAnExpungedVolumeDeletesTheFrozenFile() {
+        SnapshotVO creating = mockIncompleteTake("new-delta", "frozen-10", Volume.State.Expunged, "new-delta");
+        when(snapshotDao.findById(SNAPSHOT_ID)).thenReturn(creating);
+        when(volumeDao.findById(VOLUME_ID)).thenReturn(null);
+        SnapshotDataStoreVO storeRef = mock(SnapshotDataStoreVO.class);
+        when(storeRef.getDataStoreId()).thenReturn(POOL_ID);
+        when(snapshotStoreDao.findOneBySnapshotAndDatastoreRole(SNAPSHOT_ID, DataStoreRole.Primary)).thenReturn(storeRef);
+        doNothing().when(strategy).deleteFrozenFileOfExpungedVolume(creating, storeRef);
+
+        assertTrue(strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        verify(storeRef).setInstallPath("frozen-10");
+        verify(strategy).deleteFrozenFileOfExpungedVolume(creating, storeRef);
+        verify(creating).setState(Snapshot.State.Destroyed);
     }
 
     @Test

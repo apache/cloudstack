@@ -2552,6 +2552,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         String volumeToString = getReflectOnlySelectedFields(volume);
 
+        if (volume.getState() == Volume.State.Snapshotting && volumeHasKvmFileBasedNoCopySnapshots(volumeId)) {
+            // Another operation on its KVM file-based no-copy snapshots (a take or a delete without an answer) may hold the volume deliberately.
+            logger.warn("Not changing the state of volume [{}] back to Ready, as it has KVM file-based no-copy snapshots: check them, then set its state.",
+                    volumeToString);
+            return;
+        }
         if (volume.getState() == Volume.State.Snapshotting) {
             logger.debug("Changing volume [{}] state back to Ready.", volumeToString);
             volume.setState(Volume.State.Ready);
