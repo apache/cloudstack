@@ -22,8 +22,8 @@ bgppeers databag, which cs_bgppeers.merge keeps beside the peer entries.
 
 Once bgpd runs, changes are applied with frr-reload.py and frr is not
 restarted, so sessions to unchanged peers stay up. Because frr-reload.py
-changes any setting the file leaves out, the file states the FRR version,
-the BGP defaults and the forwarding setting for both address families.
+changes any setting the file leaves out, the file states the BGP defaults
+it relies on and the forwarding setting for both address families.
 
 CsBgpPeers also writes a copy of frr.conf with every password value replaced
 by <masked> (MASKED_COPY), so the copy can be collected by getDiagnosticsData.
@@ -165,11 +165,12 @@ class TestCsBgpPeersFrrReload(OperatorFrrTestCase):
         self.assertTrue(restart_at, self.shell.commands)
         self.assertLess(reload_at[0], restart_at[0])
 
-    def test_operator_version_and_defaults_lines(self):
+    def test_operator_defaults_lines(self):
+        # No version line, so FRR uses the installed version's defaults. The two the
+        # router relies on are stated, so a reload never depends on those defaults.
         lines = self.run_operator()
-        self.assertEqual(lines[0], "frr version 8.4.4")
-        self.assertIn("frr defaults traditional", lines)
-        self.assertNotIn("frr version 6.0", lines)
+        self.assertEqual(lines[0], "frr defaults traditional")
+        self.assertFalse([x for x in lines if x.startswith("frr version")], lines)
         block = self.router_block(lines)
         self.assertIn(" bgp ebgp-requires-policy", block)
         self.assertIn(" bgp network import-check", block)

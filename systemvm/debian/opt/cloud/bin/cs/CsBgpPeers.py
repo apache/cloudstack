@@ -28,7 +28,6 @@ FRR_DIR = "/etc/frr/"
 FRR_DAEMONS = "/etc/frr/daemons"
 FRR_CONFIG = "/etc/frr/frr.conf"
 FRR_RELOAD = "/usr/lib/frr/frr-reload.py"
-FRR_VERSION = "8.4.4"
 IPV6_FORWARDING = "/proc/sys/net/ipv6/conf/all/forwarding"
 # A copy of frr.conf without passwords, which getDiagnosticsData collects.
 MASKED_COPY = "/var/cache/cloud/frr.conf.masked"
@@ -120,7 +119,6 @@ class CsBgpPeers(CsDataBag):
 
     def _pre_set(self):
         # frr-reload.py changes every setting the file leaves out, so the file states them.
-        self.frr_conf.add("frr version {}".format(FRR_VERSION))
         self.frr_conf.add("frr defaults traditional")
         self.frr_conf.add("hostname {}".format(CsHelper.get_hostname()))
         self.frr_conf.add("service integrated-vtysh-config")
