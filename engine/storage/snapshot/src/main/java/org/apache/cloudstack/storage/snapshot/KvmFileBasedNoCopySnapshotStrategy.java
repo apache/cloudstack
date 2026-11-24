@@ -55,7 +55,9 @@ import com.cloud.agent.api.storage.MergeDiskOnlyVmSnapshotCommand;
 import com.cloud.agent.api.storage.RevertDiskOnlyVmSnapshotAnswer;
 import com.cloud.agent.api.storage.RevertDiskOnlyVmSnapshotCommand;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDetailsDao;
@@ -107,9 +109,11 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
     protected static final String KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE = "kvmFileBasedNoCopySnapshotMergeIncomplete";
 
     /**
-     * Snapshot detail holding the new volume file of a take whose outcome is unknown (no answer from the host for a running Instance).
+     * Snapshot details holding, while a take is in progress, the new file of the volume and the file that becomes the snapshot. They are removed when the take
+     * completes; if they remain (no answer from the host, management server restart), deleting the snapshot uses them to complete or discard it.
      */
     protected static final String KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH = "kvmFileBasedNoCopySnapshotPendingVolumePath";
+    protected static final String KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_FROZEN_PATH = "kvmFileBasedNoCopySnapshotPendingFrozenPath";
 
     /**
      * Wait for the merge command: at least the agent's own merge timeout (qcow2.delta.merge.timeout, 72 hours by default), so that a long merge is not taken for
@@ -331,6 +335,8 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
         boolean succeeded = false;
         boolean hostSucceeded = false;
         boolean keepVolumeReserved = false;
+        String pendingVolumePath = null;
+        boolean outcomeUnknown = false;
         try {
             // Marks the snapshot before anything is done on storage, so that operations refused while a volume has no-copy snapshots (e.g. assigning a backup
             // offering) also see a take in progress. Then re-checks what such an operation could have changed concurrently.
@@ -354,16 +360,20 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
             CreateDiskOnlyVmSnapshotCommand command = new CreateDiskOnlyVmSnapshotCommand(vm != null ? vm.getInstanceName() : null, vm != null ? vm.getUuid() : null, target,
                     List.of(new Pair<>(volumeTO, newVolumePath)), null, vmRunning ? VirtualMachine.State.Running : VirtualMachine.State.Stopped, false);
 
-            // Recorded before the host acts, so that whatever happens next (no answer, management server restart) the new file of the volume can be found.
+            // Recorded before the host acts, so that whatever happens next (no answer, management server restart) the files of the take can be found.
             snapshotDetailsDao.addDetail(snapshot.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH, newVolumePath, false);
+            snapshotDetailsDao.addDetail(snapshot.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_FROZEN_PATH, oldVolumePath, false);
+            pendingVolumePath = newVolumePath;
 
             Answer answer = sendToHost(getHostIdForOperation(volumeInfo, vm), command);
+            outcomeUnknown = answer == null;
             if (answer == null && vmRunning) {
                 // The running Instance may already be writing to the new delta: releasing the volume with its old path would make its next start lose those writes.
                 keepVolumeReserved = true;
                 throw new CloudRuntimeException(String.format("No answer from the host while taking KVM file-based no-copy snapshot [%s] of volume [%s] of running " +
                         "Instance [%s]. The volume stays in state [%s] until an administrator checks whether the Instance uses the new file [%s] (then sets it as the " +
-                        "volume path) or still the file [%s], and then sets the volume state back to Ready.", snapshot.getUuid(), volumeInfo.getUuid(), vm.getUuid(),
+                        "volume path) or still the file [%s], and then sets the volume state back to Ready. Deleting the snapshot afterwards completes it (if the " +
+                        "volume is on the new file) or discards it (if the volume is still on its old file).", snapshot.getUuid(), volumeInfo.getUuid(), vm.getUuid(),
                         Volume.State.Snapshotting, newVolumePath, oldVolumePath));
             }
             if (!(answer instanceof CreateDiskOnlyVmSnapshotAnswer) || !answer.getResult()) {
@@ -387,7 +397,7 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
             snapshotOnPrimary.processEvent(Snapshot.Event.OperationSucceeded);
 
             snapshotDetailsDao.addDetail(snapshot.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_SEQUENCE, String.valueOf(sequence), false);
-            snapshotDetailsDao.removeDetail(snapshot.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH);
+            removePendingDetails(snapshot.getId());
 
             logger.info("Took KVM file-based no-copy snapshot [{}] of volume [{}]: the snapshot is [{}] and the volume is now on [{}].", snapshot.getUuid(),
                     volumeInfo.getUuid(), oldVolumePath, newVolumePath);
@@ -398,16 +408,42 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
         } finally {
             if (!keepVolumeReserved) {
                 // Once the host has succeeded the volume is on its new file, which is already recorded: the volume is usable even if the snapshot metadata is not.
-                volumeInfo.stateTransit(succeeded || hostSucceeded ? Volume.Event.OperationSucceeded : Volume.Event.OperationFailed);
+                releaseVolume(volumeInfo, succeeded || hostSucceeded ? Volume.Event.OperationSucceeded : Volume.Event.OperationFailed);
             }
             if (hostSucceeded && !succeeded) {
                 logger.error("KVM file-based no-copy snapshot [{}] of volume [{}] was taken on storage, but its metadata could not be fully updated. It is not marked as " +
-                        "failed, so that its file (part of the backing chain of the volume) is not cleaned up.", snapshot.getUuid(), volumeInfo.getUuid());
-            } else if (!succeeded && !keepVolumeReserved && snapshotOnPrimary != null) {
-                markSnapshotOnPrimaryAsFailed(snapshotOnPrimary);
+                        "failed, so that its file (part of the backing chain of the volume) is not cleaned up; deleting the snapshot completes it first.",
+                        snapshot.getUuid(), volumeInfo.getUuid());
             } else if (!succeeded && !keepVolumeReserved) {
+                // The volume keeps its file (which is not part of any other snapshot), so this is a failed snapshot like any other and its regular cleanup is safe.
+                if (outcomeUnknown) {
+                    logger.warn("No answer from the host while taking KVM file-based no-copy snapshot [{}] of volume [{}], which keeps its file. The new file [{}] may " +
+                            "have been created and, if so, is not used and can be deleted.", snapshot.getUuid(), volumeInfo.getUuid(), pendingVolumePath);
+                }
+                removePendingDetails(snapshot.getId());
                 snapshotDetailsDao.removeDetail(snapshot.getId(), SnapshotManager.KVM_FILE_BASED_NO_COPY_SNAPSHOT);
+                if (snapshotOnPrimary != null) {
+                    markSnapshotOnPrimaryAsFailed(snapshotOnPrimary);
+                }
             }
+        }
+    }
+
+    protected void removePendingDetails(long snapshotId) {
+        snapshotDetailsDao.removeDetail(snapshotId, KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH);
+        snapshotDetailsDao.removeDetail(snapshotId, KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_FROZEN_PATH);
+    }
+
+    /**
+     * Releases the volume reserved by {@link #reserveVolume}. Never throws, as it runs in finally blocks and must not hide the original failure.
+     */
+    protected void releaseVolume(VolumeInfo volumeInfo, Volume.Event event) {
+        try {
+            if (!volumeInfo.stateTransit(event)) {
+                logger.warn("Volume [{}] could not be released with event [{}]: its state was changed concurrently.", volumeInfo.getUuid(), event);
+            }
+        } catch (RuntimeException e) {
+            logger.warn("Failed to release volume [{}] with event [{}].", volumeInfo.getUuid(), event, e);
         }
     }
 
@@ -514,7 +550,7 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
             return true;
         } finally {
             if (!keepVolumeReserved) {
-                volumeInfo.stateTransit(succeeded ? Volume.Event.OperationSucceeded : Volume.Event.OperationFailed);
+                releaseVolume(volumeInfo, succeeded ? Volume.Event.OperationSucceeded : Volume.Event.OperationFailed);
             }
         }
     }
@@ -540,6 +576,7 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
                 return true;
             case CreatedOnPrimary:
             case BackedUp:
+            case Creating:
                 break;
             default:
                 throw new InvalidParameterValueException(String.format("Snapshot [%s] cannot be deleted while it is in state [%s].", snapshotVO.getUuid(), snapshotVO.getState()));
@@ -553,6 +590,13 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
         try {
             // Re-read under the lock: a concurrent delete may have completed while this one waited, and must not be counted twice.
             SnapshotVO current = snapshotDao.findById(snapshotId);
+            if (current != null && Snapshot.State.Creating.equals(current.getState())) {
+                // Holding the lock means that no take of it is running any more: the take did not complete (no answer from the host, or a restart).
+                current = completeOrDiscardIncompleteTake(current);
+                if (current == null) {
+                    return true;
+                }
+            }
             if (current == null || !(Snapshot.State.BackedUp.equals(current.getState()) || Snapshot.State.CreatedOnPrimary.equals(current.getState()))) {
                 throw new InvalidParameterValueException(String.format("Snapshot [%s] was deleted or changed concurrently (state [%s]).", snapshotVO.getUuid(),
                         current == null ? null : current.getState()));
@@ -560,6 +604,69 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
             return deleteSnapshotInternal(current);
         } finally {
             snapshotDao.releaseFromLockTable(snapshotId);
+        }
+    }
+
+    /**
+     * Resolves a snapshot whose take did not complete, from the files recorded before the host was asked to take it and the current path of its volume (which an
+     * administrator sets after checking the Instance, as the take failure says).
+     * @return the snapshot, now complete, if the take happened (the caller then deletes it as usual); null if it did not happen and the snapshot was discarded.
+     */
+    protected SnapshotVO completeOrDiscardIncompleteTake(SnapshotVO snapshotVO) {
+        SnapshotDetailsVO pendingVolumePath = snapshotDetailsDao.findDetail(snapshotVO.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH);
+        SnapshotDetailsVO pendingFrozenPath = snapshotDetailsDao.findDetail(snapshotVO.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_FROZEN_PATH);
+        VolumeVO volumeVO = volumeDao.findById(snapshotVO.getVolumeId());
+        if (pendingVolumePath == null || volumeVO == null) {
+            logger.info("KVM file-based no-copy snapshot [{}] never reached its host; discarding it.", snapshotVO.getUuid());
+            removeSnapshotMetadata(snapshotVO);
+            return null;
+        }
+        if (pendingFrozenPath == null) {
+            throw new CloudRuntimeException(String.format("KVM file-based no-copy snapshot [%s] did not complete and its files are not fully recorded; it must be " +
+                    "resolved manually.", snapshotVO.getUuid()));
+        }
+        if (!Volume.State.Ready.equals(volumeVO.getState())) {
+            throw new InvalidParameterValueException(String.format("KVM file-based no-copy snapshot [%s] did not complete, and its volume [%s] is in state [%s]. Check " +
+                    "whether the volume uses the new file [%s] or still the file [%s], set that as the volume path and the volume state to Ready, then delete the snapshot " +
+                    "again.", snapshotVO.getUuid(), volumeVO.getUuid(), volumeVO.getState(), pendingVolumePath.getValue(), pendingFrozenPath.getValue()));
+        }
+
+        VolumeInfo volumeInfo = volumeDataFactory.getVolume(volumeVO.getId());
+        reserveVolume(volumeInfo, Volume.Event.SnapshotRequested, snapshotVO);
+        try {
+            volumeVO = volumeDao.findById(volumeVO.getId());
+            if (pendingFrozenPath.getValue().equals(volumeVO.getPath())) {
+                logger.info("The take of KVM file-based no-copy snapshot [{}] did not happen: volume [{}] is still on [{}]. Discarding the snapshot; the file [{}], if it " +
+                        "exists, is not used and can be deleted.", snapshotVO.getUuid(), volumeVO.getUuid(), volumeVO.getPath(), pendingVolumePath.getValue());
+                removeSnapshotMetadata(snapshotVO);
+                return null;
+            }
+            List<SnapshotVO> chain = listNoCopySnapshotsOfVolume(volumeVO.getId());
+            if (!pendingVolumePath.getValue().equals(volumeVO.getPath())) {
+                boolean frozenByALaterTake = chain.stream().map(s -> snapshotStoreDao.findOneBySnapshotAndDatastoreRole(s.getId(), DataStoreRole.Primary))
+                        .anyMatch(storeRef -> storeRef != null && pendingVolumePath.getValue().equals(storeRef.getInstallPath()));
+                throw new InvalidParameterValueException(String.format("KVM file-based no-copy snapshot [%s] did not complete, and volume [%s] is neither on the new " +
+                        "file [%s] nor on the file [%s] of the take. %s", snapshotVO.getUuid(), volumeVO.getUuid(), pendingVolumePath.getValue(),
+                        pendingFrozenPath.getValue(), frozenByALaterTake ? "Delete the snapshots taken after it first." : "It must be resolved manually."));
+            }
+
+            logger.info("The take of KVM file-based no-copy snapshot [{}] happened: volume [{}] is on [{}]. Completing the snapshot.", snapshotVO.getUuid(),
+                    volumeVO.getUuid(), volumeVO.getPath());
+            long sequence = chain.stream().mapToLong(this::getChainSequence).max().orElse(0L) + 1;
+            SnapshotDataStoreVO storeRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshotVO.getId(), DataStoreRole.Primary);
+            if (storeRef == null) {
+                throw new CloudRuntimeException(String.format("Unable to find the primary storage reference of snapshot [%s].", snapshotVO.getUuid()));
+            }
+            storeRef.setInstallPath(pendingFrozenPath.getValue());
+            storeRef.setState(ObjectInDataStoreStateMachine.State.Ready);
+            snapshotStoreDao.update(storeRef.getId(), storeRef);
+            snapshotDetailsDao.addDetail(snapshotVO.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_SEQUENCE, String.valueOf(sequence), false);
+            removePendingDetails(snapshotVO.getId());
+            snapshotVO.setState(Snapshot.State.BackedUp);
+            snapshotDao.update(snapshotVO.getId(), snapshotVO);
+            return snapshotDao.findById(snapshotVO.getId());
+        } finally {
+            releaseVolume(volumeInfo, Volume.Event.OperationSucceeded);
         }
     }
 
@@ -645,7 +752,7 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
             return true;
         } finally {
             if (!keepVolumeReserved) {
-                volumeInfo.stateTransit(succeeded ? Volume.Event.OperationSucceeded : Volume.Event.OperationFailed);
+                releaseVolume(volumeInfo, succeeded ? Volume.Event.OperationSucceeded : Volume.Event.OperationFailed);
             }
         }
     }
@@ -805,8 +912,29 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
         return endPoint.getId();
     }
 
+    /**
+     * Thrown when a command was not sent at all, because its host is not connected: the host did nothing, so there is no unknown outcome to handle.
+     */
+    protected static class CommandNotSentException extends CloudRuntimeException {
+        protected CommandNotSentException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    /**
+     * @return the answer of the host, or null if the command was sent but no answer came back (its outcome is then unknown).
+     * @throws CommandNotSentException if the command was not sent, e.g. because the host is down or disconnected.
+     */
     protected Answer sendToHost(long hostId, com.cloud.agent.api.Command command) {
-        return agentManager.easySend(hostId, command);
+        try {
+            return agentManager.send(hostId, command);
+        } catch (AgentUnavailableException e) {
+            throw new CommandNotSentException(String.format("The command [%s] was not sent, as host [%s] is not available: %s", command.getClass().getSimpleName(),
+                    hostId, e.getMessage()), e);
+        } catch (OperationTimedoutException e) {
+            logger.warn("No answer from host [{}] to the command [{}].", hostId, command.getClass().getSimpleName(), e);
+            return null;
+        }
     }
 
     protected String getAnswerDetails(Answer answer) {

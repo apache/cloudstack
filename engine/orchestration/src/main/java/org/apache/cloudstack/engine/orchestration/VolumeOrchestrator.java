@@ -2543,7 +2543,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             // The outcome of a KVM file-based no-copy snapshot take is unknown: a running Instance may already be writing to the new file. Resetting the volume
             // with its old path would make the next start lose those writes, so it is left for an administrator (see the snapshot details).
             logger.warn("Not cleaning up volume [{}] after the failed KVM file-based no-copy snapshot [{}]: check which file of its backing chain is current " +
-                    "(snapshot detail [kvmFileBasedNoCopySnapshotPendingVolumePath]), then set the volume path and state.", volumeId, snapshotId);
+                    "(snapshot details [kvmFileBasedNoCopySnapshotPendingVolumePath] and [kvmFileBasedNoCopySnapshotPendingFrozenPath]), set the volume path and the " +
+                    "volume state to Ready, then delete the snapshot: that completes or discards it, depending on the volume path.", volumeId, snapshotId);
             return;
         }
         _snapshotSrv.cleanupVolumeDuringSnapshotFailure(volumeId, snapshotId);

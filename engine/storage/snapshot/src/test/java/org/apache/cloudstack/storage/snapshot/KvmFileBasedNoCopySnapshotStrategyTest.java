@@ -21,12 +21,14 @@ package org.apache.cloudstack.storage.snapshot;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -60,6 +62,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.CreateDiskOnlyVmSnapshotAnswer;
@@ -471,6 +476,9 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
         verify(snapshotOnPrimary).processEvent(Snapshot.Event.OperationFailed);
         verify(snapshotOnPrimary).processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
         verify(snapshotDao).releaseFromLockTable(SNAPSHOT_ID);
+        // A definite failure is a failed snapshot like any other: its regular cleanup is safe, as its volume keeps its file.
+        verify(snapshotDetailsDao).removeDetail(SNAPSHOT_ID, SnapshotManager.KVM_FILE_BASED_NO_COPY_SNAPSHOT);
+        verify(snapshotDetailsDao).removeDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH);
     }
 
     // revert
@@ -825,6 +833,182 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
         // Not marked as failed: its outcome is unknown, and a failed snapshot could be cleaned up although its file may be in use.
         verify(strategy, never()).markSnapshotOnPrimaryAsFailed(any());
         verify(snapshotDetailsDao, never()).removeDetail(SNAPSHOT_ID, SnapshotManager.KVM_FILE_BASED_NO_COPY_SNAPSHOT);
+    }
+
+    // commands that were not sent (host down or disconnected)
+
+    @Test
+    public void sendToHostDistinguishesNotSentFromNoAnswer() throws Exception {
+        AgentManager agentManager = mock(AgentManager.class);
+        strategy.agentManager = agentManager;
+        Command command = mock(Command.class);
+        Mockito.doCallRealMethod().when(strategy).sendToHost(anyLong(), any());
+
+        when(agentManager.send(HOST_ID, command)).thenThrow(new AgentUnavailableException("host is down", HOST_ID));
+        assertThrows(KvmFileBasedNoCopySnapshotStrategy.CommandNotSentException.class, () -> strategy.sendToHost(HOST_ID, command));
+
+        Mockito.reset(agentManager);
+        when(agentManager.send(HOST_ID, command)).thenThrow(new OperationTimedoutException(new Command[0], HOST_ID, 1L, 10, false));
+        assertNull(strategy.sendToHost(HOST_ID, command));
+
+        Mockito.reset(agentManager);
+        Answer answer = new Answer(null, true, null);
+        when(agentManager.send(HOST_ID, command)).thenReturn(answer);
+        assertSame(answer, strategy.sendToHost(HOST_ID, command));
+    }
+
+    @Test
+    public void takeSnapshotOfRunningVmWhoseHostIsDownReleasesTheVolume() throws Exception {
+        attachVolumeToVm();
+        SnapshotObject snapshotOnPrimary = mockSnapshotOnPrimary();
+        doThrow(new KvmFileBasedNoCopySnapshotStrategy.CommandNotSentException("host is down", null)).when(strategy).sendToHost(anyLong(), any());
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.takeSnapshot(snapshotInfo));
+
+        verify(volumeInfo).stateTransit(Volume.Event.OperationFailed);
+        verify(volumeVO, never()).setPath(any());
+        verify(snapshotOnPrimary).processEvent(Snapshot.Event.OperationFailed);
+        verify(snapshotDetailsDao).removeDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH);
+    }
+
+    @Test
+    public void deleteSnapshotWhoseHostIsDownReleasesTheVolumeAndKeepsItRevertible() {
+        attachVolumeToVm();
+        mockChain(SNAPSHOT_ID);
+        doThrow(new KvmFileBasedNoCopySnapshotStrategy.CommandNotSentException("host is down", null)).when(strategy).sendToHost(anyLong(), any());
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        verify(volumeInfo).stateTransit(Volume.Event.OperationFailed);
+        verify(snapshotDetailsDao, never()).addDetail(eq(SNAPSHOT_ID), eq(KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE),
+                any(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void revertSnapshotWhoseHostIsDownReleasesTheVolume() {
+        mockChain(SNAPSHOT_ID);
+        doThrow(new KvmFileBasedNoCopySnapshotStrategy.CommandNotSentException("host is down", null)).when(strategy).sendToHost(anyLong(), any());
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.revertSnapshot(snapshotInfo));
+
+        verify(volumeInfo).stateTransit(Volume.Event.OperationFailed);
+        verify(volumeVO, never()).setPath(any());
+    }
+
+    @Test
+    public void releaseVolumeNeverThrows() {
+        when(volumeInfo.stateTransit(Volume.Event.OperationFailed)).thenThrow(new CloudRuntimeException("no transition"));
+        strategy.releaseVolume(volumeInfo, Volume.Event.OperationFailed);
+        when(volumeInfo.stateTransit(Volume.Event.OperationSucceeded)).thenReturn(false);
+        strategy.releaseVolume(volumeInfo, Volume.Event.OperationSucceeded);
+    }
+
+    // takes that did not complete (no answer for a running Instance, or a management server restart)
+
+    private SnapshotVO mockIncompleteTake(String pendingVolumePath, String pendingFrozenPath, Volume.State volumeState, String volumePath) {
+        SnapshotVO creating = mock(SnapshotVO.class);
+        when(creating.getId()).thenReturn(SNAPSHOT_ID);
+        when(creating.getUuid()).thenReturn("snapshot-" + SNAPSHOT_ID);
+        when(creating.getVolumeId()).thenReturn(VOLUME_ID);
+        when(creating.getDataCenterId()).thenReturn(ZONE_ID);
+        when(creating.getState()).thenReturn(Snapshot.State.Creating);
+        when(snapshotDao.acquireInLockTable(SNAPSHOT_ID)).thenReturn(creating);
+        if (pendingVolumePath != null) {
+            when(snapshotDetailsDao.findDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH))
+                    .thenReturn(new SnapshotDetailsVO(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH,
+                            pendingVolumePath, false));
+        }
+        if (pendingFrozenPath != null) {
+            when(snapshotDetailsDao.findDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_FROZEN_PATH))
+                    .thenReturn(new SnapshotDetailsVO(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_FROZEN_PATH,
+                            pendingFrozenPath, false));
+        }
+        when(volumeVO.getState()).thenReturn(volumeState);
+        when(volumeVO.getPath()).thenReturn(volumePath);
+        return creating;
+    }
+
+    @Test
+    public void deleteOfAnIncompleteTakeThatHappenedCompletesItThenMergesIt() {
+        List<SnapshotVO> chainBefore = mockChain(5L);
+        SnapshotVO creating = mockIncompleteTake("new-delta", "frozen-10", Volume.State.Ready, "new-delta");
+        SnapshotDataStoreVO storeRef = mock(SnapshotDataStoreVO.class);
+        when(storeRef.getInstallPath()).thenReturn("frozen-10");
+        when(storeRef.getDataStoreId()).thenReturn(POOL_ID);
+        when(snapshotStoreDao.findOneBySnapshotAndDatastoreRole(SNAPSHOT_ID, DataStoreRole.Primary)).thenReturn(storeRef);
+        SnapshotObjectTO snapshotTO = new SnapshotObjectTO();
+        snapshotTO.setPath("frozen-10");
+        SnapshotInfo info = mock(SnapshotInfo.class);
+        when(info.getTO()).thenReturn(snapshotTO);
+        when(snapshotDataFactory.getSnapshot(SNAPSHOT_ID, POOL_ID, DataStoreRole.Primary)).thenReturn(info);
+        when(snapshotManager.isKvmFileBasedNoCopySnapshot(SNAPSHOT_ID)).thenReturn(true);
+        // Once completed, the snapshot is BackedUp and part of the chain, after snapshot 5.
+        List<SnapshotVO> chainAfter = new ArrayList<>(chainBefore);
+        chainAfter.add(snapshotVO);
+        when(snapshotDetailsDao.findDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_SEQUENCE))
+                .thenReturn(new SnapshotDetailsVO(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_SEQUENCE, "2", false));
+        when(snapshotDao.findById(SNAPSHOT_ID)).thenReturn(creating, creating, snapshotVO);
+        when(snapshotDao.listByVolumeId(VOLUME_ID)).thenReturn(chainBefore, chainAfter);
+
+        MergeDiskOnlyVmSnapshotCommand command = deleteAndCaptureMerge();
+
+        verify(storeRef).setInstallPath("frozen-10");
+        verify(storeRef).setState(ObjectInDataStoreStateMachine.State.Ready);
+        verify(creating).setState(Snapshot.State.BackedUp);
+        verify(snapshotDetailsDao).addDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_SEQUENCE, "2", false);
+        verify(snapshotDetailsDao).removeDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH);
+        assertEquals("frozen-10", command.getDeltaMergeTreeToList().get(0).getParent().getPath());
+    }
+
+    @Test
+    public void deleteOfAnIncompleteTakeThatDidNotHappenDiscardsIt() {
+        SnapshotVO creating = mockIncompleteTake("new-delta", VOLUME_PATH, Volume.State.Ready, VOLUME_PATH);
+        when(snapshotDao.findById(SNAPSHOT_ID)).thenReturn(creating);
+
+        assertTrue(strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        verify(creating).setState(Snapshot.State.Destroyed);
+        verify(strategy, never()).sendToHost(anyLong(), any());
+        verify(volumeVO, never()).setPath(any());
+        verify(volumeInfo).stateTransit(Volume.Event.OperationSucceeded);
+    }
+
+    @Test
+    public void deleteOfAnIncompleteTakeIsRefusedWhileItsVolumeIsStillReserved() {
+        SnapshotVO creating = mockIncompleteTake("new-delta", VOLUME_PATH, Volume.State.Snapshotting, VOLUME_PATH);
+        when(snapshotDao.findById(SNAPSHOT_ID)).thenReturn(creating);
+
+        InvalidParameterValueException e = assertThrows(InvalidParameterValueException.class, () -> strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        assertTrue(e.getMessage().contains("new-delta"));
+        verify(creating, never()).setState(any());
+        verify(volumeInfo, never()).stateTransit(any());
+    }
+
+    @Test
+    public void deleteOfAnIncompleteTakeThatNeverReachedTheHostDiscardsIt() {
+        SnapshotVO creating = mockIncompleteTake(null, null, Volume.State.Snapshotting, VOLUME_PATH);
+        when(snapshotDao.findById(SNAPSHOT_ID)).thenReturn(creating);
+
+        assertTrue(strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        verify(creating).setState(Snapshot.State.Destroyed);
+        verify(strategy, never()).sendToHost(anyLong(), any());
+    }
+
+    @Test
+    public void deleteOfAnIncompleteTakeFrozenByALaterTakeAsksToDeleteTheLaterOnesFirst() {
+        mockChain(5L);
+        SnapshotDataStoreVO laterStoreRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(5L, DataStoreRole.Primary);
+        when(laterStoreRef.getInstallPath()).thenReturn("new-delta");
+        SnapshotVO creating = mockIncompleteTake("new-delta", "frozen-10", Volume.State.Ready, "newer-delta");
+        when(snapshotDao.findById(SNAPSHOT_ID)).thenReturn(creating);
+
+        InvalidParameterValueException e = assertThrows(InvalidParameterValueException.class, () -> strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        assertTrue(e.getMessage().contains("taken after it first"));
+        verify(creating, never()).setState(any());
+        verify(volumeInfo).stateTransit(Volume.Event.OperationSucceeded);
     }
 
     @Test

@@ -736,12 +736,23 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         } catch (InvalidParameterValueException e) {
             logger.warn("Undoing the assignment of Instance [{}] to backup offering [{}], as a KVM file-based no-copy snapshot was taken concurrently.", vm.getUuid(),
                     offering.getUuid());
-            backupProvider.removeVMFromBackupOffering(vm);
-            vm.setBackupOfferingId(null);
-            vm.setBackupVolumes(null);
-            vm.setBackupExternalId(null);
-            vmInstanceDao.update(vm.getId(), vm);
-            publishBackupOfferingUsageRemoved(vm, offering.getId());
+            boolean removedFromProvider = false;
+            try {
+                removedFromProvider = backupProvider.removeVMFromBackupOffering(vm);
+            } catch (RuntimeException providerException) {
+                logger.error("Failed to remove Instance [{}] from backup offering [{}] in its provider.", vm.getUuid(), offering.getUuid(), providerException);
+            } finally {
+                // Cleared even if the provider failed: the offering recorded in the DB is what KVM file-based no-copy snapshot takes check.
+                vm.setBackupOfferingId(null);
+                vm.setBackupVolumes(null);
+                vm.setBackupExternalId(null);
+                vmInstanceDao.update(vm.getId(), vm);
+                publishBackupOfferingUsageRemoved(vm, offering.getId());
+            }
+            if (!removedFromProvider) {
+                throw new InvalidParameterValueException(String.format("%s The assignment was undone in CloudStack, but the provider of backup offering [%s] failed to " +
+                        "remove the Instance: remove it there.", e.getMessage(), offering.getUuid()));
+            }
             throw e;
         }
     }
