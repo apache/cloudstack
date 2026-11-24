@@ -3368,6 +3368,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public ServiceOffering createServiceOffering(final CreateServiceOfferingCmd cmd) {
         final Long userId = CallContext.current().getCallingUserId();
         final Map<String, String> details = cmd.getDetails();
+        checkCallerMaySetOverCommitRatios(details, Collections.emptyMap());
         final String offeringName = cmd.getServiceOfferingName();
 
         final String name = cmd.getServiceOfferingName();
@@ -3636,6 +3637,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if ((entry1 || entry2) && !(entry1 && entry2)) {
                 throw new InvalidParameterValueException("Please specify the pciDevice and vgpuType correctly.");
             }
+            final Set<String> overCommitKeys = new HashSet<>();
             for (final Entry<String, String> detailEntry : details.entrySet()) {
                 String detailEntryValue = detailEntry.getValue();
                 if (detailEntry.getKey().equals(GPU.Keys.pciDevice.toString())) {
@@ -3656,6 +3658,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         logger.error("Cannot decode extra configuration value for key: " + detailEntry.getKey() + ", skipping it");
                         continue;
                     }
+                }
+                String overCommitKey = overCommitRatioDetailName(detailEntry.getKey());
+                if (overCommitKey != null) {
+                    validateOverCommitRatioInServiceOfferingDetail(detailEntry.getKey(), detailEntry.getValue());
+                    if (!overCommitKeys.add(overCommitKey)) {
+                        throw new InvalidParameterValueException(String.format("Service offering detail %s is given more than once.", overCommitKey));
+                    }
+                    detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), overCommitKey, detailEntryValue, true));
+                    continue;
                 }
                 if (detailEntry.getKey().equalsIgnoreCase(Volume.BANDWIDTH_LIMIT_IN_MBPS) || detailEntry.getKey().equalsIgnoreCase(Volume.IOPS_LIMIT)) {
                     // Add in disk offering details
@@ -3754,6 +3765,62 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return cmdExpiryAction;
+    }
+
+    /**
+     * Overcommit ratios decide how much of a shared host an offering's VMs are charged for, so only
+     * root admins may set them. A clone may carry the source offering's ratios over unchanged.
+     */
+    protected void checkCallerMaySetOverCommitRatios(Map<String, String> requested, Map<String, String> source) {
+        if (MapUtils.isEmpty(requested)) {
+            return;
+        }
+        for (Entry<String, String> entry : requested.entrySet()) {
+            String key = overCommitRatioDetailName(entry.getKey());
+            if (key != null && (source == null || !Objects.equals(source.get(key), entry.getValue()))
+                    && !_accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
+                throw new InvalidParameterValueException(String.format("Only root admins can set %s on a service offering.", key));
+            }
+        }
+    }
+
+    /**
+     * The canonical name of an overcommit ratio detail given in any case, or null if the key is not one.
+     */
+    protected static String overCommitRatioDetailName(String key) {
+        if (VmDetailConstants.CPU_OVER_COMMIT_RATIO.equalsIgnoreCase(key)) {
+            return VmDetailConstants.CPU_OVER_COMMIT_RATIO;
+        }
+        if (VmDetailConstants.MEMORY_OVER_COMMIT_RATIO.equalsIgnoreCase(key)) {
+            return VmDetailConstants.MEMORY_OVER_COMMIT_RATIO;
+        }
+        return null;
+    }
+
+    /**
+     * A service offering may declare its own overcommit ratio, overriding whatever its cluster is
+     * set to. The value means the same thing at every scope: how far the declared size is inflated
+     * relative to what the VM really holds. 1 is not overcommitted at all, which is how a VM is
+     * exempted from a cluster's overcommit.
+     *
+     * Below 1 would mean the opposite - reserving more than the VM asked for. That is a different
+     * feature and is rejected rather than being reachable by mistyping 1 as 0.1.
+     */
+    protected void validateOverCommitRatioInServiceOfferingDetail(String key, String value) {
+        float ratio;
+        try {
+            ratio = Float.parseFloat(value);
+        } catch (NumberFormatException | NullPointerException e) {
+            throw new InvalidParameterValueException(String.format("Service offering detail %s must be a number, got [%s].", key, value));
+        }
+        if (Float.isNaN(ratio) || Float.isInfinite(ratio)) {
+            throw new InvalidParameterValueException(String.format("Service offering detail %s must be a finite number, got [%s].", key, value));
+        }
+        if (ratio < 1) {
+            throw new InvalidParameterValueException(String.format(
+                    "Service offering detail %s must be at least 1, got [%s]. 1 means the offering is not "
+                            + "overcommitted; higher values mean it is oversubscribed by that factor.", key, value));
+        }
     }
 
     @Override
@@ -3931,6 +3998,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final ServiceOfferingVO sourceOffering = getAndValidateSourceOffering(cmd.getSourceOfferingId());
         final DiskOfferingVO sourceDiskOffering = getSourceDiskOffering(sourceOffering);
         final Map<String, String> requestParams = cmd.getFullUrlParams();
+        checkCallerMaySetOverCommitRatios(cmd.getDetails(), _serviceOfferingDetailsDao.listDetailsKeyPairs(sourceOffering.getId()));
 
         final String name = cmd.getServiceOfferingName();
         final String displayText = getOrDefault(cmd.getDisplayText(), sourceOffering.getDisplayText());

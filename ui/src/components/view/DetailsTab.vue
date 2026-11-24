@@ -42,7 +42,7 @@
     size="small"
     :dataSource="fetchDetails()">
     <template #renderItem="{item}">
-      <a-list-item v-if="(item in dataResource && !customDisplayItems.includes(item)) || (offeringDetails.includes(item) && dataResource.serviceofferingdetails)">
+      <a-list-item v-if="(item in dataResource && !customDisplayItems.includes(item)) || (offeringDetails.includes(item) && dataResource.serviceofferingdetails?.[item] !== undefined)">
         <div style="width: 100%">
           <strong>{{ item === 'service' ? $t('label.supportedservices') :
            $route.meta.name === 'cniconfiguration' && item === 'userdata' ? $t('label.' + String($route.meta.name).toLowerCase()) :
@@ -120,7 +120,7 @@
               </span>
             </div>
           </div>
-          <div v-else-if="$route.meta.name === 'computeoffering' && offeringDetails.includes(item)">
+          <div v-else-if="['computeoffering', 'systemoffering'].includes($route.meta.name) && offeringDetails.includes(item)">
             {{ dataResource.serviceofferingdetails[item] }}
           </div>
           <div v-else-if="item === 'headers'" style="white-space: pre-line;">
@@ -416,7 +416,7 @@ export default {
       return null
     },
     offeringDetails () {
-      return ['maxcpunumber', 'mincpunumber', 'minmemory', 'maxmemory']
+      return ['maxcpunumber', 'mincpunumber', 'minmemory', 'maxmemory', 'cpuOvercommitRatio', 'memoryOvercommitRatio']
     },
     ipV6Address () {
       if (this.dataResource.nic && this.dataResource.nic.length > 0) {

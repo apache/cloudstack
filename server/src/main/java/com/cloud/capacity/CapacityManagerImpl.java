@@ -70,6 +70,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateStoragePoolVO;
@@ -129,6 +130,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     protected UserVmDao _userVMDao;
     @Inject
     protected VMInstanceDetailsDao _vmInstanceDetailsDao;
+    @Inject
+    protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     ClusterDao _clusterDao;
     @Inject
@@ -197,6 +200,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         }
 
         try {
+            final Pair<Float, Float> offeringRatios = getOfferingOvercommitRatios(svo.getId());
             final Long clusterIdFinal = clusterId;
             final long capacityCpuId = capacityCpu.getId();
             final long capacityMemoryId = capacityMemory.getId();
@@ -218,9 +222,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     long actualTotalCpu = capacityCpu.getTotalCapacity();
                     float cpuOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterIdFinal, VmDetailConstants.CPU_OVER_COMMIT_RATIO).getValue());
                     float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterIdFinal, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO).getValue());
-                    int vmCPU = svo.getCpu() * svo.getSpeed();
                     int vmCPUCore = svo.getCpu();
-                    long vmMem = svo.getRamSize() * 1024L * 1024L;
+                    long vmCPU = scaleToClusterUnits((long) svo.getCpu() * svo.getSpeed(), offeringRatios.first(), cpuOvercommitRatio);
+                    long vmMem = scaleToClusterUnits(svo.getRamSize() * 1024L * 1024L, offeringRatios.second(), memoryOvercommitRatio);
                     long actualTotalMem = capacityMemory.getTotalCapacity();
                     long totalMem = (long)(actualTotalMem * memoryOvercommitRatio);
                     long totalCpu = (long)(actualTotalCpu * cpuOvercommitRatio);
@@ -306,12 +310,13 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             return;
         }
 
-        final int cpu = svo.getCpu() * svo.getSpeed();
         final int cpucore = svo.getCpu();
         final int cpuspeed = svo.getSpeed();
-        final long ram = svo.getRamSize() * 1024L * 1024L;
 
         try {
+            final Pair<Float, Float> offeringRatios = getOfferingOvercommitRatios(svo.getId());
+            final long cpu = scaleToClusterUnits((long) svo.getCpu() * svo.getSpeed(), offeringRatios.first(), cpuOvercommitRatio);
+            final long ram = scaleToClusterUnits(svo.getRamSize() * 1024L * 1024L, offeringRatios.second(), memoryOvercommitRatio);
             final long capacityCpuId = capacityCpu.getId();
             final long capacityMemId = capacityMem.getId();
             final long capacityCpuCoreId = capacityCpuCore.getId();
@@ -396,11 +401,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
                     if (hostHasCpuCapability) {
                         // first check from reserved capacity
-                        hostHasCapacity = checkIfHostHasCapacity(host, cpu, ram, true, cpuOvercommitRatio, memoryOvercommitRatio, true);
+                        hostHasCapacity = checkIfHostHasCapacity(host, (int) cpu, ram, true, cpuOvercommitRatio, memoryOvercommitRatio, true);
 
                         // if not reserved, check the free capacity
                         if (!hostHasCapacity)
-                            hostHasCapacity = checkIfHostHasCapacity(host, cpu, ram, false, cpuOvercommitRatio, memoryOvercommitRatio, true);
+                            hostHasCapacity = checkIfHostHasCapacity(host, (int) cpu, ram, false, cpuOvercommitRatio, memoryOvercommitRatio, true);
                     }
 
                     if (!hostHasCapacity || !hostHasCpuCapability) {
@@ -625,6 +630,49 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         return totalAllocatedSize;
     }
 
+    /**
+     * The cpu and memory overcommit ratios a service offering sets, each null when the offering
+     * sets none (or an unusable one) and its VMs inherit their cluster's.
+     */
+    protected Pair<Float, Float> getOfferingOvercommitRatios(long serviceOfferingId) {
+        Map<String, String> details = _serviceOfferingDetailsDao.listDetailsKeyPairs(serviceOfferingId,
+                List.of(VmDetailConstants.CPU_OVER_COMMIT_RATIO, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO));
+        return new Pair<>(getOfferingOvercommitRatio(serviceOfferingId, VmDetailConstants.CPU_OVER_COMMIT_RATIO, details),
+                getOfferingOvercommitRatio(serviceOfferingId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, details));
+    }
+
+    private Float getOfferingOvercommitRatio(long serviceOfferingId, String key, Map<String, String> details) {
+        String value = details == null ? null : details.get(key);
+        Float ratio = CapacityManager.parseOfferingOverCommitRatio(value);
+        if (value != null && ratio == null) {
+            logger.warn("Ignoring {} of [{}] on service offering {}: it must be a finite number of at least 1.",
+                    key, value, serviceOfferingId);
+        }
+        return ratio;
+    }
+
+    /**
+     * Scales a VM's requested size into the units the capacity tables are kept in.
+     *
+     * Capacity is counted in cluster-overcommitted units: totals are stored raw and multiplied by
+     * the cluster's overcommit ratio when read. A VM whose offering sets its own ratio therefore
+     * has to be scaled, otherwise it would occupy the wrong share. A VM with a ratio of 1 in a
+     * cluster overcommitted 10 times takes ten times the units of an equally sized neighbour,
+     * which is what "not overcommitted" means: it holds its full request.
+     *
+     * The charge depends only on the offering and the cluster of the host, so a release always
+     * matches the charge it undoes, wherever the VM has moved since.
+     *
+     * @param offeringRatio
+     *         the ratio the VM's offering sets, or null when it inherits the cluster's
+     */
+    protected long scaleToClusterUnits(long requested, Float offeringRatio, float clusterRatio) {
+        if (offeringRatio == null) {
+            return requested;
+        }
+        return (long) ((requested / offeringRatio) * clusterRatio);
+    }
+
     protected Pair<String, String> getClusterValues(long clusterId) {
         Map<String, String> map = _clusterDetailsDao.findDetails(clusterId,
                 List.of(VmDetailConstants.CPU_OVER_COMMIT_RATIO, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO));
@@ -691,6 +739,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 clusterValuesCache.get(host.getClusterId());
         float clusterCpuOvercommitRatio = Float.parseFloat(clusterValues.first());
         float clusterRamOvercommitRatio = Float.parseFloat(clusterValues.second());
+        // A VM whose offering sets a ratio is charged at it, as allocate and release do; one whose
+        // offering sets none keeps the ratio recorded when it started. Each offering is read once.
+        Map<Long, Pair<Float, Float>> offeringRatiosById = new HashMap<>();
         for (VMInstanceVO vm : vms) {
             float cpuOvercommitRatio;
             float ramOvercommitRatio;
@@ -700,6 +751,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             // if vmDetailCpu or vmDetailRam is not null it means it is running in a overcommitted cluster.
             cpuOvercommitRatio = (vmDetailCpu != null) ? Float.parseFloat(vmDetailCpu) : clusterCpuOvercommitRatio;
             ramOvercommitRatio = (vmDetailRam != null) ? Float.parseFloat(vmDetailRam) : clusterRamOvercommitRatio;
+            Pair<Float, Float> offeringRatios = offeringRatiosById.computeIfAbsent(vm.getServiceOfferingId(), this::getOfferingOvercommitRatios);
+            cpuOvercommitRatio = offeringRatios.first() != null ? offeringRatios.first() : cpuOvercommitRatio;
+            ramOvercommitRatio = offeringRatios.second() != null ? offeringRatios.second() : ramOvercommitRatio;
             ServiceOffering so = getServiceOffering(vm.getServiceOfferingId());
             if (so == null) {
                 so = _offeringsDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
@@ -745,6 +799,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 if (vmDetailRam != null) {
                     ramOvercommitRatio = Float.parseFloat(vmDetailRam);
                 }
+                Pair<Float, Float> offeringRatios = offeringRatiosById.computeIfAbsent(vm.getServiceOfferingId(), this::getOfferingOvercommitRatios);
+                cpuOvercommitRatio = offeringRatios.first() != null ? offeringRatios.first() : cpuOvercommitRatio;
+                ramOvercommitRatio = offeringRatios.second() != null ? offeringRatios.second() : ramOvercommitRatio;
                 ServiceOffering so = getServiceOffering(vm.getServiceOfferingId());
                 if (so == null) {
                     so = _offeringsDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
@@ -1059,6 +1116,34 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     }
 
+    /**
+     * A VM's request expressed in the units capacity is counted in.
+     *
+     * Capacity is counted in cluster-overcommitted units, so a VM whose offering overrides its
+     * cluster's overcommit ratio occupies a different share to its neighbours. Everything that asks
+     * "does this host have room" has to ask in the same units the charge will use, or a VM can pass
+     * the check and then fail to start.
+     *
+     * Resolved from the offering rather than from the VM, because at placement time the VM has not
+     * started and may have no ratio recorded yet.
+     */
+    @Override
+    public long scaleRequestForOffering(long serviceOfferingId, long clusterId, long requested, boolean forCpu) {
+        Pair<Float, Float> offeringRatios = getOfferingOvercommitRatios(serviceOfferingId);
+        Float offeringRatio = forCpu ? offeringRatios.first() : offeringRatios.second();
+        if (offeringRatio == null) {
+            return requested;
+        }
+        Pair<String, String> clusterValues = getClusterValues(clusterId);
+        try {
+            float clusterRatio = Float.parseFloat(forCpu ? clusterValues.first() : clusterValues.second());
+            return scaleToClusterUnits(requested, offeringRatio, clusterRatio);
+        } catch (NumberFormatException | NullPointerException e) {
+            logger.warn("Ignoring unreadable overcommit ratio on cluster {}.", clusterId);
+            return requested;
+        }
+    }
+
     @Override
     public Pair<Boolean, Boolean> checkIfHostHasCpuCapabilityAndCapacity(Host host, ServiceOffering offering, boolean considerReservedCapacity) {
         if (HypervisorType.External.equals(host.getHypervisorType())) {
@@ -1066,14 +1151,15 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             return new Pair<>(true, true);
         }
 
-        int cpu_requested = offering.getCpu() * offering.getSpeed();
-        long ram_requested = offering.getRamSize() * 1024L * 1024L;
         Pair<String, String> clusterDetails = getClusterValues(host.getClusterId());
         float cpuOvercommitRatio = Float.parseFloat(clusterDetails.first());
         float memoryOvercommitRatio = Float.parseFloat(clusterDetails.second());
+        Pair<Float, Float> offeringRatios = getOfferingOvercommitRatios(offering.getId());
+        long cpu_requested = scaleToClusterUnits((long) offering.getCpu() * offering.getSpeed(), offeringRatios.first(), cpuOvercommitRatio);
+        long ram_requested = scaleToClusterUnits(offering.getRamSize() * 1024L * 1024L, offeringRatios.second(), memoryOvercommitRatio);
 
         boolean hostHasCpuCapability = checkIfHostHasCpuCapability(host, offering.getCpu(), offering.getSpeed());
-        boolean hostHasCapacity = checkIfHostHasCapacity(host, cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio,
+        boolean hostHasCapacity = checkIfHostHasCapacity(host, (int) cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio,
                 considerReservedCapacity);
 
         return new Pair<>(hostHasCpuCapability, hostHasCapacity);

@@ -2291,6 +2291,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new CloudRuntimeException(String.format("Unable to scale %s due to insufficient resources.", vmInstance));
             }
 
+            // the charge is scaled by each offering's overcommit ratio, so ask for the change in that charge
+            long chargedCpuDiff = _capacityMgr.scaleRequestForOffering(newServiceOffering.getId(), host.getClusterId(), (long) newCpu * newSpeed, true)
+                    - _capacityMgr.scaleRequestForOffering(currentServiceOffering.getId(), host.getClusterId(), (long) currentCpu * currentSpeed, true);
+            long chargedMemoryDiff = _capacityMgr.scaleRequestForOffering(newServiceOffering.getId(), host.getClusterId(), ByteScaleUtils.mebibytesToBytes(newMemory), false)
+                    - _capacityMgr.scaleRequestForOffering(currentServiceOffering.getId(), host.getClusterId(), ByteScaleUtils.mebibytesToBytes(currentMemory), false);
+
             while (retry-- != 0) { // It's != so that it can match -1.
                 try {
                     boolean existingHostHasCapacity = false;
@@ -2303,7 +2309,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     // #1 Check existing host has capacity & and the correct tags
                     if (!excludes.shouldAvoid(ApiDBUtils.findHostById(vmInstance.getHostId()))) {
                         existingHostHasCapacity = _capacityMgr.checkIfHostHasCpuCapability(host, newCpu, newSpeed)
-                                && _capacityMgr.checkIfHostHasCapacity(host, cpuDiff, ByteScaleUtils.mebibytesToBytes(memoryDiff), false,
+                                && _capacityMgr.checkIfHostHasCapacity(host, (int) chargedCpuDiff, chargedMemoryDiff, false,
                                         _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_CPU),
                                         _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_MEMORY), false)
                                 && checkEnforceStrictHostTagCheck(vmInstance, host);
