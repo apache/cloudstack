@@ -67,15 +67,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.host.HostVO;
-import com.cloud.storage.Storage;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.utils.exception.CloudRuntimeException;
-
-import feign.FeignException;
-
 public class UnifiedNASStrategy extends NASStrategy {
     private static final Logger logger = LogManager.getLogger(UnifiedNASStrategy.class);
     @Inject private VolumeDao volumeDao;

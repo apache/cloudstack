@@ -104,6 +104,7 @@ public class OntapStorageUtilsTest {
                 () -> OntapStorageUtils.toLunCloneSourcePathInSnapshot("/vol/vol1/lun", "", "snap"));
         org.junit.jupiter.api.Assertions.assertThrows(com.cloud.exception.InvalidParameterValueException.class,
                 () -> OntapStorageUtils.toLunCloneSourcePathInSnapshot("", "vol1", "snap"));
+    }
 
     @Test
     public void isOntapSnapshotNotFoundError_matchesEntryDoesNotExist() {

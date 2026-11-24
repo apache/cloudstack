@@ -36,7 +36,6 @@ import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
@@ -209,34 +208,6 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                                 storagePool, volInfo, details, cloneOfTemplateId);
                     } else {
                         clonedCloudStackVolume = createCloudStackVolume(storagePool, volInfo, details);
-                    // Create the backend storage object (LUN for iSCSI, no-op for NFS)
-                    CloudStackVolume created = createCloudStackVolume(storagePool, volInfo, details);
-
-                    volumeVO.setPoolType(storagePool.getPoolType());
-                    volumeVO.setPoolId(storagePool.getId());
-                    volumeVO.setFormat(getImageFormatByHypervisorAndProtocol(storagePool.getHypervisor(), details.get(OntapStorageConstants.PROTOCOL)));
-                    logger.info("createAsync: Volume format set to [{}] for hypervisor [{}] and protocol [{}]", volumeVO.getFormat(), storagePool.getHypervisor(), details.get(OntapStorageConstants.PROTOCOL));
-
-                    if (ProtocolType.ISCSI.name().equalsIgnoreCase(details.get(OntapStorageConstants.PROTOCOL))) {
-                        String lunName = created != null && created.getLun() != null ? created.getLun().getName() : null;
-                        if (lunName == null) {
-                            throw new CloudRuntimeException("Missing LUN name for volume " + volInfo.getId());
-                        }
-
-                        // Persist LUN details for future operations (delete, grant/revoke access)
-                        volumeDetailsDao.addDetail(volInfo.getId(), OntapStorageConstants.LUN_DOT_UUID, created.getLun().getUuid(), false);
-                        volumeDetailsDao.addDetail(volInfo.getId(), OntapStorageConstants.LUN_DOT_NAME, lunName, false);
-                        if (created.getLun().getUuid() != null) {
-                            volumeVO.setFolder(created.getLun().getUuid());
-                        }
-
-                        logger.info("createAsync: Created LUN [{}] for volume [{}]. LUN mapping will occur during grantAccess() to per-host igroup.",
-                                lunName, volumeVO.getId());
-                        createCmdResult = new CreateCmdResult(lunName, new Answer(null, true, null));
-                    } else if (ProtocolType.NFS3.name().equalsIgnoreCase(details.get(OntapStorageConstants.PROTOCOL))) {
-                        createCmdResult = new CreateCmdResult(volInfo.getUuid(), new Answer(null, true, null));
-                        logger.info("createAsync: Managed NFS volume [{}] with path [{}] associated with pool {}",
-                                volumeVO.getId(), volInfo.getUuid(), storagePool.getId());
                     }
 
                     createCmdResult = recordCreatedVolume(storagePool, volInfo, volumeVO, details, clonedCloudStackVolume);
@@ -1496,9 +1467,6 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             putPositiveIopsDetail(snapshotDetails, OntapStorageConstants.MIN_IOPS, volumeVO.getMinIops());
             putPositiveIopsDetail(snapshotDetails, OntapStorageConstants.MAX_IOPS, volumeVO.getMaxIops());
             updateSnapshotDetails(snapshot.getId(), snapshotDetails);
-            // (see deleteCloudStackVolumeSnapshot and StorageStrategy.deleteFlexVolSnapshotForCloudStackVolume)
-            updateSnapshotDetails(snapshot.getId(), volumeInfo.getId(), flexVolUuid,
-                    ontapSnapshotUuid, snapshotName, volumePath, volumeVO.getPoolId(), protocol, lunUuid);
 
             CreateObjectAnswer createObjectAnswer = new CreateObjectAnswer(snapshotObjectTo);
             result = new CreateCmdResult(null, createObjectAnswer);

@@ -270,8 +270,6 @@ class OntapPrimaryDatastoreDriverTest {
         try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class, CALLS_REAL_METHODS)) {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(storagePoolDetails))
                     .thenReturn(nasStrategy);
-            utilityMock.when(() -> OntapStorageUtils.createCloudStackVolumeRequestByProtocol(
-                    any(), any(), any())).thenReturn(mockCloudStackVolume);
 
             when(nasStrategy.createCloudStackVolume(any())).thenReturn(mockCloudStackVolume);
 
@@ -298,15 +296,14 @@ class OntapPrimaryDatastoreDriverTest {
         when(dataStore.getName()).thenReturn("ontap-pool");
         when(volumeInfo.getType()).thenReturn(VOLUME);
         when(volumeInfo.getId()).thenReturn(100L);
-        when(volumeInfo.getName()).thenReturn("test-volume");
+        when(volumeInfo.getName()).thenReturn("test_volume");
 
         when(storagePoolDao.findById(1L)).thenReturn(storagePool);
-        when(storagePool.getId()).thenReturn(1L);
         when(storagePool.getHypervisor()).thenReturn(Hypervisor.HypervisorType.VMware);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
         when(volumeDao.findById(100L)).thenReturn(volumeVO);
 
-        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class, CALLS_REAL_METHODS)) {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any())).thenReturn(sanStrategy);
 
             driver.createAsync(dataStore, volumeInfo, createCallback);
@@ -314,7 +311,7 @@ class OntapPrimaryDatastoreDriverTest {
             ArgumentCaptor<CreateCmdResult> resultCaptor = ArgumentCaptor.forClass(CreateCmdResult.class);
             verify(createCallback).complete(resultCaptor.capture());
             assertFalse(resultCaptor.getValue().isSuccess());
-            assertTrue(resultCaptor.getValue().getResult().contains("Unsupported hypervisor [VMware]"));
+            assertTrue(resultCaptor.getValue().getResult().contains("Unsupported hypervisor type VMware"));
         }
     }
 
@@ -333,12 +330,6 @@ class OntapPrimaryDatastoreDriverTest {
         when(volumeDao.findById(100L)).thenReturn(volumeVO);
 
         try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class, CALLS_REAL_METHODS)) {
-        when(storagePool.getId()).thenReturn(1L);
-        when(storagePool.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
-        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
-        when(volumeDao.findById(100L)).thenReturn(volumeVO);
-
-        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any())).thenReturn(sanStrategy);
 
             driver.createAsync(dataStore, volumeInfo, createCallback);
@@ -347,7 +338,6 @@ class OntapPrimaryDatastoreDriverTest {
             verify(createCallback).complete(resultCaptor.capture());
             assertFalse(resultCaptor.getValue().isSuccess());
             assertTrue(resultCaptor.getValue().getResult().contains("Unsupported protocol FC"));
-            assertTrue(resultCaptor.getValue().getResult().contains("No enum constant"));
         }
     }
 
