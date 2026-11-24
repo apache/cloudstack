@@ -497,27 +497,36 @@ public class ParamProcessWorker implements DispatchWorker {
         return cal.getTime();
     }
 
-    private Long translateUuidToInternalId(final String uuid, final Parameter annotation) {
+    protected boolean isInternalIdDisallowed() {
+        return Boolean.TRUE.equals(ApiServer.ApiDisallowInternalIds.value());
+    }
+
+    protected Long translateUuidToInternalId(final String uuid, final Parameter annotation) {
         if (uuid.equals("-1")) {
             // FIXME: This is to handle a lot of hardcoded special cases where -1 is sent
             // APITODO: Find and get rid of all hardcoded params in API Cmds and service layer
             return -1L;
         }
         Long internalId = null;
-        // If annotation's empty, the cmd existed before 3.x try conversion to long
-        final boolean isPre3x = annotation.since().isEmpty() && !ApiServer.ApiDisallowInternalIds.value();
+        final boolean internalIdDisallowed = isInternalIdDisallowed();
+        // Internal IDs are only honoured for pre-3.x APIs (empty since) when not disallowed
+        final boolean internalIdAllowed = annotation.since().isEmpty() && !internalIdDisallowed;
         // Match against Java's UUID regex to check if input is uuid string
         final boolean isUuid = UuidUtils.isUuid(uuid);
-        // Enforce that it's uuid for newly added apis from version 3.x
-        if (!isPre3x && !isUuid)
+        if (!internalIdAllowed && !isUuid) {
+            if (internalIdDisallowed) {
+                throw new InvalidParameterValueException(String.format("Invalid parameter %s value=%s, a valid UUID is expected", annotation.name(), uuid));
+            }
+            // Legacy behaviour: non-UUID values for 3.x+ APIs are ignored
             return null;
+        }
 
         // There may be multiple entities defined on the @EntityReference of a Response.class
         // UUID CommandType would expect only one entityType, so use the first entityType
         final Class<?>[] entities = annotation.entityType()[0].getAnnotation(EntityReference.class).value();
 
         // Allow both uuid and internal id for pre3x apis
-        if (isPre3x && !isUuid) {
+        if (internalIdAllowed && !isUuid) {
             try {
                 internalId = Long.parseLong(uuid);
             } catch (final NumberFormatException e) {

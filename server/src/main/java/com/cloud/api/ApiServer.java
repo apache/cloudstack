@@ -374,9 +374,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             Boolean.class,
             "api.disallow.internal.ids",
             "true",
-            "When enabled, APIs will not honour requests containing internal database IDs. "
-                    + "Only UUIDs will be accepted as entity identifiers. "
-                    + "By default, internal IDs are not accepted even for pre-3.x APIs.",
+            "When true (default), only UUIDs are accepted as entity identifiers and requests passing internal database IDs "
+                    + "(or any other non-UUID value) for UUID parameters are rejected with a parameter error. "
+                    + "When false, legacy pre-3.x APIs also accept internal database IDs for backward compatibility.",
             true,
             ConfigKey.Scope.Global
     );
