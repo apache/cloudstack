@@ -64,6 +64,10 @@ public class ClvmSanlockLeaseReader {
             return ownerId;
         }
 
+        public boolean isHeldExclusivelyBy(long hostId) {
+            return mode == LeaseMode.EXCLUSIVE && ownerId != null && ownerId == hostId;
+        }
+
         public List<Long> getSharedOwnerIds() {
             return sharedOwnerIds;
         }

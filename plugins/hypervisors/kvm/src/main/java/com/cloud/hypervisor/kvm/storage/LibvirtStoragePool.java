@@ -381,6 +381,14 @@ public class LibvirtStoragePool implements KVMStoragePool {
         return ClvmSanlockHaChecker.isHostLeaseAlive(ClvmStorageAdaptor.getVgName(getLocalPath()), host.getSanlockHostId());
     }
 
+    private Boolean hasClvmVolumeLeases(HAStoragePool pool, HostTO host) {
+        Map<String, List<String>> volumesByPool = host.getClvmVolumesByPool();
+        if (volumesByPool == null) {
+            return hasClvmHostLease(host);
+        }
+        return ClvmSanlockHaChecker.areHostVolumeLeasesAlive(ClvmStorageAdaptor.getVgName(getLocalPath()), host.getSanlockHostId(), volumesByPool.get(pool.getPoolUUID()));
+    }
+
     public String createHeartBeatCommand(HAStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation) {
         if (ClvmPoolManager.isClvmPoolType(type)) {
             return null;
@@ -412,7 +420,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
     @Override
     public Boolean hasHeartBeat(HAStoragePool pool, HostTO host) {
         if (ClvmPoolManager.isClvmPoolType(type)) {
-            return hasClvmHostLease(host);
+            return hasClvmVolumeLeases(pool, host);
         }
         String hostIp = host.getPrivateNetwork().getIp();
         Script cmd = new Script(getHearthBeatPath(), HeartBeatCheckerTimeoutInMs, logger);

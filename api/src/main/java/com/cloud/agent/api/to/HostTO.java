@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.agent.api.to;
 
+import java.util.List;
+import java.util.Map;
+
 import com.cloud.host.Host;
 
 public class HostTO {
@@ -26,6 +29,7 @@ public class HostTO {
     private NetworkTO storageNetwork2;
     private String parent;
     private Long sanlockHostId;
+    private Map<String, List<String>> clvmVolumesByPool;
 
     protected HostTO() {
     }
@@ -53,6 +57,15 @@ public class HostTO {
 
     public void setSanlockHostId(Long sanlockHostId) {
         this.sanlockHostId = sanlockHostId;
+    }
+
+    /** LV paths of the CLVM volumes of the VMs on the host by pool uuid; null when the sender did not provide them. */
+    public Map<String, List<String>> getClvmVolumesByPool() {
+        return clvmVolumesByPool;
+    }
+
+    public void setClvmVolumesByPool(Map<String, List<String>> clvmVolumesByPool) {
+        this.clvmVolumesByPool = clvmVolumesByPool;
     }
 
     public String getGuid() {

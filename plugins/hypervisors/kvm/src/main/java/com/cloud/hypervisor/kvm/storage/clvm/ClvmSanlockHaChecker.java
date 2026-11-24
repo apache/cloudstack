@@ -18,6 +18,7 @@
 package com.cloud.hypervisor.kvm.storage.clvm;
 
 import java.io.File;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -82,6 +83,46 @@ public class ClvmSanlockHaChecker {
             LOGGER.warn("Ignoring invalid sanlock host id [{}]", line);
             return null;
         }
+    }
+
+    protected enum VolumeLeaseState { ALIVE, DEAD, UNKNOWN }
+
+    /**
+     * Returns false only when the exclusive leases of all the host's volumes are held by a lockspace lease that is gone: expired,
+     * or taken over by a newer incarnation of the host (it rebooted). A volume whose lease cannot be read falls back to the host lease.
+     */
+    public static boolean areHostVolumeLeasesAlive(String vgName, Long hostId, List<String> volumePaths) {
+        if (vgName == null || hostId == null || volumePaths == null || volumePaths.isEmpty()) {
+            return isHostLeaseAlive(vgName, hostId);
+        }
+        boolean unknown = false;
+        for (String volumePath : volumePaths) {
+            VolumeLeaseState state = readVolumeLeaseState(vgName, hostId, new File(volumePath).getName());
+            if (state == VolumeLeaseState.ALIVE) {
+                return true;
+            }
+            unknown = unknown || state == VolumeLeaseState.UNKNOWN;
+        }
+        return unknown && isHostLeaseAlive(vgName, hostId);
+    }
+
+    private static VolumeLeaseState readVolumeLeaseState(String vgName, long hostId, String lvName) {
+        try {
+            ClvmSanlockLeaseReader.Lease lease = ClvmSanlockLeaseReader.readLease(vgName, lvName);
+            ClvmSanlockLeaseReader.OwnerLiveness liveness = lease.isHeldExclusivelyBy(hostId)
+                    ? ClvmSanlockLeaseReader.readOwnerLiveness(vgName, lease) : null;
+            return classifyVolumeLease(lease, hostId, liveness);
+        } catch (RuntimeException e) {
+            LOGGER.warn("Cannot read the sanlock lease of volume [{}/{}]: {}", vgName, lvName, e.getMessage());
+            return VolumeLeaseState.UNKNOWN;
+        }
+    }
+
+    protected static VolumeLeaseState classifyVolumeLease(ClvmSanlockLeaseReader.Lease lease, long hostId, ClvmSanlockLeaseReader.OwnerLiveness liveness) {
+        if (lease == null || !lease.isHeldExclusivelyBy(hostId) || liveness == null) {
+            return VolumeLeaseState.UNKNOWN;
+        }
+        return liveness.isAlive() ? VolumeLeaseState.ALIVE : VolumeLeaseState.DEAD;
     }
 
     /** Returns false only when the lease stopped renewing long enough that the watchdog has reset the host. */

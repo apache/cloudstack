@@ -26,7 +26,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,6 +40,7 @@ import com.cloud.agent.api.to.NetworkTO;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.PoolType;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.storage.Storage.StoragePoolType;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class KVMHACheckerTest {
@@ -90,5 +93,48 @@ public class KVMHACheckerTest {
     public void testHostIsDeadWithoutPools() {
         assertFalse(checkHeartBeat(false));
         assertFalse(checkHeartBeat(true));
+    }
+
+    private HAStoragePool pool(String uuid, StoragePoolType type, boolean heartBeat) {
+        KVMStoragePool kvmPool = mock(KVMStoragePool.class);
+        when(kvmPool.getUuid()).thenReturn(uuid);
+        when(kvmPool.getType()).thenReturn(type);
+        when(kvmPool.hasHeartBeat(any(HAStoragePool.class), any(HostTO.class))).thenReturn(heartBeat);
+        return new HAStoragePool(kvmPool, "host", "/path", PoolType.PrimaryStorage);
+    }
+
+    private boolean checkWithClvmVolumes(Map<String, List<String>> clvmVolumes, boolean reportIfFailedForOnePool, HAStoragePool... pools) {
+        when(host.getPrivateNetwork()).thenReturn(privateNetwork);
+        when(host.getClvmVolumesByPool()).thenReturn(clvmVolumes);
+        return new KVMHAChecker(List.of(pools), host, reportIfFailedForOnePool).hasHeartBeat();
+    }
+
+    @Test
+    public void testClvmPoolWithoutVolumesOfTheHostDoesNotKeepADeadNfsHostAlive() {
+        Map<String, List<String>> volumes = new HashMap<>();
+        assertFalse(checkWithClvmVolumes(volumes, false, pool("nfs", StoragePoolType.NetworkFilesystem, false), pool("clvm", StoragePoolType.CLVM_NG, true)));
+        assertFalse(checkWithClvmVolumes(volumes, false, pool("clvm", StoragePoolType.CLVM, true), pool("nfs", StoragePoolType.NetworkFilesystem, false)));
+    }
+
+    @Test
+    public void testClvmPoolWithVolumesOfTheHostKeepsItAlive() {
+        Map<String, List<String>> volumes = Map.of("clvm", List.of("lv1"));
+        assertTrue(checkWithClvmVolumes(volumes, false, pool("nfs", StoragePoolType.NetworkFilesystem, false), pool("clvm", StoragePoolType.CLVM_NG, true)));
+    }
+
+    @Test
+    public void testClvmPoolWithoutVolumesDoesNotFailAliveHostWhenOnePoolFailureIsReported() {
+        assertTrue(checkWithClvmVolumes(new HashMap<>(), true, pool("nfs", StoragePoolType.NetworkFilesystem, true), pool("clvm", StoragePoolType.CLVM_NG, false)));
+    }
+
+    @Test
+    public void testEveryPoolVotesWhenTheSenderSentNoClvmVolumes() {
+        assertTrue(checkWithClvmVolumes(null, false, pool("nfs", StoragePoolType.NetworkFilesystem, false), pool("clvm", StoragePoolType.CLVM_NG, true)));
+    }
+
+    @Test
+    public void testNonClvmPoolsAlwaysVoteWhateverTheClvmVolumes() {
+        assertTrue(checkWithClvmVolumes(new HashMap<>(), false, pool("nfs", StoragePoolType.NetworkFilesystem, true), pool("rbd", StoragePoolType.RBD, false)));
+        assertFalse(checkWithClvmVolumes(new HashMap<>(), false, pool("nfs", StoragePoolType.NetworkFilesystem, false), pool("rbd", StoragePoolType.RBD, false)));
     }
 }

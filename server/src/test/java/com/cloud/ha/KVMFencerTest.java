@@ -221,6 +221,7 @@ public class KVMFencerTest {
         ArgumentCaptor<FenceCommand> captor = ArgumentCaptor.forClass(FenceCommand.class);
         Mockito.verify(agentManager).send(ArgumentMatchers.eq(3l), captor.capture());
         Assert.assertEquals(Long.valueOf(7), captor.getValue().getHost().getSanlockHostId());
+        Mockito.verify(clvmPoolManager).addClvmVolumes(ArgumentMatchers.eq(captor.getValue().getHost()), ArgumentMatchers.eq(host));
     }
 
     private HostVO mockDownHostInCluster(long id) {

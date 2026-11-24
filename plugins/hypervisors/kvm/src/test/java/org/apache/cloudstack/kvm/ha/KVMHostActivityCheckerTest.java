@@ -25,12 +25,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.joda.time.DateTime;
 import org.junit.Test;
@@ -42,10 +46,13 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckOnHostAnswer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVMActivityOnStoragePoolCommand;
 import com.cloud.agent.api.to.HostTO;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.dc.dao.ClusterDao;
@@ -130,5 +137,79 @@ public class KVMHostActivityCheckerTest {
         ArgumentCaptor<CheckOnHostCommand> captor = ArgumentCaptor.forClass(CheckOnHostCommand.class);
         verify(agentMgr).easySend(anyLong(), captor.capture());
         assertNull(captor.getValue().getHost().getSanlockHostId());
+    }
+
+    private KVMHostActivityChecker prepareUnreachableHostWithUpNeighbour(boolean hasClvmPool, Boolean... neighbourAliveAnswers) {
+        HostVO neighbour = org.mockito.Mockito.mock(HostVO.class);
+        when(neighbour.getId()).thenReturn(9L);
+        when(neighbour.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(host.getId()).thenReturn(8L);
+        when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(resourceManager.listHostsInClusterByStatus(anyLong(), eq(Status.Up))).thenReturn(List.of(neighbour));
+        when(clvmPoolManager.hasClvmPool(host)).thenReturn(hasClvmPool);
+        when(clvmPoolManager.getClvmVolumesByPool(host)).thenReturn(hasClvmPool ? Map.of("pool", List.of("lv")) : Map.of());
+        when(agentMgr.easySend(eq(8L), any(CheckOnHostCommand.class))).thenReturn(null);
+        CheckOnHostAnswer first = new CheckOnHostAnswer(null, neighbourAliveAnswers[0], "");
+        CheckOnHostAnswer[] rest = new CheckOnHostAnswer[neighbourAliveAnswers.length - 1];
+        for (int i = 1; i < neighbourAliveAnswers.length; i++) {
+            rest[i - 1] = new CheckOnHostAnswer(null, neighbourAliveAnswers[i], "");
+        }
+        when(agentMgr.easySend(eq(9L), any(CheckOnHostCommand.class))).thenReturn(first, rest);
+        KVMHostActivityChecker spied = spy(checker);
+        doReturn(true).when(spied).sleep(anyLong());
+        return spied;
+    }
+
+    @Test
+    public void testHostIsDownWhenClvmLeaseExpiresWhileNeighbourSaidUp() {
+        KVMHostActivityChecker spied = prepareUnreachableHostWithUpNeighbour(true, true, true, false);
+        assertEquals(Status.Down, spied.getHostAgentStatus(host));
+        verify(agentMgr, times(3)).easySend(eq(9L), any(CheckOnHostCommand.class));
+    }
+
+    @Test
+    public void testHostStaysDisconnectedWhenClvmLeaseNeverExpires() {
+        KVMHostActivityChecker spied = prepareUnreachableHostWithUpNeighbour(true, true);
+        assertEquals(Status.Disconnected, spied.getHostAgentStatus(host));
+    }
+
+    @Test
+    public void testNoWaitForClusterWithoutClvmPool() {
+        KVMHostActivityChecker spied = prepareUnreachableHostWithUpNeighbour(false, true);
+        assertEquals(Status.Disconnected, spied.getHostAgentStatus(host));
+        verify(agentMgr, times(1)).easySend(eq(9L), any(CheckOnHostCommand.class));
+    }
+
+    @Test
+    public void testSecondInvestigationDoesNotWaitWhileOneIsAlreadyWaiting() {
+        KVMHostActivityChecker spied = prepareUnreachableHostWithUpNeighbour(true, true);
+        List<Status> nested = new java.util.ArrayList<>();
+        doAnswer(invocation -> {
+            if (nested.isEmpty()) {
+                nested.add(spied.getHostAgentStatus(host));
+            }
+            return true;
+        }).when(spied).sleep(anyLong());
+        assertEquals(Status.Disconnected, spied.getHostAgentStatus(host));
+        assertEquals(Status.Disconnected, nested.get(0));
+    }
+
+    @Test
+    public void testNoWaitForHostWithoutClvmVolumesInClusterWithClvmPool() {
+        KVMHostActivityChecker spied = prepareUnreachableHostWithUpNeighbour(true, true);
+        when(clvmPoolManager.getClvmVolumesByPool(host)).thenReturn(Map.of());
+        assertEquals(Status.Disconnected, spied.getHostAgentStatus(host));
+        verify(agentMgr, times(1)).easySend(eq(9L), any(CheckOnHostCommand.class));
+    }
+
+    @Test
+    public void testHostCheckSendsClvmVolumesOfTheHost() {
+        when(host.getId()).thenReturn(8L);
+        when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(agentMgr.easySend(anyLong(), any(CheckOnHostCommand.class))).thenReturn(new Answer(null, false, "down"));
+        checker.getHostAgentStatus(host);
+        ArgumentCaptor<CheckOnHostCommand> captor = ArgumentCaptor.forClass(CheckOnHostCommand.class);
+        verify(agentMgr).easySend(anyLong(), captor.capture());
+        verify(clvmPoolManager).addClvmVolumes(eq(captor.getValue().getHost()), eq(host));
     }
 }

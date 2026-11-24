@@ -55,7 +55,10 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -81,6 +84,10 @@ public class ClvmPoolManager implements Configurable {
     private HostDetailsDao _hostDetailsDao;
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    private VolumeDao _volumeDao;
+    @Inject
+    private VMInstanceDao _vmInstanceDao;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
@@ -554,6 +561,26 @@ public class ClvmPoolManager implements Configurable {
         if (NumberUtils.isDigits(sanlockId)) {
             hostTO.setSanlockHostId(Long.valueOf(sanlockId));
         }
+    }
+
+    /** Sets the CLVM volumes of the VMs on the host in the command's host, so the agents vote only with the CLVM pools the host uses. */
+    public void addClvmVolumes(HostTO hostTO, Host host) {
+        if (hasClvmPool(host)) {
+            hostTO.setClvmVolumesByPool(getClvmVolumesByPool(host));
+        }
+    }
+
+    public Map<String, List<String>> getClvmVolumesByPool(Host host) {
+        Map<String, List<String>> volumePathsByPool = new HashMap<>();
+        for (VMInstanceVO vm : _vmInstanceDao.listByHostId(host.getId())) {
+            for (VolumeVO volume : _volumeDao.findByInstance(vm.getId())) {
+                StoragePoolVO pool = volume.getPoolId() == null ? null : _storagePoolDao.findById(volume.getPoolId());
+                if (pool != null && isClvmPoolType(pool.getPoolType()) && volume.getPath() != null) {
+                    volumePathsByPool.computeIfAbsent(pool.getUuid(), uuid -> new ArrayList<>()).add(volume.getPath());
+                }
+            }
+        }
+        return volumePathsByPool;
     }
 
     public boolean hasSanlockHostId(long hostId) {

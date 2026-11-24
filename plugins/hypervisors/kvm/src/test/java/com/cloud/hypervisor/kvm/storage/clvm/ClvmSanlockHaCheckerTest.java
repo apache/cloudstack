@@ -24,6 +24,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
+
+import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferAnswer.LeaseMode;
 import org.junit.Test;
 
 public class ClvmSanlockHaCheckerTest {
@@ -100,5 +103,40 @@ public class ClvmSanlockHaCheckerTest {
     public void testUnknownVgOrHostIdAssumesAlive() {
         assertTrue(ClvmSanlockHaChecker.isHostLeaseAlive(null, 1L));
         assertTrue(ClvmSanlockHaChecker.isHostLeaseAlive("sharedvg", null));
+    }
+
+    private static ClvmSanlockLeaseReader.Lease exclusiveLease(long owner, long generation) {
+        return new ClvmSanlockLeaseReader.Lease(LeaseMode.EXCLUSIVE, owner, generation, List.of());
+    }
+
+    @Test
+    public void testVolumeLeaseOfTheHostIsAliveWhenItsOwnerIsAlive() {
+        assertEquals(ClvmSanlockHaChecker.VolumeLeaseState.ALIVE,
+                ClvmSanlockHaChecker.classifyVolumeLease(exclusiveLease(3, 19), 3, new ClvmSanlockLeaseReader.OwnerLiveness(true, true)));
+    }
+
+    @Test
+    public void testVolumeLeaseOfTheHostIsDeadWhenItsOwnerIsGone() {
+        assertEquals(ClvmSanlockHaChecker.VolumeLeaseState.DEAD,
+                ClvmSanlockHaChecker.classifyVolumeLease(exclusiveLease(3, 19), 3, new ClvmSanlockLeaseReader.OwnerLiveness(false, false)));
+    }
+
+    @Test
+    public void testVolumeLeaseIsUnknownWhenAnotherHostOwnsIt() {
+        assertEquals(ClvmSanlockHaChecker.VolumeLeaseState.UNKNOWN,
+                ClvmSanlockHaChecker.classifyVolumeLease(exclusiveLease(4, 19), 3, null));
+    }
+
+    @Test
+    public void testVolumeLeaseIsUnknownWhenSharedOrFree() {
+        ClvmSanlockLeaseReader.Lease free = new ClvmSanlockLeaseReader.Lease(LeaseMode.FREE, null, null, List.of());
+        assertEquals(ClvmSanlockHaChecker.VolumeLeaseState.UNKNOWN, ClvmSanlockHaChecker.classifyVolumeLease(free, 3, null));
+        assertEquals(ClvmSanlockHaChecker.VolumeLeaseState.UNKNOWN, ClvmSanlockHaChecker.classifyVolumeLease(null, 3, null));
+    }
+
+    @Test
+    public void testHostWithoutVolumesFallsBackToTheHostLease() {
+        assertTrue(ClvmSanlockHaChecker.areHostVolumeLeasesAlive("vg", null, List.of("lv")));
+        assertTrue(ClvmSanlockHaChecker.areHostVolumeLeasesAlive(null, 3L, List.of("lv")));
     }
 }

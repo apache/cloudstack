@@ -25,6 +25,10 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.host.Status;
 import com.cloud.host.DetailVO;
 import com.cloud.host.dao.HostDao;
@@ -52,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -84,6 +89,12 @@ public class ClvmPoolManagerTest {
 
     @Mock
     private PrimaryDataStoreDao storagePoolDao;
+
+    @Mock
+    private VolumeDao volumeDao;
+
+    @Mock
+    private VMInstanceDao vmInstanceDao;
 
     @InjectMocks
     private ClvmPoolManager clvmPoolManager;
@@ -1670,5 +1681,70 @@ public class ClvmPoolManagerTest {
         verify(agentMgr, never()).send(eq(3L), any(Command.class));
         Assert.assertEquals(ClvmLockTransferCommand.Operation.DEACTIVATE, cmd.getValue().getOperation());
         Assert.assertEquals("/dev/sharedvg/template-abc", cmd.getValue().getLvPath());
+    }
+
+    private HostVO hostWithPools(StoragePoolType... poolTypes) {
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getId()).thenReturn(HOST_ID_1);
+        Mockito.when(host.getClusterId()).thenReturn(10L);
+        List<StoragePoolVO> pools = new java.util.ArrayList<>();
+        for (StoragePoolType type : poolTypes) {
+            StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+            Mockito.when(pool.getPoolType()).thenReturn(type);
+            pools.add(pool);
+        }
+        Mockito.when(storagePoolDao.findPoolsInClusters(Mockito.any(), Mockito.any())).thenReturn(pools);
+        return host;
+    }
+
+    private void vmWithVolume(long vmId, long poolId, String poolUuid, StoragePoolType poolType, String path) {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getPoolId()).thenReturn(poolId);
+        Mockito.when(volume.getPath()).thenReturn(path);
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(pool.getPoolType()).thenReturn(poolType);
+        Mockito.when(pool.getUuid()).thenReturn(poolUuid);
+        Mockito.when(storagePoolDao.findById(poolId)).thenReturn(pool);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(new java.util.ArrayList<>(List.of(volume)));
+        List<VMInstanceVO> vms = new java.util.ArrayList<>(vmInstanceDao.listByHostId(HOST_ID_1) == null ? List.of() : vmInstanceDao.listByHostId(HOST_ID_1));
+        vms.add(vm);
+        Mockito.when(vmInstanceDao.listByHostId(HOST_ID_1)).thenReturn(vms);
+    }
+
+    @Test
+    public void testAddClvmVolumesCollectsOnlyClvmVolumesByPool() {
+        HostVO host = hostWithPools(StoragePoolType.CLVM_NG);
+        vmWithVolume(1L, 11L, "clvm-pool", StoragePoolType.CLVM_NG, "lv-1");
+        vmWithVolume(2L, 12L, "nfs-pool", StoragePoolType.NetworkFilesystem, "nfs-vol");
+        vmWithVolume(3L, 11L, "clvm-pool", StoragePoolType.CLVM_NG, "lv-3");
+        HostTO hostTO = new HostTO(host);
+
+        clvmPoolManager.addClvmVolumes(hostTO, host);
+
+        Assert.assertEquals(Map.of("clvm-pool", List.of("lv-1", "lv-3")), hostTO.getClvmVolumesByPool());
+    }
+
+    @Test
+    public void testAddClvmVolumesSendsEmptyVolumesForHostWithOnlyNfsVolumes() {
+        HostVO host = hostWithPools(StoragePoolType.CLVM_NG, StoragePoolType.NetworkFilesystem);
+        vmWithVolume(2L, 12L, "nfs-pool", StoragePoolType.NetworkFilesystem, "nfs-vol");
+        HostTO hostTO = new HostTO(host);
+
+        clvmPoolManager.addClvmVolumes(hostTO, host);
+
+        Assert.assertEquals(Map.of(), hostTO.getClvmVolumesByPool());
+    }
+
+    @Test
+    public void testAddClvmVolumesLeavesVolumesUnsetWithoutClvmPools() {
+        HostVO host = hostWithPools(StoragePoolType.NetworkFilesystem);
+        HostTO hostTO = new HostTO(host);
+
+        clvmPoolManager.addClvmVolumes(hostTO, host);
+
+        Assert.assertNull(hostTO.getClvmVolumesByPool());
+        Mockito.verifyNoInteractions(vmInstanceDao);
     }
 }
