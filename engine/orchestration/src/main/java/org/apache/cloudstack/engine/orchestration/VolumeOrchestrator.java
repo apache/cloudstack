@@ -1907,8 +1907,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         for (VolumeVO vol : vols) {
             String volToString = getReflectOnlySelectedFields(vol);
 
-            checkVolumeIsNotUnderSnapshotOperation(vol, volToString);
-
             StoragePoolVO assignedPool = null;
             if (destVols != null) {
                 StoragePool pool = destVols.get(vol);
@@ -2304,6 +2302,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         if (_volsDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT).isEmpty()) {
             throw new CloudRuntimeException(String.format("ROOT volume is missing, unable to prepare volumes for the VM [%s].", vm.getVirtualMachine()));
+        }
+
+        // Checked on all the volumes of the Instance: the usable volumes below leave out the volumes reserved by a snapshot operation, so the Instance would
+        // otherwise start without them.
+        for (VolumeVO vol : _volsDao.findByInstance(vm.getId())) {
+            checkVolumeIsNotUnderSnapshotOperation(vol, getReflectOnlySelectedFields(vol));
         }
 
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());

@@ -26,6 +26,7 @@ import java.lang.reflect.Field;
 
 import com.cloud.configuration.Resource;
 import com.cloud.deploy.DeploymentClusterPlanner;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageAccessException;
 import com.cloud.host.Host;
@@ -47,6 +48,7 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -994,6 +996,24 @@ public class VolumeOrchestratorTest {
             Mockito.when(volume.getState()).thenReturn(state);
             volumeOrchestrator.checkVolumeIsNotUnderSnapshotOperation(volume, "vol");
         }
+    }
+
+    @Test
+    public void prepareRefusesToStartAnInstanceWithAVolumeReservedByANoCopySnapshotOperation() {
+        VirtualMachineProfile profile = Mockito.mock(VirtualMachineProfile.class);
+        Mockito.when(profile.getId()).thenReturn(MOCK_VM_ID);
+        VolumeVO root = Mockito.mock(VolumeVO.class);
+        Mockito.when(volumeDao.findByInstanceAndType(MOCK_VM_ID, Volume.Type.ROOT)).thenReturn(List.of(root));
+        VolumeVO reserved = Mockito.mock(VolumeVO.class);
+        Mockito.when(reserved.getId()).thenReturn(7L);
+        Mockito.when(reserved.getState()).thenReturn(Volume.State.Snapshotting);
+        Mockito.when(volumeDao.findByInstance(MOCK_VM_ID)).thenReturn(List.of(reserved));
+        Mockito.doReturn(true).when(volumeOrchestrator).volumeHasKvmFileBasedNoCopySnapshots(7L);
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> volumeOrchestrator.prepare(profile, Mockito.mock(DeployDestination.class)));
+
+        // The usable volumes leave the reserved volume out, so it must be checked before they are listed.
+        Mockito.verify(volumeDao, Mockito.never()).findUsableVolumesForInstance(Mockito.anyLong());
     }
 
     @Test
