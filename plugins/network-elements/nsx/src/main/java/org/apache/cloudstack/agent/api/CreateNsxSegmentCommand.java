@@ -26,10 +26,21 @@ public class CreateNsxSegmentCommand extends NsxCommand {
     private String networkName;
     private String networkGateway;
     private String networkCidr;
+    private String ipDiscoveryProfileId;
+    private String macDiscoveryProfileId;
+    private String segmentSecurityProfileId;
 
     public CreateNsxSegmentCommand(long domainId, long accountId, long zoneId,
                                    Long vpcId, String vpcName, long networkId, String networkName,
                                    String networkGateway, String networkCidr) {
+        this(domainId, accountId, zoneId, vpcId, vpcName, networkId, networkName, networkGateway,
+                networkCidr, null, null, null);
+    }
+
+    public CreateNsxSegmentCommand(long domainId, long accountId, long zoneId,
+                                   Long vpcId, String vpcName, long networkId, String networkName,
+                                   String networkGateway, String networkCidr, String ipDiscoveryProfileId,
+                                   String macDiscoveryProfileId, String segmentSecurityProfileId) {
         super(domainId, accountId, zoneId);
         this.vpcId = vpcId;
         this.vpcName = vpcName;
@@ -37,6 +48,9 @@ public class CreateNsxSegmentCommand extends NsxCommand {
         this.networkName = networkName;
         this.networkGateway = networkGateway;
         this.networkCidr = networkCidr;
+        this.ipDiscoveryProfileId = ipDiscoveryProfileId;
+        this.macDiscoveryProfileId = macDiscoveryProfileId;
+        this.segmentSecurityProfileId = segmentSecurityProfileId;
     }
 
     public Long getVpcId() {
@@ -61,6 +75,18 @@ public class CreateNsxSegmentCommand extends NsxCommand {
 
     public String getNetworkCidr() {
         return networkCidr;
+    }
+
+    public String getIpDiscoveryProfileId() {
+        return ipDiscoveryProfileId;
+    }
+
+    public String getMacDiscoveryProfileId() {
+        return macDiscoveryProfileId;
+    }
+
+    public String getSegmentSecurityProfileId() {
+        return segmentSecurityProfileId;
     }
 
     @Override

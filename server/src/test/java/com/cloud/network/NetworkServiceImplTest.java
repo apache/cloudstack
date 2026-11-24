@@ -125,6 +125,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -135,6 +136,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -156,6 +158,7 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NetworkServiceImplTest {
@@ -186,6 +189,14 @@ public class NetworkServiceImplTest {
     HypervisorGuru hypervisorGuru;
     @Mock
     NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
+    @Mock
+    NetworkMigrationManager networkMigrationManager;
+    @Mock
+    VMInstanceDao vmInstanceDao;
+    @Mock
+    ResourceTagDao resourceTagDao;
+    @Mock
+    VpcOfferingDao vpcOfferingDao;
     @Mock
     EntityManager entityMgr;
     @Mock
@@ -749,6 +760,155 @@ public class NetworkServiceImplTest {
         Assert.assertFalse(service.checkAndUpdateNetworkDns(network1, Mockito.mock(NetworkOffering.class), ip4Dns[0], null, null, null));
         Mockito.when(network1.getIp6Dns1()).thenReturn(ip6Dns[0]);
         Assert.assertFalse(service.checkAndUpdateNetworkDns(network1, Mockito.mock(NetworkOffering.class), ip4Dns[0], null, ip6Dns[0], null));
+    }
+
+    @Test
+    public void testMatchingNsxSegmentProfilesAllowOfferingUpgrade() {
+        long oldOfferingId = 1L;
+        long newOfferingId = 2L;
+        Map<NetworkOffering.Detail, String> profiles = Map.of(
+                NetworkOffering.Detail.NsxIpDiscoveryProfileId, "ip-profile",
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, "mac-profile",
+                NetworkOffering.Detail.NsxSegmentSecurityProfileId, "security-profile");
+        Mockito.when(networkModel.getNtwkOffDetails(oldOfferingId)).thenReturn(profiles);
+        Mockito.when(networkModel.getNtwkOffDetails(newOfferingId)).thenReturn(profiles);
+
+        Assert.assertTrue(service.haveMatchingNsxSegmentProfiles(oldOfferingId, newOfferingId));
+    }
+
+    @Test
+    public void testDifferentNsxSegmentProfilesRejectOfferingUpgrade() {
+        long oldOfferingId = 1L;
+        long newOfferingId = 2L;
+        long networkId = 3L;
+        Network network = Mockito.mock(Network.class);
+        NetworkOfferingVO oldOffering = Mockito.mock(NetworkOfferingVO.class);
+        NetworkOfferingVO newOffering = Mockito.mock(NetworkOfferingVO.class);
+        Mockito.when(network.getId()).thenReturn(networkId);
+        Mockito.when(networkOfferingDao.findByIdIncludingRemoved(oldOfferingId)).thenReturn(oldOffering);
+        Mockito.when(networkOfferingDao.findById(newOfferingId)).thenReturn(newOffering);
+        Mockito.when(oldOffering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        Mockito.when(newOffering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        Mockito.when(oldOffering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        Mockito.when(newOffering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        Mockito.when(ipAddressDao.listByAssociatedNetwork(networkId, null)).thenReturn(List.of());
+        Mockito.when(networkModel.getNetworkOfferingServiceProvidersMap(newOfferingId)).thenReturn(new HashMap<>());
+        Mockito.when(networkModel.getNtwkOffDetails(oldOfferingId)).thenReturn(Map.of(
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, "old-mac-profile"));
+        Mockito.when(networkModel.getNtwkOffDetails(newOfferingId)).thenReturn(Map.of(
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, "old-mac-profile"));
+
+        Assert.assertTrue(service.canUpgrade(network, oldOfferingId, newOfferingId));
+
+        Mockito.when(networkModel.getNtwkOffDetails(newOfferingId)).thenReturn(Map.of(
+                NetworkOffering.Detail.NsxMacDiscoveryProfileId, "new-mac-profile"));
+
+        Assert.assertFalse(service.canUpgrade(network, oldOfferingId, newOfferingId));
+    }
+
+    @Test
+    public void testAbsentNsxSegmentProfilesAllowOfferingUpgrade() {
+        long oldOfferingId = 1L;
+        long newOfferingId = 2L;
+        Mockito.when(networkModel.getNtwkOffDetails(oldOfferingId)).thenReturn(null);
+        Mockito.when(networkModel.getNtwkOffDetails(newOfferingId)).thenReturn(Map.of());
+
+        Assert.assertTrue(service.haveMatchingNsxSegmentProfiles(oldOfferingId, newOfferingId));
+    }
+
+    @Test
+    public void testDifferentNsxSegmentProfilesRejectNetworkMigrationBeforeMutation() {
+        NetworkVO network = prepareNsxProfileMigration(false);
+
+        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> service.migrateGuestNetwork(network.getId(), 102L, accountMock, mock(User.class), false));
+
+        Assert.assertTrue(exception.getMessage().contains("Can't upgrade from network offering"));
+        Mockito.verify(networkModel).getNtwkOffDetails(101L);
+        Mockito.verify(networkModel).getNtwkOffDetails(102L);
+        Mockito.verifyNoInteractions(networkMigrationManager);
+        Mockito.verify(networkDao, Mockito.never()).update(anyLong(), any(NetworkVO.class));
+    }
+
+    @Test
+    public void testDifferentNsxSegmentProfilesRejectVpcMigrationBeforeMutation() {
+        NetworkVO network = prepareNsxProfileMigration(true);
+        VpcVO migratingVpc = mock(VpcVO.class);
+        when(migratingVpc.getVpcOfferingId()).thenReturn(401L);
+        when(vpcDao.findById(301L)).thenReturn(migratingVpc);
+        when(networkDao.listByVpc(301L)).thenReturn(List.of(network));
+        NetworkOfferingVO newOffering = networkOfferingDao.findById(102L);
+        when(networkOfferingDao.findByUuid("new-nsx-offering")).thenReturn(newOffering);
+        when(configMgr.isOfferingForVpc(newOffering)).thenReturn(true);
+
+        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> service.migrateVpcNetwork(301L, 402L, Map.of(network.getUuid(), "new-nsx-offering"),
+                        accountMock, mock(User.class), false));
+
+        Assert.assertTrue(exception.getMessage().contains("Can't upgrade from network offering"));
+        Mockito.verify(networkModel).getNtwkOffDetails(101L);
+        Mockito.verify(networkModel).getNtwkOffDetails(102L);
+        Mockito.verifyNoInteractions(networkMigrationManager);
+        Mockito.verify(networkDao, Mockito.never()).update(anyLong(), any(NetworkVO.class));
+    }
+
+    @Test
+    public void testMatchingNsxSegmentProfilesAllowNetworkMigrationValidation() {
+        NetworkVO network = prepareNsxProfileMigration(false);
+        when(networkModel.getNtwkOffDetails(102L)).thenReturn(Map.of(
+                NetworkOffering.Detail.NsxSegmentSecurityProfileId, "old-security-profile"));
+
+        Boolean needsMigration = ReflectionTestUtils.invokeMethod(service, "networkNeedsMigration", network, 501L,
+                networkOfferingDao.findByIdIncludingRemoved(101L), networkOfferingDao.findById(102L));
+
+        Assert.assertEquals(Boolean.TRUE, needsMigration);
+    }
+
+    private NetworkVO prepareNsxProfileMigration(boolean forVpc) {
+        NetworkVO migratingNetwork = mock(NetworkVO.class);
+        NetworkOfferingVO oldOffering = mock(NetworkOfferingVO.class);
+        NetworkOfferingVO newOffering = mock(NetworkOfferingVO.class);
+        when(migratingNetwork.getId()).thenReturn(201L);
+        when(migratingNetwork.getRelated()).thenReturn(201L);
+        when(migratingNetwork.getUuid()).thenReturn("nsx-network");
+        when(migratingNetwork.getVpcId()).thenReturn(forVpc ? 301L : null);
+        when(migratingNetwork.getNetworkOfferingId()).thenReturn(101L);
+        when(migratingNetwork.getDataCenterId()).thenReturn(10L);
+        when(migratingNetwork.getPhysicalNetworkId()).thenReturn(501L);
+        when(migratingNetwork.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        when(migratingNetwork.getState()).thenReturn(Network.State.Implemented);
+        when(networkDao.findById(201L)).thenReturn(migratingNetwork);
+        when(oldOffering.getId()).thenReturn(101L);
+        when(newOffering.getId()).thenReturn(102L);
+        when(oldOffering.getUuid()).thenReturn("old-nsx-offering");
+        when(newOffering.getUuid()).thenReturn("new-nsx-offering");
+        when(oldOffering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(newOffering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(oldOffering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        when(newOffering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        when(newOffering.getState()).thenReturn(NetworkOffering.State.Enabled);
+        when(newOffering.getTags()).thenReturn("nsx");
+        when(networkOfferingDao.findByIdIncludingRemoved(101L)).thenReturn(oldOffering);
+        when(networkOfferingDao.findById(102L)).thenReturn(newOffering);
+        when(networkModel.findPhysicalNetworkId(10L, "nsx", Networks.TrafficType.Guest)).thenReturn(501L);
+        when(networkModel.resolveProvider(Network.Provider.Nsx.getName())).thenReturn(Network.Provider.Nsx);
+        when(_networkMgr.finalizeServicesAndProvidersForNetwork(oldOffering, 501L))
+                .thenReturn(Map.of(Network.Service.Firewall.getName(), Network.Provider.Nsx.getName()));
+        when(_networkMgr.finalizeServicesAndProvidersForNetwork(newOffering, 501L))
+                .thenReturn(Map.of(Network.Service.Firewall.getName(), Network.Provider.Nsx.getName()));
+        when(ipAddressDao.listByAssociatedNetwork(201L, null)).thenReturn(List.of());
+        when(vmInstanceDao.listNonRemovedVmsByTypeAndNetwork(201L, null)).thenReturn(List.of());
+        when(networkModel.getNetworkOfferingServiceProvidersMap(102L)).thenReturn(new HashMap<>());
+        when(networkModel.getNtwkOffDetails(101L)).thenReturn(Map.of(
+                NetworkOffering.Detail.NsxSegmentSecurityProfileId, "old-security-profile"));
+        when(networkModel.getNtwkOffDetails(102L)).thenReturn(Map.of(
+                NetworkOffering.Detail.NsxSegmentSecurityProfileId, "new-security-profile"));
+        service._networkMgr = _networkMgr;
+        service._networkMigrationManager = networkMigrationManager;
+        service._vmDao = vmInstanceDao;
+        service._resourceTagDao = resourceTagDao;
+        service._vpcOfferingDao = vpcOfferingDao;
+        return migratingNetwork;
     }
 
     @Test

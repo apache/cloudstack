@@ -351,7 +351,8 @@ public class NsxResource implements ServerResource {
             boolean isResourceVpc = !Objects.isNull(cmd.getVpcId());
             String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(),
                     cmd.getZoneId(), networkResourceId, isResourceVpc);
-            nsxApiClient.createSegment(segmentName, tier1GatewayName, gatewayAddress, enforcementPointPath, transportZones);
+            nsxApiClient.createSegment(segmentName, tier1GatewayName, gatewayAddress, enforcementPointPath, transportZones,
+                    cmd.getIpDiscoveryProfileId(), cmd.getMacDiscoveryProfileId(), cmd.getSegmentSecurityProfileId());
             nsxApiClient.createGroupForSegment(segmentName);
         } catch (Exception e) {
             logger.error(String.format("Failed to create network: %s", cmd.getNetworkName()));

@@ -55,6 +55,12 @@ example.ver.1 > example.ver.2:
     continue to snapshot live.
 
 4.23.0.0 > 24.0.0:
+  * NSX network offerings can reference existing IP discovery, MAC discovery,
+    and segment security profiles. New NSX segments bind selected profiles in
+    the same hierarchical request as segment creation. Profile selections are
+    configured only when creating or cloning an offering; generic resource-detail
+    APIs cannot change these selections on an existing offering.
+
   * VMware-to-KVM import using VDDK can import powered-off VMware VMs directly
     into Ceph RBD primary storage when forceconverttopool is enabled and the
     selected KVM conversion host supports qemu RBD access and in-place virt-v2v

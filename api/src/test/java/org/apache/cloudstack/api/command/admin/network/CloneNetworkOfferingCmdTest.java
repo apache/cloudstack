@@ -35,8 +35,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -84,6 +86,43 @@ public class CloneNetworkOfferingCmdTest {
         List<String> dropServices = Arrays.asList("Firewall", "Vpn");
         ReflectionTestUtils.setField(cloneNetworkOfferingCmd, "dropServices", dropServices);
         assertEquals(dropServices, cloneNetworkOfferingCmd.getDropServices());
+    }
+
+    @Test
+    public void testDetailsAreInheritedWhenCleanupIsOmittedOrFalse() {
+        Map<String, String> sourceDetails = Map.of("NsxIpDiscoveryProfileId", "source-ip-profile");
+        ReflectionTestUtils.setField(cloneNetworkOfferingCmd, "sourceDetailsMap", sourceDetails);
+
+        assertFalse(cloneNetworkOfferingCmd.isCleanupDetails());
+        assertEquals(sourceDetails, cloneNetworkOfferingCmd.getDetails());
+
+        ReflectionTestUtils.setField(cloneNetworkOfferingCmd, "cleanupDetails", false);
+        assertEquals(sourceDetails, cloneNetworkOfferingCmd.getDetails());
+    }
+
+    @Test
+    public void testSuppliedDetailsReplaceSourceDetails() {
+        Map<String, String> sourceDetails = Map.of("NsxIpDiscoveryProfileId", "source-ip-profile",
+                "NsxMacDiscoveryProfileId", "source-mac-profile");
+        Map<String, String> requestedDetails = Map.of("nsxipdiscoveryprofileid", "replacement-ip-profile");
+        ReflectionTestUtils.setField(cloneNetworkOfferingCmd, "sourceDetailsMap", sourceDetails);
+        ReflectionTestUtils.setField(cloneNetworkOfferingCmd, "details", Map.of("0", requestedDetails));
+
+        assertEquals(requestedDetails, cloneNetworkOfferingCmd.getDetails());
+    }
+
+    @Test
+    public void testCleanupDetailsOmitsInheritedAndSuppliedDetails() {
+        Map<String, String> sourceDetails = Map.of("NsxIpDiscoveryProfileId", "source-ip-profile");
+        ReflectionTestUtils.setField(cloneNetworkOfferingCmd, "sourceDetailsMap", sourceDetails);
+        ReflectionTestUtils.setField(cloneNetworkOfferingCmd, "cleanupDetails", true);
+
+        assertTrue(cloneNetworkOfferingCmd.getDetails().isEmpty());
+
+        ReflectionTestUtils.setField(cloneNetworkOfferingCmd, "details",
+                Map.of("0", Map.of("nsxipdiscoveryprofileid", "replacement-ip-profile")));
+        assertTrue(cloneNetworkOfferingCmd.getDetails().isEmpty());
+        assertEquals("source-ip-profile", sourceDetails.get("NsxIpDiscoveryProfileId"));
     }
 
     @Test

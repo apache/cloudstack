@@ -150,6 +150,38 @@
             </a-form-item>
           </a-col>
         </a-row>
+        <a-row :gutter="12" v-if="form.provider === 'NSX'">
+          <a-col :md="8" :lg="8">
+            <a-form-item name="nsxipdiscoveryprofileid" ref="nsxipdiscoveryprofileid">
+              <template #label>
+                <tooltip-label
+                  :title="$t('label.nsx.ip.discovery.profile.id')"
+                  :tooltip="$t('message.network.offering.nsx.ip.discovery.profile.id')"/>
+              </template>
+              <a-input v-model:value="form.nsxipdiscoveryprofileid" :maxlength="255" />
+            </a-form-item>
+          </a-col>
+          <a-col :md="8" :lg="8">
+            <a-form-item name="nsxmacdiscoveryprofileid" ref="nsxmacdiscoveryprofileid">
+              <template #label>
+                <tooltip-label
+                  :title="$t('label.nsx.mac.discovery.profile.id')"
+                  :tooltip="$t('message.network.offering.nsx.mac.discovery.profile.id')"/>
+              </template>
+              <a-input v-model:value="form.nsxmacdiscoveryprofileid" :maxlength="255" />
+            </a-form-item>
+          </a-col>
+          <a-col :md="8" :lg="8">
+            <a-form-item name="nsxsegmentsecurityprofileid" ref="nsxsegmentsecurityprofileid">
+              <template #label>
+                <tooltip-label
+                  :title="$t('label.nsx.segment.security.profile.id')"
+                  :tooltip="$t('message.network.offering.nsx.segment.security.profile.id')"/>
+              </template>
+              <a-input v-model:value="form.nsxsegmentsecurityprofileid" :maxlength="255" />
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="networkmode" ref="networkmode" v-if="guestType === 'isolated' && form.provider">
           <template #label>
             <tooltip-label :title="$t('label.networkmode')" :tooltip="apiParams.networkmode.description"/>
@@ -582,6 +614,9 @@ import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 import { BlockOutlined, GlobalOutlined } from '@ant-design/icons-vue'
 import { buildServiceCapabilityParams } from '@/composables/useServiceCapabilityParams'
 
+const editableDetailKeys = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning',
+  'nsxipdiscoveryprofileid', 'nsxmacdiscoveryprofileid', 'nsxsegmentsecurityprofileid']
+
 export default {
   name: 'CloneNetworkOffering',
   mixins: [mixinForm],
@@ -732,7 +767,10 @@ export default {
         netscalerservicepackages: null,
         netscalerservicepackagesdescription: '',
         nsxsupportlb: true,
-        nsxsupportsinternallb: false
+        nsxsupportsinternallb: false,
+        nsxipdiscoveryprofileid: '',
+        nsxmacdiscoveryprofileid: '',
+        nsxsegmentsecurityprofileid: ''
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -939,10 +977,10 @@ export default {
       if (r.serviceofferingid) this.form.serviceofferingid = r.serviceofferingid
 
       if (r.details) {
-        if (r.details.promiscuousmode) this.form.promiscuousmode = r.details.promiscuousmode
-        if (r.details.macaddresschanges) this.form.macaddresschanges = r.details.macaddresschanges
-        if (r.details.forgedtransmits) this.form.forgedtransmits = r.details.forgedtransmits
-        if (r.details.maclearning) this.form.maclearning = r.details.maclearning
+        const details = Object.fromEntries(Object.entries(r.details).map(([key, value]) => [key.toLowerCase(), value]))
+        for (const key of editableDetailKeys) {
+          if (details[key]) this.form[key] = details[key]
+        }
       }
 
       this.forVpc = r.forvpc || false
@@ -1370,26 +1408,31 @@ export default {
 
         params.traffictype = this.resource.traffictype || 'GUEST'
 
-        let detailsIndex = 0
-        if (values.promiscuousmode && values.promiscuousmode !== '') {
-          params['details[' + detailsIndex + '].key'] = 'promiscuousmode'
-          params['details[' + detailsIndex + '].value'] = values.promiscuousmode
-          detailsIndex++
+        const sourceDetails = this.resource.details || {}
+        const excludedDetails = [...editableDetailKeys, 'internetprotocol', 'domainid', 'zoneid']
+        const details = Object.fromEntries(Object.entries(sourceDetails)
+          .filter(([key, value]) => !excludedDetails.includes(key.toLowerCase()) && typeof value === 'string')
+          .map(([key, value]) => [key.toLowerCase(), value]))
+        for (const [key, value] of Object.entries(params)) {
+          const detailMatch = key.match(/^details\[\d+\]\.(.+)$/i)
+          if (detailMatch) {
+            details[detailMatch[1].toLowerCase()] = value
+            delete params[key]
+          }
         }
-        if (values.macaddresschanges && values.macaddresschanges !== '') {
-          params['details[' + detailsIndex + '].key'] = 'macaddresschanges'
-          params['details[' + detailsIndex + '].value'] = values.macaddresschanges
-          detailsIndex++
+        for (const key of editableDetailKeys) {
+          if (values[key]) {
+            details[key] = values[key]
+          } else {
+            delete details[key]
+          }
         }
-        if (values.forgedtransmits && values.forgedtransmits !== '') {
-          params['details[' + detailsIndex + '].key'] = 'forgedtransmits'
-          params['details[' + detailsIndex + '].value'] = values.forgedtransmits
-          detailsIndex++
+        for (const [key, value] of Object.entries(details)) {
+          params['details[0].' + key] = value
         }
-        if (values.maclearning && values.maclearning !== '') {
-          params['details[' + detailsIndex + '].key'] = 'maclearning'
-          params['details[' + detailsIndex + '].value'] = values.maclearning
-          detailsIndex++
+        if (Object.keys(details).length === 0 && Object.entries(sourceDetails)
+          .some(([key, value]) => editableDetailKeys.includes(key.toLowerCase()) && value)) {
+          params.cleanupdetails = true
         }
 
         this.loading = true
