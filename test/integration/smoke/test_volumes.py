@@ -46,7 +46,7 @@ from marvin.lib.common import (get_domain,
                                get_pod,
                                list_storage_pools,
                                list_disk_offering)
-from marvin.lib.utils import (cleanup_resources, checkVolumeSize)
+from marvin.lib.utils import (cleanup_resources, checkVolumeSize, random_gen)
 from marvin.lib.utils import (format_volume_to_ext3,
                               wait_until)
 from marvin.sshClient import SshClient
@@ -1128,6 +1128,18 @@ class TestVolumeEncryption(cloudstackTestCase):
         # RBD pools are encrypted natively by librbd (LUKS2, engine='librbd'); any other pool type
         # goes through qemu-native encryption (LUKS1, no engine attribute).
         cls.storage_pool_type = volume_pool.type
+        # In a zone with pools of several types, the encrypted volumes are kept on the pools of the type the tests
+        # check, with a storage tag of their own added to those pools (their tags are restored in tearDownClass)
+        cls.encryption_storage_tag = None
+        cls.tagged_pools = []
+        if any(pool.type != cls.storage_pool_type for pool in list_volume_pool_response):
+            cls.encryption_storage_tag = "volenc-" + random_gen(size=6).lower()
+            for pool in list_volume_pool_response:
+                if pool.type == cls.storage_pool_type:
+                    tags = getattr(pool, "tags", None) or ""
+                    cls.tagged_pools.append((pool.id, tags))
+                    StoragePool.update(cls.apiclient, id=pool.id, tags=",".join([t for t in (tags, cls.encryption_storage_tag) if t]))
+        encryption_tags = {"tags": cls.encryption_storage_tag} if cls.encryption_storage_tag else {}
 
         # Get Zone and Domain
         cls.domain = get_domain(cls.apiclient)
@@ -1173,7 +1185,8 @@ class TestVolumeEncryption(cloudstackTestCase):
             cls.apiclient,
             cls.services["service_offerings"]["small"],
             name="Small Encrypted Instance",
-            encryptroot=True
+            encryptroot=True,
+            **encryption_tags
         )
         cls._cleanup.append(cls.service_offering_encrypt)
 
@@ -1189,7 +1202,8 @@ class TestVolumeEncryption(cloudstackTestCase):
             cls.apiclient,
             cls.services["disk_offering"],
             name="Encrypted",
-            encrypt=True
+            encrypt=True,
+            **encryption_tags
         )
         cls._cleanup.append(cls.disk_offering_encrypt)
 
@@ -1199,6 +1213,9 @@ class TestVolumeEncryption(cloudstackTestCase):
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
+        finally:
+            for pool_id, tags in getattr(cls, "tagged_pools", []):
+                StoragePool.update(cls.apiclient, id=pool_id, tags=tags)
         return
 
     def setUp(self):
@@ -1628,7 +1645,8 @@ class TestVolumeEncryption(cloudstackTestCase):
             self.services["disk_offering"],
             name="Encrypted-2GB",
             disksize=2,
-            encrypt=True
+            encrypt=True,
+            tags=self.encryption_storage_tag
         )
         self.cleanup.append(disk_offering_encrypt_2gb)
 
@@ -1639,13 +1657,11 @@ class TestVolumeEncryption(cloudstackTestCase):
         # CentOS 5.5 predates reliable virtio-blk live-capacity notification), so verify success
         # through the volume's own reported size here. Guest-visible size is verified below after
         # the offline resize, once the volume is freshly re-attached.
+        # The encryption header is not part of the size of the volume, on any pool type
         list_volume_response = Volume.list(self.apiclient, id=volume.id)
-        expected_raw_size = disk_offering_encrypt_2gb.disksize << 30
-        if self.storage_pool_type == "RBD" and getattr(list_volume_response[0], "encryptformat", None):
-            expected_raw_size += (16 << 20)
         self.assertEqual(
             int(list_volume_response[0].size),
-            expected_raw_size,
+            disk_offering_encrypt_2gb.disksize << 30,
             "Check that the online resize grew the volume to the expected size"
         )
         self.assertEqual(list_volume_response[0].state, 'Ready', "Check that the online-resized volume is Ready")
@@ -1660,7 +1676,8 @@ class TestVolumeEncryption(cloudstackTestCase):
             self.services["disk_offering"],
             name="Encrypted-3GB",
             disksize=3,
-            encrypt=True
+            encrypt=True,
+            tags=self.encryption_storage_tag
         )
         self.cleanup.append(disk_offering_encrypt_3gb)
 
@@ -1815,10 +1832,8 @@ class TestVolumeEncryption(cloudstackTestCase):
         vol_sz = int(vol_sz)
         if volume_pool.type.lower() == "powerflex":
             vol_sz = vol_sz - (128 << 20) - ((vol_sz >> 30) * 200704)
-        elif volume_pool.type.lower() == "rbd" and getattr(volume, "encryptformat", None):
-            # RBD volumes are encrypted natively by librbd: the LUKS2 header/keyslots (16 MiB) are
-            # reserved out of the volume's own size, so the guest sees size - header.
-            vol_sz = vol_sz - (16 << 20)
+        # An encrypted volume is created with room for its encryption header on every other pool type (RBD keeps the
+        # LUKS2 header in the image, in front of the data), so the guest sees the size of the volume
         return str(vol_sz)
 
     def skip_if_rbd_encrypted_hotplug_unsupported(self):

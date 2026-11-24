@@ -2110,13 +2110,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         KVMStoragePool srcPool = disk.getPool();
         boolean srcOnRbd = srcPool.getType() == StoragePoolType.RBD;
         boolean destOnRbd = destPool.getType() == StoragePoolType.RBD;
-        // the size of the disk as seen by the Instance: the LUKS2 header of an RBD image is carved out of the image
-        long guestSize = srcOnRbd ? disk.getVirtualSize() - LUKS2_HEADER_RESERVE_BYTES : disk.getVirtualSize();
+        // the size of the disk as seen by the Instance: an RBD image keeps its LUKS2 header in front of the data
+        long guestSize = srcOnRbd ? getEncryptedRbdVolumeSize(srcPool, disk.getName()) : disk.getVirtualSize();
         logger.debug("Copying encrypted volume {} from pool {} to {} in pool {}, with a size of {}", disk.getPath(), srcPool.getUuid(),
                 name, destPool.getUuid(), toHumanReadableSize(guestSize));
 
         KVMPhysicalDisk newDisk = destPool.createPhysicalDisk(name, destOnRbd ? PhysicalDiskFormat.RAW : PhysicalDiskFormat.QCOW2,
-                Storage.ProvisioningType.THIN, destOnRbd ? guestSize + LUKS2_HEADER_RESERVE_BYTES : guestSize, dstPassphrase);
+                Storage.ProvisioningType.THIN, guestSize, dstPassphrase);
 
         List<Path> cephAuthFiles = new ArrayList<>();
         try (KeyFile srcKeyFile = new KeyFile(srcPassphrase); KeyFile destKeyFile = new KeyFile(dstPassphrase)) {

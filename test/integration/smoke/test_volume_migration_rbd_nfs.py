@@ -116,10 +116,11 @@ DATA_PATTERN = "0xa5"
 DATA_PATTERN_OFFSET = "1M"
 DATA_PATTERN_LENGTH = "4M"
 DATA_PATTERN_BYTES = 4 * 1024 * 1024
-# The start of a ROOT volume that the guest does not write to: the MBR and the gap in front of the first
-# partition (which traditionally starts at sector 63) that holds the boot loader. Further on, the guest
-# updates its file systems (e.g. the mount time in the superblock of /boot) while it runs.
-ROOT_CHECKSUM_LENGTH = "31k"
+# The start of a ROOT volume that the guest does not write to: the MBR and the boot loader behind it. Not further on:
+# the guest updates its file systems (e.g. the mount time in the superblock of /boot) while it runs, and an encrypted
+# thin RBD clone of a template reads as noise where its template is empty, once its object was written to (librbd),
+# which a copy of the volume to another pool does not keep.
+ROOT_CHECKSUM_LENGTH = "4k"
 
 
 class VolumeMigrationRbdNfsBase(cloudstackTestCase):
@@ -504,8 +505,9 @@ class _DetachedVolume:
 
 class InstanceDisks:
     """Verifies the data of the ROOT and DATA volumes of an Instance on its host, as the Instance sees them
-    (decrypted): a pattern written to the DATA volume, and a checksum of the boot area of the ROOT volume. For
-    encrypted volumes, the encryption of the disks in the XML domain of the Instance is verified as well."""
+    (decrypted): a pattern written to the DATA volume, and a checksum of the boot area of the ROOT volume, and that
+    the Instance sees the size of each volume. For encrypted volumes, the encryption of the disks in the XML domain
+    of the Instance is verified as well."""
 
     def __init__(self, test, instance, root_volume, data_volume):
         self.test = test
@@ -560,8 +562,20 @@ class InstanceDisks:
             else:
                 self.test.assertEqual(self._root_checksum(), self.root_checksum,
                                       "The data of volume %s is not intact after the migration to %s" % (volume.id, pool.name))
+            self._verify_size(volume, pool)
             if self.test.encrypted:
                 self._verify_encryption(volume, pool)
+
+    def _verify_size(self, volume, pool):
+        """The Instance sees the size of the volume on every pool type: an encrypted volume is created with room for
+        its encryption header, which librbd keeps in front of the data of an RBD image"""
+        ssh, instance_name = self._host_ssh()
+        target = self._disk(ssh, instance_name, volume).find("target").get("dev")
+        info = "\n".join(ssh.execute("virsh domblkinfo %s %s" % (instance_name, target)))
+        capacity = int(re.search(r"Capacity:\s+(\d+)", info).group(1))
+        size = int(Volume.list(self.test.apiclient, id=volume.id, listall=True)[0].size)
+        self.test.assertEqual(capacity, size, "The Instance sees %d bytes of volume %s on %s, instead of its size of %d bytes"
+                              % (capacity, volume.id, pool.name, size))
 
     def _verify_encryption(self, volume, pool):
         """An RBD volume is encrypted natively by librbd (LUKS2), a volume on NFS by qemu (LUKS)"""

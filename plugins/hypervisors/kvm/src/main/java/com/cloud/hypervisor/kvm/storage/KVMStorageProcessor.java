@@ -1927,22 +1927,10 @@ public class KVMStorageProcessor implements StorageProcessor {
      * Create full clone volume from VM snapshot
      */
     protected KVMPhysicalDisk createFullCloneVolume(MigrationOptions migrationOptions, VolumeObjectTO volume, KVMStoragePool primaryPool, PhysicalDiskFormat format) {
+        // The Instance sees the size of the volume on every pool type: an encrypted volume is created with room for its
+        // encryption header, on RBD as on a file based pool. So the declared size is the size of the source disk, which
+        // the host creating the destination may not even reach (a local pool, or a pool of another cluster).
         long size = volume.getSize();
-        if (volume.requiresEncryption() && migrationOptions.getSrcPoolType() != null) {
-            // The declared volume size does not track the source's actual current guest-visible size: a volume
-            // that already migrated through RBD once keeps a smaller real container size on its current,
-            // file-based pool (the LUKS2 header reserve was never added back since that pool doesn't need it).
-            // Measure the source disk directly instead of trusting the declared size, mirroring the destination
-            // sizing logic in LibvirtMigrateVolumeCommandWrapper's live single-volume migration path.
-            KVMStoragePool srcPool = getTemplateSourcePoolUsingMigrationOptions(primaryPool, migrationOptions);
-            KVMPhysicalDisk srcDisk = srcPool.getPhysicalDisk(migrationOptions.getSrcVolumeUuid());
-            long guestSize = srcDisk.getVirtualSize();
-            if (StoragePoolType.RBD.equals(srcPool.getType())) {
-                guestSize -= LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES;
-            }
-            boolean destOnRbd = StoragePoolType.RBD.equals(primaryPool.getType());
-            size = destOnRbd ? guestSize + LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES : guestSize;
-        }
         logger.debug("For VM migration with full-clone volume: Creating empty stub disk for source disk " + migrationOptions.getSrcVolumeUuid() + " and size: " + toHumanReadableSize(size) + " and format: " + format);
         return primaryPool.createPhysicalDisk(volume.getUuid(), format, volume.getProvisioningType(), size, volume.getPassphrase());
     }

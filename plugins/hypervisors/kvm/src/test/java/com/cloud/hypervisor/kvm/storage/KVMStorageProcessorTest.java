@@ -211,109 +211,48 @@ public class KVMStorageProcessorTest {
         storageProcessor.validateAvailableSizeOnPoolToTakeVolumeSnapshot(kvmStoragePoolMock, kvmPhysicalDiskMock);
     }
 
-    private MigrationOptions createFullCloneMigrationOptionsMock(StoragePoolType srcPoolType) {
-        // ScopeType.ZONE (rather than CLUSTER) makes getTemplateSourcePoolUsingMigrationOptions resolve the
-        // source pool via storagePoolManager instead of short-circuiting to the destination pool.
-        return new MigrationOptions("srcPoolUuid", srcPoolType, "srcVolumeUuid", ScopeType.ZONE, 1L);
-    }
-
-    private void setUpVolumeForCreateFullCloneVolume(boolean requiresEncryption, long declaredSize) {
-        Mockito.doReturn(requiresEncryption).when(volumeObjectToMock).requiresEncryption();
+    /**
+     * The destination of a full clone migration gets the declared size of the volume, whatever the pools are: the
+     * storage adaptor makes the room the encryption header of an encrypted volume needs, on RBD as on a file based
+     * pool. The source pool is not looked up, as the host creating the destination may not reach it.
+     */
+    private void verifyCreateFullCloneVolumeUsesTheDeclaredSize(StoragePoolType srcPoolType, ScopeType srcPoolScope, PhysicalDiskFormat format, byte[] passphrase) {
+        long declaredSize = 1073741824L;
         Mockito.doReturn(declaredSize).when(volumeObjectToMock).getSize();
         Mockito.doReturn("volumeUuid").when(volumeObjectToMock).getUuid();
         Mockito.doReturn(Storage.ProvisioningType.THIN).when(volumeObjectToMock).getProvisioningType();
-        Mockito.doReturn(null).when(volumeObjectToMock).getPassphrase();
-    }
+        Mockito.doReturn(passphrase).when(volumeObjectToMock).getPassphrase();
+        MigrationOptions migrationOptions = new MigrationOptions("srcPoolUuid", srcPoolType, "srcVolumeUuid", srcPoolScope, 1L);
 
-    private void setUpSourceDisk(StoragePoolType srcPoolType, long srcActualVirtualSize) {
-        KVMStoragePool srcPoolMock = Mockito.mock(KVMStoragePool.class);
-        KVMPhysicalDisk srcDiskMock = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.doReturn(srcPoolType).when(srcPoolMock).getType();
-        Mockito.doReturn(srcDiskMock).when(srcPoolMock).getPhysicalDisk("srcVolumeUuid");
-        Mockito.doReturn(srcActualVirtualSize).when(srcDiskMock).getVirtualSize();
-        Mockito.doReturn(srcPoolMock).when(storagePoolManager).getStoragePool(srcPoolType, "srcPoolUuid");
+        storageProcessor.createFullCloneVolume(migrationOptions, volumeObjectToMock, kvmStoragePoolMock, format);
+
+        Mockito.verify(kvmStoragePoolMock).createPhysicalDisk("volumeUuid", format, Storage.ProvisioningType.THIN, declaredSize, passphrase);
+        Mockito.verify(storagePoolManager, Mockito.never()).getStoragePool(Mockito.any(), Mockito.any());
     }
 
     @Test
-    public void createFullCloneVolumeNotEncryptedKeepsDeclaredSize() {
-        long declaredSize = 2147483648L;
-        setUpVolumeForCreateFullCloneVolume(false, declaredSize);
-        MigrationOptions migrationOptions = createFullCloneMigrationOptionsMock(StoragePoolType.NetworkFilesystem);
-
-        storageProcessor.createFullCloneVolume(migrationOptions, volumeObjectToMock, kvmStoragePoolMock, PhysicalDiskFormat.RAW);
-
-        Mockito.verify(kvmStoragePoolMock).createPhysicalDisk("volumeUuid", PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN, declaredSize, null);
+    public void createFullCloneVolumeNotEncryptedUsesTheDeclaredSize() {
+        verifyCreateFullCloneVolumeUsesTheDeclaredSize(StoragePoolType.NetworkFilesystem, ScopeType.CLUSTER, PhysicalDiskFormat.RAW, null);
     }
 
     @Test
-    public void createFullCloneVolumeEncryptedNfsToRbdAddsLuksHeaderReserve() {
-        long actualSourceSize = 2147483648L;
-        setUpVolumeForCreateFullCloneVolume(true, actualSourceSize);
-        setUpSourceDisk(StoragePoolType.NetworkFilesystem, actualSourceSize);
-        Mockito.doReturn(StoragePoolType.RBD).when(kvmStoragePoolMock).getType();
-        MigrationOptions migrationOptions = createFullCloneMigrationOptionsMock(StoragePoolType.NetworkFilesystem);
-
-        storageProcessor.createFullCloneVolume(migrationOptions, volumeObjectToMock, kvmStoragePoolMock, PhysicalDiskFormat.RAW);
-
-        long expectedSize = actualSourceSize + LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES;
-        Mockito.verify(kvmStoragePoolMock).createPhysicalDisk("volumeUuid", PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN, expectedSize, null);
+    public void createFullCloneVolumeEncryptedRbdToFileBasedPoolUsesTheDeclaredSize() {
+        verifyCreateFullCloneVolumeUsesTheDeclaredSize(StoragePoolType.RBD, ScopeType.CLUSTER, PhysicalDiskFormat.QCOW2, new byte[] {1, 2, 3});
     }
 
     @Test
-    public void createFullCloneVolumeEncryptedRbdToNfsSubtractsLuksHeaderReserve() {
-        long actualSourceSize = 1073741824L;
-        setUpVolumeForCreateFullCloneVolume(true, actualSourceSize);
-        setUpSourceDisk(StoragePoolType.RBD, actualSourceSize);
-        Mockito.doReturn(StoragePoolType.NetworkFilesystem).when(kvmStoragePoolMock).getType();
-        MigrationOptions migrationOptions = createFullCloneMigrationOptionsMock(StoragePoolType.RBD);
-
-        storageProcessor.createFullCloneVolume(migrationOptions, volumeObjectToMock, kvmStoragePoolMock, PhysicalDiskFormat.QCOW2);
-
-        long expectedSize = actualSourceSize - LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES;
-        Mockito.verify(kvmStoragePoolMock).createPhysicalDisk("volumeUuid", PhysicalDiskFormat.QCOW2, Storage.ProvisioningType.THIN, expectedSize, null);
+    public void createFullCloneVolumeEncryptedNfsToRbdUsesTheDeclaredSize() {
+        verifyCreateFullCloneVolumeUsesTheDeclaredSize(StoragePoolType.NetworkFilesystem, ScopeType.ZONE, PhysicalDiskFormat.RAW, new byte[] {1, 2, 3});
     }
 
     @Test
-    public void createFullCloneVolumeEncryptedRbdToRbdKeepsDeclaredSize() {
-        long actualSourceSize = 1073741824L;
-        setUpVolumeForCreateFullCloneVolume(true, actualSourceSize);
-        setUpSourceDisk(StoragePoolType.RBD, actualSourceSize);
-        Mockito.doReturn(StoragePoolType.RBD).when(kvmStoragePoolMock).getType();
-        MigrationOptions migrationOptions = createFullCloneMigrationOptionsMock(StoragePoolType.RBD);
-
-        storageProcessor.createFullCloneVolume(migrationOptions, volumeObjectToMock, kvmStoragePoolMock, PhysicalDiskFormat.RAW);
-
-        Mockito.verify(kvmStoragePoolMock).createPhysicalDisk("volumeUuid", PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN, actualSourceSize, null);
+    public void createFullCloneVolumeEncryptedLocalToRbdUsesTheDeclaredSize() {
+        verifyCreateFullCloneVolumeUsesTheDeclaredSize(StoragePoolType.Filesystem, ScopeType.HOST, PhysicalDiskFormat.RAW, new byte[] {1, 2, 3});
     }
 
     @Test
-    public void createFullCloneVolumeEncryptedNullSrcPoolTypeKeepsDeclaredSize() {
-        long declaredSize = 1073741824L;
-        setUpVolumeForCreateFullCloneVolume(true, declaredSize);
-        MigrationOptions migrationOptions = createFullCloneMigrationOptionsMock(null);
-
-        storageProcessor.createFullCloneVolume(migrationOptions, volumeObjectToMock, kvmStoragePoolMock, PhysicalDiskFormat.RAW);
-
-        Mockito.verify(kvmStoragePoolMock).createPhysicalDisk("volumeUuid", PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN, declaredSize, null);
-    }
-
-    @Test
-    public void createFullCloneVolumeUsesSourceDiskActualSizeNotStaleDeclaredSize() {
-        // Simulates a volume that already migrated RBD -> NFS once: its declared/nominal size (1 GiB) no longer
-        // matches its actual current container size on NFS (1 GiB - 16 MiB), because that container was itself
-        // sized to preserve guest-visible continuity from the earlier RBD migration. Migrating it NFS -> RBD a
-        // second time must size the new RBD destination from the source's real current size, not the stale
-        // declared size, or the two ends disagree on guest-visible capacity ("different sizes").
-        long staleDeclaredSize = 1073741824L;
-        long actualSourceSize = staleDeclaredSize - LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES;
-        setUpVolumeForCreateFullCloneVolume(true, staleDeclaredSize);
-        setUpSourceDisk(StoragePoolType.NetworkFilesystem, actualSourceSize);
-        Mockito.doReturn(StoragePoolType.RBD).when(kvmStoragePoolMock).getType();
-        MigrationOptions migrationOptions = createFullCloneMigrationOptionsMock(StoragePoolType.NetworkFilesystem);
-
-        storageProcessor.createFullCloneVolume(migrationOptions, volumeObjectToMock, kvmStoragePoolMock, PhysicalDiskFormat.RAW);
-
-        Mockito.verify(kvmStoragePoolMock).createPhysicalDisk("volumeUuid", PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN, staleDeclaredSize, null);
+    public void createFullCloneVolumeEncryptedSharedMountPointToRbdUsesTheDeclaredSize() {
+        verifyCreateFullCloneVolumeUsesTheDeclaredSize(StoragePoolType.SharedMountPoint, ScopeType.CLUSTER, PhysicalDiskFormat.RAW, new byte[] {1, 2, 3});
     }
 
     private List<LibvirtVMDef.DiskDef> createDiskDefs(int iterations, boolean duplicatePath) {

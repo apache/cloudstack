@@ -31,6 +31,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -530,6 +531,8 @@ public class LibvirtMigrateVolumeCommandWrapperTest {
         Assert.assertFalse(answer.getResult());
     }
 
+    private static final long ENCRYPTED_VOLUME_SIZE = 1073741824L;
+
     /**
      * Prepares migrateRBDVolume for a block copy which completes and is pivoted, and returns the source and the
      * destination pool.
@@ -571,12 +574,12 @@ public class LibvirtMigrateVolumeCommandWrapperTest {
         Mockito.doReturn(srcKvmPool).when(storagePoolMgr).getStoragePool(srcType, "src-pool");
         Mockito.doReturn(destKvmPool).when(storagePoolMgr).getStoragePool(destType, "dest-pool");
         Mockito.doReturn(true).when(destKvmPool).connectPhysicalDisk(Mockito.any(), Mockito.any());
-        Mockito.doReturn(Mockito.mock(KVMPhysicalDisk.class)).when(srcKvmPool).getPhysicalDisk(Mockito.any());
 
         Mockito.doReturn("/path/on/host").when(libvirtMigrateVolumeCommandWrapper).generateVolumePathOnHost(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.doReturn("<disk type='file' device='disk'><target dev='vdb' bus='virtio'/></disk>").when(libvirtMigrateVolumeCommandWrapper)
                 .generateDestinationDiskXMLForRBD(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
         Mockito.doNothing().when(libvirtMigrateVolumeCommandWrapper).createEncryptedDestinationVolume(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
+        Mockito.lenient().doReturn(ENCRYPTED_VOLUME_SIZE).when(libvirtMigrateVolumeCommandWrapper).getEncryptedVolumeSize(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.doNothing().when(dm).blockCopy(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.any(TypedParameter[].class), ArgumentMatchers.anyInt());
         MigrateVolumeAnswer pivoted = new MigrateVolumeAnswer(command, true, null, "dest-volume");
         Mockito.doReturn(pivoted).when(libvirtMigrateVolumeCommandWrapper).checkBlockJobStatus(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
@@ -658,4 +661,62 @@ public class LibvirtMigrateVolumeCommandWrapperTest {
         Mockito.verify(dm).blockJobAbort("vda", Domain.BlockJobAbortFlags.PIVOT);
     }
 
+    @Test
+    public void testMigrateRBDVolumeCreatesTheEncryptedDestinationWithTheSizeTheInstanceSees() throws Exception {
+        KVMStoragePool[] pools = prepareMigrationOfVolumeWhichIsPivoted(Storage.StoragePoolType.RBD, Storage.StoragePoolType.NetworkFilesystem, new byte[] {1, 2, 3});
+
+        MigrateVolumeAnswer answer = libvirtMigrateVolumeCommandWrapper.migrateRBDVolume(command, libvirtComputingResource);
+
+        Assert.assertTrue(answer.getResult());
+        Mockito.verify(libvirtMigrateVolumeCommandWrapper).getEncryptedVolumeSize(Mockito.eq(pools[0]), Mockito.any(), Mockito.eq("src-volume"));
+        Mockito.verify(libvirtMigrateVolumeCommandWrapper).createEncryptedDestinationVolume(Mockito.eq(pools[1]), Mockito.any(), Mockito.any(), Mockito.eq(ENCRYPTED_VOLUME_SIZE));
+    }
+
+    private void verifyEncryptedDestinationVolumeIsCreatedWithTheSizeTheInstanceSees(Storage.StoragePoolType destType, PhysicalDiskFormat expectedFormat) {
+        KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
+        PrimaryDataStoreTO destPool = Mockito.mock(PrimaryDataStoreTO.class);
+        Mockito.doReturn(destType).when(destPool).getPoolType();
+        VolumeObjectTO destVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
+        Mockito.doReturn("dest-volume").when(destVolumeObjectTO).getPath();
+        byte[] passphrase = new byte[] {1, 2, 3};
+        Mockito.doReturn(passphrase).when(destVolumeObjectTO).getPassphrase();
+
+        libvirtMigrateVolumeCommandWrapper.createEncryptedDestinationVolume(pool, destPool, destVolumeObjectTO, ENCRYPTED_VOLUME_SIZE);
+
+        // the storage adaptor makes the room for the encryption header, so the size is not grown here
+        Mockito.verify(pool).createPhysicalDisk("dest-volume", expectedFormat, Storage.ProvisioningType.THIN, ENCRYPTED_VOLUME_SIZE, passphrase);
+    }
+
+    @Test
+    public void testCreateEncryptedDestinationVolumeOnRbd() {
+        verifyEncryptedDestinationVolumeIsCreatedWithTheSizeTheInstanceSees(Storage.StoragePoolType.RBD, PhysicalDiskFormat.RAW);
+    }
+
+    @Test
+    public void testCreateEncryptedDestinationVolumeOnNfs() {
+        verifyEncryptedDestinationVolumeIsCreatedWithTheSizeTheInstanceSees(Storage.StoragePoolType.NetworkFilesystem, PhysicalDiskFormat.QCOW2);
+    }
+
+    @Test
+    public void testCreateEncryptedDestinationVolumeOnSharedMountPoint() {
+        verifyEncryptedDestinationVolumeIsCreatedWithTheSizeTheInstanceSees(Storage.StoragePoolType.SharedMountPoint, PhysicalDiskFormat.QCOW2);
+    }
+
+    @Test
+    public void testCreateEncryptedDestinationVolumeOnLocalStorage() {
+        verifyEncryptedDestinationVolumeIsCreatedWithTheSizeTheInstanceSees(Storage.StoragePoolType.Filesystem, PhysicalDiskFormat.QCOW2);
+    }
+
+    @Test
+    public void testGetEncryptedVolumeSizeOfAFileIsItsVirtualSize() {
+        KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
+        PrimaryDataStoreTO dataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        Mockito.doReturn(Storage.StoragePoolType.NetworkFilesystem).when(dataStore).getPoolType();
+        KVMPhysicalDisk disk = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.doReturn(disk).when(pool).getPhysicalDisk("volume");
+        // a QCOW2 file keeps its encryption header apart from the data the Instance sees
+        Mockito.doReturn(ENCRYPTED_VOLUME_SIZE).when(disk).getVirtualSize();
+
+        Assert.assertEquals(ENCRYPTED_VOLUME_SIZE, libvirtMigrateVolumeCommandWrapper.getEncryptedVolumeSize(pool, dataStore, "volume"));
+    }
 }

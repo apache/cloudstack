@@ -481,11 +481,7 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
             if (ArrayUtils.isNotEmpty(destVolumeObjectTO.getPassphrase())) {
                 // libvirt can not create (and format) an encrypted mirror itself, so the destination volume is
                 // created with its encryption header up front and the block copy writes into it.
-                KVMPhysicalDisk srcDisk = srcKvmPool.getPhysicalDisk(srcVolumeObjectTO.getPath());
-                long guestSize = srcDisk.getVirtualSize();
-                if (Objects.equals(Storage.StoragePoolType.RBD, sourcePool.getPoolType())) {
-                    guestSize -= LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES;
-                }
+                long guestSize = getEncryptedVolumeSize(srcKvmPool, sourcePool, srcVolumeObjectTO.getPath());
                 createEncryptedDestinationVolume(pool, destPool, destVolumeObjectTO, guestSize);
                 destVolumeCreated = true;
                 blockCopyFlags |= Domain.BlockCopyFlags.REUSE_EXT;
@@ -564,9 +560,21 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
 
 
     /**
+     * Returns the size of an encrypted volume as the Instance sees it, which the destination of the block copy must
+     * have as well: an RBD image keeps its LUKS2 header in front of the data, a QCOW2 file keeps it apart from them.
+     */
+    protected long getEncryptedVolumeSize(KVMStoragePool kvmStoragePool, PrimaryDataStoreTO dataStore, String path) {
+        if (Objects.equals(Storage.StoragePoolType.RBD, dataStore.getPoolType())) {
+            return LibvirtStorageAdaptor.getEncryptedRbdVolumeSize(kvmStoragePool, path);
+        }
+        return kvmStoragePool.getPhysicalDisk(path).getVirtualSize();
+    }
+
+    /**
      * Creates the (empty) destination volume of a live migration of an encrypted volume, with its encryption
      * header, so that the block copy can write into it. An RBD volume gets a native librbd LUKS2 header, a volume
-     * on a file based pool is a qemu LUKS encrypted QCOW2 file.
+     * on a file based pool is a qemu LUKS encrypted QCOW2 file. Either one is created with room for its header,
+     * so that the Instance sees the given size.
      *
      * @param guestSize size of the disk as seen by the Instance
      */
@@ -574,13 +582,8 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
         String path = destVolumeObjectTO.getPath();
         // a previous failed attempt may have left the volume behind
         deleteDestinationVolume(pool, destPool, path);
-        if (Objects.equals(Storage.StoragePoolType.RBD, destPool.getPoolType())) {
-            // the LUKS2 header is carved out of the image, so it has to be added to what the Instance can use
-            pool.createPhysicalDisk(path, PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN,
-                    guestSize + LibvirtStorageAdaptor.LUKS2_HEADER_RESERVE_BYTES, destVolumeObjectTO.getPassphrase());
-        } else {
-            pool.createPhysicalDisk(path, PhysicalDiskFormat.QCOW2, Storage.ProvisioningType.THIN, guestSize, destVolumeObjectTO.getPassphrase());
-        }
+        PhysicalDiskFormat format = Objects.equals(Storage.StoragePoolType.RBD, destPool.getPoolType()) ? PhysicalDiskFormat.RAW : PhysicalDiskFormat.QCOW2;
+        pool.createPhysicalDisk(path, format, Storage.ProvisioningType.THIN, guestSize, destVolumeObjectTO.getPassphrase());
     }
 
     protected void deleteDestinationVolume(KVMStoragePool pool, PrimaryDataStoreTO destPool, String path) {
