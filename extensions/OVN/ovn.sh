@@ -836,8 +836,14 @@ cmd_ensure_network_device() {
     # OVN is a distributed fabric: there is no per-network host to select.
     # We use this hook as a Northbound reachability probe and to hand CloudStack
     # a stable details blob that is echoed back on every later call.
-    local network_id nb_schema
-    require_arg network_id network_id
+    local network_id vpc_id nb_schema
+    # Both paths reach this hook. The network path sends network_id; the VPC
+    # path (ensureExtensionDetails(Vpc)) sends vpc_id and no network_id, so
+    # requiring network_id outright failed for every extension-backed VPC.
+    network_id="$(arg network_id)"
+    vpc_id="$(arg vpc_id)"
+    [ -n "${network_id}" ] || [ -n "${vpc_id}" ] \
+        || emit_failure "ensure-network-device needs network_id or vpc_id"
 
     if ! nb_schema="$(nbctl --bare get NB_Global . external_ids 2>/dev/null)"; then
         # get on an empty table can legitimately fail; fall back to a plain list
@@ -847,8 +853,12 @@ cmd_ensure_network_device() {
     fi
 
     log "northbound ${NB_DB} reachable (NB_Global external_ids=${nb_schema:-none})"
-    emit_json "$(jq -nc --arg db "${NB_DB}" --arg ls "$(ls_name "${network_id}")" \
-        '{nb_db:$db, logical_switch:$ls, status:"success"}')"
+    # There is no logical switch to name on the VPC path, and emitting an empty
+    # one would store "cs-net-" in the details blob CloudStack keeps.
+    emit_json "$(jq -nc --arg db "${NB_DB}" \
+        --arg ls "${network_id:+$(ls_name "${network_id}")}" \
+        '{nb_db:$db, status:"success"}
+         + (if $ls != "" then {logical_switch:$ls} else {} end)')"
     exit 0
 }
 

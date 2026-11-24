@@ -378,6 +378,19 @@ echo " ISOLATED NETWORK LIFECYCLE"
 echo "=========================================================="
 
 run "ensure-network-device" ensure-network-device '{"network_id":"42"}'
+# CloudStack calls this hook on the VPC path too, with vpc_id and no
+# network_id. Requiring network_id made that call fail for every
+# extension-backed VPC, so the details blob CloudStack keeps was never written.
+run "ensure-network-device on the VPC path (vpc_id, no network_id)" ensure-network-device \
+  '{"vpc_id":"7","zone_id":"1","vpc_cidr":"10.2.0.0/16"}'
+# Its output is what CloudStack stores as the VPC's details blob, so a stray
+# "cs-net-" with no id behind it would be persisted and fed back for ever.
+VPCOUT="$($SCRIPT ensure-network-device /tmp/payload.json 20 2>&1)"
+if printf '%s' "$VPCOUT" | jq -e 'has("logical_switch")' >/dev/null 2>&1; then
+    bad "the VPC path reported a logical switch it does not have: $VPCOUT"
+else
+    ok "no logical switch is claimed on the VPC path"
+fi
 
 run "implement-network (L2 + DHCP + gateway leg)" implement-network \
   '{"network_id":"42","network_uuid":"net-uuid-42","cidr":"10.1.1.0/24","gateway":"10.1.1.1","zone_id":"1"}'
