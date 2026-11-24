@@ -119,6 +119,13 @@ patch_systemvm() {
   echo "Extracting cloud scripts" >> $logfile 2>&1
   tar -xvf $newpath/cloud-scripts.tgz -C / >> $logfile 2>&1
 
+  if [ "$TYPE" = "secstorage" ]; then
+    # The archive also carries /var/www, which is extracted as root. Give it back
+    # to the web server user, the same as on boot, so that new download links
+    # can still be created under /var/www/html/userdata after the patch.
+    chown www-data:www-data -R /var/www
+  fi
+
   if [ -f $backupfolder/conf/cloud.jks ]; then
     cp -r $backupfolder/conf/* /usr/local/cloud/systemvm/conf/
     echo "Restored keystore file and certs using backup" >> $logfile 2>&1
