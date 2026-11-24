@@ -31,6 +31,9 @@
 # A host is only reported as DEAD when its heartbeat is there and stale. If there is none (the agent of the host is not
 # upgraded yet, or has no bindings, or the first heartbeat is not written yet), or if it can not be read, the state of the
 # host is not known and the exit status is 2, as for a Ceph cluster which can not be reached.
+#
+# A heartbeat which is late (older than the interval, but not older than the limit of the age) is not answered at once: the
+# script waits for a new one until the limit, and reports the host as DEAD only if there is none, see check().
 
 import argparse
 import os
@@ -40,6 +43,9 @@ import sys
 import time
 
 from kvmha_rbd import BindingsError, Ceph, CephError, DEFAULT_WRITE_TIMEOUT, KEY_ENV, ObjectNotFoundError, check_bindings, heartbeat_max_age, silence_standard_error
+
+# seconds between two reads of a heartbeat which is late, while a new one is waited for
+LATE_HEARTBEAT_POLL_INTERVAL = 5
 
 
 class Parser(argparse.ArgumentParser):
@@ -120,8 +126,8 @@ def main():
         ceph.close()
 
 
-def check(ceph, heartbeat_object, pool, interval, write_timeout):
-    now = int(time.time())
+def read_heartbeat(ceph, heartbeat_object, pool):
+    """Returns the timestamp of the heartbeat, or exits with 2 if it is not known whether the host is alive."""
     try:
         heartbeat = ceph.read(heartbeat_object).strip()
     except ObjectNotFoundError:
@@ -139,12 +145,32 @@ def check(ceph, heartbeat_object, pool, interval, write_timeout):
         print("=====> Unable to tell whether the host is alive, the RADOS object [%s] in pool [%s] does not hold a heartbeat <======"
               % (heartbeat_object, pool))
         sys.exit(2)
-    age = now - int(heartbeat)
+    return int(heartbeat)
+
+
+def check(ceph, heartbeat_object, pool, interval, write_timeout):
+    timestamp = read_heartbeat(ceph, heartbeat_object, pool)
+    started = int(time.time())
+    age = started - timestamp
     max_age = heartbeat_max_age(interval, write_timeout)
+    # A heartbeat which is late (older than the interval) but not stale (not older than the limit) is the one of a host which
+    # is slow to write, or of a host which has just died. A host is only asked about when it is suspected, e.g. when its agent
+    # is lost, and that is asked once: it must not be answered "alive" only because the question came early. So the new
+    # heartbeat of a host which is alive is waited for, until the limit.
+    while interval < age <= max_age:
+        time.sleep(min(LATE_HEARTBEAT_POLL_INTERVAL, max_age - age + 1))
+        if read_heartbeat(ceph, heartbeat_object, pool) != timestamp:
+            print("=====> ALIVE <=====")
+            return
+        age = int(time.time()) - timestamp
     if age > max_age:
-        print("=====> Considering host as DEAD because last write to RADOS object [%s] in pool [%s] was [%d] seconds ago, "
-              "but the max age is [%d] (the interval of [%d] and the time which a write can take of [%d]) <======"
-              % (heartbeat_object, pool, age, max_age, interval, write_timeout))
+        message = ("=====> Considering host as DEAD because last write to RADOS object [%s] in pool [%s] was [%d] seconds ago, "
+                   "but the max age is [%d] (the interval of [%d] and the time which a write can take of [%d])"
+                   % (heartbeat_object, pool, age, max_age, interval, write_timeout))
+        waited = int(time.time()) - started
+        if waited:
+            message += ", and there was no new heartbeat in the [%d] seconds waited for it" % waited
+        print(message + " <======")
     else:
         print("=====> ALIVE <=====")
 
