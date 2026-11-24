@@ -61,10 +61,10 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.withSettings;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.ArgumentMatchers.contains;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -205,28 +205,6 @@ public class OntapPrimaryDatastoreLifecycleTest {
         }
     }
 
-    private Map<String, Object> buildDsInfosForProtocol(String protocol) {
-        HashMap<String, String> detailsMap = new HashMap<String, String>();
-        detailsMap.put(OntapStorageConstants.USERNAME, "testUser");
-        detailsMap.put(OntapStorageConstants.PASSWORD, "testPassword");
-        detailsMap.put(OntapStorageConstants.STORAGE_IP, "10.10.10.10");
-        detailsMap.put(OntapStorageConstants.SVM_NAME, "vs0");
-        detailsMap.put(OntapStorageConstants.PROTOCOL, protocol);
-
-        Map<String, Object> dsInfos = new HashMap<>();
-        dsInfos.put("zoneId", 1L);
-        dsInfos.put("podId", 1L);
-        dsInfos.put("clusterId", 1L);
-        dsInfos.put("name", "testStoragePool");
-        dsInfos.put("providerName", "testProvider");
-        dsInfos.put("capacityBytes", 1073741824L);
-        dsInfos.put("managed", true);
-        dsInfos.put("tags", "testTag");
-        dsInfos.put("isTagARule", false);
-        dsInfos.put("details", detailsMap);
-        return dsInfos;
-    }
-
     private Storage.StoragePoolType initializeAndCapturePoolType(String protocol) {
         try (MockedStatic<StorageProviderFactory> storageProviderFactory = Mockito.mockStatic(StorageProviderFactory.class)) {
             storageProviderFactory.when(() -> StorageProviderFactory.getStrategy(any())).thenReturn(storageStrategy);
@@ -309,6 +287,28 @@ public class OntapPrimaryDatastoreLifecycleTest {
 
         assertTrue(ex.getMessage().contains("IOPS capacity must be greater than 0"));
         verify(_dataStoreHelper, never()).createPrimaryDataStore(any());
+    }
+
+    private Map<String, Object> buildDsInfosForProtocol(String protocol) {
+        HashMap<String, String> detailsMap = new HashMap<String, String>();
+        detailsMap.put(OntapStorageConstants.USERNAME, "testUser");
+        detailsMap.put(OntapStorageConstants.PASSWORD, "testPassword");
+        detailsMap.put(OntapStorageConstants.STORAGE_IP, "10.10.10.10");
+        detailsMap.put(OntapStorageConstants.SVM_NAME, "vs0");
+        detailsMap.put(OntapStorageConstants.PROTOCOL, protocol);
+
+        Map<String, Object> dsInfos = new HashMap<>();
+        dsInfos.put("zoneId", 1L);
+        dsInfos.put("podId", 1L);
+        dsInfos.put("clusterId", 1L);
+        dsInfos.put("name", "testStoragePool");
+        dsInfos.put("providerName", "testProvider");
+        dsInfos.put("capacityBytes", 1073741824L);
+        dsInfos.put("managed", true);
+        dsInfos.put("tags", "testTag");
+        dsInfos.put("isTagARule", false);
+        dsInfos.put("details", detailsMap);
+        return dsInfos;
     }
 
     @Test

@@ -110,6 +110,15 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class OntapPrimaryDatastoreDriverTest {
 
+    /**
+     * A real serial number taken from an ONTAP array, and the WWID NetApp derives from it as its
+     * OUI plus the serial's ASCII bytes in hex. The serial deliberately contains a '/', which is
+     * why volume paths carry the WWID: the raw serial would break the '/targetIQN/LUN' parsing that
+     * every hypervisor resource applies to the path.
+     */
+    private static final String LUN_SERIAL_NUMBER = "x0M-8?/kEsJT";
+    private static final String LUN_WWID = "600a098078304d2d383f2f6b45734a54";
+
     @Mock
     private StoragePoolDetailsDao storagePoolDetailsDao;
 
@@ -569,6 +578,7 @@ class OntapPrimaryDatastoreDriverTest {
 
             when(sanStrategy.getAccessGroup(any())).thenReturn(existingAccessGroup);
             when(sanStrategy.ensureLunMapped(anyString(), anyString(), anyString())).thenReturn("0");
+            when(sanStrategy.getLunSerialNumber(anyString(), anyString())).thenReturn(LUN_SERIAL_NUMBER);
 
             // Execute
             boolean result = driver.grantAccess(volumeInfo, host, dataStore);
@@ -622,6 +632,7 @@ class OntapPrimaryDatastoreDriverTest {
             when(sanStrategy.getAccessGroup(any())).thenReturn(null);
             when(sanStrategy.createAccessGroup(any())).thenReturn(createdAccessGroup);
             when(sanStrategy.ensureLunMapped(anyString(), anyString(), anyString())).thenReturn("0");
+            when(sanStrategy.getLunSerialNumber(anyString(), anyString())).thenReturn(LUN_SERIAL_NUMBER);
 
             // Execute
             boolean result = driver.grantAccess(volumeInfo, hostVO, dataStore);
@@ -3737,6 +3748,7 @@ class OntapPrimaryDatastoreDriverTest {
             utilityMock.when(() -> OntapStorageUtils.getIgroupName(anyString(), anyString())).thenReturn("igroup1");
             when(sanStrategy.getAccessGroup(any())).thenReturn(existingAccessGroup);
             when(sanStrategy.ensureLunMapped(anyString(), anyString(), anyString())).thenReturn("0");
+            when(sanStrategy.getLunSerialNumber(anyString(), anyString())).thenReturn(LUN_SERIAL_NUMBER);
 
             assertTrue(driver.grantAccess(volumeInfo, host, dataStore));
 

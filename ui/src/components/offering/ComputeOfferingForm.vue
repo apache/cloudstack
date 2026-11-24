@@ -401,6 +401,17 @@
             <a-radio-button value="hypervisor_default">{{ $t('label.hypervisor.default') }}</a-radio-button>
           </a-radio-group>
         </a-form-item>
+        <a-form-item name="errorpolicy" ref="errorpolicy">
+          <template #label>
+            <tooltip-label :title="$t('label.errorpolicy')" :tooltip="apiParams.errorpolicy.description"/>
+          </template>
+          <a-radio-group v-model:value="form.errorpolicy" buttonStyle="solid" @change="selected => { handleErrorPolicyChange(selected.target.value) }">
+            <a-radio-button value="report">{{ $t('label.errorpolicy.report') }}</a-radio-button>
+            <a-radio-button value="stop">{{ $t('label.errorpolicy.stop') }}</a-radio-button>
+            <a-radio-button value="ignore">{{ $t('label.errorpolicy.ignore') }}</a-radio-button>
+            <a-radio-button value="enospace">{{ $t('label.errorpolicy.enospace') }}</a-radio-button>
+          </a-radio-group>
+        </a-form-item>
         <a-form-item :label="$t('label.qostype')" name="qostype" ref="qostype">
           <a-radio-group v-model:value="form.qostype" buttonStyle="solid" @change="selected => { handleQosTypeChange(selected.target.value) }">
             <a-radio-button value="">{{ $t('label.none') }}</a-radio-button>
@@ -616,6 +627,7 @@ export default {
         storagetype: 'shared',
         provisioningtype: 'thin',
         cachemode: 'none',
+        errorpolicy: 'report',
         qostype: '',
         iscustomizeddiskiops: false,
         diskofferingid: null,
@@ -629,6 +641,7 @@ export default {
       storageType: 'shared',
       provisioningType: 'thin',
       cacheMode: 'none',
+      errorPolicy: 'report',
       offeringType: 'fixed',
       isCustomizedDiskIops: false,
       isPublic: true,
@@ -785,6 +798,7 @@ export default {
     handleStorageTypeChange (val) { this.storageType = val },
     handleProvisioningTypeChange (val) { this.provisioningType = val },
     handleCacheModeChange (val) { this.cacheMode = val },
+    handleErrorPolicyChange (val) { this.errorPolicy = val },
     handleComputeOfferingTypeChange (val) { this.offeringType = val },
     handleQosTypeChange (val) { this.qosType = val },
     handleDeploymentPlannerChange (planner) { this.selectedDeploymentPlanner = planner; this.plannerModeVisible = false; if (this.selectedDeploymentPlanner === 'ImplicitDedicationPlanner') this.plannerModeVisible = isAdmin() },

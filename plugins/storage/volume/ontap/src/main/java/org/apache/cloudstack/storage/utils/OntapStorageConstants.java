@@ -114,6 +114,7 @@ public class OntapStorageConstants {
     public static final String LUN_DOT_NAME = "lun.name";
     public static final String IQN = "iqn";
     public static final String LUN_DOT_UUID = "lun.uuid";
+    public static final String LUN_DOT_SERIAL_NUMBER = "lun.serial_number";
     public static final String QOS_POLICY_UUID = "qosPolicyUuid";
     public static final String IS_AFF = "isAFF";
     public static final String MIN_IOPS_NOT_SUPPORTED_ON_FAS = "Minimum IOPS must be 0 for FAS. Only a Maximum IOPS limit is supported";
@@ -164,6 +165,24 @@ public class OntapStorageConstants {
 
     /** vm_snapshot_details key for ONTAP FlexVolume-level VM snapshots. */
     public static final String ONTAP_FLEXVOL_SNAPSHOT = "ontapFlexVolSnapshot";
+
+    public static final String SERIAL_NUMBER = "serial_number";
+
+    /**
+     * NAA format designator.
+     * {@code 6} = "IEEE Registered Extended" (128-bit WWID).
+     */
+    public static final String NAA_IEEE_REG_EXT = "6";
+    /**
+     * NetApp's IEEE-registered OUI. Lookup: https://standards-oui.ieee.org/ → "NetApp, Inc."
+     */
+    public static final String NETAPP_OUI = "00a098";
+    /**
+     *  the 4-bit pad nibble
+     * <p>The full WWID is {@code NETAPP_NAA_PREFIX} + {@code serial_number_hex} (12 ASCII
+     * bytes of the LUN serial, hex-encoded), yielding 32 hex chars / 128 bits.</p>
+     */
+    public static final String NETAPP_NAA_PREFIX = NAA_IEEE_REG_EXT + NETAPP_OUI + "0";
 
     /** Name prefix of the LUN that caches a template on the FlexVol, suffixed with the template id. */
     public static final String TEMPLATE_LUN_PREFIX = "cs_tmpl_";
