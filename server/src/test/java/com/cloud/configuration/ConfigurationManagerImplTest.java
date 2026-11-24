@@ -71,6 +71,7 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.network.bgp.TenantBgpConfig;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -859,6 +860,20 @@ public class ConfigurationManagerImplTest {
     @Test
     public void validateValueRangeTestReturnsNotNullWhenConfigKeyHasRangeAndValueIsInvalid() {
         Assert.assertNotNull(configurationManagerImplSpy.validateValueRange(NetworkModel.MACIdentifier.key(), "-1", Integer.class, null));
+    }
+
+    @Test
+    public void validateValueRangeTestAcceptsBgpMinHoldtimeWithinRange() {
+        for (String value : new String[] {"0", "3", "65535"}) {
+            Assert.assertNull(configurationManagerImplSpy.validateValueRange(TenantBgpConfig.MinHoldtime.key(), value, Integer.class, null));
+        }
+    }
+
+    @Test
+    public void validateValueRangeTestRejectsBgpMinHoldtimeOutsideRange() {
+        for (String value : new String[] {"-1", "65536"}) {
+            Assert.assertNotNull(configurationManagerImplSpy.validateValueRange(TenantBgpConfig.MinHoldtime.key(), value, Integer.class, null));
+        }
     }
 
     @Test

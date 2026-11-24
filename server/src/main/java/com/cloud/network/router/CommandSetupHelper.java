@@ -34,6 +34,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.BgpPeerTO;
+import org.apache.cloudstack.network.bgp.TenantBgpConfig;
 import org.apache.cloudstack.network.dao.BgpPeerDetailsDao;
 import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
@@ -1630,6 +1631,7 @@ public class CommandSetupHelper {
         }
 
         final SetBgpPeersCommand cmd = new SetBgpPeersCommand(bgpPeerTOs);
+        cmd.setMinHoldtime(TenantBgpConfig.MinHoldtime.value());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());

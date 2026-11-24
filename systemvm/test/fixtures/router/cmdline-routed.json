@@ -1,0 +1,14 @@
+{
+  "config": {
+    "dns1": "203.0.113.53",
+    "domain": "cs1cloud.internal",
+    "has_public_network": "true",
+    "is_routed": "true",
+    "name": "r-1001-VM",
+    "redundant_router": "false",
+    "source_nat_ip": "198.51.100.10",
+    "type": "vpcrouter",
+    "vpccidr": "172.16.0.0/16"
+  },
+  "id": "cmdline"
+}

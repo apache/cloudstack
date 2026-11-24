@@ -91,6 +91,7 @@ import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnetVO;
 import org.apache.cloudstack.datacenter.dao.DataCenterIpv4GuestSubnetDao;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap.State;
+import org.apache.cloudstack.network.bgp.TenantBgpConfig;
 import org.apache.cloudstack.network.dao.BgpPeerDao;
 import org.apache.cloudstack.network.dao.BgpPeerDetailsDao;
 import org.apache.cloudstack.network.dao.BgpPeerNetworkMapDao;
@@ -160,7 +161,8 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         return new ConfigKey[] {
                 RoutedNetworkVpcEnabled,
                 RoutedNetworkIPv4MaxCidrSize, RoutedNetworkIPv4MinCidrSize, RoutedIPv4NetworkCidrAutoAllocationEnabled,
-                RoutedVpcIPv4MaxCidrSize, RoutedVpcIPv4MinCidrSize, UseSystemBgpPeers
+                RoutedVpcIPv4MaxCidrSize, RoutedVpcIPv4MinCidrSize, UseSystemBgpPeers,
+                TenantBgpConfig.MinHoldtime
         };
     }
 
