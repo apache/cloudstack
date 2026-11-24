@@ -40,7 +40,7 @@
       "qemuargs": [
         [
           "-m",
-          "500M"
+          "1024M"
         ],
 	[
           "-machine",
@@ -52,7 +52,7 @@
         ],
         [
           "-smp",
-          "1"
+          "2"
         ],
 	[ "-pflash", "/usr/share/AAVMF/AAVMF_CODE.fd" ],
 	[ "-monitor", "none" ],

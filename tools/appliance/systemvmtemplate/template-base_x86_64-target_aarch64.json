@@ -39,7 +39,7 @@
       "qemuargs": [
         [
           "-m",
-          "500M"
+          "1024M"
         ],
         [
           "-machine",
@@ -51,7 +51,7 @@
         ],
         [
           "-smp",
-          "1"
+          "2"
         ],
         [ "-bios", "/usr/share/qemu-efi-aarch64/QEMU_EFI.fd" ],
         [ "-monitor", "none" ],
