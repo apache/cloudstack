@@ -2341,37 +2341,45 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return kubernetesCluster;
     }
 
-    private List<Long> validateNodes(List<Long> nodeIds, Long networkId, String networkName, KubernetesCluster cluster,  boolean removeNodes) {
+    protected List<Long> validateNodes(List<Long> nodeIds, Long networkId, String networkName, KubernetesCluster cluster,  boolean removeNodes) {
         Account caller = CallContext.current().getCallingAccount();
         List<Long> validNodeIds = new ArrayList<>(nodeIds);
+        List<String> invalidNodes = new ArrayList<>();
         for (Long id : nodeIds) {
             VMInstanceVO node = vmInstanceDao.findById(id);
             if (Objects.isNull(node)) {
-                logger.error(String.format("Failed to find node (physical or virtual machine) with ID: %s", id));
-                validNodeIds.remove(id);
+                if (removeNodes) {
+                    logger.error(String.format("Failed to find node (physical or virtual machine) with ID: %s", id));
+                    validNodeIds.remove(id);
+                } else {
+                    VMInstanceVO removedNode = vmInstanceDao.findByIdIncludingRemoved(id);
+                    if (removedNode != null) {
+                        accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, removedNode);
+                    }
+                    invalidNodes.add(removedNode != null ? String.format("VM %s has been removed", removedNode.getUuid()) : String.format("VM %s was not found", id));
+                }
                 continue;
             }
             accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, node);
             if (!removeNodes) {
                 VMTemplateVO template = templateDao.findById(node.getTemplateId());
                 if (Objects.isNull(template)) {
-                    logger.error((String.format("Failed to find template with ID: %s", id)));
-                    validNodeIds.remove(id);
+                    invalidNodes.add(String.format("The template of VM %s was not found or has been deleted", node.getUuid()));
                 } else if (!template.isForCks()) {
-                    logger.error(String.format("Node: %s is deployed with a template that is not marked to be used for CKS", node.getId()));
-                    validNodeIds.remove(id);
+                    invalidNodes.add(String.format("VM %s is deployed with template %s, which is not marked for CKS", node.getUuid(), template.getUuid()));
                 }
                 NicVO nicVO = nicDao.findDefaultNicForVM(id);
-                if (networkId != nicVO.getNetworkId()) {
-                    logger.error(String.format("Node: %s does not have its default NIC in the kubernetes cluster network: %s", node.getId(), networkName));
-                    validNodeIds.remove(id);
+                if (nicVO == null || networkId != nicVO.getNetworkId()) {
+                    invalidNodes.add(String.format("VM %s does not have its default NIC in the Kubernetes cluster network %s", node.getUuid(), networkName));
                 }
                 List<KubernetesClusterVmMapVO> clusterVmMapVO = kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(cluster.getId(), Collections.singletonList(id));
                 if (Objects.nonNull(clusterVmMapVO) && !clusterVmMapVO.isEmpty()) {
-                    logger.warn(String.format("Node: %s is already part of the cluster %s", node.getId(), cluster.getName()));
-                    validNodeIds.remove(id);
+                    invalidNodes.add(String.format("VM %s is already part of the Kubernetes cluster %s", node.getUuid(), cluster.getUuid()));
                 }
             }
+        }
+        if (!invalidNodes.isEmpty()) {
+            throw new InvalidParameterValueException(String.format("Unable to add the nodes to the Kubernetes cluster: %s", String.join("; ", invalidNodes)));
         }
         return validNodeIds;
     }
