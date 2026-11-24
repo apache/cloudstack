@@ -69,6 +69,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Assert;
 import org.junit.Before;
@@ -498,6 +499,18 @@ public class VolumeImportUnmanageManagerImplTest {
         Assert.assertThrows(InvalidParameterValueException.class, () -> volumeImportUnmanageManager.unmanageVolume(volumeId));
 
         verify(volumeDao, Mockito.never()).update(Mockito.anyLong(), any());
+    }
+
+    @Test
+    public void testCheckIfVolumeForSnapshotMatchesFullAndPoolRelativePaths() {
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        when(pool.getId()).thenReturn(poolId);
+        when(snapshotDataStoreDao.listByStoreAndInstallPaths(poolId, DataStoreRole.Primary, List.of("/mnt/pool/frozen-file", "frozen-file")))
+                .thenReturn(List.of(mock(SnapshotDataStoreVO.class)));
+
+        Assert.assertTrue(volumeImportUnmanageManager.checkIfVolumeForSnapshot(pool, "/mnt/pool/frozen-file", "frozen-file"));
+        Assert.assertFalse(volumeImportUnmanageManager.checkIfVolumeForSnapshot(pool, "/mnt/pool/other-file", "other-file"));
+        Assert.assertFalse(volumeImportUnmanageManager.checkIfVolumeForSnapshot(pool, null, null));
     }
 
     @Test

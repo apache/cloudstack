@@ -66,6 +66,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -331,6 +332,22 @@ public class VMSnapshotManagerTest {
         doThrow(new InvalidParameterValueException("has KVM file-based no-copy snapshots")).when(snapshotManager)
                 .validateVolumeHasNoKvmFileBasedNoCopySnapshots(volumeMock, "take an Instance snapshot of its Instance");
         _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", false);
+    }
+
+    // a KVM file-based no-copy snapshot was taken after the Instance snapshot was allocated
+    @Test
+    public void testCreateVMSnapshotJobRemovesTheAllocatedSnapshotWhenAVolumeNowHasKvmFileBasedNoCopySnapshots() throws Exception {
+        when(vmMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        doThrow(new InvalidParameterValueException("has KVM file-based no-copy snapshots")).when(snapshotManager)
+                .validateVolumeHasNoKvmFileBasedNoCopySnapshots(volumeMock, "take an Instance snapshot of its Instance");
+        VMSnapshotVO allocated = mock(VMSnapshotVO.class);
+        when(allocated.getState()).thenReturn(VMSnapshot.State.Allocated);
+        when(_vmSnapshotDao.findById(5L)).thenReturn(allocated);
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> _vmSnapshotMgr.orchestrateCreateVMSnapshot(new VmWorkCreateVMSnapshot(1L, 1L, TEST_VM_ID, "handler", 5L, false)));
+
+        verify(_vmSnapshotDao).remove(5L);
     }
 
     // successful creation case

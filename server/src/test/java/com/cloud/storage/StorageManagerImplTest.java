@@ -86,6 +86,11 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import com.cloud.user.AccountManagerImpl;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -98,6 +103,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doNothing;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StorageManagerImplTest {
@@ -1726,5 +1732,30 @@ public class StorageManagerImplTest {
         Boolean result = ReflectionTestUtils.invokeMethod(storageManagerImpl, "checkUsagedSpace", pool);
 
         Assert.assertFalse(result);
+    }
+    @Test
+    public void removeSnapshotsInErrorStatusLeavesKvmFileBasedNoCopySnapshotsAlone() {
+        SnapshotDao snapshotDao = Mockito.mock(SnapshotDao.class);
+        SnapshotDetailsDao snapshotDetailsDao = Mockito.mock(SnapshotDetailsDao.class);
+        SnapshotDataStoreDao snapshotStoreDao = Mockito.mock(SnapshotDataStoreDao.class);
+        storageManagerImpl._snapshotDao = snapshotDao;
+        storageManagerImpl.snapshotDetailsDao = snapshotDetailsDao;
+        storageManagerImpl._snapshotStoreDao = snapshotStoreDao;
+        SnapshotVO noCopySnapshot = Mockito.mock(SnapshotVO.class);
+        Mockito.when(noCopySnapshot.getId()).thenReturn(1L);
+        SnapshotVO regularSnapshot = Mockito.mock(SnapshotVO.class);
+        Mockito.when(regularSnapshot.getId()).thenReturn(2L);
+        Mockito.when(snapshotDao.listAllByStatusIncludingRemoved(Snapshot.State.Error)).thenReturn(List.of(noCopySnapshot, regularSnapshot));
+        Mockito.when(snapshotDetailsDao.findDetail(1L, Snapshot.KVM_FILE_BASED_NO_COPY_SNAPSHOT_DETAIL)).thenReturn(Mockito.mock(SnapshotDetailsVO.class));
+        SnapshotDataStoreVO storeRef = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(snapshotStoreDao.findBySnapshotId(2L)).thenReturn(List.of(storeRef));
+        doNothing().when(storageManagerImpl).deleteSnapshot(regularSnapshot, storeRef);
+
+        storageManagerImpl.removeSnapshotsInErrorStatus();
+
+        Mockito.verify(snapshotStoreDao, Mockito.never()).findBySnapshotId(1L);
+        Mockito.verify(snapshotDao, Mockito.never()).expunge(1L);
+        Mockito.verify(storageManagerImpl).deleteSnapshot(regularSnapshot, storeRef);
+        Mockito.verify(snapshotDao).expunge(2L);
     }
 }

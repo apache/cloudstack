@@ -57,6 +57,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import com.cloud.agent.api.Answer;
@@ -821,6 +822,71 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
         verify(volumeInfo, never()).stateTransit(Volume.Event.OperationSucceeded);
         verify(snapshotDetailsDao).addDetail(eq(SNAPSHOT_ID), eq(KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH), any(),
                 eq(false));
+        // Not marked as failed: its outcome is unknown, and a failed snapshot could be cleaned up although its file may be in use.
+        verify(strategy, never()).markSnapshotOnPrimaryAsFailed(any());
+        verify(snapshotDetailsDao, never()).removeDetail(SNAPSHOT_ID, SnapshotManager.KVM_FILE_BASED_NO_COPY_SNAPSHOT);
+    }
+
+    @Test
+    public void takeSnapshotRecordsThePendingVolumePathBeforeSendingAndRemovesItOnSuccess() {
+        mockSnapshotOnPrimary();
+        CreateDiskOnlyVmSnapshotAnswer answer = mock(CreateDiskOnlyVmSnapshotAnswer.class);
+        when(answer.getResult()).thenReturn(true);
+        when(answer.getMapVolumeToSnapshotSize()).thenReturn(Map.of(VOLUME_UUID, 1L));
+        ArgumentCaptor<Command> commandCaptor = ArgumentCaptor.forClass(Command.class);
+        doReturn(answer).when(strategy).sendToHost(eq(HOST_ID), commandCaptor.capture());
+
+        strategy.takeSnapshot(snapshotInfo);
+
+        String newPath = ((CreateDiskOnlyVmSnapshotCommand) commandCaptor.getValue()).getVolumeTosAndNewPaths().get(0).second();
+        InOrder inOrder = Mockito.inOrder(snapshotDetailsDao, strategy);
+        inOrder.verify(snapshotDetailsDao).addDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH, newPath, false);
+        inOrder.verify(strategy).sendToHost(eq(HOST_ID), any());
+        inOrder.verify(snapshotDetailsDao).removeDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH);
+    }
+
+    @Test
+    public void takeSnapshotWhoseMetadataFailsAfterTheHostSucceededIsNotMarkedAsFailed() {
+        SnapshotObject snapshotOnPrimary = mockSnapshotOnPrimary();
+        CreateDiskOnlyVmSnapshotAnswer answer = mock(CreateDiskOnlyVmSnapshotAnswer.class);
+        when(answer.getResult()).thenReturn(true);
+        when(answer.getMapVolumeToSnapshotSize()).thenReturn(Map.of(VOLUME_UUID, 1L));
+        doReturn(answer).when(strategy).sendToHost(eq(HOST_ID), any());
+        Mockito.doThrow(new CloudRuntimeException("database error")).when(snapshotOnPrimary).processEvent(eq(ObjectInDataStoreStateMachine.Event.OperationSucceeded),
+                any(CreateObjectAnswer.class));
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.takeSnapshot(snapshotInfo));
+
+        verify(volumeVO).setPath(any());
+        verify(volumeInfo).stateTransit(Volume.Event.OperationSucceeded);
+        verify(volumeInfo, never()).stateTransit(Volume.Event.OperationFailed);
+        verify(strategy, never()).markSnapshotOnPrimaryAsFailed(any());
+        verify(snapshotDetailsDao, never()).removeDetail(SNAPSHOT_ID, SnapshotManager.KVM_FILE_BASED_NO_COPY_SNAPSHOT);
+    }
+
+    @Test
+    public void markSnapshotOnPrimaryAsFailedNeverThrows() throws Exception {
+        SnapshotObject snapshotOnPrimary = mock(SnapshotObject.class);
+        Mockito.doThrow(new CloudRuntimeException("database error")).when(snapshotOnPrimary).processEvent(Snapshot.Event.OperationFailed);
+        Mockito.doThrow(new CloudRuntimeException("database error")).when(snapshotOnPrimary).processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+
+        strategy.markSnapshotOnPrimaryAsFailed(snapshotOnPrimary);
+
+        verify(snapshotOnPrimary).processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+    }
+
+    @Test
+    public void deleteSnapshotDeletedConcurrentlyWhileWaitingForTheLockIsRefused() {
+        mockChain(SNAPSHOT_ID);
+        SnapshotVO destroyed = mock(SnapshotVO.class);
+        when(destroyed.getState()).thenReturn(Snapshot.State.Destroyed);
+        when(snapshotDao.findById(SNAPSHOT_ID)).thenReturn(snapshotVO, destroyed);
+
+        assertThrows(InvalidParameterValueException.class, () -> strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        verify(strategy, never()).sendToHost(anyLong(), any());
+        verify(volumeInfo, never()).stateTransit(any());
+        verify(snapshotDao).releaseFromLockTable(SNAPSHOT_ID);
     }
 
     @Test

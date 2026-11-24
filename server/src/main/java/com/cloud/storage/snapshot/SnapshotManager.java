@@ -83,7 +83,7 @@ public interface SnapshotManager extends Configurable {
     /**
      * Name of the snapshot detail that marks a volume snapshot taken with {@link #KvmFileBasedVolumeSnapshotNoCopy}.
      */
-    String KVM_FILE_BASED_NO_COPY_SNAPSHOT = "kvmFileBasedNoCopySnapshot";
+    String KVM_FILE_BASED_NO_COPY_SNAPSHOT = Snapshot.KVM_FILE_BASED_NO_COPY_SNAPSHOT_DETAIL;
 
     void deletePoliciesForVolume(Long volumeId);
 

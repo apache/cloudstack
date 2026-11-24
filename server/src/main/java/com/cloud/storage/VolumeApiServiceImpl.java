@@ -2767,6 +2767,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return newVolumeOnPrimaryStorage;
     }
 
+    /**
+     * KVM file-based no-copy snapshots are part of the backing chain of their volume. Backups may add or replace files in that chain, and a volume being hot
+     * attached to a running Instance could be snapshotted on a host other than the Instance's while the attach is in progress.
+     */
+    protected void validateAttachOfVolumeWithKvmFileBasedNoCopySnapshots(UserVmVO vm, VolumeVO volume) {
+        if (vm == null || volume == null) {
+            return;
+        }
+        if (vm.getBackupOfferingId() != null) {
+            _snapshotMgr.validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "attach it to an Instance with a backup offering");
+        }
+        if (!State.Stopped.equals(vm.getState())) {
+            _snapshotMgr.validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "attach it to an Instance that is not stopped (stop the Instance first)");
+        }
+    }
+
     private Volume orchestrateAttachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
         VolumeInfo volumeToAttach = volFactory.getVolume(volumeId);
 
@@ -2775,6 +2791,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         UserVmVO vm = _userVmDao.findById(vmId);
+        // Checked again here, as the Instance may have been started, or assigned a backup offering, since the attach was requested.
+        validateAttachOfVolumeWithKvmFileBasedNoCopySnapshots(vm, _volsDao.findById(volumeId));
         VolumeVO existingVolumeOfVm = getVmExistingVolumeForVolumeAttach(vm, volumeToAttach);
         VolumeInfo newVolumeOnPrimaryStorage = createVolumeOnPrimaryForAttachIfNeeded(volumeToAttach, vm, existingVolumeOfVm);
 
@@ -3043,10 +3061,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         validateIfVmHasBackups(vm, true);
 
-        if (vm.getBackupOfferingId() != null) {
-            // Backups may add or replace files in the backing chains that KVM file-based no-copy snapshots are part of.
-            _snapshotMgr.validateVolumeHasNoKvmFileBasedNoCopySnapshots(_volsDao.findById(volumeToAttach.getId()), "attach it to an Instance with a backup offering");
-        }
+        validateAttachOfVolumeWithKvmFileBasedNoCopySnapshots(vm, _volsDao.findById(volumeToAttach.getId()));
 
         _accountMgr.checkAccess(caller, null, true, volumeToAttach, vm);
 

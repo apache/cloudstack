@@ -58,6 +58,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -971,12 +977,65 @@ public class VolumeOrchestratorTest {
     }
 
     @Test
-    public void checkVolumeIsNotUnderSnapshotOperationRefusesReservedVolumes() {
+    public void checkVolumeIsNotUnderSnapshotOperationRefusesReservedVolumesWithKvmFileBasedNoCopySnapshots() {
+        Mockito.doReturn(true).when(volumeOrchestrator).volumeHasKvmFileBasedNoCopySnapshots(Mockito.anyLong());
         for (Volume.State state : List.of(Volume.State.Snapshotting, Volume.State.RevertSnapshotting)) {
             VolumeVO volume = Mockito.mock(VolumeVO.class);
             Mockito.when(volume.getState()).thenReturn(state);
             Assert.assertThrows(CloudRuntimeException.class, () -> volumeOrchestrator.checkVolumeIsNotUnderSnapshotOperation(volume, "vol"));
         }
+    }
+
+    @Test
+    public void checkVolumeIsNotUnderSnapshotOperationAllowsReservedVolumesWithoutKvmFileBasedNoCopySnapshots() {
+        Mockito.doReturn(false).when(volumeOrchestrator).volumeHasKvmFileBasedNoCopySnapshots(Mockito.anyLong());
+        for (Volume.State state : List.of(Volume.State.Snapshotting, Volume.State.RevertSnapshotting)) {
+            VolumeVO volume = Mockito.mock(VolumeVO.class);
+            Mockito.when(volume.getState()).thenReturn(state);
+            volumeOrchestrator.checkVolumeIsNotUnderSnapshotOperation(volume, "vol");
+        }
+    }
+
+    @Test
+    public void volumeHasKvmFileBasedNoCopySnapshotsIgnoresDestroyedAndErrorSnapshots() {
+        SnapshotDao snapshotDao = Mockito.mock(SnapshotDao.class);
+        SnapshotDetailsDao snapshotDetailsDao = Mockito.mock(SnapshotDetailsDao.class);
+        volumeOrchestrator._snapshotDao = snapshotDao;
+        volumeOrchestrator.snapshotDetailsDao = snapshotDetailsDao;
+        List<SnapshotVO> snapshots = new ArrayList<>();
+        long id = 1;
+        for (Snapshot.State state : List.of(Snapshot.State.Destroyed, Snapshot.State.Error, Snapshot.State.BackedUp)) {
+            SnapshotVO snapshot = Mockito.mock(SnapshotVO.class);
+            Mockito.when(snapshot.getState()).thenReturn(state);
+            Mockito.lenient().when(snapshot.getId()).thenReturn(id++);
+            snapshots.add(snapshot);
+        }
+        Mockito.when(snapshotDao.listByVolumeId(1L)).thenReturn(snapshots);
+
+        Assert.assertFalse(volumeOrchestrator.volumeHasKvmFileBasedNoCopySnapshots(1L));
+
+        Mockito.when(snapshotDetailsDao.findDetail(3L, Snapshot.KVM_FILE_BASED_NO_COPY_SNAPSHOT_DETAIL)).thenReturn(Mockito.mock(SnapshotDetailsVO.class));
+        Assert.assertTrue(volumeOrchestrator.volumeHasKvmFileBasedNoCopySnapshots(1L));
+        Mockito.verify(snapshotDetailsDao, Mockito.never()).findDetail(1L, Snapshot.KVM_FILE_BASED_NO_COPY_SNAPSHOT_DETAIL);
+        Mockito.verify(snapshotDetailsDao, Mockito.never()).findDetail(2L, Snapshot.KVM_FILE_BASED_NO_COPY_SNAPSHOT_DETAIL);
+    }
+
+    @Test
+    public void cleanupVolumeDuringSnapshotFailureLeavesVolumesOfKvmFileBasedNoCopySnapshotsAlone() {
+        SnapshotDetailsDao snapshotDetailsDao = Mockito.mock(SnapshotDetailsDao.class);
+        SnapshotService snapshotService = Mockito.mock(SnapshotService.class);
+        volumeOrchestrator.snapshotDetailsDao = snapshotDetailsDao;
+        volumeOrchestrator._snapshotSrv = snapshotService;
+        Mockito.when(snapshotDetailsDao.findDetail(2L, Snapshot.KVM_FILE_BASED_NO_COPY_SNAPSHOT_DETAIL)).thenReturn(Mockito.mock(SnapshotDetailsVO.class));
+
+        volumeOrchestrator.cleanupVolumeDuringSnapshotFailure(1L, 2L);
+        Mockito.verify(snapshotService, Mockito.never()).cleanupVolumeDuringSnapshotFailure(Mockito.anyLong(), Mockito.anyLong());
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
+        Mockito.doReturn(volume).when(volumeDao).findById(1L);
+        volumeOrchestrator.cleanupVolumeDuringSnapshotFailure(1L, 3L);
+        Mockito.verify(snapshotService).cleanupVolumeDuringSnapshotFailure(1L, 3L);
     }
 
     @Test

@@ -712,6 +712,28 @@ public class VolumeApiServiceImplTest {
         }
     }
 
+    @Test
+    public void attachOfVolumeWithKvmFileBasedNoCopySnapshotsIsOnlyAllowedToStoppedInstancesWithoutBackupOffering() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        UserVmVO vm = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.KVM, 1L, false, false, 1L, 1L, 1, 1L, null, null, null, "vm");
+
+        vm.setState(State.Stopped);
+        volumeApiServiceImpl.validateAttachOfVolumeWithKvmFileBasedNoCopySnapshots(vm, volume);
+        Mockito.verify(snapshotManagerMock, Mockito.never()).validateVolumeHasNoKvmFileBasedNoCopySnapshots(Mockito.any(), Mockito.anyString());
+
+        for (State state : List.of(State.Running, State.Starting)) {
+            vm.setState(state);
+            volumeApiServiceImpl.validateAttachOfVolumeWithKvmFileBasedNoCopySnapshots(vm, volume);
+        }
+        Mockito.verify(snapshotManagerMock, Mockito.times(2)).validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume,
+                "attach it to an Instance that is not stopped (stop the Instance first)");
+
+        vm.setState(State.Stopped);
+        vm.setBackupOfferingId(1L);
+        volumeApiServiceImpl.validateAttachOfVolumeWithKvmFileBasedNoCopySnapshots(vm, volume);
+        Mockito.verify(snapshotManagerMock).validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "attach it to an Instance with a backup offering");
+    }
+
     // volume not Ready
     @Test(expected = InvalidParameterValueException.class)
     public void testTakeSnapshotF1() throws ResourceAllocationException {
