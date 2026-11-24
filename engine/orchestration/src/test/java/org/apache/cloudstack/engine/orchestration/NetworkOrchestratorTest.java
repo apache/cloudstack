@@ -39,9 +39,11 @@ import java.util.Map;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.GlobalLock;
 import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.framework.extensions.network.NetworkExtensionElement;
@@ -52,6 +54,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.mockito.ArgumentMatchers;
+import org.mockito.InOrder;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -99,6 +102,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
+import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
@@ -111,6 +115,7 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicNetworkMapDao;
 import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
+import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
 import com.cloud.vm.dao.UserVmDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -1279,5 +1284,108 @@ public class NetworkOrchestratorTest extends TestCase {
         testOrchestrator.ensureRouterForLazilyImplementedAssociation(network, mock(DeployDestination.class), mock(ReservationContext.class));
 
         verify(testOrchestrator, never()).implementNetworkElementsAndResources(any(), any(), any(), any());
+    }
+
+    private GlobalLock prepareNicAllocationLock(MockedStatic<GlobalLock> globalLockMocked, long vmId, boolean acquired) {
+        GlobalLock lock = mock(GlobalLock.class);
+        globalLockMocked.when(() -> GlobalLock.getInternLock("vm.nic.allocation." + vmId)).thenReturn(lock);
+        when(lock.lock(NetworkOrchestrator.NIC_ALLOCATION_LOCK_TIMEOUT_SECONDS)).thenReturn(acquired);
+        return lock;
+    }
+
+    private VirtualMachineProfile prepareVmProfileForNicAllocation(long vmId, Type type) {
+        VirtualMachine vm = mock(VirtualMachine.class);
+        when(vm.getId()).thenReturn(vmId);
+        VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
+        when(vmProfile.getVirtualMachine()).thenReturn(vm);
+        when(vmProfile.getType()).thenReturn(type);
+        return vmProfile;
+    }
+
+    @Test
+    public void allocateNicForVmWithFreeDeviceIdTestPicksTheDeviceIdAndAllocatesTheNicWhileHoldingTheLock() throws Exception {
+        long vmId = 5L;
+        int freeDeviceId = 3;
+        Network network = mock(Network.class);
+        NicProfile requested = mock(NicProfile.class);
+        NicProfile allocated = mock(NicProfile.class);
+        VirtualMachineProfile vmProfile = prepareVmProfileForNicAllocation(vmId, Type.DomainRouter);
+        testOrchestrator._vmNetworkMapDao = mock(VMNetworkMapDao.class);
+        when(testOrchestrator._nicDao.getFreeDeviceId(vmId)).thenReturn(freeDeviceId);
+        Mockito.doReturn(new Pair<>(allocated, freeDeviceId)).when(testOrchestrator).allocateNic(requested, network, false, freeDeviceId, vmProfile);
+
+        try (MockedStatic<GlobalLock> globalLockMocked = Mockito.mockStatic(GlobalLock.class)) {
+            GlobalLock lock = prepareNicAllocationLock(globalLockMocked, vmId, true);
+
+            NicProfile result = testOrchestrator.allocateNicForVmWithFreeDeviceId(network, requested, vmProfile);
+
+            Assert.assertSame(allocated, result);
+            InOrder inOrder = Mockito.inOrder(lock, testOrchestrator._nicDao, testOrchestrator);
+            inOrder.verify(lock).lock(NetworkOrchestrator.NIC_ALLOCATION_LOCK_TIMEOUT_SECONDS);
+            inOrder.verify(testOrchestrator._nicDao).getFreeDeviceId(vmId);
+            inOrder.verify(testOrchestrator).allocateNic(requested, network, false, freeDeviceId, vmProfile);
+            inOrder.verify(lock).unlock();
+            inOrder.verify(lock).releaseRef();
+            verify(testOrchestrator._vmNetworkMapDao, never()).persist(any());
+        }
+    }
+
+    @Test
+    public void allocateNicForVmWithFreeDeviceIdTestPersistsTheVmNetworkMapForUserVm() throws Exception {
+        long vmId = 6L;
+        Network network = mock(Network.class);
+        NicProfile requested = mock(NicProfile.class);
+        VirtualMachineProfile vmProfile = prepareVmProfileForNicAllocation(vmId, Type.User);
+        testOrchestrator._vmNetworkMapDao = mock(VMNetworkMapDao.class);
+        when(testOrchestrator._nicDao.getFreeDeviceId(vmId)).thenReturn(1);
+        Mockito.doReturn(new Pair<>(mock(NicProfile.class), 1)).when(testOrchestrator).allocateNic(requested, network, false, 1, vmProfile);
+
+        try (MockedStatic<GlobalLock> globalLockMocked = Mockito.mockStatic(GlobalLock.class)) {
+            GlobalLock lock = prepareNicAllocationLock(globalLockMocked, vmId, true);
+
+            testOrchestrator.allocateNicForVmWithFreeDeviceId(network, requested, vmProfile);
+
+            verify(testOrchestrator._vmNetworkMapDao).persist(any(VMNetworkMapVO.class));
+            verify(lock).unlock();
+            verify(lock).releaseRef();
+        }
+    }
+
+    @Test
+    public void allocateNicForVmWithFreeDeviceIdTestDoesNotAllocateWhenTheLockIsNotAcquired() throws Exception {
+        long vmId = 7L;
+        Network network = mock(Network.class);
+        NicProfile requested = mock(NicProfile.class);
+        VirtualMachineProfile vmProfile = prepareVmProfileForNicAllocation(vmId, Type.DomainRouter);
+
+        try (MockedStatic<GlobalLock> globalLockMocked = Mockito.mockStatic(GlobalLock.class)) {
+            GlobalLock lock = prepareNicAllocationLock(globalLockMocked, vmId, false);
+
+            Assert.assertThrows(ConcurrentOperationException.class, () -> testOrchestrator.allocateNicForVmWithFreeDeviceId(network, requested, vmProfile));
+
+            verify(testOrchestrator._nicDao, never()).getFreeDeviceId(anyLong());
+            verify(testOrchestrator, never()).allocateNic(any(), any(), any(), Mockito.anyInt(), any());
+            verify(lock, never()).unlock();
+            verify(lock).releaseRef();
+        }
+    }
+
+    @Test
+    public void allocateNicForVmWithFreeDeviceIdTestReleasesTheLockWhenTheAllocationFails() throws Exception {
+        long vmId = 8L;
+        Network network = mock(Network.class);
+        NicProfile requested = mock(NicProfile.class);
+        VirtualMachineProfile vmProfile = prepareVmProfileForNicAllocation(vmId, Type.DomainRouter);
+        when(testOrchestrator._nicDao.getFreeDeviceId(vmId)).thenReturn(2);
+        Mockito.doReturn(new Pair<NicProfile, Integer>(null, 2)).when(testOrchestrator).allocateNic(requested, network, false, 2, vmProfile);
+
+        try (MockedStatic<GlobalLock> globalLockMocked = Mockito.mockStatic(GlobalLock.class)) {
+            GlobalLock lock = prepareNicAllocationLock(globalLockMocked, vmId, true);
+
+            Assert.assertThrows(CloudRuntimeException.class, () -> testOrchestrator.allocateNicForVmWithFreeDeviceId(network, requested, vmProfile));
+
+            verify(lock).unlock();
+            verify(lock).releaseRef();
+        }
     }
 }
