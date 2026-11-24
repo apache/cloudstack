@@ -2188,6 +2188,26 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
+    public void reconcileNicsForRunningVm(final VirtualMachineProfile vmProfile, final DeployDestination dest, final ReservationContext context) {
+        for (final NicVO nic : _nicDao.listByVmId(vmProfile.getId())) {
+            if (nic.getState() != Nic.State.Allocated) {
+                continue;
+            }
+            try {
+                final Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
+                if (implemented == null || implemented.first() == null) {
+                    logger.warn("Unable to implement Network ID={} to reconcile NIC {} of Running Instance {}", nic.getNetworkId(), nic, vmProfile);
+                    continue;
+                }
+                prepareNic(vmProfile, dest, context, nic.getId(), implemented.second());
+                logger.info("Re-reserved NIC {} of Running Instance {}", nic, vmProfile);
+            } catch (final Exception e) {
+                logger.warn("Failed to reconcile NIC {} of Running Instance {}", nic, vmProfile, e);
+            }
+        }
+    }
+
+    @Override
     public NicProfile prepareNic(final VirtualMachineProfile vmProfile, final DeployDestination dest, final ReservationContext context, final long nicId, final Network network)
             throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
             ResourceUnavailableException {

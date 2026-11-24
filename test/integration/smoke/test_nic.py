@@ -18,6 +18,8 @@
 from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (Account,
+                             Configurations,
+                             Host,
                              ServiceOffering,
                              Network,
                              VirtualMachine,
@@ -25,7 +27,8 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_zone,
                                get_suitable_test_template,
                                get_domain)
-from marvin.lib.utils import validateList
+from marvin.lib.utils import validateList, wait_until
+from marvin.sshClient import SshClient
 from marvin.codes import PASS
 from nose.plugins.attrib import attr
 
@@ -146,8 +149,9 @@ class TestNic(cloudstackTestCase):
                 zoneid=self.services["network"]["zoneid"]
             )
             self.cleanup.insert(0, self.test_network2)
-        except Exception as ex:
-            self.debug("Exception during NIC test SETUP!: " + str(ex))
+        except Exception:
+            self.tearDown()
+            raise
 
     @attr(
         tags=[
@@ -456,7 +460,85 @@ class TestNic(cloudstackTestCase):
             self.assertTrue(found, "Nic not found for the specific network")
 
 
+    def get_vm_nic(self, vm_uuid):
+        return self.dbclient.execute(
+            "SELECT n.state, n.broadcast_uri, n.ip4_address, n.network_id FROM nics n JOIN vm_instance v ON n.instance_id = v.id "
+            "WHERE v.uuid = '%s' AND n.removed IS NULL" % vm_uuid)[0]
+
+    def get_nics_count(self, network_id):
+        return self.dbclient.execute("SELECT nics_count FROM op_networks WHERE id = %d" % network_id)[0][0]
+
+    def wait_for_vm_and_nic_state(self, vm, vm_state, nic_state, timeout):
+        def check_state():
+            vms = VirtualMachine.list(self.apiclient, id=vm.id, listall=True)
+            nic = self.get_vm_nic(vm.id)
+            return vms is not None and vms[0].state == vm_state and nic[0] == nic_state, nic
+
+        result, nic = wait_until(5, timeout // 5, check_state)
+        self.assertTrue(result, "VM %s did not reach state %s with nic state %s, nic is %s" % (vm.name, vm_state, nic_state, nic))
+        return nic
+
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_04_nic_reserved_again_after_out_of_band_power_on(self):
+        """Test that a NIC released on a missing VM is reserved again and nics_count restored once the VM runs again
+
+        1. Deploy a VM in an isolated network, record its nic and the network's nics_count
+        2. Destroy the domain with virsh, so the VM is reported missing and synced to Stopped
+        3. Verify the nic is released (Allocated, no broadcast uri) and nics_count went down by one
+        4. Recreate the domain with virsh, so the VM is synced to Running out of band
+        5. Verify the nic is Reserved again with the same broadcast uri and ip, and nics_count is restored
+        """
+        if self.hypervisor.lower() != "kvm":
+            self.skipTest("Out of band power on through virsh is only tested on KVM")
+
+        host_config = self.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+        ping_interval = int(Configurations.list(self.apiclient, name="ping.interval")[0].value)
+
+        vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[self.test_network.id]
+        )
+        self.cleanup.insert(0, vm)
+
+        # 1 - record the reserved nic and nics_count
+        nic_state, broadcast_uri, ip_address, network_id = self.get_vm_nic(vm.id)
+        self.assertEqual(nic_state, "Reserved", "Nic of a running VM should be Reserved")
+        self.assertIsNotNone(broadcast_uri, "Nic of a running VM should have a broadcast uri")
+        nics_count = self.get_nics_count(network_id)
+
+        vm_response = VirtualMachine.list(self.apiclient, id=vm.id, listall=True)[0]
+        host = Host.list(self.apiclient, id=vm_response.hostid)[0]
+        ssh_host = SshClient(host.ipaddress, 22, host_config["username"], host_config["password"], 10)
+        domain_xml = "/tmp/%s.xml" % vm_response.instancename
+        self.cleanup_domain_xml = lambda: ssh_host.execute("rm -f %s" % domain_xml)
+
+        # 2 - make the VM go missing
+        ssh_host.execute("virsh dumpxml %s > %s" % (vm_response.instancename, domain_xml))
+        ssh_host.execute("virsh destroy %s" % vm_response.instancename)
+
+        # 3 - nic released and nics_count decremented
+        # a missing VM is only synced after a graceful period of two ping intervals, noticed on the next ping
+        released_nic = self.wait_for_vm_and_nic_state(vm, "Stopped", "Allocated", 3 * ping_interval + 30)
+        self.assertIsNone(released_nic[1], "Released nic should not have a broadcast uri")
+        self.assertEqual(self.get_nics_count(network_id), nics_count - 1, "nics_count should drop by one when the nic is released")
+
+        # 4 - bring the domain back out of band, a persistent domain is still defined and only needs a start
+        ssh_host.execute("virsh create %s || virsh start %s" % (domain_xml, vm_response.instancename))
+
+        # 5 - nic reserved again and nics_count restored
+        # the power on is noticed on the next ping
+        reconciled_nic = self.wait_for_vm_and_nic_state(vm, "Running", "Reserved", ping_interval + 30)
+        self.assertEqual(reconciled_nic[1], broadcast_uri, "Reconciled nic should get the network's broadcast uri back")
+        self.assertEqual(reconciled_nic[2], ip_address, "Reconciled nic should keep its ip address")
+        self.assertEqual(self.get_nics_count(network_id), nics_count, "nics_count should be restored when the nic is reserved again")
+
     def tearDown(self):
+        if hasattr(self, "cleanup_domain_xml"):
+            self.cleanup_domain_xml()
         try:
             for obj in self.cleanup:
                 try:
