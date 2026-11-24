@@ -2785,7 +2785,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         for (final PIF pif : hostPifs) {
             final PIF.Record rec = pif.getRecord(conn);
             if (rec.management) {
-                if (!isVlanAllowedForManagementPif(rec)) {
+                if (!isVlanAllowedForManagementPif(conn, host, rec)) {
                     final String msg = "Unsupported configuration.  Management network is on a VLAN.  host=" + _host.getUuid() + "; pif=" + rec.uuid +
                             "; vlan=" + rec.VLAN;
                     logger.warn(msg);
@@ -5819,22 +5819,28 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
 
     /**
      * XenServer and XCP-ng support the management interface on a tagged VLAN from product version 8.0 onwards.
-     * The XenAPI protocol version (Host.getAPIVersionMajor) cannot be used for this; it does not follow the product version.
+     * The product version is read from the host itself; the XenAPI protocol version (Host.getAPIVersionMajor) cannot be
+     * used for this, as it does not follow the product version. If the version cannot be read, a VLAN is not allowed.
      */
-    public boolean isManagementNetworkOnVlanSupported() {
-        String productVersion = getHost().getProductVersion();
-        if (StringUtils.isBlank(productVersion)) {
+    public boolean isManagementNetworkOnVlanSupported(Connection conn, Host host) {
+        try {
+            String productVersion = CitrixHelper.getProductVersion(host.getSoftwareVersion(conn));
+            if (StringUtils.isBlank(productVersion)) {
+                return false;
+            }
+            return new ComparableVersion(productVersion).compareTo(new ComparableVersion("8.0")) >= 0;
+        } catch (final Exception e) {
+            logger.warn("Could not determine product version of host " + _host.getUuid() + "; assuming VLAN management network is unsupported", e);
             return false;
         }
-        return new ComparableVersion(productVersion).compareTo(new ComparableVersion("8.0")) >= 0;
     }
 
     /**
      * Whether a PIF may carry the management (or cloud-private) network: untagged PIFs always may, tagged ones only
      * on hosts that support the management interface on a VLAN.
      */
-    public boolean isVlanAllowedForManagementPif(PIF.Record rec) {
-        return rec.VLAN == null || rec.VLAN == -1 || isManagementNetworkOnVlanSupported();
+    public boolean isVlanAllowedForManagementPif(Connection conn, Host host, PIF.Record rec) {
+        return rec.VLAN == null || rec.VLAN == -1 || isManagementNetworkOnVlanSupported(conn, host);
     }
 
     public void destroyVm(VM vm, Connection connection, boolean forced) throws XenAPIException, XmlRpcException {

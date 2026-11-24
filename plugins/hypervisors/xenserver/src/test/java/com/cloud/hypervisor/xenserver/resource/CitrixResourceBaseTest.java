@@ -620,28 +620,56 @@ public class CitrixResourceBaseTest {
         Assert.assertEquals(123456789000L, listAnswer.getLastModified().get(0).longValue());
     }
 
-    @Test
-    public void isManagementNetworkOnVlanSupportedTestBlankVersion() {
-        citrixResourceBase._host.setProductVersion(null);
-        Assert.assertFalse(citrixResourceBase.isManagementNetworkOnVlanSupported());
-        citrixResourceBase._host.setProductVersion("");
-        Assert.assertFalse(citrixResourceBase.isManagementNetworkOnVlanSupported());
+    private void mockSoftwareVersion(String key, String version) throws XenAPIException, XmlRpcException {
+        Map<String, String> softwareVersion = new HashMap<>();
+        softwareVersion.put(key, version);
+        Mockito.when(hostMock.getSoftwareVersion(connectionMock)).thenReturn(softwareVersion);
+    }
+
+    private void mockProductVersion(String version) throws XenAPIException, XmlRpcException {
+        mockSoftwareVersion("product_version", version);
     }
 
     @Test
-    public void isManagementNetworkOnVlanSupportedTestBefore8() {
+    public void isManagementNetworkOnVlanSupportedTestBlankVersion() throws XenAPIException, XmlRpcException {
+        mockProductVersion("");
+        Assert.assertFalse(citrixResourceBase.isManagementNetworkOnVlanSupported(connectionMock, hostMock));
+        mockProductVersion(" ");
+        Assert.assertFalse(citrixResourceBase.isManagementNetworkOnVlanSupported(connectionMock, hostMock));
+    }
+
+    @Test
+    public void isManagementNetworkOnVlanSupportedTestBefore8() throws XenAPIException, XmlRpcException {
         for (String version : new String[] {"6.5.0", "7.1.2", "7.6.0"}) {
-            citrixResourceBase._host.setProductVersion(version);
-            Assert.assertFalse(version, citrixResourceBase.isManagementNetworkOnVlanSupported());
+            mockProductVersion(version);
+            Assert.assertFalse(version, citrixResourceBase.isManagementNetworkOnVlanSupported(connectionMock, hostMock));
         }
     }
 
     @Test
-    public void isManagementNetworkOnVlanSupportedTest8AndLater() {
+    public void isManagementNetworkOnVlanSupportedTest8AndLater() throws XenAPIException, XmlRpcException {
         for (String version : new String[] {"8.0", "8.0.0", "8.2.1", "8.3.0", "8.4.0"}) {
-            citrixResourceBase._host.setProductVersion(version);
-            Assert.assertTrue(version, citrixResourceBase.isManagementNetworkOnVlanSupported());
+            mockProductVersion(version);
+            Assert.assertTrue(version, citrixResourceBase.isManagementNetworkOnVlanSupported(connectionMock, hostMock));
         }
+    }
+
+    @Test
+    public void isManagementNetworkOnVlanSupportedTestPlatformVersionFallback() throws XenAPIException, XmlRpcException {
+        mockSoftwareVersion("platform_version", "8.2.1");
+        Assert.assertTrue(citrixResourceBase.isManagementNetworkOnVlanSupported(connectionMock, hostMock));
+    }
+
+    @Test
+    public void isManagementNetworkOnVlanSupportedTestNoVersion() throws XenAPIException, XmlRpcException {
+        Mockito.when(hostMock.getSoftwareVersion(connectionMock)).thenReturn(new HashMap<>());
+        Assert.assertFalse(citrixResourceBase.isManagementNetworkOnVlanSupported(connectionMock, hostMock));
+    }
+
+    @Test
+    public void isManagementNetworkOnVlanSupportedTestXenApiFailure() throws XenAPIException, XmlRpcException {
+        Mockito.when(hostMock.getSoftwareVersion(connectionMock)).thenThrow(new XmlRpcException("unreachable"));
+        Assert.assertFalse(citrixResourceBase.isManagementNetworkOnVlanSupported(connectionMock, hostMock));
     }
 
     private PIF.Record pifRecordWithVlan(Long vlan) {
@@ -652,18 +680,18 @@ public class CitrixResourceBaseTest {
     }
 
     @Test
-    public void isVlanAllowedForManagementPifTestUntagged() {
-        citrixResourceBase._host.setProductVersion("7.1.2");
-        Assert.assertTrue(citrixResourceBase.isVlanAllowedForManagementPif(pifRecordWithVlan(null)));
-        Assert.assertTrue(citrixResourceBase.isVlanAllowedForManagementPif(pifRecordWithVlan(-1L)));
+    public void isVlanAllowedForManagementPifTestUntagged() throws XenAPIException, XmlRpcException {
+        Assert.assertTrue(citrixResourceBase.isVlanAllowedForManagementPif(connectionMock, hostMock, pifRecordWithVlan(null)));
+        Assert.assertTrue(citrixResourceBase.isVlanAllowedForManagementPif(connectionMock, hostMock, pifRecordWithVlan(-1L)));
+        Mockito.verify(hostMock, Mockito.never()).getSoftwareVersion(connectionMock);
     }
 
     @Test
-    public void isVlanAllowedForManagementPifTestTagged() {
-        citrixResourceBase._host.setProductVersion("7.1.2");
-        Assert.assertFalse(citrixResourceBase.isVlanAllowedForManagementPif(pifRecordWithVlan(100L)));
-        citrixResourceBase._host.setProductVersion("8.2.1");
-        Assert.assertTrue(citrixResourceBase.isVlanAllowedForManagementPif(pifRecordWithVlan(100L)));
+    public void isVlanAllowedForManagementPifTestTagged() throws XenAPIException, XmlRpcException {
+        mockProductVersion("7.1.2");
+        Assert.assertFalse(citrixResourceBase.isVlanAllowedForManagementPif(connectionMock, hostMock, pifRecordWithVlan(100L)));
+        mockProductVersion("8.2.1");
+        Assert.assertTrue(citrixResourceBase.isVlanAllowedForManagementPif(connectionMock, hostMock, pifRecordWithVlan(100L)));
     }
 
     private PIF.Record mockManagementPifOnVlan(long vlan) throws XenAPIException, XmlRpcException {
@@ -678,7 +706,7 @@ public class CitrixResourceBaseTest {
 
     @Test
     public void getManagementNetworkTestVlanOnProductVersion8() throws XenAPIException, XmlRpcException {
-        citrixResourceBase._host.setProductVersion("8.2.1");
+        mockProductVersion("8.2.1");
         PIF.Record pifRecord = mockManagementPifOnVlan(100L);
         Network.Record networkRecord = new Network.Record();
         Mockito.when(pifRecord.network.getRecord(connectionMock)).thenReturn(networkRecord);
@@ -691,7 +719,7 @@ public class CitrixResourceBaseTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void getManagementNetworkTestVlanBeforeProductVersion8() throws XenAPIException, XmlRpcException {
-        citrixResourceBase._host.setProductVersion("7.1.2");
+        mockProductVersion("7.1.2");
         mockManagementPifOnVlan(100L);
 
         citrixResourceBase.getManagementNetwork(connectionMock);
