@@ -158,10 +158,11 @@ public class OntapHostListener implements HypervisorHostListener {
             // Update pool capacity/usage information
             StoragePoolVO poolVO = _storagePoolDao.findById(poolId);
             if (poolVO != null && poolInfo.getCapacityBytes() > 0) {
+                long usedBytes = Math.max(0, poolInfo.getCapacityBytes() - poolInfo.getAvailableBytes());
                 poolVO.setCapacityBytes(poolInfo.getCapacityBytes());
-                poolVO.setUsedBytes(poolInfo.getCapacityBytes() - poolInfo.getAvailableBytes());
+                poolVO.setUsedBytes(usedBytes);
                 _storagePoolDao.update(poolVO.getId(), poolVO);
-                logger.info("hostConnect: Updated storage pool capacity: {} GB, used: {} GB", poolInfo.getCapacityBytes() / (1024 * 1024 * 1024), (poolInfo.getCapacityBytes() - poolInfo.getAvailableBytes()) / (1024 * 1024 * 1024));
+                logger.info("hostConnect: Updated storage pool capacity: {} GB, used: {} GB", poolInfo.getCapacityBytes() / (1024 * 1024 * 1024), usedBytes / (1024 * 1024 * 1024));
             }
 
         } catch (Exception e) {

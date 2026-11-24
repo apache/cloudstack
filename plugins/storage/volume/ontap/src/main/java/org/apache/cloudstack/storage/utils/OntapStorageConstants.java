@@ -59,11 +59,29 @@ public class OntapStorageConstants {
     public static final String JOB_SUCCESS = "success";
 
     public static final String TRUE = "true";
-    public static final String FALSE = "false";
 
     // Query params
     public static final String NAME = "name";
     public static final String FIELDS = "fields";
+    public static final String SERIAL_NUMBER = "serial_number";
+
+    /**
+     * NAA format designator.
+     * {@code 6} = "IEEE Registered Extended" (128-bit WWID).
+     */
+    public static final String NAA_IEEE_REG_EXT = "6";
+    /**
+     * NetApp's IEEE-registered OUI. Lookup: https://standards-oui.ieee.org/ → "NetApp, Inc."
+     */
+    public static final String NETAPP_OUI = "00a098";
+    /**
+     *  the 4-bit pad nibble
+     * <p>The full WWID is {@code NETAPP_NAA_PREFIX} + {@code serial_number_hex} (12 ASCII
+     * bytes of the LUN serial, hex-encoded), yielding 32 hex chars / 128 bits.</p>
+     */
+    public static final String NETAPP_NAA_PREFIX = NAA_IEEE_REG_EXT + NETAPP_OUI + "0";
+    public static final String SPACE_USED = "space.used";
+    public static final String CLUSTER_NODE_ASUP_FIELDS = "model,is_all_flash_optimized,is_capacity_optimized,is_perf_optimized";
     public  static final String INITIATORS = "initiators";
     public static final String AGGREGATES = "aggregates";
     public static final String STATE = "state";
@@ -90,8 +108,15 @@ public class OntapStorageConstants {
     public static final String SEMICOLON = ";";
     public static final String COMMA = ",";
     public static final String HYPHEN = "-";
+    public static final String DOT = ".";
 
     public static final String VOLUME_PATH_PREFIX = "/vol/";
+
+    /**
+     * Path segment inserted after the FlexVol name when identifying a LUN inside a FlexVol snapshot
+     * for {@code POST /api/storage/luns} clone ({@code /vol/&lt;fv&gt;/.snapshot/&lt;snap&gt;/&lt;lun&gt;}).
+     */
+    public static final String SNAPSHOT_PATH_SEGMENT = "/.snapshot/";
 
     public static final String ONTAP_NAME_REGEX = "^[a-zA-Z][a-zA-Z0-9_]*$";
     public static final String KVM = "KVM";
@@ -101,6 +126,18 @@ public class OntapStorageConstants {
     public static final String LUN_DOT_NAME = "lun.name";
     public static final String IQN = "iqn";
     public static final String LUN_DOT_UUID = "lun.uuid";
+    /** Volume detail set on an offline migration destination while the strategy holds host access to it. */
+    public static final String MIGRATION_DESTINATION = "ontap.migration.destination";
+    public static final String LUN_DOT_SERIAL_NUMBER = "lun.serial_number";
+    public static final String QOS_POLICY_UUID = "qosPolicyUuid";
+    public static final String IS_AFF = "isAFF";
+    public static final String MIN_IOPS_NOT_SUPPORTED_ON_FAS = "Minimum IOPS must be 0 for FAS. Only a Maximum IOPS limit is supported";
+    public static final String QOS_POLICY_NONE = "none";
+    public static final String QOS_POLICY_NAME_PREFIX = "cs_";
+    public static final String QOS_POLICY_NAME_TO = "to_";
+    public static final String QOS_POLICY_NAME_IOPS = "iops_";
+    public static final String UUID = "uuid";
+    public static final String QOS_POLICY_OBJECT_COUNT_FIELDS = "uuid,name,object_count";
     public static final String LOGICAL_UNIT_NUMBER = "logical_unit_number";
     public static final String IGROUP_DOT_NAME = "igroup.name";
     public static final String IGROUP_DOT_UUID = "igroup.uuid";
@@ -114,6 +151,13 @@ public class OntapStorageConstants {
     public static final String VOLUME_PATH = "volume_path";
     public static final String PRIMARY_POOL_ID = "primary_pool_id";
     public static final String ONTAP_SNAP_SIZE = "ontap_snap_size";
+    /**
+     * Optional {@code snapshot_details} keys: min/max IOPS from the source volume at take-snapshot
+     * time. Persisted only when the volume has configured values; applied to volumes created from
+     * the snapshot in a later change (see TODO on create-from-snapshot).
+     */
+    public static final String MIN_IOPS = "min_iops";
+    public static final String MAX_IOPS = "max_iops";
     public static final String FILE_PATH = "file_path";
     public static final int MAX_SNAPSHOT_NAME_LENGTH = 255;
     public static final String ONTAP_TEMP_CG_PREFIX = "cs-temp-cg-";
@@ -127,9 +171,94 @@ public class OntapStorageConstants {
     public static final int ONTAP_SFSR_JOB_POLL_INTERVAL_MS = 2000;
     public static final int ONTAP_SNAPSHOT_DELETE_JOB_MAX_RETRIES = 30;
     public static final int ONTAP_SNAPSHOT_DELETE_JOB_POLL_INTERVAL_MS = 2000;
+    /** Retry settings for FlexVolume create/resize/delete job polling. */
+    public static final int ONTAP_VOLUME_JOB_MAX_RETRIES = 10;
+    public static final int ONTAP_VOLUME_JOB_POLL_INTERVAL_MS = 1000;
     public static final int ONTAP_FLEXVOL_JOB_POLL_INTERVAL_MS = 2000;
     public static final int ONTAP_FLEXVOL_RESOLVE_MAX_RETRIES = 30;
 
     /** vm_snapshot_details key for ONTAP FlexVolume-level VM snapshots. */
     public static final String ONTAP_FLEXVOL_SNAPSHOT = "ontapFlexVolSnapshot";
+
+    /** Name prefix of the LUN that caches a template on the FlexVol, suffixed with the template id. */
+    public static final String TEMPLATE_LUN_PREFIX = "cs_tmpl_";
+
+    /**
+     * Key of the {@code volume_details} row that {@code StorageSystemDataMotionStrategy} writes
+     * immediately before {@code createAsync} when a volume is to be cloned from a template already
+     * cached on this pool. The value is the CloudStack template id. The literal must stay in sync
+     * with the string used by the orchestrator.
+     */
+    public static final String CLONE_OF_TEMPLATE = "cloneOfTemplate";
+
+    /**
+     * Key of the {@code volume_details} row that {@code StorageSystemDataMotionStrategy} writes
+     * immediately before {@code createAsync} when a volume is to be created from a CloudStack
+     * snapshot already present on this pool. The value is the CloudStack snapshot id. The literal
+     * must stay in sync with the string used by the orchestrator.
+     */
+    public static final String CLONE_OF_SNAPSHOT = "cloneOfSnapshot";
+
+    /**
+     * Driver capability read by {@code StorageSystemDataMotionStrategy} when copying a snapshot to
+     * secondary storage. The literal must stay in sync with the string used by the orchestrator.
+     */
+    public static final String CAN_DIRECT_ATTACH_SNAPSHOT = "CAN_DIRECT_ATTACH_SNAPSHOT";
+
+    /**
+     * Name prefix of the temporary volume a snapshot is cloned into for createTemplate(snapshotid),
+     * suffixed with the CloudStack snapshot id and volume id.
+     */
+    public static final String TEMP_SNAPSHOT_COPY_NAME_PREFIX = "cs_tmp_snap_";
+
+    // ASUP (AutoSupport) / EMS telemetry
+    public static final String ADVANCED_CONFIG_KEY_CATEGORY = "Advanced";
+    public static final String ASUP_CATEGORY = "provisioning";
+    public static final String ASUP_SEVERITY = "notice";
+    public static final String ASUP_EVENT_SOURCE = "CloudStack ONTAP plugin";
+    public static final String ASUP_EVENT_ID_HEARTBEAT = "0";
+    public static final String ASUP_EVENT_ID_STORAGE_POOL = "1";
+    public static final String ASUP_UNKNOWN = "unknown";
+    /** Event-id 0/1 JSON field: short human-readable description of the message. */
+    public static final String ASUP_MESSAGE = "message";
+    public static final String ASUP_HEARTBEAT_MESSAGE = "CloudStack connected to Unified ONTAP cluster";
+    public static final String ASUP_POOL_MESSAGE = "CloudStack storage pool backed by Unified ONTAP volume";
+    public static final String ASUP_POOL_NAME = "poolName";
+    public static final String ASUP_POOL_STATUS = "poolStatus";
+    public static final String ASUP_PROTOCOL = "protocol";
+    public static final String ASUP_SVM = "svm";
+    public static final String ASUP_ONTAP_VOLUME_UUID = "ontapVolumeUuid";
+    public static final String ASUP_CLOUDSTACK_VERSION = "cloudstackVersion";
+    public static final String ASUP_PLATFORM = "platform";
+    public static final String ASUP_ONTAP_VERSION = "ontapVersion";
+    public static final String ASUP_ONTAP_CLUSTER_MODEL = "ontapClusterModel";
+    public static final String ASUP_ONTAP_PLATFORM_TYPE = "ontapPlatformType";
+    public static final String ASUP_PLATFORM_TYPE_PERFORMANCE = "performance";
+    public static final String ASUP_PLATFORM_TYPE_CAPACITY = "capacity";
+    public static final String ASUP_PLATFORM_TYPE_FAS = "fas";
+    public static final String ASUP_PLATFORM_TYPE_COMPOSITE = "composite";
+    public static final String ASUP_CLUSTER_UUID = "clusterUuid";
+    public static final String ASUP_MANAGEMENT_SERVER_COUNT = "managementServerCount";
+    /** Event-id 0 field: VM snapshots spanning multiple ONTAP pools (consistency group). */
+    public static final String ASUP_SNAPSHOT_ACROSS_POOL = "snapshot_across_pool";
+    public static final String ASUP_MULTI_PRIMARY_STORAGE_POOL_VM = "multiPrimaryStoragePoolVm";
+    public static final String ASUP_ROOT_DISK_COUNT = "rootDiskCount";
+    public static final String ASUP_DATA_DISK_COUNT = "dataDiskCount";
+    public static final String ASUP_TOTAL_LOGICAL_SIZE_BYTES = "totalLogicalSizeBytes";
+    public static final String ASUP_VOLUME_SNAPSHOT_COUNT = "volumeSnapshotCount";
+    public static final String ASUP_VM_SNAPSHOT_COUNT = "vmSnapshotCount";
+    public static final String ASUP_GLOBAL_LOCK_NAME = "ontap.autosupport.push";
+    public static final String ASUP_INTERVAL_CONFIG_KEY = "ontap.autosupport.interval";
+    /** {@code ontap.autosupport.interval} value that disables telemetry reporting. */
+    public static final int ASUP_DISABLED_INTERVAL_HOURS = 0;
+    public static final int ASUP_MIN_INTERVAL_HOURS = 4;
+    public static final int ASUP_MAX_INTERVAL_HOURS = 168; // once a week
+    public static final int ASUP_DEFAULT_INTERVAL_HOURS = 24; // once a day
+
+    public static final String ASUP_INTERVAL_DESCRIPTION =
+            "Interval in hours between telemetry reports sent to the ONTAP cluster. "
+                    + ASUP_DISABLED_INTERVAL_HOURS + " disables reporting. Allowed range is "
+                    + ASUP_MIN_INTERVAL_HOURS + " hours to " + ASUP_MAX_INTERVAL_HOURS
+                    + " hours (1 week). Default is " + ASUP_DEFAULT_INTERVAL_HOURS
+                    + " hours (once a day). Changes take effect immediately and do not require a management server restart.";
 }

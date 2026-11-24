@@ -30,6 +30,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -131,6 +132,46 @@ public class StorageSystemDataMotionStrategyTest {
     @Test
     public void internalCanHandleTestNoStoragePoolsIsManaged() {
         configureAndTestInternalCanHandle(false, false, StrategyPriority.CANT_HANDLE);
+    }
+
+    @Test
+    public void canHandleDeclinesMigratingVolumeOnOntapPrimary() {
+        PrimaryDataStore srcStore = mock(PrimaryDataStoreImpl.class);
+        PrimaryDataStore destStore = mock(PrimaryDataStoreImpl.class);
+        VolumeObject srcVolume = mock(VolumeObject.class);
+        VolumeObject destVolume = mock(VolumeObject.class);
+        doReturn(Volume.State.Migrating).when(srcVolume).getState();
+        doReturn(srcStore).when(srcVolume).getDataStore();
+        doReturn(destStore).when(destVolume).getDataStore();
+        doReturn(1L).when(srcStore).getId();
+        doReturn(2L).when(destStore).getId();
+        StoragePoolVO srcPool = Mockito.spy(new StoragePoolVO());
+        StoragePoolVO destPool = Mockito.spy(new StoragePoolVO());
+        lenient().doReturn(true).when(srcPool).isManaged();
+        doReturn(DataStoreProvider.ONTAP_PLUGIN_NAME).when(destPool).getStorageProviderName();
+        doReturn(srcPool).when(primaryDataStoreDao).findById(1L);
+        doReturn(destPool).when(primaryDataStoreDao).findById(2L);
+
+        Assert.assertEquals(StrategyPriority.CANT_HANDLE, strategy.canHandle(srcVolume, destVolume));
+    }
+
+    @Test
+    public void internalCanHandleDeclinesMapWithOntapPool() {
+        VolumeObject volumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn(0L).when(volumeInfo).getPoolId();
+        DataStore ds = Mockito.spy(new PrimaryDataStoreImpl());
+        Mockito.doReturn(1L).when(ds).getId();
+        Map<VolumeInfo, DataStore> volumeMap = new HashMap<>();
+        volumeMap.put(volumeInfo, ds);
+        StoragePoolVO srcPool = Mockito.spy(new StoragePoolVO());
+        lenient().doReturn(true).when(srcPool).isManaged();
+        StoragePoolVO destPool = Mockito.spy(new StoragePoolVO());
+        Mockito.doReturn(DataStoreProvider.ONTAP_PLUGIN_NAME).when(destPool).getStorageProviderName();
+        Mockito.doReturn(srcPool).when(primaryDataStoreDao).findById(0L);
+        Mockito.doReturn(destPool).when(primaryDataStoreDao).findById(1L);
+
+        Assert.assertEquals(StrategyPriority.CANT_HANDLE,
+                strategy.internalCanHandle(volumeMap, new HostVO("srcHostUuid"), new HostVO("destHostUuid")));
     }
 
     private void configureAndTestInternalCanHandle(boolean sPool0IsManaged, boolean sPool1IsManaged, StrategyPriority expectedStrategyPriority) {
@@ -555,6 +596,7 @@ public class StorageSystemDataMotionStrategyTest {
         Mockito.doReturn(0L).when(volumeInfo).getPoolId();
 
         DataStore ds = Mockito.spy(new PrimaryDataStoreImpl());
+        Mockito.lenient().doReturn(1L).when(ds).getId();
 
         Map<VolumeInfo, DataStore> volumeMap = new HashMap<>();
         volumeMap.put(volumeInfo, ds);
@@ -580,6 +622,7 @@ public class StorageSystemDataMotionStrategyTest {
         Mockito.doReturn(0L).when(volumeInfo).getPoolId();
 
         DataStore ds = Mockito.spy(new PrimaryDataStoreImpl());
+        Mockito.lenient().doReturn(1L).when(ds).getId();
 
         Map<VolumeInfo, DataStore> volumeMap = new HashMap<>();
         volumeMap.put(volumeInfo, ds);
@@ -605,6 +648,7 @@ public class StorageSystemDataMotionStrategyTest {
         Mockito.doReturn(0L).when(volumeInfo).getPoolId();
 
         DataStore ds = Mockito.spy(new PrimaryDataStoreImpl());
+        Mockito.lenient().doReturn(1L).when(ds).getId();
 
         Map<VolumeInfo, DataStore> volumeMap = new HashMap<>();
         volumeMap.put(volumeInfo, ds);
@@ -633,6 +677,7 @@ public class StorageSystemDataMotionStrategyTest {
         Mockito.doReturn(0L).when(volumeInfo).getPoolId();
 
         DataStore ds = Mockito.spy(new PrimaryDataStoreImpl());
+        Mockito.lenient().doReturn(1L).when(ds).getId();
 
         Map<VolumeInfo, DataStore> volumeMap = new HashMap<>();
         volumeMap.put(volumeInfo, ds);

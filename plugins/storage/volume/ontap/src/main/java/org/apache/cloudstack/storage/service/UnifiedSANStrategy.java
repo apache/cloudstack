@@ -19,17 +19,26 @@
 
 package org.apache.cloudstack.storage.service;
 
-import com.cloud.host.HostVO;
-import com.cloud.utils.exception.CloudRuntimeException;
-import feign.FeignException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.feign.model.CliSnapshotRestoreRequest;
 import org.apache.cloudstack.storage.feign.model.Igroup;
 import org.apache.cloudstack.storage.feign.model.Initiator;
-import org.apache.cloudstack.storage.feign.model.Svm;
-import org.apache.cloudstack.storage.feign.model.OntapStorage;
 import org.apache.cloudstack.storage.feign.model.Lun;
 import org.apache.cloudstack.storage.feign.model.LunMap;
-import org.apache.cloudstack.storage.feign.model.CliSnapshotRestoreRequest;
+import org.apache.cloudstack.storage.feign.model.LunSpace;
+import org.apache.cloudstack.storage.feign.model.OntapStorage;
+import org.apache.cloudstack.storage.feign.model.Svm;
+import org.apache.cloudstack.storage.feign.model.VolumeQosPolicy;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
@@ -38,18 +47,31 @@ import org.apache.cloudstack.storage.service.model.ProtocolType;
 import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.apache.cloudstack.storage.utils.OntapStorageUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.HostVO;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+import feign.FeignException;
 
 public class UnifiedSANStrategy extends SANStrategy {
 
     private static final Logger logger = LogManager.getLogger(UnifiedSANStrategy.class);
+    private static final int LUN_COPY_POLL_INTERVAL_MS = 2000;
+    private static final Map<String, Object> LUN_COPY_STATUS_QUERY = Map.of("fields", "copy,name,uuid");
+    private static final String LUN_COPY_ALREADY_EXISTS_ERROR_CODE = "7018919";
+    private static final String LUN_COPY_SOURCE_BUSY_ERROR_CODE = "5375060";
+    // How long ONTAP may keep returning 404 or no copy object for the new LUN before the copy fails. Package-private so tests can shorten it.
+    long lunCopyStatusGraceMs = 60_000L;
     @Inject
     private StoragePoolDetailsDao storagePoolDetailsDao;
+    @Inject
+    private VolumeDetailsDao volumeDetailsDao;
 
     public UnifiedSANStrategy(OntapStorage ontapStorage) {
         super(ontapStorage);
@@ -78,6 +100,7 @@ public class UnifiedSANStrategy extends SANStrategy {
                 throw new CloudRuntimeException("Failed to create Lun: " + cloudstackVolume.getLun().getName());
             }
             Lun lun = createdLun.getRecords().get(0);
+            validateCreatedLun(lun, cloudstackVolume.getLun().getName(), "createCloudStackVolume");
             logger.debug("createCloudStackVolume: LUN created successfully. Lun: {}", lun);
 
             CloudStackVolume createdCloudStackVolume = new CloudStackVolume();
@@ -86,16 +109,124 @@ public class UnifiedSANStrategy extends SANStrategy {
         } catch (FeignException e) {
             logger.error("FeignException occurred while creating LUN: {}, Status: {}, Exception: {}",
                     cloudstackVolume.getLun().getName(), e.status(), e.getMessage());
-            throw new CloudRuntimeException("Failed to create Lun: " + e.getMessage());
+            throw new CloudRuntimeException("Failed to create Lun: " + e.getMessage(), e);
+        } catch (CloudRuntimeException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("Exception occurred while creating LUN: {}, Exception: {}", cloudstackVolume.getLun().getName(), e.getMessage());
-            throw new CloudRuntimeException("Failed to create Lun: " + e.getMessage());
+            throw new CloudRuntimeException("Failed to create Lun: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Creates an empty LUN that caches a template on this pool's FlexVolume.
+     *
+     * <p>Sized to the template virtual disk size (what KVM writes after {@code qemu-img convert}
+     * to RAW). On create failure, best-effort deletes any leftover LUN before rethrowing.</p>
+     */
+    @Override
+    public CloudStackVolume createTemplateCache(StoragePoolVO storagePool, TemplateInfo templateInfo,
+                                                Map<String, String> details, long sizeInBytes) {
+        if (sizeInBytes <= 0) {
+            throw new CloudRuntimeException("Unknown virtual size for template [" + templateInfo.getId()
+                    + "]; cannot size the template LUN on pool [" + storagePool.getId() + "]. The template size in vm_template"
+                    + " is unset; verify the template was registered/seeded with its virtual size (virtualsize in"
+                    + " template.properties on secondary storage).");
+        }
+
+        CloudStackVolume request = buildTemplateLunRequest(storagePool, details, templateInfo.getId(), sizeInBytes);
+        String lunName = request.getLun().getName();
+        CloudStackVolume created = null;
+        try {
+            created = createCloudStackVolume(request);
+            Lun lun = created.getLun();
+            logger.info("createTemplateCache: Created template cache LUN [{}] (uuid [{}], {} bytes) on pool [{}] for template [{}]",
+                    lun.getName(), lun.getUuid(), sizeInBytes, storagePool.getId(), templateInfo.getId());
+            return created;
+        } catch (Exception e) {
+            bestEffortDeleteTemplateCacheLun(details.get(OntapStorageConstants.SVM_NAME), lunName,
+                    created != null && created.getLun() != null ? created.getLun().getUuid() : null);
+            if (e instanceof CloudRuntimeException) {
+                throw (CloudRuntimeException) e;
+            }
+            throw new CloudRuntimeException("Failed to create template cache LUN for template [" + templateInfo.getId()
+                    + "]: " + e.getMessage(), e);
+        }
+    }
+
+    private CloudStackVolume buildTemplateLunRequest(StoragePoolVO storagePool, Map<String, String> details,
+                                                     long templateId, long sizeInBytes) {
+        Svm svm = new Svm();
+        svm.setName(details.get(OntapStorageConstants.SVM_NAME));
+
+        Lun lunRequest = new Lun();
+        lunRequest.setSvm(svm);
+        lunRequest.setName(OntapStorageUtils.getLunName(storagePool.getName(),
+                OntapStorageConstants.TEMPLATE_LUN_PREFIX + templateId));
+        lunRequest.setOsType(Lun.OsTypeEnum.valueOf(
+                OntapStorageUtils.getOSTypeFromHypervisor(storagePool.getHypervisor().name())));
+        LunSpace lunSpace = new LunSpace();
+        lunSpace.setSize(sizeInBytes);
+        lunRequest.setSpace(lunSpace);
+
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lunRequest);
+        return request;
+    }
+
+    private void bestEffortDeleteTemplateCacheLun(String svmName, String lunName, String lunUuid) {
+        try {
+            String uuid = lunUuid;
+            if (uuid == null || uuid.isEmpty()) {
+                Map<String, String> lookup = Map.of(
+                        OntapStorageConstants.NAME, lunName,
+                        OntapStorageConstants.SVM_DOT_NAME, svmName);
+                CloudStackVolume existing = getCloudStackVolume(lookup);
+                if (existing == null || existing.getLun() == null || existing.getLun().getUuid() == null) {
+                    logger.warn("bestEffortDeleteTemplateCacheLun: LUN [{}] not found on SVM [{}]; nothing to delete",
+                            lunName, svmName);
+                    return;
+                }
+                uuid = existing.getLun().getUuid();
+            }
+            Lun lun = new Lun();
+            lun.setUuid(uuid);
+            lun.setName(lunName);
+            CloudStackVolume deleteRequest = new CloudStackVolume();
+            deleteRequest.setLun(lun);
+            deleteCloudStackVolume(deleteRequest);
+            logger.info("bestEffortDeleteTemplateCacheLun: Removed leftover template cache LUN [{}] on SVM [{}]",
+                    lunName, svmName);
+        } catch (Exception cleanupEx) {
+            logger.warn("bestEffortDeleteTemplateCacheLun: Failed to remove leftover template cache LUN [{}] on SVM [{}]: {}",
+                    lunName, svmName, cleanupEx.getMessage());
         }
     }
 
     @Override
-    CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
-        return null;
+    public CloudStackVolume updateCloudStackVolume(CloudStackVolume cloudstackVolume) {
+        if (cloudstackVolume == null || cloudstackVolume.getLun() == null
+                || cloudstackVolume.getLun().getUuid() == null) {
+            throw new CloudRuntimeException("Invalid iSCSI volume request");
+        }
+        VolumeQosPolicy qosPolicy = cloudstackVolume.getLun().getQosPolicy();
+        if (qosPolicy == null) {
+            return cloudstackVolume;
+        }
+        Lun lunUpdate = new Lun();
+        lunUpdate.setQosPolicy(qosPolicy);
+        try {
+            JobResponse response = sanFeignClient.updateLun(
+                    getAuthHeader(), cloudstackVolume.getLun().getUuid(), lunUpdate);
+            pollJobIfPresent(response, "update LUN [" + cloudstackVolume.getLun().getUuid() + "]");
+        } catch (FeignException e) {
+            throw new CloudRuntimeException("Failed to update LUN: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to update LUN: " + e.getMessage(), e);
+        }
+        logger.info("Updated LUN [{}] with QoS policy [{}]",
+                cloudstackVolume.getLun().getUuid(), qosPolicy.getName());
+        return cloudstackVolume;
     }
 
     @Override
@@ -109,7 +240,8 @@ public class UnifiedSANStrategy extends SANStrategy {
             String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
             Map<String, Object> queryParams = Map.of("allow_delete_while_mapped", "true");
             try {
-                sanFeignClient.deleteLun(authHeader, cloudstackVolume.getLun().getUuid(), queryParams);
+                JobResponse response = sanFeignClient.deleteLun(authHeader, cloudstackVolume.getLun().getUuid(), queryParams);
+                pollJobIfPresent(response, "delete Lun [" + cloudstackVolume.getLun().getName() + "]");
             } catch (FeignException feignEx) {
                 if (feignEx.status() == 404) {
                     logger.warn("deleteCloudStackVolume: Lun {} does not exist (status 404), skipping deletion", cloudstackVolume.getLun().getName());
@@ -124,8 +256,311 @@ public class UnifiedSANStrategy extends SANStrategy {
         }
     }
 
+    /**
+     * Clones a LUN inside the FlexVolume using ONTAP's {@code clone.source} form of LUN create.
+     *
+     * <p>The resulting LUN shares blocks with its source and is created in constant time.
+     * It is a sis-clone, so it stays readable after the source LUN is deleted.</p>
+     */
     @Override
-    public void copyCloudStackVolume(CloudStackVolume cloudstackVolume) {}
+    public CloudStackVolume cloneCloudStackVolume(CloudStackVolume cloudstackVolume) {
+        if (cloudstackVolume == null || cloudstackVolume.getLun() == null) {
+            logger.error("cloneCloudStackVolume: LUN clone failed. Invalid request: {}", cloudstackVolume);
+            throw new CloudRuntimeException("Failed to clone Lun, invalid request");
+        }
+        Lun lunRequest = cloudstackVolume.getLun();
+        if (lunRequest.getClone() == null || lunRequest.getClone().getSource() == null) {
+            logger.error("cloneCloudStackVolume: LUN clone failed. No clone source in request for Lun {}", lunRequest.getName());
+            throw new CloudRuntimeException("Failed to clone Lun, no clone source provided");
+        }
+        logger.trace("cloneCloudStackVolume: Cloning Lun {} from source name={} uuid={}",
+                lunRequest.getName(),
+                lunRequest.getClone().getSource().getName(),
+                lunRequest.getClone().getSource().getUuid());
+        try {
+            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+            OntapResponse<Lun> clonedLun = sanFeignClient.createLun(authHeader, true, lunRequest);
+            if (clonedLun == null || CollectionUtils.isEmpty(clonedLun.getRecords())) {
+                logger.error("cloneCloudStackVolume: LUN clone returned no records for Lun {}", lunRequest.getName());
+                throw new CloudRuntimeException("Failed to clone Lun: " + lunRequest.getName());
+            }
+            Lun lun = clonedLun.getRecords().get(0);
+            validateCreatedLun(lun, lunRequest.getName(), "cloneCloudStackVolume");
+            logger.debug("cloneCloudStackVolume: LUN cloned successfully. Lun: {}", lun);
+
+            CloudStackVolume clonedCloudStackVolume = new CloudStackVolume();
+            clonedCloudStackVolume.setLun(lun);
+            clonedCloudStackVolume.setVolumeInfo(cloudstackVolume.getVolumeInfo());
+            return clonedCloudStackVolume;
+        } catch (FeignException e) {
+            logger.error("FeignException occurred while cloning LUN: {}, Status: {}, Exception: {}",
+                    lunRequest.getName(), e.status(), e.getMessage());
+            throw new CloudRuntimeException("Failed to clone Lun: " + e.getMessage());
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.error("Exception occurred while cloning LUN: {}, Exception: {}", lunRequest.getName(), e.getMessage());
+            throw new CloudRuntimeException("Failed to clone Lun: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Copies a LUN onto another FlexVol with ONTAP's {@code copy.source} form of LUN create.
+     *
+     * <p>Unlike {@code clone.source}, this is a full independent copy and can cross FlexVols on the
+     * same SVM. The create call returns before the copy finishes, so this waits for progress.
+     * Create retries and status polling share one deadline of {@code timeoutSeconds}.</p>
+     */
+    @Override
+    public CloudStackVolume copyCloudStackVolume(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo,
+            StoragePoolVO destStoragePool, Map<String, String> destDetails, int timeoutSeconds) {
+        CloudStackVolume request = buildLunCopyRequest(srcVolumeInfo, destVolumeInfo, destStoragePool, destDetails);
+        Lun lunRequest = request.getLun();
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        long deadline = System.currentTimeMillis() + Math.max(0, timeoutSeconds) * 1000L;
+        Lun copiedLun = null;
+        try {
+            OntapResponse<Lun> copiedLunResponse = createLunCopyWithRetry(authHeader, lunRequest, deadline);
+            if (copiedLunResponse == null || CollectionUtils.isEmpty(copiedLunResponse.getRecords())) {
+                throw new CloudRuntimeException("Failed to copy Lun: " + lunRequest.getName());
+            }
+
+            copiedLun = copiedLunResponse.getRecords().get(0);
+            validateCreatedLun(copiedLun, lunRequest.getName(), "copyCloudStackVolume");
+            waitForLunCopy(authHeader, copiedLun.getUuid(), deadline);
+
+            CloudStackVolume copiedCloudStackVolume = new CloudStackVolume();
+            copiedCloudStackVolume.setLun(copiedLun);
+            return copiedCloudStackVolume;
+        } catch (FeignException e) {
+            bestEffortDeleteCopiedLun(copiedLun);
+            throw new CloudRuntimeException("Failed to copy Lun: " + e.getMessage(), e);
+        } catch (CloudRuntimeException e) {
+            bestEffortDeleteCopiedLun(copiedLun);
+            throw e;
+        }
+    }
+
+    private CloudStackVolume buildLunCopyRequest(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo,
+            StoragePoolVO destStoragePool, Map<String, String> destDetails) {
+        VolumeDetailVO srcLunUuid = volumeDetailsDao.findDetail(srcVolumeInfo.getId(), OntapStorageConstants.LUN_DOT_UUID);
+        VolumeDetailVO srcLunName = volumeDetailsDao.findDetail(srcVolumeInfo.getId(), OntapStorageConstants.LUN_DOT_NAME);
+        if (srcLunUuid == null || StringUtils.isBlank(srcLunUuid.getValue())) {
+            throw new CloudRuntimeException("Source volume [" + srcVolumeInfo.getId() + "] has no ONTAP LUN UUID");
+        }
+
+        String destLunName = destVolumeInfo.getName().replace(OntapStorageConstants.HYPHEN, OntapStorageConstants.UNDERSCORE);
+        if (!OntapStorageUtils.isValidName(destLunName)) {
+            throw new InvalidParameterValueException("Invalid dataObject name [" + destLunName
+                    + "]. It must start with a letter and can only contain letters, digits, and underscores, and be up to 200 characters long.");
+        }
+
+        Lun.Source source = new Lun.Source();
+        source.setUuid(srcLunUuid.getValue());
+        if (srcLunName != null) {
+            source.setName(srcLunName.getValue());
+        }
+        Lun.Copy copy = new Lun.Copy();
+        copy.setSource(source);
+
+        Svm svm = new Svm();
+        svm.setName(destDetails.get(OntapStorageConstants.SVM_NAME));
+        Lun lun = new Lun();
+        lun.setSvm(svm);
+        lun.setName(OntapStorageUtils.getLunName(destStoragePool.getName(), destLunName));
+        lun.setCopy(copy);
+        // ONTAP rejects qos_policy.name on a copy.source create. The driver patches the
+        // policy onto the new LUN after this copy returns.
+
+        CloudStackVolume request = new CloudStackVolume();
+        request.setLun(lun);
+        return request;
+    }
+
+    private OntapResponse<Lun> createLunCopyWithRetry(String authHeader, Lun lunRequest, long deadline) {
+        boolean sourceBusyObserved = false;
+        while (true) {
+            try {
+                return sanFeignClient.createLun(authHeader, true, lunRequest);
+            } catch (FeignException e) {
+                if (sourceBusyObserved && isLunCopyAlreadyExists(e)) {
+                    OntapResponse<Lun> existingCopy = findLunByName(authHeader, lunRequest);
+                    if (existingCopy != null) {
+                        logger.info("ONTAP copy for destination LUN [{}] was already started; resuming it", lunRequest.getName());
+                        return existingCopy;
+                    }
+                } else if (!isLunCopySourceBusy(e)) {
+                    throw e;
+                }
+                if (System.currentTimeMillis() >= deadline) {
+                    throw e;
+                }
+                sourceBusyObserved = true;
+                logger.warn("ONTAP source LUN for [{}] is still settling from a previous copy; retrying", lunRequest.getName());
+                sleepForLunCopyRetry(lunRequest.getName(), deadline);
+            }
+        }
+    }
+
+    private boolean isLunCopySourceBusy(FeignException exception) {
+        return exception.status() == 500 && exception.contentUTF8().contains(LUN_COPY_SOURCE_BUSY_ERROR_CODE);
+    }
+
+    private boolean isLunCopyAlreadyExists(FeignException exception) {
+        return exception.status() == 409 && exception.contentUTF8().contains(LUN_COPY_ALREADY_EXISTS_ERROR_CODE);
+    }
+
+    private OntapResponse<Lun> findLunByName(String authHeader, Lun lunRequest) {
+        String svmName = lunRequest.getSvm() != null ? lunRequest.getSvm().getName() : storage.getSvmName();
+        Map<String, Object> queryParams = Map.of(
+                OntapStorageConstants.SVM_DOT_NAME, svmName,
+                OntapStorageConstants.NAME, lunRequest.getName());
+        OntapResponse<Lun> response = sanFeignClient.getLunResponse(authHeader, queryParams);
+        return response != null && !CollectionUtils.isEmpty(response.getRecords()) ? response : null;
+    }
+
+    private void sleepForLunCopyRetry(String lunName, long deadline) {
+        try {
+            Thread.sleep(Math.min(LUN_COPY_POLL_INTERVAL_MS, Math.max(1, deadline - System.currentTimeMillis())));
+        } catch (InterruptedException interruptedException) {
+            Thread.currentThread().interrupt();
+            throw new CloudRuntimeException("Interrupted while retrying ONTAP LUN copy for [" + lunName + "]", interruptedException);
+        }
+    }
+
+    private void bestEffortDeleteCopiedLun(Lun copiedLun) {
+        if (copiedLun == null || copiedLun.getUuid() == null) {
+            return;
+        }
+        try {
+            CloudStackVolume copiedVolume = new CloudStackVolume();
+            copiedVolume.setLun(copiedLun);
+            deleteCloudStackVolume(copiedVolume);
+        } catch (Exception e) {
+            logger.warn("Failed to clean up partial copied Lun [{}]: {}", copiedLun.getUuid(), e.getMessage());
+        }
+    }
+
+    protected void waitForLunCopy(String authHeader, String lunUuid, long deadline) {
+        long startTime = System.currentTimeMillis();
+        while (true) {
+            Lun lun = null;
+            FeignException notFoundException = null;
+            try {
+                lun = sanFeignClient.getLunByUUID(authHeader, lunUuid, LUN_COPY_STATUS_QUERY);
+            } catch (FeignException e) {
+                if (e.status() != 404) {
+                    throw e;
+                }
+                notFoundException = e;
+            }
+            if (lun == null && notFoundException == null) {
+                throw new CloudRuntimeException("Unable to retrieve ONTAP LUN copy status for Lun [" + lunUuid + "]");
+            }
+            // ONTAP may take a while to expose a new LUN or its copy details. Tolerate that for a limited time.
+            if (lun == null || lun.getCopy() == null) {
+                if (System.currentTimeMillis() - startTime >= lunCopyStatusGraceMs) {
+                    throw new CloudRuntimeException("ONTAP did not return copy details for Lun [" + lunUuid + "] within "
+                            + (lunCopyStatusGraceMs / 1000) + "s", notFoundException);
+                }
+                logger.warn("ONTAP has not returned copy details for Lun [{}] yet, will retry", lunUuid);
+            }
+            Lun.Source source = lun != null && lun.getCopy() != null ? lun.getCopy().getSource() : null;
+            Lun.Progress progress = source != null ? source.getProgress() : null;
+            // A missing progress object means ONTAP has not reported the copy yet. Keep waiting.
+            if (progress != null && Integer.valueOf(100).equals(progress.getPercentComplete())) {
+                return;
+            }
+            if (progress != null && ("failed".equalsIgnoreCase(progress.getState()) || "failure".equalsIgnoreCase(progress.getState())
+                    || "error".equalsIgnoreCase(progress.getState()))) {
+                throw new CloudRuntimeException("ONTAP LUN copy failed for Lun [" + lunUuid + "]");
+            }
+            if (System.currentTimeMillis() >= deadline) {
+                throw new CloudRuntimeException("Timed out waiting for ONTAP LUN copy for Lun [" + lunUuid + "]");
+            }
+            try {
+                Thread.sleep(Math.min(LUN_COPY_POLL_INTERVAL_MS, Math.max(1, deadline - System.currentTimeMillis())));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new CloudRuntimeException("Interrupted while waiting for ONTAP LUN copy for Lun [" + lunUuid + "]", e);
+            }
+        }
+    }
+
+    /**
+     * Ensures ONTAP returned a usable LUN identity from create/clone. Callers in the datastore
+     * driver rely on non-null name and uuid, so reject incomplete records at the Feign boundary.
+     */
+    private void validateCreatedLun(Lun lun, String requestName, String operation) {
+        if (lun == null || lun.getName() == null || lun.getUuid() == null) {
+            logger.error("{}: ONTAP returned incomplete LUN for {}", operation, requestName);
+            throw new CloudRuntimeException("ONTAP returned incomplete LUN for: " + requestName);
+        }
+    }
+
+    /**
+     * Grows an existing LUN to {@code sizeInBytes}.
+     *
+     * <p>Needed after cloning a cached template, because a clone inherits the size of its source
+     * while the service offering may ask for a larger disk.</p>
+     */
+    @Override
+    public void resizeCloudStackVolume(CloudStackVolume cloudstackVolume, long sizeInBytes) {
+        if (cloudstackVolume == null || cloudstackVolume.getVolumeInfo() == null) {
+            logger.error("resizeCloudStackVolume: Lun resize failed. Invalid request: {}", cloudstackVolume);
+            throw new CloudRuntimeException("Failed to resize Lun, invalid request");
+        }
+        if (sizeInBytes <= 0) {
+            throw new CloudRuntimeException("Failed to resize Lun, invalid size " + sizeInBytes);
+        }
+
+        // Resolve LUN UUID from volume details when not pre-populated on the cloudstackVolume
+        // Keep a QoS policy already set on the request so size and QoS go out in one LUN update.
+        VolumeQosPolicy qosPolicy = cloudstackVolume.getLun() != null ? cloudstackVolume.getLun().getQosPolicy() : null;
+        if (cloudstackVolume.getLun() == null || cloudstackVolume.getLun().getUuid() == null) {
+            logger.debug("LUN details not present on cloudstackVolume, resolving UUID from volume details");
+            long volumeId = cloudstackVolume.getVolumeInfo().getId();
+            VolumeDetailVO lunUuidDetail = volumeDetailsDao.findDetail(volumeId, OntapStorageConstants.LUN_DOT_UUID);
+            if (lunUuidDetail == null || StringUtils.isBlank(lunUuidDetail.getValue())) {
+                throw new CloudRuntimeException("LUN UUID not found in volume details for volume " + volumeId);
+            }
+            Lun resolvedLun = new Lun();
+            resolvedLun.setUuid(lunUuidDetail.getValue());
+            cloudstackVolume.setLun(resolvedLun);
+        } else {
+            logger.debug("resizeCloudStackVolume: LUN UUID [{}] already present on cloudstackVolume, skipping volume details lookup", cloudstackVolume.getLun().getUuid());
+        }
+
+        String lunUuid = cloudstackVolume.getLun().getUuid();
+        logger.trace("resizeCloudStackVolume: Resizing Lun {} to {} bytes", lunUuid, sizeInBytes);
+        try {
+            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+            LunSpace lunSpace = new LunSpace();
+            lunSpace.setSize(sizeInBytes);
+            Lun lunPatch = new Lun();
+            lunPatch.setSpace(lunSpace);
+            if (qosPolicy != null) {
+                lunPatch.setQosPolicy(qosPolicy);
+            }
+            JobResponse response = sanFeignClient.updateLun(authHeader, lunUuid, lunPatch);
+            pollJobIfPresent(response, "resize Lun [" + lunUuid + "]");
+            logger.debug("resizeCloudStackVolume: Lun {} resized to {} bytes", lunUuid, sizeInBytes);
+        } catch (FeignException e) {
+            logger.error("FeignException occurred while resizing LUN [{}], Status: {}, Exception: {}",
+                    lunUuid, e.status(), e.getMessage());
+            if (OntapStorageUtils.isOntapObjectNotFoundError(e)) {
+                throw new CloudRuntimeException(String.format(
+                        "LUN [%s] no longer exists on ONTAP; it may have been deleted externally. " +
+                        "Verify the LUN is present before retrying the resize.", lunUuid));
+            }
+            throw new CloudRuntimeException(String.format(
+                    "Failed to resize LUN [%s]: %s",lunUuid, e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Exception occurred while resizing LUN [{}]: {}", lunUuid, e.getMessage());
+            throw new CloudRuntimeException(String.format(
+                    "Unexpected error while resizing LUN [%s]: %s", lunUuid, e.getMessage()));
+        }
+    }
 
     @Override
     public CloudStackVolume getCloudStackVolume(Map<String, String> values) {
@@ -160,10 +595,41 @@ public class UnifiedSANStrategy extends SANStrategy {
                 return null;
             }
             logger.error("FeignException occurred while fetching Lun, Status: {}, Exception: {}", e.status(), e.getMessage());
-            throw new CloudRuntimeException("Failed to fetch Lun details: " + e.getMessage());
+            throw new CloudRuntimeException("Failed to fetch Lun poolDetails: " + e.getMessage());
         } catch (Exception e) {
             logger.error("Exception occurred while fetching Lun, Exception: {}", e.getMessage());
-            throw new CloudRuntimeException("Failed to fetch Lun details: " + e.getMessage());
+            throw new CloudRuntimeException("Failed to fetch Lun poolDetails: " + e.getMessage());
+        }
+    }
+
+    public String getLunSerialNumber(String svmName, String lunName) {
+        logger.trace("getLunSerialNumber: fetching serial number of LUN [{}] on SVM [{}]", lunName, svmName);
+        if (svmName == null || svmName.isEmpty() || lunName == null || lunName.isEmpty()) {
+            throw new CloudRuntimeException("Failed to get LUN serial number, invalid svm or LUN name");
+        }
+        try {
+            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+            Map<String, Object> queryParams = Map.of(
+                    OntapStorageConstants.SVM_DOT_NAME, svmName,
+                    OntapStorageConstants.NAME, lunName,
+                    OntapStorageConstants.FIELDS, OntapStorageConstants.SERIAL_NUMBER);
+            OntapResponse<Lun> lunResponse = sanFeignClient.getLunResponse(authHeader, queryParams);
+            if (lunResponse == null || lunResponse.getRecords() == null || lunResponse.getRecords().isEmpty()) {
+                logger.warn("getLunSerialNumber: LUN [{}] on SVM [{}] not found", lunName, svmName);
+                return null;
+            }
+            return lunResponse.getRecords().get(0).getSerialNumber();
+        } catch (FeignException e) {
+            if (e.status() == 404) {
+                logger.warn("getLunSerialNumber: LUN [{}] on SVM [{}] not found (status 404)", lunName, svmName);
+                return null;
+            }
+            logger.error("FeignException while fetching serial number of LUN [{}], Status: {}, Exception: {}",
+                    lunName, e.status(), e.getMessage());
+            throw new CloudRuntimeException("Failed to fetch LUN serial number: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Exception while fetching serial number of LUN [{}]: {}", lunName, e.getMessage());
+            throw new CloudRuntimeException("Failed to fetch LUN serial number: " + e.getMessage());
         }
     }
 
@@ -174,9 +640,9 @@ public class UnifiedSANStrategy extends SANStrategy {
             logger.error("createAccessGroup: Igroup creation failed. Invalid request: {}", accessGroup);
             throw new CloudRuntimeException("Failed to create Igroup, invalid request");
         }
-        // Get StoragePool details
+        // Get StoragePool poolDetails
         if (accessGroup.getStoragePoolId() == null) {
-            throw new CloudRuntimeException("Failed to create Igroup, invalid datastore details in the request");
+            throw new CloudRuntimeException("Failed to create Igroup, invalid datastore poolDetails in the request");
         }
         if (accessGroup.getHostsToConnect() == null || accessGroup.getHostsToConnect().isEmpty()) {
             throw new CloudRuntimeException("Failed to create Igroup, no hosts to connect provided in the request");
@@ -185,7 +651,7 @@ public class UnifiedSANStrategy extends SANStrategy {
         String igroupName = null;
         try {
             Map<String, String> dataStoreDetails = storagePoolDetailsDao.listDetailsKeyPairs(accessGroup.getStoragePoolId());
-            logger.trace("createAccessGroup: Successfully fetched datastore details.");
+            logger.trace("createAccessGroup: Successfully fetched datastore poolDetails.");
 
             // Generate Igroup request
             Igroup igroupRequest = new Igroup();
@@ -229,7 +695,19 @@ public class UnifiedSANStrategy extends SANStrategy {
             } catch (FeignException feignEx) {
                 if (feignEx.status() == 409) {
                     logger.warn("createAccessGroup: Igroup with name {} already exists (status 409). Fetching existing Igroup.", igroupName);
-                    // TODO: Currently we aren't doing anything with the returned AccessGroup object, so, haven't added code here to fetch the existing Igroup and set it in AccessGroup.
+                    String lookupAuth = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+                    Map<String, Object> igroupParams = Map.of(
+                            OntapStorageConstants.SVM_DOT_NAME, svmName,
+                            OntapStorageConstants.NAME, igroupName);
+                    OntapResponse<Igroup> existing = sanFeignClient.getIgroupResponse(lookupAuth, igroupParams);
+                    if (existing == null || existing.getRecords() == null || existing.getRecords().isEmpty()) {
+                        String ontapError = feignEx.contentUTF8();
+                        if (StringUtils.isBlank(ontapError)) {
+                            ontapError = feignEx.getMessage();
+                        }
+                        throw new CloudRuntimeException("Igroup [" + igroupName + "] already exists but was not returned: " + ontapError, feignEx);
+                    }
+                    createdAccessGroup.setIgroup(existing.getRecords().get(0));
                     return createdAccessGroup;
                 }
                 logger.error("createAccessGroup: FeignException during Igroup creation: Status: {}, Exception: {}", feignEx.status(), feignEx.getMessage(), feignEx);
@@ -261,9 +739,9 @@ public class UnifiedSANStrategy extends SANStrategy {
             logger.error("deleteAccessGroup: Igroup deletion failed. Invalid request: {}", accessGroup);
             throw new CloudRuntimeException("Failed to delete Igroup, invalid request");
         }
-        // Get StoragePool details
+        // Get StoragePool poolDetails
         if (accessGroup.getStoragePoolId() == null) {
-            throw new CloudRuntimeException("Failed to delete Igroup, invalid datastore details in the request");
+            throw new CloudRuntimeException("Failed to delete Igroup, invalid datastore poolDetails in the request");
         }
         try {
             String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
@@ -370,10 +848,10 @@ public class UnifiedSANStrategy extends SANStrategy {
                 return null;
             }
             logger.error("FeignException occurred while fetching Igroup, Status: {}, Exception: {}", e.status(), e.getMessage());
-            throw new CloudRuntimeException("Failed to fetch Igroup details: " + e.getMessage());
+            throw new CloudRuntimeException("Failed to fetch Igroup poolDetails: " + e.getMessage());
         } catch (Exception e) {
             logger.error("Exception occurred while fetching Igroup, Exception: {}", e.getMessage());
-            throw new CloudRuntimeException("Failed to fetch Igroup details: " + e.getMessage());
+            throw new CloudRuntimeException("Failed to fetch Igroup poolDetails: " + e.getMessage());
         }
     }
 
@@ -409,7 +887,8 @@ public class UnifiedSANStrategy extends SANStrategy {
             igroup.setName(igroupName);
             lunMapRequest.setIgroup(igroup);
             try {
-                sanFeignClient.createLunMap(authHeader, true, lunMapRequest);
+                // return_records is false. The host path comes from the LUN serial number, not this response.
+                sanFeignClient.createLunMap(authHeader, false, lunMapRequest);
             } catch (Exception feignEx) {
                 String errMsg = feignEx.getMessage();
                 if (errMsg != null && errMsg.contains(("LUN already mapped to this group"))) {
@@ -419,29 +898,8 @@ public class UnifiedSANStrategy extends SANStrategy {
                     throw feignEx;
                 }
             }
-            // Get the LunMap details
-            OntapResponse<LunMap> lunMapResponse = null;
-            try {
-                lunMapResponse = sanFeignClient.getLunMapResponse(authHeader,
-                        Map.of(
-                                OntapStorageConstants.SVM_DOT_NAME, svmName,
-                                OntapStorageConstants.LUN_DOT_NAME, lunName,
-                                OntapStorageConstants.IGROUP_DOT_NAME, igroupName,
-                                OntapStorageConstants.FIELDS, OntapStorageConstants.LOGICAL_UNIT_NUMBER
-                        ));
-                if(lunMapResponse != null && lunMapResponse.getRecords() != null && !lunMapResponse.getRecords().isEmpty()
-                         && lunMapResponse.getRecords().get(0).getLogicalUnitNumber() != null) {
-                    lunNumber =  lunMapResponse.getRecords().get(0).getLogicalUnitNumber().toString();
-
-                } else {
-                    logger.error("enableLogicalAccess: Failed to fetch LunMap details for Lun: {} and igroup: {}. LunMap response is null or empty.", lunName, igroupName);
-                    throw new CloudRuntimeException("Failed to fetch LunMap details for Lun: " + lunName + " and igroup: " + igroupName);
-                }
-            } catch (Exception e) {
-                logger.error("enableLogicalAccess: Failed to fetch LunMap details for Lun: {} and igroup: {}, Exception: {}", lunName, igroupName, e);
-                throw new CloudRuntimeException("Failed to fetch LunMap details for Lun: " + lunName + " and igroup: " + igroupName);
-            }
-            logger.trace("enableLogicalAccess: LunMap created successfully, LunMap: {}", lunMapResponse.getRecords().get(0));
+            logger.trace("enableLogicalAccess: LunMap created for Lun: {} and igroup: {}", lunName, igroupName);
+            lunNumber = "";
         } catch (Exception e) {
             logger.error("Exception occurred while creating LunMap", e);
             throw new CloudRuntimeException("Failed to create LunMap: " + e.getMessage());
@@ -530,11 +988,10 @@ public class UnifiedSANStrategy extends SANStrategy {
         }
 
         // Create if not exists
-        Map<String, String> enableMap = Map.of(
-                OntapStorageConstants.LUN_DOT_NAME, lunName,
-                OntapStorageConstants.SVM_DOT_NAME, svmName,
-                OntapStorageConstants.IGROUP_DOT_NAME, accessGroupName
-        );
+        Map<String, String> enableMap = new HashMap<>();
+        enableMap.put(OntapStorageConstants.LUN_DOT_NAME, lunName);
+        enableMap.put(OntapStorageConstants.SVM_DOT_NAME, svmName);
+        enableMap.put(OntapStorageConstants.IGROUP_DOT_NAME, accessGroupName);
         String response = enableLogicalAccess(enableMap);
         if (response == null ) {
             throw new CloudRuntimeException("Failed to map LUN [" + lunName + "] to iGroup [" + accessGroupName + "]");
@@ -542,6 +999,7 @@ public class UnifiedSANStrategy extends SANStrategy {
         logger.trace("ensureLunMapped: Successfully mapped LUN [{}] to igroup [{}] with LUN number [{}]", lunName, accessGroupName, response);
         return response;
     }
+
     /**
      * Reverts a LUN to a snapshot using the ONTAP CLI-based snapshot file restore API.
      *
