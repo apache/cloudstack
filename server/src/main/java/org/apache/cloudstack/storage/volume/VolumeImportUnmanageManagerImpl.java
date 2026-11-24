@@ -36,6 +36,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering;
 import com.cloud.resourcelimit.ReservationHelper;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
@@ -124,6 +125,8 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     private VolumeApiService volumeApiService;
     @Inject
     private SnapshotDataStoreDao snapshotDataStoreDao;
+    @Inject
+    private SnapshotManager snapshotManager;
     @Inject
     private DataStoreManager dataStoreManager;
 
@@ -572,6 +575,8 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         if (volumeVO.getAttached() != null || volumeVO.getInstanceId() != null) {
             logFailureAndThrowException(String.format("Volume %s is attached to VM (ID: %s)", volumeVO, volumeVO.getInstanceId()));
         }
+        // The unmanaged file would keep the frozen files of KVM file-based no-copy snapshots as its backing chain.
+        snapshotManager.validateVolumeHasNoKvmFileBasedNoCopySnapshots(volumeVO, "unmanage it");
         return volumeVO;
     }
 

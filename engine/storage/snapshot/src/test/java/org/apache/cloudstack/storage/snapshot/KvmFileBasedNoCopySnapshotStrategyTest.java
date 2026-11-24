@@ -464,7 +464,8 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
         assertThrows(CloudRuntimeException.class, () -> strategy.takeSnapshot(snapshotInfo));
 
         verify(volumeVO, never()).setPath(any());
-        verify(snapshotDetailsDao, never()).addDetail(anyLong(), any(), any(), Mockito.anyBoolean());
+        verify(snapshotDetailsDao, never()).addDetail(eq(SNAPSHOT_ID), eq(KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_SEQUENCE), any(),
+                Mockito.anyBoolean());
         verify(volumeInfo).stateTransit(Volume.Event.OperationFailed);
         verify(snapshotOnPrimary).processEvent(Snapshot.Event.OperationFailed);
         verify(snapshotOnPrimary).processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
@@ -603,8 +604,9 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
     }
 
     @Test
-    public void deleteSnapshotOfRemovedVolumeDeletesItsFrozenFile() {
+    public void deleteSnapshotOfExpungedVolumeDeletesItsFrozenFile() {
         mockChain(SNAPSHOT_ID);
+        when(volumeVO.getState()).thenReturn(Volume.State.Expunged);
         when(volumeVO.getRemoved()).thenReturn(new java.util.Date());
 
         DeleteDiskOnlyVmSnapshotCommand command = (DeleteDiskOnlyVmSnapshotCommand) deleteSnapshotOfGoneVolumeAndCaptureCommand();
@@ -616,18 +618,21 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
     }
 
     @Test
-    public void deleteSnapshotOfExpungedVolumeDeletesItsFrozenFile() {
+    public void deleteSnapshotOfRemovedButNotExpungedVolumeOnlyRemovesMetadata() {
         mockChain(SNAPSHOT_ID);
-        when(volumeVO.getState()).thenReturn(Volume.State.Expunged);
+        when(volumeVO.getState()).thenReturn(Volume.State.Destroy);  // e.g. unmanaged: the files stay with the unmanaged disk
+        when(volumeVO.getRemoved()).thenReturn(new java.util.Date());
 
-        assertTrue(deleteSnapshotOfGoneVolumeAndCaptureCommand() instanceof DeleteDiskOnlyVmSnapshotCommand);
+        assertTrue(strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        verify(strategy, never()).sendToHost(anyLong(), any());
         verify(snapshotVO).setState(Snapshot.State.Destroyed);
     }
 
     @Test
     public void deleteSnapshotOfExpungedVolumeKeepsMetadataWhenTheFileCannotBeDeleted() {
         mockChain(SNAPSHOT_ID);
-        when(volumeVO.getRemoved()).thenReturn(new java.util.Date());
+        when(volumeVO.getState()).thenReturn(Volume.State.Expunged);
         EndPoint endPoint = mock(EndPoint.class);
         when(endPoint.getId()).thenReturn(HOST_ID);
         when(endPointSelector.select(any(SnapshotInfo.class))).thenReturn(endPoint);
@@ -784,6 +789,107 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
         attachVolumeToVm();
         when(vm.getState()).thenReturn(VirtualMachine.State.Starting);
         assertThrows(InvalidParameterValueException.class, () -> strategy.deleteSnapshot(SNAPSHOT_ID, null));
+        verify(strategy, never()).sendToHost(anyLong(), any());
+    }
+
+    // unknown outcomes and partial merges
+
+    @Test
+    public void takeSnapshotAbortsWhenABackupOfferingWasAssignedMeanwhile() {
+        attachVolumeToVm();
+        when(vm.getBackupOfferingId()).thenReturn(1L);
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.takeSnapshot(snapshotInfo));
+
+        verify(snapshotDetailsDao).addDetail(SNAPSHOT_ID, SnapshotManager.KVM_FILE_BASED_NO_COPY_SNAPSHOT, "true", false);
+        verify(snapshotDetailsDao).removeDetail(SNAPSHOT_ID, SnapshotManager.KVM_FILE_BASED_NO_COPY_SNAPSHOT);
+        verify(strategy, never()).createSnapshotOnPrimary(any());
+        verify(strategy, never()).sendToHost(anyLong(), any());
+        verify(volumeInfo).stateTransit(Volume.Event.OperationFailed);
+    }
+
+    @Test
+    public void takeSnapshotOfRunningVmWithoutAnswerKeepsTheVolumeReserved() {
+        attachVolumeToVm();
+        mockSnapshotOnPrimary();
+        doReturn(null).when(strategy).sendToHost(anyLong(), any());
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.takeSnapshot(snapshotInfo));
+
+        verify(volumeVO, never()).setPath(any());
+        verify(volumeInfo, never()).stateTransit(Volume.Event.OperationFailed);
+        verify(volumeInfo, never()).stateTransit(Volume.Event.OperationSucceeded);
+        verify(snapshotDetailsDao).addDetail(eq(SNAPSHOT_ID), eq(KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH), any(),
+                eq(false));
+    }
+
+    @Test
+    public void takeSnapshotOfDetachedVolumeWithoutAnswerReleasesTheVolume() {
+        mockSnapshotOnPrimary();
+        doReturn(null).when(strategy).sendToHost(anyLong(), any());
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.takeSnapshot(snapshotInfo));
+
+        verify(volumeInfo).stateTransit(Volume.Event.OperationFailed);
+    }
+
+    @Test
+    public void deleteSendsTheMergeWithTheAgentMergeTimeoutAsWait() {
+        mockChain(SNAPSHOT_ID);
+        assertEquals(KvmFileBasedNoCopySnapshotStrategy.MERGE_COMMAND_WAIT_SECONDS, deleteAndCaptureMerge().getWait());
+    }
+
+    @Test
+    public void failedMergeMarksTheSnapshotAsNotRevertible() {
+        mockChain(SNAPSHOT_ID);
+        doReturn(new Answer(null, false, "blockcommit failed")).when(strategy).sendToHost(anyLong(), any());
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        verify(snapshotDetailsDao).addDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE, "true", false);
+        verify(volumeInfo).stateTransit(Volume.Event.OperationFailed);
+    }
+
+    @Test
+    public void mergeWithoutAnswerKeepsTheVolumeReserved() {
+        mockChain(SNAPSHOT_ID);
+        doReturn(null).when(strategy).sendToHost(anyLong(), any());
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        verify(snapshotDetailsDao).addDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE, "true", false);
+        verify(volumeInfo, never()).stateTransit(Volume.Event.OperationFailed);
+        verify(volumeVO, never()).setPath(any());
+    }
+
+    @Test
+    public void revertOfAPartiallyMergedSnapshotIsRefused() {
+        mockChain(SNAPSHOT_ID);
+        when(snapshotDetailsDao.findDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE))
+                .thenReturn(new SnapshotDetailsVO(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE, "true", false));
+
+        assertThrows(InvalidParameterValueException.class, () -> strategy.revertSnapshot(snapshotInfo));
+        verify(strategy, never()).sendToHost(anyLong(), any());
+    }
+
+    @Test
+    public void revertWithoutAnswerKeepsTheVolumeReserved() {
+        mockChain(SNAPSHOT_ID);
+        doReturn(null).when(strategy).sendToHost(anyLong(), any());
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.revertSnapshot(snapshotInfo));
+
+        verify(volumeInfo, never()).stateTransit(Volume.Event.OperationFailed);
+        verify(volumeVO, never()).setPath(any());
+    }
+
+    @Test
+    public void revertWhileTheVmIsStartingIsRefused() {
+        mockChain(SNAPSHOT_ID);
+        attachVolumeToVm();
+        when(vm.getState()).thenReturn(VirtualMachine.State.Starting);
+
+        assertThrows(InvalidParameterValueException.class, () -> strategy.revertSnapshot(snapshotInfo));
         verify(strategy, never()).sendToHost(anyLong(), any());
     }
 

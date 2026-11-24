@@ -44,6 +44,8 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -121,6 +123,8 @@ public class VolumeImportUnmanageManagerImplTest {
     private ResponseGenerator responseGenerator;
     @Mock
     private VolumeDao volumeDao;
+    @Mock
+    private SnapshotManager snapshotManager;
     @Mock
     private PrimaryDataStoreDao primaryDataStoreDao;
     @Mock
@@ -482,6 +486,18 @@ public class VolumeImportUnmanageManagerImplTest {
         }
 
         verify(driver).volumeManagementChanged(storagePoolVO, volumeVO, false);
+    }
+
+    @Test
+    public void testUnmanageVolumeWithKvmFileBasedNoCopySnapshotsIsRefused() {
+        when(volumeVO.getState()).thenReturn(Volume.State.Ready);
+        when(volumeVO.getInstanceId()).thenReturn(null);
+        Mockito.doThrow(new InvalidParameterValueException("has KVM file-based no-copy snapshots")).when(snapshotManager)
+                .validateVolumeHasNoKvmFileBasedNoCopySnapshots(volumeVO, "unmanage it");
+
+        Assert.assertThrows(InvalidParameterValueException.class, () -> volumeImportUnmanageManager.unmanageVolume(volumeId));
+
+        verify(volumeDao, Mockito.never()).update(Mockito.anyLong(), any());
     }
 
     @Test

@@ -1887,11 +1887,24 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
     }
 
+    /**
+     * A snapshot operation that is not serialized with the Instance (e.g. deleting or reverting a snapshot of a stopped Instance) may be replacing or merging the
+     * files of the volume: starting the Instance meanwhile would open files that are about to be removed.
+     */
+    protected void checkVolumeIsNotUnderSnapshotOperation(VolumeVO vol, String volToString) {
+        if (Volume.State.Snapshotting.equals(vol.getState()) || Volume.State.RevertSnapshotting.equals(vol.getState())) {
+            throw new CloudRuntimeException(String.format("Volume %s is in state %s: the Instance cannot be started until the snapshot operation on it finishes.",
+                    volToString, vol.getState()));
+        }
+    }
+
     private List<VolumeTask> getTasks(List<VolumeVO> vols, Map<Volume, StoragePool> destVols, VirtualMachineProfile vm) throws StorageUnavailableException {
         boolean recreate = RecreatableSystemVmEnabled.value();
         List<VolumeTask> tasks = new ArrayList<VolumeTask>();
         for (VolumeVO vol : vols) {
             String volToString = getReflectOnlySelectedFields(vol);
+
+            checkVolumeIsNotUnderSnapshotOperation(vol, volToString);
 
             StoragePoolVO assignedPool = null;
             if (destVols != null) {

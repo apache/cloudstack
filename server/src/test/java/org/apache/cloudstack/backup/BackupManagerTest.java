@@ -1475,6 +1475,38 @@ public class BackupManagerTest {
     }
 
     @Test
+    public void testUndoAssignmentWhenANoCopySnapshotAppearedConcurrently() {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(1L);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        BackupOfferingVO offering = mock(BackupOfferingVO.class);
+        when(offering.getId()).thenReturn(2L);
+        VolumeVO volume = mock(VolumeVO.class);
+        when(volumeDao.findByInstance(1L)).thenReturn(List.of(volume));
+        Mockito.doThrow(new InvalidParameterValueException("has KVM file-based no-copy snapshots")).when(snapshotManager)
+                .validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "assign its Instance to a backup offering");
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            org.junit.Assert.assertThrows(InvalidParameterValueException.class, () -> backupManager.undoAssignmentIfNoCopySnapshotsAppeared(vm, offering, backupProvider));
+        }
+
+        verify(backupProvider).removeVMFromBackupOffering(vm);
+        verify(vm).setBackupOfferingId(null);
+        verify(vmInstanceDao).update(1L, vm);
+    }
+
+    @Test
+    public void testAssignmentIsKeptWhenNoNoCopySnapshotAppeared() {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(1L);
+        when(volumeDao.findByInstance(1L)).thenReturn(List.of(mock(VolumeVO.class)));
+
+        backupManager.undoAssignmentIfNoCopySnapshotsAppeared(vm, mock(BackupOfferingVO.class), backupProvider);
+
+        verify(backupProvider, never()).removeVMFromBackupOffering(any());
+    }
+
+    @Test
     public void testRemoveVMFromBackupOffering() {
         Long vmId = 1L;
         Long accountId = 2L;

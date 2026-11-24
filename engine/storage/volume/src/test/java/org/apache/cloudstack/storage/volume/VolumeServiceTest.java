@@ -359,4 +359,19 @@ public class VolumeServiceTest extends TestCase{
         Mockito.when(diskOfferingDaoMock.findByIdIncludingRemoved(diskOfferingId)).thenReturn(diskOffering);
         Mockito.when(diskOfferingDaoMock.findById(diskOfferingId)).thenReturn(diskOffering);
     }
+
+    @Test
+    public void migrateVolumeIsRefusedWhenTheVolumeHasKvmFileBasedNoCopySnapshots() throws Exception {
+        VolumeInfo volume = Mockito.mock(VolumeInfo.class);
+        Mockito.when(volume.getId()).thenReturn(42L);
+        Mockito.when(volume.getUuid()).thenReturn("volume-uuid");
+        Mockito.when(snapshotManagerMock.volumeHasKvmFileBasedNoCopySnapshots(42L)).thenReturn(true);
+
+        org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult result = volumeServiceImplSpy.migrateVolume(volume,
+                Mockito.mock(org.apache.cloudstack.engine.subsystem.api.storage.DataStore.class)).get();
+
+        Assert.assertTrue(result.isFailed());
+        Assert.assertTrue(result.getResult().contains("no-copy snapshots"));
+        Mockito.verify(volume, Mockito.never()).processEvent(Mockito.any());
+    }
 }

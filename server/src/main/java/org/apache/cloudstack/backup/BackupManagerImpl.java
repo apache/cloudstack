@@ -717,7 +717,33 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Failed to get the backup provider for the zone, please contact the administrator");
         }
 
-        return transactionAssignVMToBackupOffering(vm, offering, backupProvider) != null;
+        VMInstanceVO assignedVm = transactionAssignVMToBackupOffering(vm, offering, backupProvider);
+        if (assignedVm == null) {
+            return false;
+        }
+        undoAssignmentIfNoCopySnapshotsAppeared(assignedVm, offering, backupProvider);
+        return true;
+    }
+
+    /**
+     * A KVM file-based no-copy snapshot take marks its snapshot before working on storage and then re-reads the backup offering of the Instance. Checking for
+     * such marks again once the assignment is committed means that at least one of two concurrent operations sees the other: when it is this one, the
+     * assignment is undone.
+     */
+    protected void undoAssignmentIfNoCopySnapshotsAppeared(VMInstanceVO vm, BackupOfferingVO offering, BackupProvider backupProvider) {
+        try {
+            validateVmVolumesHaveNoKvmFileBasedNoCopySnapshots(vm, "assign its Instance to a backup offering");
+        } catch (InvalidParameterValueException e) {
+            logger.warn("Undoing the assignment of Instance [{}] to backup offering [{}], as a KVM file-based no-copy snapshot was taken concurrently.", vm.getUuid(),
+                    offering.getUuid());
+            backupProvider.removeVMFromBackupOffering(vm);
+            vm.setBackupOfferingId(null);
+            vm.setBackupVolumes(null);
+            vm.setBackupExternalId(null);
+            vmInstanceDao.update(vm.getId(), vm);
+            publishBackupOfferingUsageRemoved(vm, offering.getId());
+            throw e;
+        }
     }
 
     private VMInstanceVO transactionAssignVMToBackupOffering(VMInstanceVO vm, BackupOfferingVO offering, BackupProvider backupProvider) {
@@ -1397,6 +1423,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     protected void validateBackupVolumes(BackupVO backup, VMInstanceVO vm, BackupOffering offering) {
+        // Every provider restores into the backing chains of the volumes, which their KVM file-based no-copy snapshots are part of.
+        List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
+        for (VolumeVO volume : vmVolumes) {
+            snapshotManager.validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "restore a backup onto it");
+        }
         BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         if (KBOSS_BACKUP_PROVIDER.equals(backupProvider.getName())) {
             return;
@@ -1404,10 +1435,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         // This is done to handle historic backups if any with Veeam / Networker plugins
         List<Backup.VolumeInfo> backupVolumes = CollectionUtils.isEmpty(backup.getBackedUpVolumes()) ?
                 vm.getBackupVolumeList() : backup.getBackedUpVolumes();
-        List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
-        for (VolumeVO volume : vmVolumes) {
-            snapshotManager.validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "restore a backup onto it");
-        }
         if (vmVolumes.size() != backupVolumes.size()) {
             throw new CloudRuntimeException("Unable to restore Instance with the current Backup as the Backup has different number of disks to the Instance");
         }
