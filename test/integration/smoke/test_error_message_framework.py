@@ -128,25 +128,33 @@ class TestErrorMessageFrameworkRuntimeOverride(cloudstackTestCase):
 
         self._backup_error_messages_file()
 
-        # fresh markers and its own override/restore cycle per test method, so a failure in
-        # one assertion can't hide whether the other would have passed
-        self.base_marker = "MARVIN_BASE_%s" % random_gen()
-        self.admin_marker = "MARVIN_ADMIN_%s" % random_gen()
-        data[self.TARGET_KEY] = "Custom base message [%s] for {{instance}} in state {{instanceState}}" % self.base_marker
-        # this key doesn't exist in the shipped file; adding it proves the whole admin-suffix
-        # mechanism, not just a content edit, is picked up live
-        data[self.ADMIN_KEY] = "Custom ADMIN-ONLY message [%s] for {{instance}} in state {{instanceState}}" % self.admin_marker
-        self._write_error_messages_file(json.dumps(data, indent=4))
+        # unittest does not call tearDown() when setUp() raises, so once the backup/override
+        # above have been written, anything that fails below must restore before re-raising -
+        # otherwise a partial SCP failure or a failed readback assertion leaves management
+        # servers serving the MARVIN overrides.
+        try:
+            # fresh markers and its own override/restore cycle per test method, so a failure in
+            # one assertion can't hide whether the other would have passed
+            self.base_marker = "MARVIN_BASE_%s" % random_gen()
+            self.admin_marker = "MARVIN_ADMIN_%s" % random_gen()
+            data[self.TARGET_KEY] = "Custom base message [%s] for {{instance}} in state {{instanceState}}" % self.base_marker
+            # this key doesn't exist in the shipped file; adding it proves the whole admin-suffix
+            # mechanism, not just a content edit, is picked up live
+            data[self.ADMIN_KEY] = "Custom ADMIN-ONLY message [%s] for {{instance}} in state {{instanceState}}" % self.admin_marker
+            self._write_error_messages_file(json.dumps(data, indent=4))
 
-        # diagnostic: tells a write/targeting bug apart from a reload bug if this ever fails
-        readback = self._read_error_messages_file()
-        self.assertIsNotNone(readback, "Could not read back %s right after writing it" % self.ERROR_MESSAGES_PATH)
-        self.assertIn(
-            self.base_marker, readback,
-            "The override was not present when reading %s back immediately after writing it" % self.ERROR_MESSAGES_PATH
-        )
+            # diagnostic: tells a write/targeting bug apart from a reload bug if this ever fails
+            readback = self._read_error_messages_file()
+            self.assertIsNotNone(readback, "Could not read back %s right after writing it" % self.ERROR_MESSAGES_PATH)
+            self.assertIn(
+                self.base_marker, readback,
+                "The override was not present when reading %s back immediately after writing it" % self.ERROR_MESSAGES_PATH
+            )
 
-        time.sleep(self.SETTLE_DELAY_SECONDS)
+            time.sleep(self.SETTLE_DELAY_SECONDS)
+        except Exception:
+            self._restore_error_messages_file_from_backup()
+            raise
 
     def tearDown(self):
         try:
