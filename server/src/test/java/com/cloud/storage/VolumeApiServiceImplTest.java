@@ -694,6 +694,24 @@ public class VolumeApiServiceImplTest {
         }
     }
 
+    // Negative test - a volume with KVM file-based no-copy snapshots cannot be attached to an Instance with a backup offering
+    @Test
+    public void attachVolumeWithKvmFileBasedNoCopySnapshotsToVmWithBackupOfferingIsRefused() {
+        UserVmVO kvmVmWithBackupOffering = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.KVM, 1L, false, false, 1L, 1L, 1, 1L, null, null, null, "vm");
+        kvmVmWithBackupOffering.setState(State.Running);
+        kvmVmWithBackupOffering.setDataCenterId(1L);
+        kvmVmWithBackupOffering.setBackupOfferingId(1L);
+        when(userVmDaoMock.findById(4L)).thenReturn(kvmVmWithBackupOffering);
+        Mockito.doThrow(new InvalidParameterValueException("has KVM file-based no-copy snapshots")).when(snapshotManagerMock)
+                .validateVolumeHasNoKvmFileBasedNoCopySnapshots(Mockito.any(), Mockito.eq("attach it to an Instance with a backup offering"));
+
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            InvalidParameterValueException e = Assert.assertThrows(InvalidParameterValueException.class,
+                    () -> volumeApiServiceImpl.attachVolumeToVM(4L, 10L, 1L, false, false));
+            Assert.assertEquals("has KVM file-based no-copy snapshots", e.getMessage());
+        }
+    }
+
     // volume not Ready
     @Test(expected = InvalidParameterValueException.class)
     public void testTakeSnapshotF1() throws ResourceAllocationException {

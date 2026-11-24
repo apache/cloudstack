@@ -3043,6 +3043,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         validateIfVmHasBackups(vm, true);
 
+        if (vm.getBackupOfferingId() != null) {
+            // Backups may add or replace files in the backing chains that KVM file-based no-copy snapshots are part of.
+            _snapshotMgr.validateVolumeHasNoKvmFileBasedNoCopySnapshots(_volsDao.findById(volumeToAttach.getId()), "attach it to an Instance with a backup offering");
+        }
+
         _accountMgr.checkAccess(caller, null, true, volumeToAttach, vm);
 
         StoragePoolVO volumeToAttachStoragePool = _storagePoolDao.findById(volumeToAttach.getPoolId());

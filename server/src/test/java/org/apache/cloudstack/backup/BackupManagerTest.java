@@ -121,6 +121,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -177,6 +178,8 @@ public class BackupManagerTest {
 
     @Mock
     VolumeDao volumeDao;
+    @Mock
+    SnapshotManager snapshotManager;
 
     @Mock
     VMInstanceDao vmInstanceDao;
@@ -1450,6 +1453,25 @@ public class BackupManagerTest {
             verify(backupOfferingDao, times(1)).findById(offeringId);
             verify(backupManager, times(1)).getBackupProvider("testbackupprovider");
         }
+    }
+
+    @Test
+    public void testAssignVMToBackupOfferingRefusedWhenAVolumeHasKvmFileBasedNoCopySnapshots() {
+        Long vmId = 1L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        overrideBackupFrameworkConfigValue();
+        when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+        when(vm.getDataCenterId()).thenReturn(1L);
+        when(vm.getBackupOfferingId()).thenReturn(null);
+        VolumeVO volume = mock(VolumeVO.class);
+        when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
+        Mockito.doThrow(new InvalidParameterValueException("has KVM file-based no-copy snapshots")).when(snapshotManager)
+                .validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "assign its Instance to a backup offering");
+
+        org.junit.Assert.assertThrows(InvalidParameterValueException.class, () -> backupManager.assignVMToBackupOffering(vmId, 2L));
+        verify(backupOfferingDao, never()).findById(Mockito.anyLong());
     }
 
     @Test

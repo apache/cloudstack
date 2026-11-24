@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -61,6 +63,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.CreateDiskOnlyVmSnapshotAnswer;
 import com.cloud.agent.api.storage.CreateDiskOnlyVmSnapshotCommand;
+import com.cloud.agent.api.storage.DeleteDiskOnlyVmSnapshotCommand;
 import com.cloud.agent.api.storage.MergeDiskOnlyVmSnapshotCommand;
 import com.cloud.agent.api.storage.RevertDiskOnlyVmSnapshotAnswer;
 import com.cloud.agent.api.storage.RevertDiskOnlyVmSnapshotCommand;
@@ -78,6 +81,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.SnapshotZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -111,6 +115,7 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
     private PrimaryDataStoreDao storagePoolDao;
     private SnapshotManager snapshotManager;
     private HostDetailsDao hostDetailsDao;
+    private EndPointSelector endPointSelector;
 
     private SnapshotInfo snapshotInfo;
     private SnapshotVO snapshotVO;
@@ -187,6 +192,7 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
         when(volumeInfo.getState()).thenReturn(Volume.State.Ready);
         when(volumeInfo.getTO()).thenReturn(volumeTO);
         when(volumeInfo.getInstanceId()).thenReturn(null);
+        when(volumeInfo.stateTransit(any())).thenReturn(true);
         when(snapshotInfo.getBaseVolume()).thenReturn(volumeInfo);
         when(volumeDataFactory.getVolume(VOLUME_ID)).thenReturn(volumeInfo);
 
@@ -202,6 +208,8 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
         doReturn(HOST_ID).when(strategy).getHostIdForOperation(any(), any());
         hostDetailsDao = mock(HostDetailsDao.class);
         strategy.hostDetailsDao = hostDetailsDao;
+        endPointSelector = mock(EndPointSelector.class);
+        strategy.endPointSelector = endPointSelector;
         when(hostDetailsDao.findDetail(HOST_ID, Host.HOST_KVM_DISK_ONLY_SNAPSHOT_SINGLE_VOLUME)).thenReturn(new DetailVO(HOST_ID,
                 Host.HOST_KVM_DISK_ONLY_SNAPSHOT_SINGLE_VOLUME, "true"));
     }
@@ -227,7 +235,9 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
      */
     private List<SnapshotVO> mockChain(long... ids) {
         List<SnapshotVO> chain = new ArrayList<>();
+        long sequence = 0;
         for (long id : ids) {
+            sequence++;
             SnapshotVO snapshot = id == SNAPSHOT_ID ? snapshotVO : mockSnapshotVO(id, Snapshot.State.BackedUp);
             when(snapshotManager.isKvmFileBasedNoCopySnapshot(id)).thenReturn(true);
 
@@ -240,7 +250,10 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
             SnapshotDataStoreVO storeRef = mock(SnapshotDataStoreVO.class);
             when(storeRef.getInstallPath()).thenReturn("frozen-" + id);
             when(storeRef.getPhysicalSize()).thenReturn(100L);
+            when(storeRef.getDataStoreId()).thenReturn(POOL_ID);
             when(snapshotStoreDao.findOneBySnapshotAndDatastoreRole(id, DataStoreRole.Primary)).thenReturn(storeRef);
+            when(snapshotDetailsDao.findDetail(id, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_SEQUENCE))
+                    .thenReturn(new SnapshotDetailsVO(id, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_SEQUENCE, String.valueOf(sequence), false));
             chain.add(snapshot);
         }
         when(snapshotDao.listByVolumeId(VOLUME_ID)).thenReturn(chain);
@@ -578,15 +591,50 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
         verify(volumeInfo).stateTransit(Volume.Event.OperationFailed);
     }
 
+    private Command deleteSnapshotOfGoneVolumeAndCaptureCommand() {
+        EndPoint endPoint = mock(EndPoint.class);
+        when(endPoint.getId()).thenReturn(HOST_ID);
+        when(endPointSelector.select(any(SnapshotInfo.class))).thenReturn(endPoint);
+        ArgumentCaptor<Command> commandCaptor = ArgumentCaptor.forClass(Command.class);
+        doReturn(new Answer(null, true, null)).when(strategy).sendToHost(eq(HOST_ID), commandCaptor.capture());
+
+        assertTrue(strategy.deleteSnapshot(SNAPSHOT_ID, null));
+        return commandCaptor.getValue();
+    }
+
     @Test
-    public void deleteSnapshotOfRemovedVolumeOnlyRemovesMetadata() {
+    public void deleteSnapshotOfRemovedVolumeDeletesItsFrozenFile() {
         mockChain(SNAPSHOT_ID);
         when(volumeVO.getRemoved()).thenReturn(new java.util.Date());
 
-        assertTrue(strategy.deleteSnapshot(SNAPSHOT_ID, null));
+        DeleteDiskOnlyVmSnapshotCommand command = (DeleteDiskOnlyVmSnapshotCommand) deleteSnapshotOfGoneVolumeAndCaptureCommand();
 
-        verify(strategy, never()).sendToHost(anyLong(), any());
+        assertEquals(1, command.getSnapshots().size());
+        assertEquals("frozen-" + SNAPSHOT_ID, command.getSnapshots().get(0).getPath());
+        verify(volumeInfo, never()).stateTransit(any());
         verify(snapshotVO).setState(Snapshot.State.Destroyed);
+    }
+
+    @Test
+    public void deleteSnapshotOfExpungedVolumeDeletesItsFrozenFile() {
+        mockChain(SNAPSHOT_ID);
+        when(volumeVO.getState()).thenReturn(Volume.State.Expunged);
+
+        assertTrue(deleteSnapshotOfGoneVolumeAndCaptureCommand() instanceof DeleteDiskOnlyVmSnapshotCommand);
+        verify(snapshotVO).setState(Snapshot.State.Destroyed);
+    }
+
+    @Test
+    public void deleteSnapshotOfExpungedVolumeKeepsMetadataWhenTheFileCannotBeDeleted() {
+        mockChain(SNAPSHOT_ID);
+        when(volumeVO.getRemoved()).thenReturn(new java.util.Date());
+        EndPoint endPoint = mock(EndPoint.class);
+        when(endPoint.getId()).thenReturn(HOST_ID);
+        when(endPointSelector.select(any(SnapshotInfo.class))).thenReturn(endPoint);
+        doReturn(new Answer(null, false, "permission denied")).when(strategy).sendToHost(anyLong(), any());
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.deleteSnapshot(SNAPSHOT_ID, null));
+        verify(snapshotVO, never()).setState(any());
     }
 
     @Test
@@ -605,11 +653,129 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
     }
 
     @Test
-    public void deleteSnapshotWhileVolumeIsBusyIsRefused() {
+    public void deleteSnapshotWhileVolumeIsInAnotherStateIsRefused() {
         mockChain(SNAPSHOT_ID);
         when(volumeInfo.getState()).thenReturn(Volume.State.Migrating);
+        when(volumeInfo.stateTransit(Volume.Event.SnapshotRequested)).thenThrow(new CloudRuntimeException("no transition"));
         assertThrows(InvalidParameterValueException.class, () -> strategy.deleteSnapshot(SNAPSHOT_ID, null));
         verify(strategy, never()).sendToHost(anyLong(), any());
+        verify(volumeInfo, never()).stateTransit(Volume.Event.OperationFailed);
+    }
+
+    // volume reservation races (stateTransit returns false when its optimistic update loses)
+
+    @Test
+    public void takeSnapshotIsAbortedWhenTheVolumeReservationLosesARace() {
+        when(volumeInfo.stateTransit(Volume.Event.SnapshotRequested)).thenReturn(false);
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.takeSnapshot(snapshotInfo));
+
+        verify(strategy, never()).createSnapshotOnPrimary(any());
+        verify(strategy, never()).sendToHost(anyLong(), any());
+        verify(volumeInfo, never()).stateTransit(Volume.Event.OperationFailed);
+        verify(snapshotDao).releaseFromLockTable(SNAPSHOT_ID);
+    }
+
+    @Test
+    public void revertSnapshotIsAbortedWhenTheVolumeReservationLosesARace() {
+        mockChain(SNAPSHOT_ID);
+        when(volumeInfo.stateTransit(Volume.Event.RevertSnapshotRequested)).thenReturn(false);
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.revertSnapshot(snapshotInfo));
+
+        verify(strategy, never()).sendToHost(anyLong(), any());
+        verify(volumeInfo, never()).stateTransit(Volume.Event.OperationFailed);
+    }
+
+    @Test
+    public void deleteSnapshotIsAbortedWhenTheVolumeReservationLosesARace() {
+        mockChain(SNAPSHOT_ID);
+        when(volumeInfo.stateTransit(Volume.Event.SnapshotRequested)).thenReturn(false);
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        verify(strategy, never()).sendToHost(anyLong(), any());
+        verify(volumeInfo, never()).stateTransit(Volume.Event.OperationFailed);
+    }
+
+    @Test
+    public void revertReadsTheChainOnlyAfterReservingTheVolume() {
+        mockChain(5L, SNAPSHOT_ID);
+        doReturn(new Answer(null, false, "failed")).when(strategy).sendToHost(anyLong(), any());
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.revertSnapshot(snapshotInfo));
+
+        org.mockito.InOrder inOrder = Mockito.inOrder(volumeInfo, snapshotDao);
+        inOrder.verify(volumeInfo).stateTransit(Volume.Event.RevertSnapshotRequested);
+        inOrder.verify(snapshotDao).listByVolumeId(VOLUME_ID);
+    }
+
+    @Test
+    public void deleteReadsTheChainOnlyAfterReservingTheVolume() {
+        mockChain(SNAPSHOT_ID);
+        doReturn(new Answer(null, false, "failed")).when(strategy).sendToHost(anyLong(), any());
+
+        assertThrows(CloudRuntimeException.class, () -> strategy.deleteSnapshot(SNAPSHOT_ID, null));
+
+        org.mockito.InOrder inOrder = Mockito.inOrder(volumeInfo, snapshotDao);
+        inOrder.verify(volumeInfo).stateTransit(Volume.Event.SnapshotRequested);
+        inOrder.verify(snapshotDao).listByVolumeId(VOLUME_ID);
+    }
+
+    // chain order follows the takes, not the snapshot ids
+
+    @Test
+    public void chainIsOrderedByTakeSequenceNotById() {
+        mockChain(SNAPSHOT_ID + 5, SNAPSHOT_ID);  // the snapshot with the higher id was taken first
+
+        List<SnapshotVO> chain = strategy.listNoCopySnapshotsOfVolume(VOLUME_ID);
+
+        assertEquals(SNAPSHOT_ID + 5, chain.get(0).getId());
+        assertEquals(SNAPSHOT_ID, chain.get(1).getId());
+    }
+
+    @Test
+    public void revertOfTheLatestTakeIsAllowedEvenWithALowerId() {
+        mockChain(SNAPSHOT_ID + 5, SNAPSHOT_ID);
+        RevertDiskOnlyVmSnapshotAnswer answer = mock(RevertDiskOnlyVmSnapshotAnswer.class);
+        VolumeObjectTO reverted = new VolumeObjectTO();
+        reverted.setPath("new-delta");
+        when(answer.getResult()).thenReturn(true);
+        when(answer.getVolumeObjectTos()).thenReturn(List.of(reverted));
+        doReturn(answer).when(strategy).sendToHost(anyLong(), any());
+
+        assertTrue(strategy.revertSnapshot(snapshotInfo));
+    }
+
+    @Test
+    public void revertOfAnOlderTakeIsRefusedEvenWithAHigherId() {
+        mockChain(SNAPSHOT_ID, SNAPSHOT_ID - 5);  // the snapshot with the lower id was taken last
+        assertThrows(InvalidParameterValueException.class, () -> strategy.revertSnapshot(snapshotInfo));
+        verify(strategy, never()).sendToHost(anyLong(), any());
+    }
+
+    @Test
+    public void deleteMergeTreeFollowsTheTakeSequence() {
+        mockChain(SNAPSHOT_ID, SNAPSHOT_ID - 5);  // taken: SNAPSHOT_ID first, then SNAPSHOT_ID - 5
+
+        DeltaMergeTreeTO tree = deleteAndCaptureMerge().getDeltaMergeTreeToList().get(0);
+
+        assertEquals("frozen-" + SNAPSHOT_ID, tree.getParent().getPath());
+        assertEquals("frozen-" + (SNAPSHOT_ID - 5), tree.getChild().getPath());
+    }
+
+    @Test
+    public void takeSnapshotRecordsTheNextChainSequence() {
+        mockChain(3L, 4L);
+        mockSnapshotOnPrimary();
+        CreateDiskOnlyVmSnapshotAnswer answer = mock(CreateDiskOnlyVmSnapshotAnswer.class);
+        when(answer.getResult()).thenReturn(true);
+        when(answer.getMapVolumeToSnapshotSize()).thenReturn(Map.of(VOLUME_UUID, 1L));
+        doReturn(answer).when(strategy).sendToHost(anyLong(), any());
+
+        strategy.takeSnapshot(snapshotInfo);
+
+        verify(snapshotDetailsDao).addDetail(SNAPSHOT_ID, KvmFileBasedNoCopySnapshotStrategy.KVM_FILE_BASED_NO_COPY_SNAPSHOT_SEQUENCE, "3", false);
     }
 
     @Test

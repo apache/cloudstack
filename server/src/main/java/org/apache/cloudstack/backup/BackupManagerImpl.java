@@ -151,6 +151,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -214,6 +215,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private DomainDao domainDao;
     @Inject
     private VolumeDao volumeDao;
+    @Inject
+    private SnapshotManager snapshotManager;
     @Inject
     private DataCenterDao dataCenterDao;
     @Inject
@@ -670,6 +673,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return new Gson().toJson(list.toArray(), Backup.VolumeInfo[].class);
     }
 
+    /**
+     * KVM file-based no-copy volume snapshots are part of the backing chains of the volumes: backups may add or replace files in those chains.
+     */
+    protected void validateVmVolumesHaveNoKvmFileBasedNoCopySnapshots(VMInstanceVO vm, String operation) {
+        for (VolumeVO volume : volumeDao.findByInstance(vm.getId())) {
+            snapshotManager.validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, operation);
+        }
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN, eventDescription = "assign Instance to Backup Offering", async = true)
     public boolean assignVMToBackupOffering(Long vmId, Long offeringId) {
@@ -686,6 +698,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm.getBackupOfferingId() != null) {
             throw new CloudRuntimeException("Instance already is assigned to a backup offering, please remove the Instance from its previous offering");
         }
+
+        validateVmVolumesHaveNoKvmFileBasedNoCopySnapshots(vm, "assign its Instance to a backup offering");
 
         final BackupOfferingVO offering = backupOfferingDao.findById(offeringId);
         if (offering == null) {
@@ -1391,6 +1405,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         List<Backup.VolumeInfo> backupVolumes = CollectionUtils.isEmpty(backup.getBackedUpVolumes()) ?
                 vm.getBackupVolumeList() : backup.getBackedUpVolumes();
         List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
+        for (VolumeVO volume : vmVolumes) {
+            snapshotManager.validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "restore a backup onto it");
+        }
         if (vmVolumes.size() != backupVolumes.size()) {
             throw new CloudRuntimeException("Unable to restore Instance with the current Backup as the Backup has different number of disks to the Instance");
         }
@@ -1657,6 +1674,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm.getRemoved() != null) {
             throw new CloudRuntimeException("Instance with ID " + backup.getVmId() + " couldn't be found.");
         }
+        validateVmVolumesHaveNoKvmFileBasedNoCopySnapshots(vm, "restore a backup onto it");
         if (!vm.getState().equals(VirtualMachine.State.Stopped)) {
             throw new CloudRuntimeException("The Instance should be in stopped state");
         }
