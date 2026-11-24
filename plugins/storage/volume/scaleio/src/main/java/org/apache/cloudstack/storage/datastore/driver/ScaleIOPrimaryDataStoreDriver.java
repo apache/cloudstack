@@ -29,12 +29,15 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -59,6 +62,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.manager.ScaleIOSDCManager;
 import org.apache.cloudstack.storage.datastore.manager.ScaleIOSDCManagerImpl;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
@@ -115,6 +119,12 @@ import com.google.common.base.Preconditions;
 public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     protected Logger logger = LogManager.getLogger(getClass());
 
+    /**
+     * Volume detail set by StorageSystemDataMotionStrategy when a volume is to be created from a snapshot on the same
+     * storage system (see {@link DataStoreCapabilities#CAN_CREATE_VOLUME_FROM_SNAPSHOT}); its value is the snapshot id.
+     */
+    static final String CLONE_OF_SNAPSHOT = "cloneOfSnapshot";
+
     @Inject
     EndPointSelector selector;
     @Inject
@@ -147,6 +157,10 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private VolumeService volumeService;
     @Inject
     private VolumeOrchestrationService volumeMgr;
+    @Inject
+    private DataStoreManager dataStoreMgr;
+    @Inject
+    private VolumeDataFactory volumeDataFactory;
     private ScaleIOSDCManager sdcManager;
 
     public ScaleIOPrimaryDataStoreDriver() {
@@ -511,6 +525,11 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         Preconditions.checkArgument(storagePoolId > 0, "storagePoolId should be > 0");
         Preconditions.checkArgument(storagePool != null && storagePool.getHostAddress() != null, "storagePool and host address should not be null");
 
+        final Long snapshotIdToCopy = getSnapshotIdToCreateVolumeFrom(volumeInfo);
+        if (snapshotIdToCopy != null && anyVolumeRequiresEncryption(volumeInfo)) {
+            throw new CloudRuntimeException(String.format("Creating an encrypted volume from a PowerFlex volume snapshot is not supported, volume: %s", volumeInfo));
+        }
+
         try {
             final ScaleIOGatewayClient client = getScaleIOClient(storagePool);
             final String scaleIOStoragePoolId = storagePool.getPath();
@@ -543,6 +562,10 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             usedBytes += volume.getSize();
             storagePool.setUsedBytes(usedBytes > capacityBytes ? capacityBytes : usedBytes);
             storagePoolDao.update(storagePoolId, storagePool);
+
+            if (snapshotIdToCopy != null) {
+                copySnapshotToNewVolume(snapshotIdToCopy, volume, storagePool, client);
+            }
 
             CreateObjectAnswer answer = new CreateObjectAnswer(createdObject.getTO());
 
@@ -582,6 +605,128 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             String errMsg = "Unable to create PowerFlex Volume due to " + e.getMessage();
             logger.warn(errMsg);
             throw new CloudRuntimeException(errMsg, e);
+        }
+    }
+
+    /**
+     * Returns the id of the snapshot whose data the new volume must contain, if the volume is being created from a
+     * volume snapshot (the "cloneOfSnapshot" contract of {@link DataStoreCapabilities#CAN_CREATE_VOLUME_FROM_SNAPSHOT}).
+     */
+    protected Long getSnapshotIdToCreateVolumeFrom(VolumeInfo volumeInfo) {
+        VolumeDetailVO detail = volumeDetailsDao.findDetail(volumeInfo.getId(), CLONE_OF_SNAPSHOT);
+        if (detail == null || StringUtils.isBlank(detail.getValue())) {
+            return null;
+        }
+        return Long.parseLong(detail.getValue());
+    }
+
+    /**
+     * Copies the data of a PowerFlex volume snapshot into a newly created PowerFlex volume, through a KVM host.
+     * <p>
+     * A PowerFlex snapshot belongs to the volume tree (VTree) of its source volume, and so would a snapshot of it. A
+     * volume created from a snapshot must be independent of that VTree (its own lifecycle, migration and VTree
+     * limits), so the data is copied: both are mapped to the host's SDC and the agent copies the snapshot block device
+     * to the new volume's block device. On failure the new PowerFlex volume is removed.
+     */
+    protected void copySnapshotToNewVolume(long snapshotId, VolumeVO newVolume, StoragePoolVO storagePool, ScaleIOGatewayClient client) {
+        SnapshotDataStoreVO snapshotStore = snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(snapshotId, DataStoreRole.Primary);
+        if (snapshotStore == null || StringUtils.isBlank(snapshotStore.getInstallPath())) {
+            throw new CloudRuntimeException(String.format("Unable to find the PowerFlex snapshot [id: %d] on primary storage", snapshotId));
+        }
+        if (snapshotStore.getDataStoreId() != storagePool.getId()) {
+            throw new CloudRuntimeException(String.format("The PowerFlex snapshot [id: %d] is on storage pool %d, the new volume %s is on storage pool %s;" +
+                    " creating a volume from a PowerFlex snapshot is supported on the same storage pool only", snapshotId, snapshotStore.getDataStoreId(), newVolume, storagePool));
+        }
+        SnapshotVO snapshot = snapshotDao.findById(snapshotId);
+        VolumeVO snapshotBaseVolume = snapshot != null ? volumeDao.findByIdIncludingRemoved(snapshot.getVolumeId()) : null;
+        Storage.ImageFormat format = snapshotBaseVolume != null && snapshotBaseVolume.getFormat() != null ? snapshotBaseVolume.getFormat() : Storage.ImageFormat.RAW;
+        final String snapshotPath = snapshotStore.getInstallPath();
+        final String newVolumePath = newVolume.getPath();
+
+        DataStore dataStore = dataStoreMgr.getDataStore(storagePool.getId(), DataStoreRole.Primary);
+        VolumeInfo newVolumeInfo = volumeDataFactory.getVolume(newVolume.getId(), dataStore);
+        EndPoint ep = selector.select(newVolumeInfo);
+        if (ep == null) {
+            deleteVolumeAfterFailedCopy(client, newVolume, storagePool);
+            throw new CloudRuntimeException(String.format("No host available to copy the PowerFlex snapshot [id: %d] to the volume %s", snapshotId, newVolume));
+        }
+        Host host = hostDao.findById(ep.getId());
+
+        logger.info("Copying PowerFlex snapshot [id: {}, path: {}] to the new volume {} [path: {}] on host {}", snapshotId, snapshotPath, newVolume, newVolumePath, host);
+        String errMsg = null;
+        try {
+            final String sdcId = prepareSdcOnHost(host, dataStore);
+            if (StringUtils.isBlank(sdcId)) {
+                alertHostSdcDisconnection(host);
+                throw new CloudRuntimeException("No SDC connected on the host " + host + " to copy the PowerFlex snapshot");
+            }
+            if (!client.mapVolumeToSdc(ScaleIOUtil.getVolumePath(snapshotPath), sdcId)) {
+                throw new CloudRuntimeException("Failed to map the PowerFlex snapshot volume " + snapshotPath + " to the SDC " + sdcId);
+            }
+            if (!client.mapVolumeToSdc(ScaleIOUtil.getVolumePath(newVolumePath), sdcId)) {
+                throw new CloudRuntimeException("Failed to map the PowerFlex volume " + newVolumePath + " to the SDC " + sdcId);
+            }
+
+            VolumeObjectTO srcTO = new VolumeObjectTO();
+            srcTO.setPath(snapshotPath);
+            srcTO.setUuid(snapshot != null ? snapshot.getUuid() : null);
+            srcTO.setName(snapshot != null ? snapshot.getName() : snapshotPath);
+            srcTO.setSize(snapshotStore.getSize() > 0 ? snapshotStore.getSize() : newVolume.getSize());
+            srcTO.setFormat(format);
+            srcTO.setDataStore(getPrimaryDataStoreTOForManagedVolume(storagePool, snapshotPath, srcTO.getName(), srcTO.getSize()));
+
+            VolumeObjectTO destTO = (VolumeObjectTO) newVolumeInfo.getTO();
+            destTO.setPath(newVolumePath);
+            destTO.setFormat(Storage.ImageFormat.RAW);
+            destTO.setDataStore(getPrimaryDataStoreTOForManagedVolume(storagePool, newVolumePath, newVolume.getName(), newVolume.getSize()));
+
+            int copyVolumeWait = NumbersUtil.parseInt(configDao.getValue(Config.CopyVolumeWait.key()), Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
+            CopyCommand cmd = new CopyCommand(srcTO, destTO, copyVolumeWait, VirtualMachineManager.ExecuteInSequence.value());
+            Answer answer = ep.sendMessage(cmd);
+            if (answer == null || !answer.getResult()) {
+                errMsg = answer != null ? answer.getDetails() : "no answer from host " + host;
+            }
+        } catch (Exception e) {
+            errMsg = e.getMessage();
+        } finally {
+            revokeVolumeAccess(snapshotPath, host, dataStore);
+            revokeVolumeAccess(newVolumePath, host, dataStore);
+        }
+
+        if (errMsg != null) {
+            deleteVolumeAfterFailedCopy(client, newVolume, storagePool);
+            throw new CloudRuntimeException(String.format("Failed to copy the PowerFlex snapshot [id: %d] to the volume %s: %s", snapshotId, newVolume, errMsg));
+        }
+        logger.info("Copied PowerFlex snapshot [id: {}] to the new volume {}", snapshotId, newVolume);
+    }
+
+    protected String prepareSdcOnHost(Host host, DataStore dataStore) {
+        sdcManager = ComponentContext.inject(sdcManager);
+        return sdcManager.prepareSDC(host, dataStore);
+    }
+
+    protected PrimaryDataStoreTO getPrimaryDataStoreTOForManagedVolume(StoragePoolVO storagePool, String volumePath, String volumeName, long volumeSize) {
+        PrimaryDataStore store = (PrimaryDataStore) dataStoreMgr.getDataStore(storagePool.getId(), DataStoreRole.Primary);
+        Map<String, String> details = new HashMap<>();
+        details.put(PrimaryDataStore.MANAGED, Boolean.TRUE.toString());
+        details.put(PrimaryDataStore.STORAGE_HOST, storagePool.getHostAddress());
+        details.put(PrimaryDataStore.STORAGE_PORT, String.valueOf(storagePool.getPort()));
+        details.put(PrimaryDataStore.MANAGED_STORE_TARGET, volumePath);
+        details.put(PrimaryDataStore.MANAGED_STORE_TARGET_ROOT_VOLUME, volumeName);
+        details.put(PrimaryDataStore.VOLUME_SIZE, String.valueOf(volumeSize));
+        details.put(StorageManager.STORAGE_POOL_DISK_WAIT.toString(), String.valueOf(StorageManager.STORAGE_POOL_DISK_WAIT.valueIn(storagePool.getId())));
+        store.setDetails(details);
+        return new PrimaryDataStoreTO(store);
+    }
+
+    private void deleteVolumeAfterFailedCopy(ScaleIOGatewayClient client, VolumeVO volume, StoragePoolVO storagePool) {
+        try {
+            client.deleteVolume(ScaleIOUtil.getVolumePath(volume.getPath()));
+            long usedBytes = storagePool.getUsedBytes() - volume.getSize();
+            storagePool.setUsedBytes(usedBytes < 0 ? 0 : usedBytes);
+            storagePoolDao.update(storagePool.getId(), storagePool);
+        } catch (Exception e) {
+            logger.warn("Failed to remove the PowerFlex volume {} after a failed copy from snapshot, remove it manually: {}", volume.getPath(), e.getMessage());
         }
     }
 
