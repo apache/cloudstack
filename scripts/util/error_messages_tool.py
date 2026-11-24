@@ -300,6 +300,27 @@ def parse_entries(text: str) -> list:
     return entries
 
 
+def _unparsed_lines(text: str) -> list:
+    """Return (lineno, content) for non-blank lines parse_entries() can't place.
+
+    parse_entries() only recognizes one "key": "value" entry per line; any
+    other non-blank line (e.g. a compact single-line object, or multiple
+    entries packed onto one line) is silently skipped. Since fix/sort rebuild
+    the file from parse_entries() output alone, such lines would otherwise be
+    dropped without warning instead of just reformatted.
+    """
+    unparsed = []
+    for lineno, line in enumerate(text.splitlines(), 1):
+        if not line.strip():
+            continue
+        if _OPEN_BRACE_RE.match(line) or _CLOSE_BRACE_RE.match(line):
+            continue
+        if _ENTRY_RE.match(line):
+            continue
+        unparsed.append((lineno, line))
+    return unparsed
+
+
 # ---------------------------------------------------------------------------
 # Structural error detection
 # ---------------------------------------------------------------------------
@@ -831,6 +852,17 @@ def cmd_fix(args: Args, sort: bool = False) -> int:
     Returns 0 on success.
     """
     text    = _load_text(args.file)
+
+    unparsed = _unparsed_lines(text)
+    if unparsed:
+        print(f"error: {len(unparsed)} line(s) are not in the recognized "
+              f"'\"key\": \"value\"' one-entry-per-line format; fix/sort would "
+              f"silently drop them. Refusing to write. Reformat these lines "
+              f"manually first:", file=sys.stderr)
+        for lineno, line in unparsed:
+            print(f"  Line {lineno}: {line!r}", file=sys.stderr)
+        return 1
+
     entries = parse_entries(text)
 
     entries, removed = _deduplicate(entries)
@@ -862,7 +894,8 @@ def cmd_fix(args: Args, sort: bool = False) -> int:
         print(new_text)
         return 0
 
-    if new_text == text:
+    same_file = args.output.resolve() == args.file.resolve()
+    if new_text == text and same_file:
         print("File already clean, nothing to write.")
         return 0
 
