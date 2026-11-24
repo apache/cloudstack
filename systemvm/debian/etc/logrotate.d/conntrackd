@@ -11,3 +11,14 @@
         fi
     endscript
 }
+
+# conntrackd keeps this file open (General { LogFile on }), so truncate it in place instead of restarting the daemon
+/var/log/conntrackd.log {
+    maxsize 10M
+    rotate 2
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+}
