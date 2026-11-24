@@ -944,7 +944,7 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
     }
 
     @Test
-    public void completingAnEarlierMiddleMergeDoesNotCountThePhysicalSizeTwice() {
+    public void completingAnEarlierMiddleMergeOnlyUpdatesTheMetadata() {
         mockChain(SNAPSHOT_ID, 11L);
         SnapshotDataStoreVO childStoreRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(11L, DataStoreRole.Primary);
         when(childStoreRef.getInstallPath()).thenReturn("frozen-" + SNAPSHOT_ID);
@@ -953,8 +953,10 @@ public class KvmFileBasedNoCopySnapshotStrategyTest {
         assertTrue(strategy.deleteSnapshot(SNAPSHOT_ID, null));
 
         verify(strategy, never()).sendToHost(anyLong(), any());
-        verify(childStoreRef, never()).setPhysicalSize(Mockito.anyLong());
+        // The size of the merged file was never added (the admin set the path): it is added now.
+        verify(childStoreRef).setPhysicalSize(200L);
         verify(childStoreRef).setInstallPath("frozen-" + SNAPSHOT_ID);
+        verify(snapshotVO).setState(Snapshot.State.Destroyed);
     }
 
     @Test

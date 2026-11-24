@@ -78,6 +78,9 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VMInstanceVO;
@@ -954,21 +957,24 @@ public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
      */
     protected void updateMetadataAfterMerge(SnapshotVO snapshotVO, SnapshotDataStoreVO snapshotStoreRef, SnapshotVO childSnapshot, VolumeVO volumeVO) {
         String mergedPath = snapshotStoreRef.getInstallPath();
-        if (childSnapshot == null) {
-            logger.debug("Volume [{}] is now on [{}].", volumeVO.getUuid(), mergedPath);
-            volumeVO.setPath(mergedPath);
-            volumeDao.update(volumeVO.getId(), volumeVO);
-        } else {
-            SnapshotDataStoreVO childStoreRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(childSnapshot.getId(), DataStoreRole.Primary);
-            logger.debug("Snapshot [{}] is now on [{}].", childSnapshot.getUuid(), mergedPath);
-            if (!mergedPath.equals(childStoreRef.getInstallPath())) {
-                // Not when completing an earlier merge whose child was already updated.
-                childStoreRef.setPhysicalSize(childStoreRef.getPhysicalSize() + snapshotStoreRef.getPhysicalSize());
+        // One transaction, so that a failure cannot leave the child updated while the snapshot remains (deleting it again would then count its size twice).
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                if (childSnapshot == null) {
+                    logger.debug("Volume [{}] is now on [{}].", volumeVO.getUuid(), mergedPath);
+                    volumeVO.setPath(mergedPath);
+                    volumeDao.update(volumeVO.getId(), volumeVO);
+                } else {
+                    SnapshotDataStoreVO childStoreRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(childSnapshot.getId(), DataStoreRole.Primary);
+                    logger.debug("Snapshot [{}] is now on [{}].", childSnapshot.getUuid(), mergedPath);
+                    childStoreRef.setInstallPath(mergedPath);
+                    childStoreRef.setPhysicalSize(childStoreRef.getPhysicalSize() + snapshotStoreRef.getPhysicalSize());
+                    snapshotStoreDao.update(childStoreRef.getId(), childStoreRef);
+                }
+                removeSnapshotMetadata(snapshotVO);
             }
-            childStoreRef.setInstallPath(mergedPath);
-            snapshotStoreDao.update(childStoreRef.getId(), childStoreRef);
-        }
-        removeSnapshotMetadata(snapshotVO);
+        });
     }
 
     protected void removeSnapshotMetadata(SnapshotVO snapshotVO) {
