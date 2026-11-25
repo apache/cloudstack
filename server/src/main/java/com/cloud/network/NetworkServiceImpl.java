@@ -148,9 +148,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
-import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -4466,7 +4464,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                     long vmId = nic.getInstanceId();
                                     VMInstanceVO vm = _vmDao.findById(vmId);
                                     if (vm == null) {
-                                        logger.error("Instance for NIC {} not found with Instance Id: {}", nic, vmId);
+                                        logger.error("Instance for NIC {} not found with Instance ID: {}", nic, vmId);
                                         continue;
                                     }
                                     long isDefault = (nic.isDefaultNic()) ? 1 : 0;

@@ -566,7 +566,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public static final ConfigKey<Long> DELETE_QUERY_BATCH_SIZE = new ConfigKey<>("Advanced", Long.class, "delete.query.batch.size", "0",
             "Indicates the limit applied while deleting entries in bulk. With this, the delete query will apply the limit as many times as necessary," +
                     " to delete all the entries. This is advised when retaining several days of records, which can lead to slowness. <= 0 means that no limit will " +
-                    "be applied. Default value is 0. For now, this is used for deletion of VM stats, volume stats, and usage records.", true);
+                    "be applied. Default value is 0. For now, this is used for deletion of VM stats, volume stats, events, and usage records.", true);
 
     private static final String IOPS_READ_RATE = "IOPS Read";
     private static final String IOPS_WRITE_RATE = "IOPS Write";
@@ -1195,7 +1195,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     encryptEventValueIfConfigIsEncrypted(config, value),
                     scope != null ? scope : ConfigKey.Scope.Global.name());
 
-            return _configDao.findByName(name);
+            ConfigurationVO updatedConfig = _configDao.findByName(name);
+            if (updatedConfig != null && scope != null) {
+                // The configuration table holds the global value. Report the value just set in the
+                // requested scope instead. This object is only used for the response; it is not persisted.
+                updatedConfig.setValue(updatedValue);
+            }
+            return updatedConfig;
         } else {
             throw new CloudRuntimeException("Unable to update configuration parameter " + name);
         }
@@ -9083,36 +9089,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Unable to find network offering " + networkOfferingId);
         }
         return networkOfferingDetailsDao.findZoneIds(networkOfferingId);
-    }
-
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_MARK_DEFAULT_ZONE, eventDescription = "Marking account with the " + "default zone", async = true)
-    public AccountVO markDefaultZone(final String accountName, final long domainId, final long defaultZoneId) {
-
-        // Check if the account exists
-        final Account account = _accountDao.findEnabledAccount(accountName, domainId);
-        if (account == null) {
-            DomainVO domain = _domainDao.findById(domainId);
-            String domainStr = domain == null ? String.valueOf(domainId) : domain.toString();
-            logger.error("Unable to find account by name: {} in domain {}", accountName, domainStr);
-            throw new InvalidParameterValueException(String.format("Account by name: %s doesn't exist in domain %s", accountName, domainStr));
-        }
-
-        // Don't allow modification of system account
-        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new InvalidParameterValueException("Can not modify system account");
-        }
-
-        final AccountVO acctForUpdate = _accountDao.findById(account.getId());
-
-        acctForUpdate.setDefaultZoneId(defaultZoneId);
-
-        if (_accountDao.update(account.getId(), acctForUpdate)) {
-            CallContext.current().setEventDetails("Default zone ID: " + defaultZoneId);
-            return _accountDao.findById(account.getId());
-        } else {
-            return null;
-        }
     }
 
     // Note: This method will be used for entity name validations in the coming

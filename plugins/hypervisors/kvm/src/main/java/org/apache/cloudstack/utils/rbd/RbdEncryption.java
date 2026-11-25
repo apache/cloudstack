@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.utils.rbd;
 
+import com.cloud.utils.RbdUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
@@ -67,7 +68,7 @@ public class RbdEncryption {
     }
 
     private static String monSpec(String monHost, int monPort) {
-        return monPort > 0 ? monHost + ":" + monPort : monHost;
+        return RbdUtils.getRbdMonitors(monHost, monPort);
     }
 
     /**
