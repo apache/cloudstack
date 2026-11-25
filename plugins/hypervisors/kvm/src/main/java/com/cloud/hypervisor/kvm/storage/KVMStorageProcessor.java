@@ -424,7 +424,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     StoragePoolType.Linstor,
                     StoragePoolType.FiberChannel,
                     StoragePoolType.CLVM,
-                    StoragePoolType.NVMeTCP).contains(primaryPool.getType())) {
+                    StoragePoolType.NVMeTCP,
+                        StoragePoolType.OntapiSCSI).contains(primaryPool.getType())) {
                     newTemplate.setFormat(ImageFormat.RAW);
                 } else {
                     newTemplate.setFormat(ImageFormat.QCOW2);
@@ -3523,7 +3524,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                 StoragePoolType.Linstor,
                 StoragePoolType.FiberChannel,
                 StoragePoolType.CLVM,
-                StoragePoolType.NVMeTCP).contains(poolType)) {
+                StoragePoolType.NVMeTCP,
+                StoragePoolType.OntapiSCSI).contains(poolType)) {
             return ImageFormat.RAW;
         } else {
             return ImageFormat.QCOW2;

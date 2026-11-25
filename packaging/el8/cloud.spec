@@ -129,6 +129,8 @@ Requires: (selinux-tools if selinux-tools)
 Requires: sysstat
 Requires: python3-libnbd
 Suggests: ceph-common
+Suggests: python3-rados
+Suggests: python3-rbd
 Requires: socat
 Requires: file
 Requires: openssl
