@@ -157,6 +157,7 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateLocation;
+import com.cloud.utils.RbdUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -423,7 +424,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     StoragePoolType.Linstor,
                     StoragePoolType.FiberChannel,
                     StoragePoolType.CLVM,
-                    StoragePoolType.NVMeTCP).contains(primaryPool.getType())) {
+                    StoragePoolType.NVMeTCP,
+                        StoragePoolType.OntapiSCSI).contains(primaryPool.getType())) {
                     newTemplate.setFormat(ImageFormat.RAW);
                 } else {
                     newTemplate.setFormat(ImageFormat.QCOW2);
@@ -2924,7 +2926,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     protected Rados radosConnect(final KVMStoragePool primaryPool) throws RadosException {
         Rados r = new Rados(primaryPool.getAuthUserName());
-        r.confSet(CEPH_MON_HOST, primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
+        r.confSet(CEPH_MON_HOST, RbdUtils.getRbdMonitors(primaryPool.getSourceHost(), primaryPool.getSourcePort()));
         r.confSet(CEPH_AUTH_KEY, primaryPool.getAuthSecret());
         r.confSet(CEPH_CLIENT_MOUNT_TIMEOUT, CEPH_DEFAULT_MOUNT_TIMEOUT);
         r.connect();
@@ -3141,7 +3143,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         try {
 
             r = new Rados(srcPool.getAuthUserName());
-            r.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
+            r.confSet("mon_host", RbdUtils.getRbdMonitors(srcPool.getSourceHost(), srcPool.getSourcePort()));
             r.confSet("key", srcPool.getAuthSecret());
             r.confSet("client_mount_timeout", "30");
             r.connect();
@@ -3537,7 +3539,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                 StoragePoolType.Linstor,
                 StoragePoolType.FiberChannel,
                 StoragePoolType.CLVM,
-                StoragePoolType.NVMeTCP).contains(poolType)) {
+                StoragePoolType.NVMeTCP,
+                StoragePoolType.OntapiSCSI).contains(poolType)) {
             return ImageFormat.RAW;
         } else {
             return ImageFormat.QCOW2;

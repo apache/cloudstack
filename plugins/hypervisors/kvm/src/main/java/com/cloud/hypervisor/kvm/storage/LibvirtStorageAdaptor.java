@@ -1595,7 +1595,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     logger.debug("Trying to perform a RBD clone (layering) since we are operating in the same storage pool");
 
                     Rados r = new Rados(srcPool.getAuthUserName());
-                    r.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
+                    r.confSet("mon_host", RbdUtils.getRbdMonitors(srcPool.getSourceHost(), srcPool.getSourcePort()));
                     r.confSet("key", srcPool.getAuthSecret());
                     r.confSet("client_mount_timeout", "30");
                     if (dataPool != null) {
@@ -1668,14 +1668,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     logger.debug("Both the source and destination are RBD, but not the same Ceph cluster. Performing a copy");
 
                     Rados rSrc = new Rados(srcPool.getAuthUserName());
-                    rSrc.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
+                    rSrc.confSet("mon_host", RbdUtils.getRbdMonitors(srcPool.getSourceHost(), srcPool.getSourcePort()));
                     rSrc.confSet("key", srcPool.getAuthSecret());
                     rSrc.confSet("client_mount_timeout", "30");
                     rSrc.connect();
                     logger.debug("Successfully connected to source Ceph cluster at " + rSrc.confGet("mon_host"));
 
                     Rados rDest = new Rados(destPool.getAuthUserName());
-                    rDest.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+                    rDest.confSet("mon_host", RbdUtils.getRbdMonitors(destPool.getSourceHost(), destPool.getSourcePort()));
                     rDest.confSet("key", destPool.getAuthSecret());
                     rDest.confSet("client_mount_timeout", "30");
                     if (dataPool != null) {
@@ -1742,7 +1742,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         long cloneSize;
         try {
             radosConnection = new Rados(destPool.getAuthUserName());
-            radosConnection.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+            radosConnection.confSet("mon_host", RbdUtils.getRbdMonitors(destPool.getSourceHost(), destPool.getSourcePort()));
             radosConnection.confSet("key", destPool.getAuthSecret());
             radosConnection.confSet("client_mount_timeout", "30");
             radosConnection.connect();
@@ -1833,7 +1833,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         IoCTX ioContext = null;
         try {
             radosConnection = new Rados(destPool.getAuthUserName());
-            radosConnection.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+            radosConnection.confSet("mon_host", RbdUtils.getRbdMonitors(destPool.getSourceHost(), destPool.getSourcePort()));
             radosConnection.confSet("key", destPool.getAuthSecret());
             radosConnection.confSet("client_mount_timeout", "30");
             radosConnection.connect();

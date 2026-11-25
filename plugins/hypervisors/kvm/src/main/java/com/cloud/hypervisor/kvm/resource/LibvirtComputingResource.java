@@ -26,6 +26,7 @@ import static com.cloud.host.Host.HOST_QEMU_RBD_SUPPORT;
 import static com.cloud.host.Host.HOST_QEMU_IMG_VERSION;
 import static com.cloud.host.Host.HOST_QEMU_IO_VERSION;
 import static com.cloud.host.Host.HOST_QEMU_NBD_VERSION;
+import static com.cloud.host.Host.HOST_RBD_CLI;
 import static com.cloud.host.Host.HOST_RBD_VOLUME_ENCRYPTION;
 import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
 import static com.cloud.host.Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT;
@@ -109,6 +110,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
+import org.apache.cloudstack.utils.rbd.RbdBackupGuestManager;
 import org.apache.cloudstack.utils.rbd.RbdEncryption;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
@@ -1441,6 +1443,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new CloudRuntimeException(e.getMessage());
         }
 
+        // A backup of an RBD volume which this agent was running when it went down may have left its guest frozen or paused.
+        new RbdBackupGuestManager().releaseAllGuests();
+
         // destroy default network, see https://libvirt.org/sources/java/javadoc/org/libvirt/Network.html
         try {
             Network network = conn.networkLookupByName("default");
@@ -1501,7 +1506,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final String[] info = NetUtils.getNetworkParams(privateNic);
 
-        kvmhaMonitor = new KVMHAMonitor(info[0]);
+        // the GUID of the host as the management server knows it, as in Agent.getResourceGuid()
+        final String hostGuid = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUID) + "-" + name;
+        kvmhaMonitor = new KVMHAMonitor(info[0], hostGuid);
         final Thread haMonitorThread = new Thread(kvmhaMonitor);
         haMonitorThread.start();
 
@@ -4498,6 +4505,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setIqn(getIqn());
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
         cmd.getHostDetails().put(HOST_RBD_VOLUME_ENCRYPTION, String.valueOf(hostSupportsRbdVolumeEncryption()));
+        cmd.getHostDetails().put(HOST_RBD_CLI, String.valueOf(hostHasRbdCli()));
         cmd.setHostTags(getHostTags());
         boolean instanceConversionSupported = hostSupportsInstanceConversion();
         cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
@@ -6305,6 +6313,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return false;
         }
         return true;
+    }
+
+    /**
+     * Whether the {@code rbd} command line tool, shipped by ceph-common, is installed. Libvirt and
+     * qemu reach RBD images through librbd, so a host works as an RBD primary storage client without
+     * it; only tooling that runs {@code rbd} itself, such as incremental RBD backups, needs it.
+     */
+    public boolean hostHasRbdCli() {
+        return new File(Script.getExecutableAbsolutePath("rbd")).isAbsolute();
     }
 
     /**
