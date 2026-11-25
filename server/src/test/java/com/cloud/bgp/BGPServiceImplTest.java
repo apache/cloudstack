@@ -176,13 +176,13 @@ public class BGPServiceImplTest {
         verify(vpcVirtualRouterElement).applyBgpPeers(eq(vpc), eq(null), any());
     }
 
-    // The minimum hold time is a dynamic global setting registered by this service.
+    // The minimum hold time is a dynamic account setting registered by this service.
     @Test
-    public void minHoldtimeIsDynamicGlobalSettingDefaulting3() {
+    public void minHoldtimeIsDynamicAccountSettingDefaulting3() {
         Assert.assertEquals("vpc.gateway.bgp.min.holdtime", BGPService.MinHoldtime.key());
         Assert.assertEquals("3", BGPService.MinHoldtime.defaultValue());
         Assert.assertTrue(BGPService.MinHoldtime.isDynamic());
-        Assert.assertEquals(Collections.singletonList(ConfigKey.Scope.Global), BGPService.MinHoldtime.getScopes());
+        Assert.assertEquals(Collections.singletonList(ConfigKey.Scope.Account), BGPService.MinHoldtime.getScopes());
         Assert.assertTrue(Arrays.asList(bGPServiceImplSpy.getConfigKeys()).contains(BGPService.MinHoldtime));
     }
 }

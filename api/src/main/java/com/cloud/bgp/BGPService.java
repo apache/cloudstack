@@ -35,7 +35,8 @@ public interface BGPService extends Configurable {
             "The lowest BGP hold time, in seconds, that a virtual router accepts. "
                     + "It applies to every BGP peer on the router. "
                     + "A session that negotiates a lower hold time, including 0, is refused.",
-            true);
+            true,
+            ConfigKey.Scope.Account);
 
     ASNumberRange createASNumberRange(long zoneId, long startASNumber, long endASNumber);
     List<ASNumberRange> listASNumberRanges(Long zoneId);

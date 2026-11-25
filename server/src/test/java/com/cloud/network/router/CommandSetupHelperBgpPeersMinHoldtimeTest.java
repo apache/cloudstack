@@ -61,6 +61,7 @@ public class CommandSetupHelperBgpPeersMinHoldtimeTest {
 
     private static final long ROUTER_ID = 14L;
     private static final long ZONE_ID = 1L;
+    private static final long ACCOUNT_ID = 2L;
     private static final long VPC_ID = 30L;
     private static final long TIER_ID = 31L;
     private static final long OFFERING_ID = 32L;
@@ -113,6 +114,7 @@ public class CommandSetupHelperBgpPeersMinHoldtimeTest {
 
         Mockito.lenient().when(router.getId()).thenReturn(ROUTER_ID);
         Mockito.lenient().when(router.getDataCenterId()).thenReturn(ZONE_ID);
+        Mockito.lenient().when(router.getAccountId()).thenReturn(ACCOUNT_ID);
         Mockito.lenient().when(router.getVpcId()).thenReturn(VPC_ID);
         Mockito.lenient().when(router.getInstanceName()).thenReturn("r-14-VM");
         Mockito.lenient().when(asNumber.getAsNumber()).thenReturn(64600L);
@@ -141,6 +143,11 @@ public class CommandSetupHelperBgpPeersMinHoldtimeTest {
                 ArgumentMatchers.nullable(Long.class))).thenReturn(value);
     }
 
+    private void settingIn(String key, ConfigKey.Scope scope, Long scopeId, String value) {
+        Mockito.lenient().when(configDepot.getConfigStringValue(ArgumentMatchers.eq(key), ArgumentMatchers.eq(scope),
+                scopeId == null ? ArgumentMatchers.isNull() : ArgumentMatchers.eq(scopeId))).thenReturn(value);
+    }
+
     private SetBgpPeersCommand sent() {
         Commands cmds = new Commands(Command.OnError.Stop);
         commandSetupHelper.createBgpPeersCommands(Collections.singletonList(operatorPeer), router, cmds, network);
@@ -161,5 +168,20 @@ public class CommandSetupHelperBgpPeersMinHoldtimeTest {
     public void operatorBgpCommandCarriesRaisedMinHoldtime() {
         setting(MIN_HOLDTIME, "9");
         Assert.assertEquals(Integer.valueOf(9), sent().getMinHoldtime());
+    }
+
+    // The value of the router's account is used when the account has one.
+    @Test
+    public void operatorBgpCommandUsesAccountMinHoldtime() {
+        settingIn(MIN_HOLDTIME, ConfigKey.Scope.Global, null, "5");
+        settingIn(MIN_HOLDTIME, ConfigKey.Scope.Account, ACCOUNT_ID, "9");
+        Assert.assertEquals(Integer.valueOf(9), sent().getMinHoldtime());
+    }
+
+    // An account without its own value uses the global value.
+    @Test
+    public void operatorBgpCommandFallsBackToGlobalMinHoldtime() {
+        settingIn(MIN_HOLDTIME, ConfigKey.Scope.Global, null, "5");
+        Assert.assertEquals(Integer.valueOf(5), sent().getMinHoldtime());
     }
 }
