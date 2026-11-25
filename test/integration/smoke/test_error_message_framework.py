@@ -22,6 +22,12 @@ regular user and the root admin see the correct variant (including the admin-onl
 suffix) on the very next API call. Handles multi-node clusters (via listManagementServers) and
 local developer runs (mgtSvrIp is localhost/127.0.0.1), mirroring
 test_extension_lifecycle.py's getManagementServerIps()/move_extension_path().
+
+Note for operators: the errormetadata an API response carries is scoped to whatever
+{{placeholders}} the *currently active* template text for that key references. Rewording a
+message at runtime to drop a placeholder also drops that field from errormetadata, even if the
+exception itself still carries it - keeping any external consumer of that metadata (a UI locale
+string, a script, etc.) in sync with a reworded message is the operator's responsibility.
 """
 
 from marvin.cloudstackTestCase import cloudstackTestCase

@@ -130,9 +130,14 @@ change, a file that only exists in the plugin's source tree will never reach a r
 }
 ```
 
-`errortextkey` and the shape of `errormetadata` are stable regardless of how `error-messages.json`
-is customized; `errortext` is only the currently-resolved template rendering and shouldn't be
-matched on by API clients that care about the specific error condition.
+`errortextkey` is stable regardless of how `error-messages.json` is customized. `errormetadata`'s
+keys are **not**: they're limited to whatever `{{placeholder}}` tokens the *currently active*
+template text for that key references, so if an operator reworks a message's wording and drops a
+placeholder, that field also disappears from `errormetadata` on the next response, even though
+the exception itself still carries it. `errortext` is only the currently-resolved template
+rendering and shouldn't be matched on by API clients that care about the specific error condition.
+Keep any external consumer of a key's `errormetadata` fields (a UI locale string, a script, ...)
+in sync with the server's current wording for that key.
 
 ## Localizing in the UI
 
@@ -155,6 +160,13 @@ Practically: to ship a UI-side translation for a specific error, add a key equal
 `errortextkey` (optionally suffixed `.admin` for a root-admin-specific variant) to the relevant
 locale file (e.g. `ui/public/locales/hi.json` for Hindi). No server-side change is needed.
 
+Because a UI locale entry is a separate, independently-versioned artifact from
+`error-messages.json`, it can drift out of sync with the server's current wording for that key:
+if an operator reworks the server-side message at runtime and drops a `{{placeholder}}`, that
+field also disappears from `errormetadata` (see above), so a UI locale string still referencing
+it will render the literal, unresolved `{{placeholder}}` token. Keeping locale files in sync with
+whatever wording is actually deployed is the operator's/translator's responsibility.
+
 ## Global settings
 
 Two `ConfigKey`s on `ApiServiceConfiguration` control metadata rendering, both non-dynamic
@@ -170,6 +182,10 @@ so making them dynamic would add avoidable config-depot load):
 - `api/src/test/java/org/apache/cloudstack/context/ResponseMessageResolverTest.java`: unit
   tests for resolution, placeholder substitution, admin/non-admin selection, metadata
   conversion, and the plugin-file merge/priority/collision/hot-reload behavior.
+- `framework/jobs/src/test/java/org/apache/cloudstack/framework/jobs/impl/JobSerializerHelperTest.java`:
+  verifies async-job (de)serialization normalizes a keyed exception's metadata to
+  `Serializable`-safe values before `ObjectOutputStream` sees it, including through the shared
+  metadata map that `new CloudRuntimeException(cause)` wrapping produces.
 - `test/integration/smoke/test_error_message_framework.py`: a Marvin integration test that
   edits `error-messages.json` on a live management server at runtime and verifies both a
   regular user and the root admin see the right variant, with no restart.

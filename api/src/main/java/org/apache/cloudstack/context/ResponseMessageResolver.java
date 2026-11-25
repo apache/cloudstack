@@ -119,6 +119,22 @@ public class ResponseMessageResolver {
         return getCombinedMetadataFromErrorTemplate(template, metadata, false);
     }
 
+    /**
+     * @param onlyForTemplateVariables when true (the client-facing {@link #updateExceptionResponse}
+     *                                 path), restricts the result to only the placeholders present
+     *                                 in *template* - i.e. whatever the currently active
+     *                                 error-messages.json text for this key happens to reference.
+     *                                 Because that file can be customized by an operator at runtime
+     *                                 (see error-messages.json.in / test_error_message_framework.py)
+     *                                 without a restart, rewording a message to drop a placeholder
+     *                                 also drops that field from the metadata sent to API clients,
+     *                                 even if the throw site explicitly attached it. This is
+     *                                 intentional: errormetadata is scoped to the server's current
+     *                                 wording, not to a fixed per-key contract. If an operator
+     *                                 reworks a message's wording, keeping any external consumer
+     *                                 (a UI locale string, a script parsing errormetadata, etc.)
+     *                                 in sync is the operator's own responsibility.
+     */
     protected static Map<String, Object> getCombinedMetadataFromErrorTemplate(String template,
                                                                               Map<String, Object> metadata,
                                                                               boolean onlyForTemplateVariables) {
@@ -448,6 +464,15 @@ public class ResponseMessageResolver {
         }
     }
 
+    /**
+     * Populates *response*'s errortextkey/errortext/errormetadata from *cre*.
+     *
+     * <p>errormetadata is scoped to the placeholders present in the currently active
+     * error-messages.json template for the key (see the {@code onlyForTemplateVariables}
+     * note on {@link #getCombinedMetadataFromErrorTemplate}) - an operator who customizes a
+     * message's wording at runtime is responsible for keeping any external consumer of that
+     * key's metadata (UI locale strings, scripts, etc.) in sync with the new wording.
+     */
     public static void updateExceptionResponse(ExceptionResponse response, CloudRuntimeException cre) {
         String key = cre.getMessageKey();
         Map<String, Object> map = cre.getMetadata();
