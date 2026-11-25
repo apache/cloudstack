@@ -78,8 +78,10 @@ class CsBgpPeers(CsDataBag):
             logging.info("%s not found, restarting frr" % FRR_RELOAD)
             self._restart_frr()
             return
+        # --stdout keeps frr-reload.py from writing its own log file, which records
+        # every applied line with peer passwords in clear text.
         # communicate() reads the output while waiting, so a long output cannot fill the pipe and block.
-        result = CsHelper.execute2("%s --reload %s" % (FRR_RELOAD, FRR_CONFIG), False)
+        result = CsHelper.execute2("%s --reload --stdout %s" % (FRR_RELOAD, FRR_CONFIG), False)
         # The output is not logged, since it can echo config lines with peer passwords.
         result.communicate()
         if result.returncode != 0:

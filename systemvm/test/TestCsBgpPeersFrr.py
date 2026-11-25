@@ -105,6 +105,17 @@ class TestCsBgpPeersFrrReload(OperatorFrrTestCase):
         self.assertTrue([c for c in self.shell.commands if c == "systemctl restart frr"], self.shell.commands)
         self.assertFalse([c for c in self.shell.commands if "frr-reload.py" in c], self.shell.commands)
 
+    def test_operator_frr_reload_logs_to_stdout(self):
+        # Without --stdout, frr-reload.py writes its own log file with peer passwords in it.
+        self.run_operator()
+        reloads = [c for c in self.shell.commands if "frr-reload.py" in c]
+        self.assertEqual(len(reloads), 1, self.shell.commands)
+        args = reloads[0].split()
+        self.assertEqual(args[0], bgppeers_module.FRR_RELOAD)
+        self.assertIn("--reload", args)
+        self.assertIn("--stdout", args)
+        self.assertEqual(args[-1], self.conf)
+
     def test_operator_reads_frr_reload_output_while_waiting(self):
         # A wait with unread output pipes blocks once frr-reload.py fills a pipe.
         self.run_operator()
