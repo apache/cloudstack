@@ -179,7 +179,7 @@ public class BGPServiceImplTest {
     // The minimum hold time is a dynamic account setting registered by this service.
     @Test
     public void minHoldtimeIsDynamicAccountSettingDefaulting3() {
-        Assert.assertEquals("vpc.gateway.bgp.min.holdtime", BGPService.MinHoldtime.key());
+        Assert.assertEquals("routed.bgp.min.holdtime", BGPService.MinHoldtime.key());
         Assert.assertEquals("3", BGPService.MinHoldtime.defaultValue());
         Assert.assertTrue(BGPService.MinHoldtime.isDynamic());
         Assert.assertEquals(Collections.singletonList(ConfigKey.Scope.Account), BGPService.MinHoldtime.getScopes());

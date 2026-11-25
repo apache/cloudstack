@@ -30,7 +30,7 @@ import java.util.List;
 public interface BGPService extends Configurable {
 
     ConfigKey<Integer> MinHoldtime = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Integer.class,
-            "vpc.gateway.bgp.min.holdtime",
+            "routed.bgp.min.holdtime",
             "3",
             "The lowest BGP hold time, in seconds, that a virtual router accepts. "
                     + "It applies to every BGP peer on the router. "
