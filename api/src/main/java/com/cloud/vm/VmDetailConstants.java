@@ -23,6 +23,7 @@ public interface VmDetailConstants {
     String ROOT_DISK_SIZE = "rootdisksize";
     String BOOT_MODE = "boot.mode";
     String NAME_ON_HYPERVISOR= "nameonhypervisor";
+    String CLUSTER_ID = "clusterid";
 
     // VMware specific
     String NIC_ADAPTER = "nicAdapter";
