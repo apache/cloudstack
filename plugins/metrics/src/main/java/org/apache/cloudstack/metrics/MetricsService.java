@@ -19,6 +19,7 @@ package org.apache.cloudstack.metrics;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.ListHostsUsageHistoryCmd;
 import org.apache.cloudstack.api.ListSystemVMsUsageHistoryCmd;
 import org.apache.cloudstack.api.ListVMsUsageHistoryCmd;
 import org.apache.cloudstack.api.ListVolumesUsageHistoryCmd;
@@ -34,6 +35,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
 import org.apache.cloudstack.response.DbMetricsResponse;
 import org.apache.cloudstack.response.HostMetricsResponse;
+import org.apache.cloudstack.response.HostMetricsStatsResponse;
 import org.apache.cloudstack.response.InfrastructureResponse;
 import org.apache.cloudstack.response.ManagementServerMetricsResponse;
 import org.apache.cloudstack.response.StoragePoolMetricsResponse;
@@ -58,6 +60,7 @@ public interface MetricsService extends PluggableService {
     ListResponse<VmMetricsStatsResponse> searchForVmMetricsStats(ListVMsUsageHistoryCmd cmd);
     ListResponse<VmMetricsStatsResponse> searchForSystemVmMetricsStats(ListSystemVMsUsageHistoryCmd cmd);
     ListResponse<VolumeMetricsStatsResponse> searchForVolumeMetricsStats(ListVolumesUsageHistoryCmd cmd);
+    ListResponse<HostMetricsStatsResponse> searchForHostMetricsStats(ListHostsUsageHistoryCmd cmd);
     List<VolumeMetricsResponse> listVolumeMetrics(List<VolumeResponse> volumeResponses);
     List<VmMetricsResponse> listVmMetrics(List<UserVmResponse> vmResponses);
     List<StoragePoolMetricsResponse> listStoragePoolMetrics(List<StoragePoolResponse> poolResponses);
