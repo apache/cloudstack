@@ -92,6 +92,7 @@ import com.cloud.agent.api.ModifyTargetsAnswer;
 import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.PreMigrationCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.VlanTrunkMigrationHelper;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
@@ -108,6 +109,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
@@ -145,6 +147,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Preconditions;
 import java.util.Arrays;
@@ -178,6 +181,10 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private ClusterDao clusterDao;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    private HostDetailsDao hostDetailsDao;
+    @Inject
+    private NicDao nicDao;
     @Inject
     protected PrimaryDataStoreDao _storagePoolDao;
     @Inject
@@ -617,8 +624,9 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         if (imageFormat != ImageFormat.VHD && imageFormat != ImageFormat.OVA && imageFormat != ImageFormat.QCOW2 &&
                 !(imageFormat == ImageFormat.RAW && (StoragePoolType.PowerFlex == poolType ||
                 StoragePoolType.FiberChannel == poolType ||
-                StoragePoolType.NVMeTCP == poolType))) {
-            throw new CloudRuntimeException(String.format("Only the following image types are currently supported: %s, %s, %s, %s (for PowerFlex, FiberChannel and NVMeTCP)",
+                StoragePoolType.NVMeTCP == poolType ||
+                        StoragePoolType.OntapiSCSI == poolType))) {
+            throw new CloudRuntimeException(String.format("Only the following image types are currently supported: %s, %s, %s, %s (for PowerFlex, FiberChannel, NVMeTCP and OntapiSCSI)",
                 ImageFormat.VHD.toString(), ImageFormat.OVA.toString(), ImageFormat.QCOW2.toString(), ImageFormat.RAW.toString()));
         }
     }
@@ -2194,6 +2202,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     .anyMatch(info -> ClvmPoolManager.isClvmPoolType(info.getSourcePoolType()));
             migrateCommand.setClvmCrossPoolMigration(hasClvmCrossPoolVolume);
 
+            VlanTrunkMigrationHelper.populateVlanTrunkMigrationDetails(migrateCommand, (PrepareForMigrationAnswer) pfma, hostDetailsDao, destHost.getId());
+
             Integer newVmCpuShares = ((PrepareForMigrationAnswer) pfma).getNewVmCpuShares();
             if (newVmCpuShares != null) {
                 logger.debug(String.format("Setting CPU shares to [%d] as part of migrate VM with volumes command for VM [%s].", newVmCpuShares, vmTO));
@@ -2224,6 +2234,10 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             }
 
             handlePostMigration(success, srcVolumeInfoToDestVolumeInfo, vmTO, srcHost, destHost);
+
+            if (success) {
+                VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, destHost.getId(), nicDao, hostDetailsDao, agentManager::send, logger);
+            }
 
             if (!success) {
                 if (migrateAnswer == null) {

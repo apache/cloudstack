@@ -79,6 +79,15 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class OntapPrimaryDatastoreDriverTest {
 
+    /**
+     * A real serial number taken from an ONTAP array, and the WWID NetApp derives from it as its
+     * OUI plus the serial's ASCII bytes in hex. The serial deliberately contains a '/', which is
+     * why volume paths carry the WWID: the raw serial would break the '/targetIQN/LUN' parsing that
+     * every hypervisor resource applies to the path.
+     */
+    private static final String LUN_SERIAL_NUMBER = "x0M-8?/kEsJT";
+    private static final String LUN_WWID = "600a098078304d2d383f2f6b45734a54";
+
     @Mock
     private StoragePoolDetailsDao storagePoolDetailsDao;
 
@@ -171,7 +180,7 @@ class OntapPrimaryDatastoreDriverTest {
 
         when(storagePoolDao.findById(1L)).thenReturn(storagePool);
         when(storagePool.getId()).thenReturn(1L);
-        when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.Iscsi);
+        when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.OntapiSCSI);
         when(storagePool.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
 
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
@@ -292,25 +301,17 @@ class OntapPrimaryDatastoreDriverTest {
         when(dataStore.getId()).thenReturn(1L);
         when(dataStore.getName()).thenReturn("ontap-pool");
         when(volumeInfo.getType()).thenReturn(VOLUME);
-        when(volumeInfo.getId()).thenReturn(100L);
         when(volumeInfo.getName()).thenReturn("test-volume");
 
         when(storagePoolDao.findById(1L)).thenReturn(storagePool);
-        when(storagePool.getId()).thenReturn(1L);
-        when(storagePool.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
-        when(volumeDao.findById(100L)).thenReturn(volumeVO);
 
-        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
-            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any())).thenReturn(sanStrategy);
+        driver.createAsync(dataStore, volumeInfo, createCallback);
 
-            driver.createAsync(dataStore, volumeInfo, createCallback);
-
-            ArgumentCaptor<CreateCmdResult> resultCaptor = ArgumentCaptor.forClass(CreateCmdResult.class);
-            verify(createCallback).complete(resultCaptor.capture());
-            assertFalse(resultCaptor.getValue().isSuccess());
-            assertTrue(resultCaptor.getValue().getResult().contains("No enum constant"));
-        }
+        ArgumentCaptor<CreateCmdResult> resultCaptor = ArgumentCaptor.forClass(CreateCmdResult.class);
+        verify(createCallback).complete(resultCaptor.capture());
+        assertFalse(resultCaptor.getValue().isSuccess());
+        assertTrue(resultCaptor.getValue().getResult().contains("Unsupported protocol [FC]"));
     }
 
     @Test
@@ -433,6 +434,7 @@ class OntapPrimaryDatastoreDriverTest {
 
             when(sanStrategy.getAccessGroup(any())).thenReturn(existingAccessGroup);
             when(sanStrategy.ensureLunMapped(anyString(), anyString(), anyString())).thenReturn("0");
+            when(sanStrategy.getLunSerialNumber(anyString(), anyString())).thenReturn(LUN_SERIAL_NUMBER);
 
             // Execute
             boolean result = driver.grantAccess(volumeInfo, host, dataStore);
@@ -485,6 +487,7 @@ class OntapPrimaryDatastoreDriverTest {
             when(sanStrategy.getAccessGroup(any())).thenReturn(null);
             when(sanStrategy.createAccessGroup(any())).thenReturn(createdAccessGroup);
             when(sanStrategy.ensureLunMapped(anyString(), anyString(), anyString())).thenReturn("0");
+            when(sanStrategy.getLunSerialNumber(anyString(), anyString())).thenReturn(LUN_SERIAL_NUMBER);
 
             // Execute
             boolean result = driver.grantAccess(volumeInfo, hostVO, dataStore);

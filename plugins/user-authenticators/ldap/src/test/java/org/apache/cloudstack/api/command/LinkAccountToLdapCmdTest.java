@@ -100,4 +100,12 @@ public class LinkAccountToLdapCmdTest implements LdapConfigurationChanger {
         assertEquals("accountId", String.valueOf(accountId), result.getAdminId());
         assertEquals("accountName", String.valueOf(accountName), result.getAccountName());
     }
+
+    @Test
+    public void getTypeDefaultsToGroup() throws Exception {
+        assertEquals("GROUP", linkAccountToLdapCmd.getType());
+
+        setHiddenField(linkAccountToLdapCmd, "type", "OU");
+        assertEquals("OU", linkAccountToLdapCmd.getType());
+    }
 }

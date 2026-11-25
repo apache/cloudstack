@@ -240,9 +240,12 @@ import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
+import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -467,6 +470,8 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     protected Logger logger = LogManager.getLogger(ApiResponseHelper.class);
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
 
+    @Inject
+    private FirewallRuleDetailsDao firewallRuleDetailsDao;
     @Inject
     private EntityManager _entityMgr;
     @Inject
@@ -1325,6 +1330,21 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         }
     }
 
+    private void setLbConnectionSettings(LoadBalancerResponse lbResponse, long lbRuleId) {
+        FirewallRuleDetailVO keepAlive = firewallRuleDetailsDao.findDetail(lbRuleId, LoadBalancer.KEEPALIVE);
+        if (keepAlive != null) {
+            lbResponse.setKeepAlive(Boolean.valueOf(keepAlive.getValue()));
+        }
+        FirewallRuleDetailVO idleTimeout = firewallRuleDetailsDao.findDetail(lbRuleId, LoadBalancer.IDLE_TIMEOUT);
+        if (idleTimeout != null) {
+            lbResponse.setIdleTimeout(NumberUtils.toLong(idleTimeout.getValue()));
+        }
+        FirewallRuleDetailVO keepAliveTimeout = firewallRuleDetailsDao.findDetail(lbRuleId, LoadBalancer.KEEPALIVE_TIMEOUT);
+        if (keepAliveTimeout != null) {
+            lbResponse.setKeepAliveTimeout(NumberUtils.toLong(keepAliveTimeout.getValue()));
+        }
+    }
+
     @Override
     public LoadBalancerResponse createLoadBalancerResponse(LoadBalancer loadBalancer) {
         LoadBalancerResponse lbResponse = new LoadBalancerResponse();
@@ -1333,6 +1353,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         lbResponse.setDescription(loadBalancer.getDescription());
         List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(loadBalancer.getId());
         lbResponse.setCidrList(StringUtils.join(cidrs, ","));
+        setLbConnectionSettings(lbResponse, loadBalancer.getId());
 
         IPAddressVO publicIp = ApiDBUtils.findIpAddressById(loadBalancer.getSourceIpAddressId());
         lbResponse.setPublicIpId(publicIp.getUuid());
@@ -4827,6 +4848,16 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
      */
     @Override
     public NicResponse createNicResponse(Nic result) {
+        return createNicResponse(result, null);
+    }
+
+    /**
+     * Same as {@link #createNicResponse(Nic)}, but when {@code networkId} is given (a {@code listNics?networkid=}
+     * query), the trunk nic's {@code associatednetworks} is narrowed to that one network instead of every
+     * network the nic trunks - callers that asked about one specific network shouldn't get every other one back.
+     */
+    @Override
+    public NicResponse createNicResponse(Nic result, Long networkId) {
         NicResponse response = new NicResponse();
         NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, result.getInstanceId());
@@ -4898,6 +4929,11 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
                 }
                 response.setSecondaryIps(ipList);
             }
+        }
+        /*trunked / associatednetworks - multi-VLAN trunk nic, if any*/
+        response.setTrunked(result.getMultiNetwork());
+        if (result.getMultiNetwork()) {
+            response.setAssociatedNetworks(ApiDBUtils.findAssociatedNetworkResponses(result.getId(), networkId));
         }
         /*18: extra dhcp options */
         List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = nicExtraDhcpOptionVOs

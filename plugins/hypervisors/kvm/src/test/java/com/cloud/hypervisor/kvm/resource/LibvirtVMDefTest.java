@@ -142,6 +142,68 @@ public class LibvirtVMDefTest extends TestCase {
     }
 
     @Test
+    public void testInterfaceLegacySingleVlanTag() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defBridgeNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        ifDef.setVlanTag(123);
+
+        String expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='targetDeviceName'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<vlan trunk='no'>\n<tag id='123'/>\n</vlan>"
+                        + "<link state='up'/>\n"
+                        + "</interface>\n";
+
+        assertEquals(expected, ifDef.toString());
+        assertFalse(ifDef.isVlanTrunk());
+    }
+
+    @Test
+    public void testInterfaceTrunkVlanTags() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defBridgeNet("cloudbr1", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        ifDef.setTrunkVlanTags(Arrays.asList(100, 200, 300), 100);
+
+        String expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='cloudbr1'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<vlan trunk='yes'>\n<tag id='100' nativeMode='untagged'/>\n<tag id='200'/>\n<tag id='300'/>\n</vlan>"
+                        + "<link state='up'/>\n"
+                        + "</interface>\n";
+
+        assertEquals(expected, ifDef.toString());
+        assertTrue(ifDef.isVlanTrunk());
+        assertEquals(Arrays.asList(100, 200, 300), ifDef.getTrunkVlanTags());
+        assertEquals(Integer.valueOf(100), ifDef.getNativeVlanTag());
+    }
+
+    @Test
+    public void testInterfaceTrunkVlanTagsWithoutNativeVlan() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defBridgeNet("cloudbr1", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        ifDef.setTrunkVlanTags(Arrays.asList(100, 200, 300), null);
+
+        String content = ifDef.toString();
+        assertFalse(content.contains("nativeMode"));
+    }
+
+    @Test
+    public void testInterfaceTrunkVlanTagsTakesPrecedenceOverLegacyVlanTag() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defBridgeNet("cloudbr1", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        ifDef.setVlanTag(50);
+        ifDef.setTrunkVlanTags(Arrays.asList(50, 60), 50);
+
+        String content = ifDef.toString();
+        assertTrue(content.contains("<vlan trunk='yes'>"));
+        assertFalse(content.contains("trunk='no'"));
+    }
+
+    @Test
     public void testInterfaceWithMultiQueueAndPacked() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
         ifDef.defBridgeNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
@@ -212,6 +274,37 @@ public class LibvirtVMDefTest extends TestCase {
         String expected3 = "<cpu mode='host-passthrough'></cpu>";
         assertEquals(expected3, cpuModeDef.toString());
 
+    }
+
+    @Test
+    public void testCpuModeDefIgnoresInvalidModelName() {
+        LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
+        cpuModeDef.setMode("custom");
+        cpuModeDef.setModel("Nehalem</model></cpu><devices><disk type='file'/></devices><cpu><model>x");
+
+        assertEquals("<cpu></cpu>", cpuModeDef.toString());
+        assertTrue(LibvirtVMDef.CpuModeDef.isValidModelName("EPYC-Rome-v2"));
+        assertTrue(LibvirtVMDef.CpuModeDef.isValidModelName("x86-64-v2"));
+        assertTrue(LibvirtVMDef.CpuModeDef.isValidModelName("Skylake-Client-noTSX-IBRS"));
+        assertFalse(LibvirtVMDef.CpuModeDef.isValidModelName(""));
+        assertFalse(LibvirtVMDef.CpuModeDef.isValidModelName("-Nehalem"));
+        assertFalse(LibvirtVMDef.CpuModeDef.isValidModelName("Nehalem Broadwell"));
+        assertFalse(LibvirtVMDef.CpuModeDef.isValidModelName("Nehalem<"));
+    }
+
+    @Test
+    public void testVideoDefOnlyEmitsKnownModels() {
+        assertEquals(LibvirtVMDef.VideoDef.VideoModel.VIRTIO, LibvirtVMDef.VideoDef.VideoModel.fromString("VirtIO"));
+        assertEquals(LibvirtVMDef.VideoDef.VideoModel.QXL, LibvirtVMDef.VideoDef.VideoModel.fromString(" qxl "));
+        assertNull(LibvirtVMDef.VideoDef.VideoModel.fromString(null));
+        assertNull(LibvirtVMDef.VideoDef.VideoModel.fromString(""));
+        assertNull(LibvirtVMDef.VideoDef.VideoModel.fromString("virtio'/></video><disk type='file'/><video><model type='virtio"));
+
+        assertEquals("", new LibvirtVMDef.VideoDef(null, 65536).toString());
+        assertEquals("<video>\n<model type='virtio' vram='65536'/>\n</video>\n",
+                new LibvirtVMDef.VideoDef(LibvirtVMDef.VideoDef.VideoModel.VIRTIO, 65536).toString());
+        assertEquals("<video>\n<model type='vga'/>\n</video>\n",
+                new LibvirtVMDef.VideoDef(LibvirtVMDef.VideoDef.VideoModel.VGA, 0).toString());
     }
 
     @Test

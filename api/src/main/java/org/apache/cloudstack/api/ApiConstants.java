@@ -335,6 +335,8 @@ public class ApiConstants {
     public static final String MOVE_ACL_CONSISTENCY_HASH = "aclconsistencyhash";
     public static final String IMAGE_PATH = "imagepath";
     public static final String INSTANCE_CONVERSION_SUPPORTED = "instanceconversionsupported";
+    public static final String VLAN_FILTERING_ENABLED = "vlanfilteringenabled";
+    public static final String VLAN_TRUNK_XML_SUPPORTED = "vlantrunkxmlsupported";
     public static final String INTERNAL_DNS1 = "internaldns1";
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERNET_PROTOCOL = "internetprotocol";
@@ -375,6 +377,7 @@ public class ApiConstants {
     public static final String IS_ISO = "isiso";
     public static final String IS_PORTABLE = "isportable";
     public static final String IS_PUBLIC = "ispublic";
+    public static final String IDLE_TIMEOUT = "idletimeout";
     public static final String IS_PERSISTENT = "ispersistent";
     public static final String EGRESS_DEFAULT_POLICY = "egressdefaultpolicy";
     public static final String IS_READY = "isready";
@@ -386,6 +389,8 @@ public class ApiConstants {
     public static final String JAVA_VERSION = "javaversion";
     public static final String JOB_ID = "jobid";
     public static final String JOB_STATUS = "jobstatus";
+    public static final String KEEPALIVE = "keepalive";
+    public static final String KEEPALIVE_TIMEOUT = "keepalivetimeout";
     public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
     public static final String KERNEL_VERSION = "kernelversion";
     public static final String KEYPAIR_ID = "keypairid";
@@ -438,6 +443,7 @@ public class ApiConstants {
     public static final String NIC = "nic";
     public static final String NICS = "nics";
     public static final String NIC_NETWORK_LIST = "nicnetworklist";
+    public static final String NIC_NETWORKS_LIST = "nicnetworkslist";
     public static final String NIC_IP_ADDRESS_LIST = "nicipaddresslist";
     public static final String NIC_MULTIQUEUE_NUMBER = "nicmultiqueuenumber";
     public static final String NIC_PACKED_VIRTQUEUES_ENABLED = "nicpackedvirtqueuesenabled";
@@ -906,6 +912,8 @@ public class ApiConstants {
     public static final String ASSOCIATED_NETWORK = "associatednetwork";
     public static final String ASSOCIATED_NETWORK_ID = "associatednetworkid";
     public static final String ASSOCIATED_NETWORK_NAME = "associatednetworkname";
+    public static final String ASSOCIATED_NETWORKS = "associatednetworks";
+    public static final String TRUNKED = "trunked";
     public static final String ASSOCIATED_VPC_ID = "associatedvpcid";
     public static final String ASSOCIATED_VPC_NAME = "associatedvpcname";
     public static final String SOURCE_NAT_SUPPORTED = "sourcenatsupported";
@@ -950,7 +958,6 @@ public class ApiConstants {
     public static final String HA_HOST = "hahost";
     public static final String CUSTOM_DISK_OFF_MIN_SIZE = "customdiskofferingminsize";
     public static final String CUSTOM_DISK_OFF_MAX_SIZE = "customdiskofferingmaxsize";
-    public static final String DEFAULT_ZONE_ID = "defaultzoneid";
     public static final String LIVE_MIGRATE = "livemigrate";
     public static final String MIGRATE_ALLOWED = "migrateallowed";
     public static final String MIGRATE_TO = "migrateto";
@@ -1248,6 +1255,7 @@ public class ApiConstants {
     public static final String OVM3_POOL = "ovm3pool";
     public static final String OVM3_CLUSTER = "ovm3cluster";
     public static final String OVM3_VIP = "ovm3vip";
+    public static final String CLEAN_UP_CONNECTION_SETTINGS = "cleanupconnectionsettings";
     public static final String CLEAN_UP_DETAILS = "cleanupdetails";
     public static final String CLEAN_UP_EXTERNAL_DETAILS = "cleanupexternaldetails";
     public static final String CLEAN_UP_EXTRA_CONFIG = "cleanupextraconfig";
@@ -1533,6 +1541,7 @@ public class ApiConstants {
     public static final String SCHEDULED = "scheduled";
     public static final String SCHEDULED_DATE = "scheduleddate";
     public static final String BACKUP_PROVIDER = "backupprovider";
+    public static final String COMPRESS_ASYNC = "compressasync";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

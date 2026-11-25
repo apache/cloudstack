@@ -48,6 +48,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.User;
 import com.cloud.utils.DomainHelper;
@@ -61,6 +62,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
+import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
@@ -1409,5 +1411,55 @@ public class ConfigurationManagerImplTest {
         Map<Network.Service, Set<Network.Provider>> mapWithEmptySet = new HashMap<>();
         mapWithEmptySet.put(Network.Service.Firewall, Collections.emptySet());
         Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, mapWithEmptySet));
+    }
+
+    private Configuration updateConfigurationWithMocks(ConfigurationVO cfg, String value, Long clusterId) {
+        String name = cfg.getName();
+        String category = cfg.getCategory();
+        Mockito.when(configDao.findByName(name)).thenReturn(cfg);
+
+        UpdateCfgCmd cmd = Mockito.mock(UpdateCfgCmd.class);
+        Mockito.when(cmd.getCfgName()).thenReturn(name);
+        Mockito.when(cmd.getValue()).thenReturn(value);
+        Mockito.when(cmd.getZoneId()).thenReturn(null);
+        Mockito.when(cmd.getClusterId()).thenReturn(clusterId);
+        Mockito.when(cmd.getStoragePoolId()).thenReturn(null);
+        Mockito.when(cmd.getImageStoreId()).thenReturn(null);
+        Mockito.when(cmd.getManagementServerId()).thenReturn(null);
+        Mockito.when(cmd.getAccountId()).thenReturn(null);
+        Mockito.when(cmd.getDomainId()).thenReturn(null);
+
+        AccountManager accountManager = Mockito.mock(AccountManager.class);
+        ReflectionTestUtils.setField(configurationManagerImplSpy, "_accountMgr", accountManager);
+        Mockito.doNothing().when(configurationManagerImplSpy).validateIpAddressRelatedConfigValues(name, value);
+        Mockito.doNothing().when(configurationManagerImplSpy).validateConflictingConfigValue(name, value);
+        ConfigKey.Scope scope = clusterId == null ? null : ConfigKey.Scope.Cluster;
+        Mockito.doReturn(value).when(configurationManagerImplSpy).updateConfiguration(anyLong(), Mockito.eq(name),
+                Mockito.eq(category), Mockito.eq(value), Mockito.eq(scope), Mockito.eq(clusterId));
+
+        CallContext callContext = Mockito.mock(CallContext.class);
+        Mockito.when(callContext.getCallingUserId()).thenReturn(User.UID_ADMIN);
+        Mockito.when(callContext.getCallingAccount()).thenReturn(accountMock);
+        try (MockedStatic<CallContext> callContextMock = Mockito.mockStatic(CallContext.class)) {
+            callContextMock.when(CallContext::current).thenReturn(callContext);
+            return configurationManagerImplSpy.updateConfiguration(cmd);
+        }
+    }
+
+    @Test
+    public void updateConfigurationWithScopeReturnsValueSetInScope() {
+        ConfigurationVO cfg = new ConfigurationVO("Advanced", "DEFAULT", "test", "drs.algorithm", "balanced", "description");
+        Configuration result = updateConfigurationWithMocks(cfg, "condensed", 1L);
+        Assert.assertEquals("drs.algorithm", result.getName());
+        Assert.assertEquals("condensed", result.getValue());
+    }
+
+    @Test
+    public void updateConfigurationWithoutScopeReturnsConfigurationRowUnchanged() {
+        ConfigurationVO cfg = Mockito.spy(new ConfigurationVO("Advanced", "DEFAULT", "test", "drs.algorithm", "condensed", "description"));
+        Configuration result = updateConfigurationWithMocks(cfg, "condensed", null);
+        Assert.assertSame(cfg, result);
+        Assert.assertEquals("condensed", result.getValue());
+        Mockito.verify(cfg, Mockito.never()).setValue(Mockito.anyString());
     }
 }

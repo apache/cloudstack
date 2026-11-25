@@ -117,6 +117,10 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "Max IOPS of the disk volume")
     private Long maxIops;
 
+    @SerializedName("iscustomizediops")
+    @Param(description = "True if the volume's disk offering uses custom IOPS, false otherwise")
+    private Boolean customizedIops;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "The date the disk volume was created")
     private Date created;
@@ -408,6 +412,10 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     public void setMaxIops(Long maxIops) {
         this.maxIops = maxIops;
+    }
+
+    public void setCustomizedIops(Boolean customizedIops) {
+        this.customizedIops = customizedIops;
     }
 
     public void setCreated(Date created) {
@@ -710,6 +718,14 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     public Long getMaxIops() {
         return maxIops;
+    }
+
+    public Boolean isCustomizedIops() {
+        return customizedIops;
+    }
+
+    public Boolean getCustomizedIops() {
+        return customizedIops;
     }
 
     public Date getCreated() {
