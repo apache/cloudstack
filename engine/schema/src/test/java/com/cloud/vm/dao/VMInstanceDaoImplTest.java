@@ -211,10 +211,12 @@ public class VMInstanceDaoImplTest {
     }
 
     /*
-     * Mirrors testUpdatePowerStateNoChangeMaxUpdatesInvalidStateVmStopped but with a null
-     * hostId (the default from setUp), which is what happens when the row was loaded through
-     * a partial-select projection that doesn't include hostId. isPowerStateInSyncWithInstanceState
-     * must not NPE on the null hostId, and must still detect the state is out-of-sync.
+     * Mirrors testUpdatePowerStateNoChangeMaxUpdatesInvalidStateVmStopped but with
+     * vm.getHostId() returning null (the default from setUp), which is what happens when the
+     * row was loaded through a partial-select projection that doesn't include the host_id column.
+     * The hostId argument passed to updatePowerState and vm.getPowerHostId() are both non-null.
+     * isPowerStateInSyncWithInstanceState must not NPE on the null vm.getHostId(), and must
+     * still detect the state is out-of-sync.
      */
     @Test
     public void testUpdatePowerStateNoChangeMaxUpdatesInvalidStateVmStoppedNullHostId() {

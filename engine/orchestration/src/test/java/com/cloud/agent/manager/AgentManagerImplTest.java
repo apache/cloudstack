@@ -182,11 +182,11 @@ public class AgentManagerImplTest {
     @Test
     public void testHandleCommandsListenerExceptionDoesNotAbortLoop() throws Exception {
         Listener throwingListener = Mockito.mock(Listener.class);
-        Mockito.when(throwingListener.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any()))
+        Mockito.when(throwingListener.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Command[].class)))
                 .thenThrow(new RuntimeException("simulated NPE from power-state sync"));
 
         Listener goodListener = Mockito.mock(Listener.class);
-        Mockito.when(goodListener.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any()))
+        Mockito.when(goodListener.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Command[].class)))
                 .thenReturn(true);
 
         mgr._cmdMonitors = new ArrayList<>();
@@ -206,11 +206,11 @@ public class AgentManagerImplTest {
     @Test
     public void testHandleCommandsAllListenersSucceed() throws Exception {
         Listener listenerA = Mockito.mock(Listener.class);
-        Mockito.when(listenerA.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any()))
+        Mockito.when(listenerA.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Command[].class)))
                 .thenReturn(true);
 
         Listener listenerB = Mockito.mock(Listener.class);
-        Mockito.when(listenerB.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any()))
+        Mockito.when(listenerB.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Command[].class)))
                 .thenReturn(false);
 
         mgr._cmdMonitors = new ArrayList<>();
@@ -234,11 +234,11 @@ public class AgentManagerImplTest {
     @Test
     public void testHandleCommandsThrowingListenerDoesNotStarveDownstreamListener() throws Exception {
         Listener powerStateSyncListener = Mockito.mock(Listener.class);
-        Mockito.when(powerStateSyncListener.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any()))
+        Mockito.when(powerStateSyncListener.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Command[].class)))
                 .thenThrow(new NullPointerException("hostId was null in isPowerStateInSyncWithInstanceState"));
 
         Listener pingListener = Mockito.mock(Listener.class);
-        Mockito.when(pingListener.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any()))
+        Mockito.when(pingListener.processCommands(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Command[].class)))
                 .thenReturn(false);
 
         mgr._cmdMonitors = new ArrayList<>();
