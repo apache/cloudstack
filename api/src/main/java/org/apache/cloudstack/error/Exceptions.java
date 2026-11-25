@@ -18,7 +18,9 @@
 package org.apache.cloudstack.error;
 
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -144,10 +146,30 @@ public final class Exceptions {
         ex.setMetadata(data.third());
     }
 
+    /**
+     * Normalizes metadata to Serializable-safe String values on every {@link CloudRuntimeException}
+     * reachable from *cre*, walking its cause chain and suppressed exceptions. A wrapper built via
+     * {@code new CloudRuntimeException(cause)} shares its cause's metadata map by reference, so
+     * normalizing only *cre* itself would leave that same, still-unnormalized map reachable (and
+     * serialized) through {@code cre.getCause()}.
+     */
     public static void normalizeMetadata(CloudRuntimeException cre) {
-        if (MapUtils.isEmpty(cre.getMetadata())) {
+        normalizeMetadataGraph(cre, Collections.newSetFromMap(new IdentityHashMap<>()));
+    }
+
+    private static void normalizeMetadataGraph(Throwable th, Set<Throwable> visited) {
+        if (th == null || !visited.add(th)) {
             return;
         }
-        cre.setMetadata(ResponseMessageResolver.convertToStringMap(cre.getMetadata()));
+        if (th instanceof CloudRuntimeException) {
+            CloudRuntimeException cre = (CloudRuntimeException) th;
+            if (MapUtils.isNotEmpty(cre.getMetadata())) {
+                cre.setMetadata(ResponseMessageResolver.convertToStringMap(cre.getMetadata()));
+            }
+        }
+        normalizeMetadataGraph(th.getCause(), visited);
+        for (Throwable suppressed : th.getSuppressed()) {
+            normalizeMetadataGraph(suppressed, visited);
+        }
     }
 }

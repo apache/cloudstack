@@ -90,6 +90,27 @@ public class JobSerializerHelperTest {
     }
 
     @Test
+    public void testSerializingWrapperExceptionNormalizesCauseSharedMetadata() {
+        // new CloudRuntimeException(cause) shares the cause's metadata map by reference (see
+        // CloudRuntimeException(Throwable)), so normalizing only the outer wrapper would leave
+        // that same, still-unnormalized map reachable through wrapper.getCause().getMetadata().
+        CloudRuntimeException cause = new CloudRuntimeException("Unable to find network with ID abc");
+        cause.setMessageKey("vm.deploy.network.not.found");
+        cause.setMetadata(Map.of("network", new NonSerializableEntity("my-network")));
+
+        CloudRuntimeException wrapper = new CloudRuntimeException(cause);
+
+        // this would throw NotSerializableException if the cause's metadata weren't normalized too
+        String serialized = JobSerializerHelper.toObjectSerializedString(wrapper);
+
+        assertNotNull(serialized);
+        Object wrapperNetworkValue = wrapper.getMetadata().get("network");
+        assertTrue("wrapper's metadata value should have been converted to a String", wrapperNetworkValue instanceof String);
+        Object causeNetworkValue = cause.getMetadata().get("network");
+        assertTrue("cause's metadata value should have been converted to a String too", causeNetworkValue instanceof String);
+    }
+
+    @Test
     public void testSerializingNonCloudRuntimeExceptionObjectIsUnaffected() {
         String plainValue = "just a plain serializable object";
 
