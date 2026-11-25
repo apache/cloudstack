@@ -64,6 +64,14 @@ public class ResponseMessageResolver {
     private static final List<String> RESOURCE_NAME_GETTERS =
             Arrays.asList("getDisplayText", "getDisplayName", "getName");
 
+    // Matches an "id" field in a toString() output, whether from a plain "id=123"/"id: 123"
+    // style, or a JSON-style (e.g. ReflectionToStringBuilderUtils/JSON_STYLE) "id":123 style,
+    // with or without a following separator comma.
+    private static final Pattern DB_ID_PATTERN = Pattern.compile("\"?\\bid\\b\"?\\s*[:=]\\s*\\d+\\s*,?\\s*");
+    // Cleans up a stray trailing comma left behind when the removed id field was the last one
+    // before a closing brace/bracket.
+    private static final Pattern TRAILING_COMMA_PATTERN = Pattern.compile(",(\\s*[}\\]])");
+
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     // volatile for safe publication
@@ -279,13 +287,23 @@ public class ResponseMessageResolver {
         String result = obj.toString();
         if (StringUtils.isNotEmpty(result)) {
             if (!isAdmin) {
-                result = result.replaceAll("\\bid:\\s*\\d+", "").trim();
+                result = redactDbId(result);
             }
             if (StringUtils.isNotEmpty(result)) {
                 return result;
             }
         }
         return getMetadataObjectStringValue(obj, isAdmin);
+    }
+
+    /**
+     * Strips an "id" field's value out of a toString() result, covering both a plain
+     * "id=123"/"id: 123" style and a JSON-style (quoted key) "id":123 style.
+     */
+    protected static String redactDbId(String toStringResult) {
+        String redacted = DB_ID_PATTERN.matcher(toStringResult).replaceAll("");
+        redacted = TRAILING_COMMA_PATTERN.matcher(redacted).replaceAll("$1");
+        return redacted.trim();
     }
 
     protected static String invokeStringGetter(Object obj, String methodName) {

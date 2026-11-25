@@ -597,6 +597,43 @@ public class ResponseMessageResolverTest {
     }
 
     @Test
+    public void getMetadataObjectStringValuePreferringToString_shouldStripJsonStyleIdForNonRootAdmin() {
+        // matches ReflectionToStringBuilderUtils/JSON_STYLE output, e.g. ServiceOfferingVO.toString()
+        Object obj = new Object() {
+            @Override public String toString() { return "Service offering {\"id\":42,\"name\":\"Small Instance\",\"uuid\":\"abc-123-def\"}"; }
+        };
+        Assert.assertEquals("Service offering {\"name\":\"Small Instance\",\"uuid\":\"abc-123-def\"}",
+                ResponseMessageResolver.getMetadataObjectStringValuePreferringToString(obj, false));
+    }
+
+    @Test
+    public void getMetadataObjectStringValuePreferringToString_shouldStripJsonStyleIdWhenLastFieldForNonRootAdmin() {
+        Object obj = new Object() {
+            @Override public String toString() { return "{\"name\":\"Small Instance\",\"uuid\":\"abc-123-def\",\"id\":42}"; }
+        };
+        Assert.assertEquals("{\"name\":\"Small Instance\",\"uuid\":\"abc-123-def\"}",
+                ResponseMessageResolver.getMetadataObjectStringValuePreferringToString(obj, false));
+    }
+
+    @Test
+    public void getMetadataObjectStringValuePreferringToString_shouldStripEqualsStyleIdForNonRootAdmin() {
+        Object obj = new Object() {
+            @Override public String toString() { return "UsageVMSnapshotVO [id=42, zoneId=1, vmId=4]"; }
+        };
+        Assert.assertEquals("UsageVMSnapshotVO [zoneId=1, vmId=4]",
+                ResponseMessageResolver.getMetadataObjectStringValuePreferringToString(obj, false));
+    }
+
+    @Test
+    public void getMetadataObjectStringValuePreferringToString_shouldPreserveJsonStyleIdForRootAdmin() {
+        Object obj = new Object() {
+            @Override public String toString() { return "Service offering {\"id\":42,\"name\":\"Small Instance\",\"uuid\":\"abc-123-def\"}"; }
+        };
+        Assert.assertEquals("Service offering {\"id\":42,\"name\":\"Small Instance\",\"uuid\":\"abc-123-def\"}",
+                ResponseMessageResolver.getMetadataObjectStringValuePreferringToString(obj, true));
+    }
+
+    @Test
     public void updateExceptionResponse_shouldHandleNullMetadata() {
         ExceptionResponse response = new ExceptionResponse();
         CloudRuntimeException cre = Mockito.mock(CloudRuntimeException.class);
