@@ -17,6 +17,7 @@
 package com.cloud.configuration;
 
 import com.cloud.alert.AlertManager;
+import com.cloud.bgp.BGPService;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.VlanVO;
@@ -859,6 +860,20 @@ public class ConfigurationManagerImplTest {
     @Test
     public void validateValueRangeTestReturnsNotNullWhenConfigKeyHasRangeAndValueIsInvalid() {
         Assert.assertNotNull(configurationManagerImplSpy.validateValueRange(NetworkModel.MACIdentifier.key(), "-1", Integer.class, null));
+    }
+
+    @Test
+    public void validateValueRangeTestAcceptsBgpMinHoldtimeWithinRange() {
+        for (String value : new String[] {"0", "3", "65535"}) {
+            Assert.assertNull(configurationManagerImplSpy.validateValueRange(BGPService.MinHoldtime.key(), value, Integer.class, null));
+        }
+    }
+
+    @Test
+    public void validateValueRangeTestRejectsBgpMinHoldtimeOutsideRange() {
+        for (String value : new String[] {"-1", "65536"}) {
+            Assert.assertNotNull(configurationManagerImplSpy.validateValueRange(BGPService.MinHoldtime.key(), value, Integer.class, null));
+        }
     }
 
     @Test

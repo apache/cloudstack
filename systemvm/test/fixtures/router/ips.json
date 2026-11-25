@@ -1,0 +1,146 @@
+{
+  "eth0": [
+    {
+      "add": true,
+      "broadcast": "169.254.255.255",
+      "cidr": "169.254.10.20/16",
+      "device": "eth0",
+      "gateway": null,
+      "is_private_gateway": false,
+      "netmask": "255.255.0.0",
+      "network": "169.254.0.0/16",
+      "nw_type": "control",
+      "one_to_one_nat": false,
+      "public_ip": "169.254.10.20",
+      "size": "16",
+      "source_nat": false
+    }
+  ],
+  "eth1": [
+    {
+      "add": true,
+      "broadcast": "198.51.100.255",
+      "cidr": "198.51.100.10/24",
+      "device": "eth1",
+      "gateway": "198.51.100.1",
+      "is_private_gateway": false,
+      "mtu": "1500",
+      "netmask": "255.255.255.0",
+      "network": "198.51.100.0/24",
+      "nw_type": "public",
+      "one_to_one_nat": false,
+      "public_ip": "198.51.100.10",
+      "size": "24",
+      "source_nat": true
+    }
+  ],
+  "eth2": [
+    {
+      "add": true,
+      "broadcast": "172.16.10.255",
+      "cidr": "172.16.10.1/24",
+      "device": "eth2",
+      "gateway": "172.16.10.1",
+      "is_private_gateway": false,
+      "mtu": "1500",
+      "netmask": "255.255.255.0",
+      "network": "172.16.10.0/24",
+      "nw_type": "guest",
+      "one_to_one_nat": false,
+      "public_ip": "172.16.10.1",
+      "size": "24",
+      "source_nat": false
+    }
+  ],
+  "eth3": [
+    {
+      "add": true,
+      "broadcast": "100.64.0.3",
+      "cidr": "100.64.0.1/30",
+      "device": "eth3",
+      "gateway": "100.64.0.2",
+      "is_private_gateway": true,
+      "mtu": "9000",
+      "netmask": "255.255.255.252",
+      "network": "100.64.0.0/30",
+      "nw_type": "public",
+      "one_to_one_nat": false,
+      "public_ip": "100.64.0.1",
+      "size": "30",
+      "source_nat": false
+    }
+  ],
+  "eth4": [
+    {
+      "add": true,
+      "broadcast": "172.16.20.255",
+      "cidr": "172.16.20.1/24",
+      "device": "eth4",
+      "gateway": "172.16.20.1",
+      "is_private_gateway": false,
+      "mtu": "1500",
+      "netmask": "255.255.255.0",
+      "network": "172.16.20.0/24",
+      "nw_type": "guest",
+      "one_to_one_nat": false,
+      "public_ip": "172.16.20.1",
+      "size": "24",
+      "source_nat": false
+    }
+  ],
+  "eth5": [
+    {
+      "add": true,
+      "broadcast": "100.64.0.7",
+      "cidr": "100.64.0.5/30",
+      "device": "eth5",
+      "gateway": "100.64.0.6",
+      "is_private_gateway": true,
+      "mtu": "9000",
+      "netmask": "255.255.255.252",
+      "network": "100.64.0.4/30",
+      "nw_type": "public",
+      "one_to_one_nat": false,
+      "public_ip": "100.64.0.5",
+      "size": "30",
+      "source_nat": false
+    }
+  ],
+  "eth6": [
+    {
+      "add": true,
+      "broadcast": "100.64.0.11",
+      "cidr": "100.64.0.9/30",
+      "device": "eth6",
+      "gateway": "100.64.0.10",
+      "is_private_gateway": true,
+      "mtu": "9000",
+      "netmask": "255.255.255.252",
+      "network": "100.64.0.8/30",
+      "nw_type": "public",
+      "one_to_one_nat": false,
+      "public_ip": "100.64.0.9",
+      "size": "30",
+      "source_nat": false
+    }
+  ],
+  "eth7": [
+    {
+      "add": true,
+      "broadcast": "100.64.0.15",
+      "cidr": "100.64.0.13/30",
+      "device": "eth7",
+      "gateway": "100.64.0.14",
+      "is_private_gateway": true,
+      "mtu": "9000",
+      "netmask": "255.255.255.252",
+      "network": "100.64.0.12/30",
+      "nw_type": "public",
+      "one_to_one_nat": false,
+      "public_ip": "100.64.0.13",
+      "size": "30",
+      "source_nat": false
+    }
+  ],
+  "id": "ips"
+}

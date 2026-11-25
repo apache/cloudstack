@@ -34,7 +34,7 @@ public class SetBgpPeersConfigItem extends AbstractConfigItemFacade {
     @Override
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {
         final SetBgpPeersCommand command = (SetBgpPeersCommand) cmd;
-        return generateConfigItems(new BgpPeers(Arrays.asList(command.getBpgPeers())));
+        return generateConfigItems(new BgpPeers(Arrays.asList(command.getBpgPeers()), command.getMinHoldtime()));
     }
 
     @Override

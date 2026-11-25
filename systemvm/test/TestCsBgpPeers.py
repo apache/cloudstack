@@ -33,6 +33,7 @@ class TestCsBgpPeers(unittest.TestCase):
         self.csbgppeers = CsBgpPeers("bgppeers", {})
         self.csbgppeers.peers = {}
         self.csbgppeers.public_ip = "100.64.0.10"
+        self.csbgppeers.min_holdtime = 3
         self.csbgppeers.frr_conf = CsFile("frr.conf.test")
         self.csbgppeers.frr_conf.repopulate()
 

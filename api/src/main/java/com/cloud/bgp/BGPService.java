@@ -21,11 +21,22 @@ import com.cloud.network.Network;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.network.BgpPeer;
 
 import java.util.List;
 
-public interface BGPService {
+public interface BGPService extends Configurable {
+
+    ConfigKey<Integer> MinHoldtime = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Integer.class,
+            "routed.bgp.min.holdtime",
+            "3",
+            "The lowest BGP hold time, in seconds, that a virtual router accepts. "
+                    + "It applies to every BGP peer on the router. "
+                    + "A session that negotiates a lower hold time, including 0, is refused.",
+            true,
+            ConfigKey.Scope.Account);
 
     ASNumberRange createASNumberRange(long zoneId, long startASNumber, long endASNumber);
     List<ASNumberRange> listASNumberRanges(Long zoneId);

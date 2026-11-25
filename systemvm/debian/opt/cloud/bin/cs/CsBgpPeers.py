@@ -37,9 +37,10 @@ class CsBgpPeers(CsDataBag):
         else:
             self.public_ip = self.cl.get_eth2_ip()
 
+        self.min_holdtime = self.dbag.get("min_holdtime")
         self.peers = {}
         for item in self.dbag:
-            if item == "id":
+            if item in ("id", "min_holdtime"):
                 continue
             self._process_dbag_item(self.dbag[item])
 
@@ -108,6 +109,11 @@ class CsBgpPeers(CsDataBag):
         for as_number in self.peers.keys():
             self.frr_conf.add("router bgp {}".format(as_number))
             self.frr_conf.add(" bgp router-id {}".format(self.public_ip))
+            # FRR accepts 1-65535 here. 0 turns off the minimum and renders no line.
+            if self.min_holdtime and 1 <= int(self.min_holdtime) <= 65535:
+                self.frr_conf.add(" bgp minimum-holdtime {}".format(self.min_holdtime))
+            elif self.min_holdtime:
+                logging.error("Ignoring minimum hold time %s, which is outside 1-65535" % self.min_holdtime)
             if self.peers[as_number]['ip6_peers']:
                 self.frr_conf.add(" bgp default ipv6-unicast")
             for ip4_peer in self.peers[as_number]['ip4_peers']:
