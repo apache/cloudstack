@@ -38,13 +38,16 @@ OPERATOR_PEER = {'peer_id': 1, 'network_id': 100, 'network_as_number': 64600, 'p
                  'ip4_address': '198.51.100.1', 'guest_ip4_cidr': '172.16.10.0/24', 'details': {}}
 
 
+ABSENT = object()
+
+
 class OperatorFrrTestCase(unittest.TestCase):
     """Runs CsBgpPeers.process() in a sandbox and records the shell commands."""
 
-    def run_operator(self, min_holdtime=None, peer=None, bgpd_running=True):
-        # None leaves the min_holdtime key out of the databag.
+    def run_operator(self, min_holdtime=ABSENT, peer=None, bgpd_running=True):
+        # ABSENT leaves the min_holdtime key out of the databag.
         bag = {"id": "bgppeers", "1-100": dict(peer or OPERATOR_PEER)}
-        if min_holdtime is not None:
+        if min_holdtime is not ABSENT:
             bag["min_holdtime"] = min_holdtime
         sandbox = VrSandbox(mode="routed", extra={"bgppeers.json": bag})
         self.addCleanup(sandbox.close)
@@ -104,6 +107,28 @@ class TestCsBgpPeersMinimumHoldtime(OperatorFrrTestCase):
         for value in (-1, 65536):
             block = self.router_block(self.run_operator(value))
             self.assertEqual([x for x in block if "minimum-holdtime" in x], [], value)
+
+    def test_operator_only_vr_skips_minimum_holdtime_that_is_not_a_number(self):
+        # A value int() cannot read is logged and skipped, and the rest of the file still applies.
+        for value in ("abc", "None", "null", "3s", [3]):
+            with self.assertLogs(level="ERROR") as logs:
+                lines = self.run_operator(value)
+            block = self.router_block(lines)
+            self.assertEqual([x for x in block if "minimum-holdtime" in x], [], value)
+            self.assertIn(" neighbor 198.51.100.1 remote-as 65100", block, value)
+            self.assertEqual(lines[-1], "line vty", value)
+            self.assertTrue([m for m in logs.output if "Ignoring minimum hold time" in m], logs.output)
+
+    def test_operator_only_vr_renders_no_minimum_holdtime_for_empty_values(self):
+        # A null or empty value means no minimum, as when the key is missing.
+        for value in (None, ""):
+            block = self.router_block(self.run_operator(value))
+            self.assertEqual([x for x in block if "minimum-holdtime" in x], [], value)
+            self.assertIn(" neighbor 198.51.100.1 remote-as 65100", block, value)
+
+    def test_operator_only_vr_renders_minimum_holdtime_from_a_string(self):
+        block = self.router_block(self.run_operator("3"))
+        self.assertEqual([x for x in block if "minimum-holdtime" in x], [" bgp minimum-holdtime 3"])
 
 
 if __name__ == '__main__':

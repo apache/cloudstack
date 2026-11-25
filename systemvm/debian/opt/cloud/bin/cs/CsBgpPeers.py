@@ -105,15 +105,30 @@ class CsBgpPeers(CsDataBag):
 
         return
 
+    def _minimum_holdtime(self):
+        # FRR accepts 1-65535 here. 0 turns off the minimum and renders no line.
+        # A value FRR would reject renders no line, so the rest of the file still applies.
+        if not self.min_holdtime:
+            return None
+        try:
+            value = int(self.min_holdtime)
+        except (TypeError, ValueError):
+            logging.error("Ignoring minimum hold time %s, which is not a whole number" % self.min_holdtime)
+            return None
+        if value == 0:
+            return None
+        if not 1 <= value <= 65535:
+            logging.error("Ignoring minimum hold time %s, which is outside 1-65535" % self.min_holdtime)
+            return None
+        return value
+
     def _process_peers(self):
         for as_number in self.peers.keys():
             self.frr_conf.add("router bgp {}".format(as_number))
             self.frr_conf.add(" bgp router-id {}".format(self.public_ip))
-            # FRR accepts 1-65535 here. 0 turns off the minimum and renders no line.
-            if self.min_holdtime and 1 <= int(self.min_holdtime) <= 65535:
-                self.frr_conf.add(" bgp minimum-holdtime {}".format(self.min_holdtime))
-            elif self.min_holdtime:
-                logging.error("Ignoring minimum hold time %s, which is outside 1-65535" % self.min_holdtime)
+            min_holdtime = self._minimum_holdtime()
+            if min_holdtime:
+                self.frr_conf.add(" bgp minimum-holdtime {}".format(min_holdtime))
             if self.peers[as_number]['ip6_peers']:
                 self.frr_conf.add(" bgp default ipv6-unicast")
             for ip4_peer in self.peers[as_number]['ip4_peers']:
