@@ -86,8 +86,9 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             } catch (ManagementServerException e) {
                 throw new CloudRuntimeException(String.format("Failed to retrieve public IP for the network: %s ", network.getName()));
             }
+            // take the cluster before attaching the ISO, so that an add which is refused leaves nothing behind
+            transitToOperationState(KubernetesCluster.Event.AddNodeRequested);
             attachCksIsoForNodesAdditionToCluster(nodeIds, kubernetesCluster.getId(), mountCksIsoOnVr);
-            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.AddNodeRequested);
             String controlNodeGuestIp = getControlVmPrivateIp();
             Ternary<Integer, Long, Long> nodesAddedAndMemory = importNodeToCluster(nodeIds, network, publicIp, controlNodeGuestIp, mountCksIsoOnVr);
             int nodesAdded = nodesAddedAndMemory.first();
@@ -113,7 +114,14 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
                     description, kubernetesCluster.getId(), ApiCommandResourceType.KubernetesCluster.toString(), 0);
             return true;
         } catch (Exception e) {
-            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            // a failure before this operation took the cluster must not end the operation that holds it, and after,
+            // the cluster is only moved while this operation still holds it, see stateTransitTo
+            if (isOperationStarted()) {
+                stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            }
+            if (e instanceof CloudRuntimeException) {
+                throw (CloudRuntimeException) e;
+            }
             throw new CloudRuntimeException(e);
         }
     }
