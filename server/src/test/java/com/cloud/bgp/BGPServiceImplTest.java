@@ -28,7 +28,6 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.dao.VpcServiceMapDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.network.BgpPeerVO;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.BgpPeerDao;
@@ -44,7 +43,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -174,15 +172,5 @@ public class BGPServiceImplTest {
         bGPServiceImplSpy.applyBgpPeers(vpc, true);
 
         verify(vpcVirtualRouterElement).applyBgpPeers(eq(vpc), eq(null), any());
-    }
-
-    // The minimum hold time is a dynamic account setting registered by this service.
-    @Test
-    public void minHoldtimeIsDynamicAccountSettingDefaulting3() {
-        Assert.assertEquals("routed.bgp.min.holdtime", BGPService.MinHoldtime.key());
-        Assert.assertEquals("3", BGPService.MinHoldtime.defaultValue());
-        Assert.assertTrue(BGPService.MinHoldtime.isDynamic());
-        Assert.assertEquals(Collections.singletonList(ConfigKey.Scope.Account), BGPService.MinHoldtime.getScopes());
-        Assert.assertTrue(Arrays.asList(bGPServiceImplSpy.getConfigKeys()).contains(BGPService.MinHoldtime));
     }
 }

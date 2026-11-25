@@ -25,7 +25,6 @@ import java.util.List;
 
 public class BgpPeers extends ConfigBase {
     private List<BgpPeerTO> peers;
-    private Integer minHoldtime;
 
     public BgpPeers() {
         super(ConfigBase.BGP_PEERS);
@@ -36,24 +35,11 @@ public class BgpPeers extends ConfigBase {
         this.peers = bgpPeers;
     }
 
-    public BgpPeers(List<BgpPeerTO> bgpPeers, Integer minHoldtime) {
-        this(bgpPeers);
-        this.minHoldtime = minHoldtime;
-    }
-
     public List<BgpPeerTO> getPeers() {
         return peers;
     }
 
     public void setPeers(List<BgpPeerTO> bgpPeers) {
         this.peers = bgpPeers;
-    }
-
-    public Integer getMinHoldtime() {
-        return minHoldtime;
-    }
-
-    public void setMinHoldtime(Integer minHoldtime) {
-        this.minHoldtime = minHoldtime;
     }
 }

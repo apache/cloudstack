@@ -55,7 +55,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.BgpPeerVO;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
@@ -107,16 +106,6 @@ public class BGPServiceImpl implements BGPService {
     VpcServiceMapDao vpcServiceMapDao;
 
     public BGPServiceImpl() {
-    }
-
-    @Override
-    public String getConfigComponentName() {
-        return BGPService.class.getSimpleName();
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {MinHoldtime};
     }
 
     @Override

@@ -40,7 +40,7 @@ public interface DiagnosticsFilesList {
     "diagnostics.data.router.defaults", "Advanced", "iptables,ipaddr,iprule,iproute,/etc/cloudstack-release," +
             "/etc/dnsmasq.conf,/etc/dhcphosts.txt,/etc/dhcpopts.txt,/etc/dnsmasq.d/cloud.conf,/etc/dnsmasq-resolv.conf,/var/lib/misc/dnsmasq.leases,/var/log/dnsmasq.log," +
             "/etc/hosts,/etc/resolv.conf,/etc/haproxy/haproxy.cfg,/var/log/haproxy.log,/etc/ipsec.d/l2tp.conf,/var/log/cloud.log," +
-            "/var/log/routerServiceMonitor.log,/var/log/daemon.log,/var/log/frr/frr.log,/var/cache/cloud/frr.conf.masked",
+            "/var/log/routerServiceMonitor.log,/var/log/daemon.log",
             "List of supported diagnostics data file options for the domain router.", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
 
     List<String> generateFileList();

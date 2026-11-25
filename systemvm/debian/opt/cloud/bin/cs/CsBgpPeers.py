@@ -22,7 +22,6 @@ import os
 from . import CsHelper
 from .CsDatabag import CsDataBag
 from .CsFile import CsFile
-from .CsFrrConfig import mask_passwords
 
 FRR_DIR = "/etc/frr/"
 FRR_DAEMONS = "/etc/frr/daemons"
@@ -30,8 +29,6 @@ FRR_CONFIG = "/etc/frr/frr.conf"
 FRR_RELOAD = "/usr/lib/frr/frr-reload.py"
 IP_FORWARDING = "/proc/sys/net/ipv4/ip_forward"
 IPV6_FORWARDING = "/proc/sys/net/ipv6/conf/all/forwarding"
-# A copy of frr.conf without passwords, which getDiagnosticsData collects.
-MASKED_COPY = "/var/cache/cloud/frr.conf.masked"
 
 
 class CsBgpPeers(CsDataBag):
@@ -44,10 +41,9 @@ class CsBgpPeers(CsDataBag):
         else:
             self.public_ip = self.cl.get_eth2_ip()
 
-        self.min_holdtime = self.dbag.get("min_holdtime")
         self.peers = {}
         for item in self.dbag:
-            if item in ("id", "min_holdtime"):
+            if item == "id":
                 continue
             self._process_dbag_item(self.dbag[item])
 
@@ -64,7 +60,6 @@ class CsBgpPeers(CsDataBag):
         self._route_map_set()
         self._post_set()
         conf_changed = self.frr_conf.commit()
-        self._write_masked_copy()
 
         if start_bgpd:
             # bgpd only starts with frr, so turning it on needs a restart.
@@ -90,14 +85,6 @@ class CsBgpPeers(CsDataBag):
         if result.returncode != 0:
             logging.error("frr-reload.py failed with exit code %s, restarting frr" % result.returncode)
             self._restart_frr()
-
-    def _write_masked_copy(self):
-        try:
-            with open(MASKED_COPY, "w") as f:
-                for line in mask_passwords([line.rstrip("\n") for line in self.frr_conf.new_config]):
-                    f.write(line + "\n")
-        except IOError as e:
-            logging.error("Unable to write %s: %s" % (MASKED_COPY, e))
 
     @staticmethod
     def _kernel_forwarding(path):
@@ -163,11 +150,6 @@ class CsBgpPeers(CsDataBag):
             self.frr_conf.add(" bgp router-id {}".format(self.public_ip))
             self.frr_conf.add(" bgp ebgp-requires-policy")
             self.frr_conf.add(" bgp network import-check")
-            # FRR accepts 1-65535 here. 0 turns off the minimum and renders no line.
-            if self.min_holdtime and 1 <= int(self.min_holdtime) <= 65535:
-                self.frr_conf.add(" bgp minimum-holdtime {}".format(self.min_holdtime))
-            elif self.min_holdtime:
-                logging.error("Ignoring minimum hold time %s, which is outside 1-65535" % self.min_holdtime)
             if self.peers[as_number]['ip6_peers']:
                 self.frr_conf.add(" bgp default ipv6-unicast")
             for ip4_peer in self.peers[as_number]['ip4_peers']:

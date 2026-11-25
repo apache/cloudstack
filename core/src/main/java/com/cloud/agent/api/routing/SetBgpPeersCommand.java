@@ -25,7 +25,6 @@ import org.apache.cloudstack.network.BgpPeerTO;
 
 public class SetBgpPeersCommand extends NetworkElementCommand {
     BgpPeerTO[] bpgPeers;
-    Integer minHoldtime;
 
     protected SetBgpPeersCommand() {
     }
@@ -36,13 +35,5 @@ public class SetBgpPeersCommand extends NetworkElementCommand {
 
     public BgpPeerTO[] getBpgPeers() {
         return bpgPeers;
-    }
-
-    public Integer getMinHoldtime() {
-        return minHoldtime;
-    }
-
-    public void setMinHoldtime(Integer minHoldtime) {
-        this.minHoldtime = minHoldtime;
     }
 }
