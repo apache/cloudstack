@@ -305,6 +305,7 @@ export default {
       oauthKeycloakRedirectUri: '',
       oauthKeycloakAuthorizeUrl: '',
       oauthGenericProviders: [],
+      globalGenericProviders: [],
       oauthLoading: false,
       oauthDomainQueried: false,
       loginType: 0,
@@ -406,6 +407,7 @@ export default {
           const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
           this.oauthGenericProviders = oauthproviders.filter(item => item.type === 'oidc' && (item.enabled === true || item.enabled === 'true'))
           if (!domain) {
+            this.globalGenericProviders = this.oauthGenericProviders
             oauthproviders.forEach(item => {
               if (item.provider === 'google') {
                 this.googleprovider = item.enabled
@@ -498,6 +500,7 @@ export default {
         this.fetchOauthProviders(domain)
       } else {
         this.oauthDomainQueried = false
+        this.oauthGenericProviders = this.globalGenericProviders
         this.oauthGithubProvider = this.githubprovider
         this.oauthGoogleProvider = this.googleprovider
         this.oauthKeycloakProvider = this.keycloakprovider
@@ -534,7 +537,9 @@ export default {
           scope: 'openid email',
           state: this.from || 'cloudstack'
         }
-        window.location.href = `${config.authorization_endpoint}?${new URLSearchParams(options).toString()}`
+        const authorizeUrl = new URL(config.authorization_endpoint)
+        Object.entries(options).forEach(([key, value]) => authorizeUrl.searchParams.set(key, value))
+        window.location.href = authorizeUrl.toString()
       }).catch(() => {
         this.$notification.error({
           message: this.$t('label.error'),
