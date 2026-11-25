@@ -455,7 +455,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
         boolean compressNow = checkSyncCompressionAndConfigureCommand(backupOfferingVO, supportsCompression, command, hostVO);
 
-        Answer answer = sendBackupCommand(hostId, command);
+        Answer answer = sendBackupCommand(hostVO, command);
 
         if (answer == null || !answer.getResult()) {
             processBackupFailure(answer, userVm, hostId, runningVm, backupVO);
@@ -669,7 +669,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         Answer[] answers;
 
         try {
-            answers = sendBackupCommands(host.getId(), commands);
+            answers = sendBackupCommands(host, commands);
         } catch (OperationTimedoutException | AgentUnavailableException e) {
             throw new CloudRuntimeException(e);
         }
@@ -746,7 +746,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
         RestoreKbossBackupCommand cmd = new RestoreKbossBackupCommand(Set.of(), Set.of(backupAndVolumePair), secondaryStorageUrls, quickRestore);
 
-        Answer answer = sendBackupCommand(hostVo.getId(), cmd);
+        Answer answer = sendBackupCommand(hostVo, cmd);
 
         if (!processRestoreAnswers(vm, new Answer[] {answer}, quickRestore)) {
             throw new CloudRuntimeException("Bad answer from agent");
@@ -1181,7 +1181,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             return false;
         }
         Collections.shuffle(hosts);
-        Answer answer = sendBackupCommand(hosts.get(0).getId(), hashCommand);
+        Answer answer = sendBackupCommand(hosts.get(0), hashCommand);
         if (!answer.getResult()) {
             message = String.format("Unable to get hash of backup [%s] due to [%s]. Will try again later.", backupVO.getUuid(), answer.getDetails());
             logger.warn(message);
@@ -2651,6 +2651,13 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             logger.trace("Unable to find host [{}] to resolve the zone-level [{}]; using the global value.", hostId, backupTimeout.key());
             return backupTimeout.value();
         }
+        return getBackupTimeout(host);
+    }
+
+    private int getBackupTimeout(HostVO host) {
+        if (host == null) {
+            return backupTimeout.value();
+        }
         return backupTimeout.valueIn(host.getDataCenterId());
     }
 
@@ -2659,8 +2666,20 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         return agentManager.easySend(hostId, cmd);
     }
 
+    protected Answer sendBackupCommand(HostVO host, Command cmd) {
+        cmd.setWait(getBackupTimeout(host));
+        return agentManager.easySend(host.getId(), cmd);
+    }
+
     protected Answer[] sendBackupCommands(Long hostId, Commands cmds) throws OperationTimedoutException, AgentUnavailableException {
-        int backupTimeoutValue = getBackupTimeout(hostId);
+        return sendBackupCommands(hostId, cmds, getBackupTimeout(hostId));
+    }
+
+    protected Answer[] sendBackupCommands(HostVO host, Commands cmds) throws OperationTimedoutException, AgentUnavailableException {
+        return sendBackupCommands(host.getId(), cmds, getBackupTimeout(host));
+    }
+
+    private Answer[] sendBackupCommands(Long hostId, Commands cmds, int backupTimeoutValue) throws OperationTimedoutException, AgentUnavailableException {
         for (Command cmd : cmds) {
             cmd.setWait(backupTimeoutValue);
         }
