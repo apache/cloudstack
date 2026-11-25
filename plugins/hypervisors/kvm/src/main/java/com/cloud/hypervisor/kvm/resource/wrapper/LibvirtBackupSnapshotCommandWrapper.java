@@ -44,10 +44,10 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.hypervisor.kvm.storage.LibvirtStorageAdaptor;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.utils.RbdUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -98,11 +98,7 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
              */
             if (primaryPool.getType() == StoragePoolType.RBD) {
                 try {
-                    final Rados r = new Rados(primaryPool.getAuthUserName());
-                    r.confSet("mon_host", RbdUtils.getRbdMonitors(primaryPool.getSourceHost(), primaryPool.getSourcePort()));
-                    r.confSet("key", primaryPool.getAuthSecret());
-                    r.confSet("client_mount_timeout", "30");
-                    r.connect();
+                    final Rados r = LibvirtStorageAdaptor.connectToCeph(primaryPool);
                     logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
                     final IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());

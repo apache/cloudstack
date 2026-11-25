@@ -723,21 +723,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      * an RBD volume.
      */
     private KVMPhysicalDisk getRbdPhysicalDisk(String volumeUuid, LibvirtStoragePool pool) {
-        Rados r = new Rados(pool.getAuthUserName());
+        Rados r = null;
         try {
-            r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
-            /*
-             * The secret is null when the pool has no cephx user, and librados
-             * aborts the process rather than returning an error if it is handed a
-             * null value here.
-             */
-            if (pool.getAuthUserName() != null) {
-                r.confSet("key", pool.getAuthSecret());
-            } else {
-                r.confSet("auth_client_required", "none");
-            }
-            r.confSet("client_mount_timeout", "30");
-            r.connect();
+            r = connectToCeph(pool);
 
             IoCTX io = r.ioCtxCreate(pool.getSourceDir());
             try {
@@ -766,7 +754,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
             throw new CloudRuntimeException(e.toString(), e);
         } finally {
-            r.shutDown();
+            if (r != null) {
+                r.shutDown();
+            }
         }
     }
 
@@ -1373,10 +1363,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return message == null ? null : message.replaceAll("key=[^:\\s]*", "key=******");
     }
 
-    private static Rados connectToCeph(KVMStoragePool pool) throws RadosException {
+    public static Rados connectToCeph(KVMStoragePool pool) throws RadosException {
         Rados r = new Rados(pool.getAuthUserName());
-        // an unspecified port (0) is left out, so that the default port of the Ceph monitors is used
-        r.confSet("mon_host", pool.getSourcePort() > 0 ? pool.getSourceHost() + ":" + pool.getSourcePort() : pool.getSourceHost());
+        r.confSet("mon_host", RbdUtils.getRbdMonitors(pool.getSourceHost(), pool.getSourcePort()));
         // librados aborts the process rather than returning an error if it is handed a null key, which a pool without
         // a cephx user has
         if (pool.getAuthUserName() != null) {
@@ -1594,15 +1583,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     /* We are on the same Ceph cluster, but we require RBD format 2 on the source image */
                     logger.debug("Trying to perform a RBD clone (layering) since we are operating in the same storage pool");
 
-                    Rados r = new Rados(srcPool.getAuthUserName());
-                    r.confSet("mon_host", RbdUtils.getRbdMonitors(srcPool.getSourceHost(), srcPool.getSourcePort()));
-                    r.confSet("key", srcPool.getAuthSecret());
-                    r.confSet("client_mount_timeout", "30");
+                    Rados r = connectToCeph(srcPool);
                     if (dataPool != null) {
                         logger.debug("Setting RBD data pool to " + dataPool + " for the new image " + disk.getName());
                         r.confSet(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL, dataPool);
                     }
-                    r.connect();
                     logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
                     IoCTX io = r.ioCtxCreate(srcPool.getSourceDir());
@@ -1667,22 +1652,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     /* The source pool or host is not the same Ceph cluster, we do a simple copy with Qemu-Img */
                     logger.debug("Both the source and destination are RBD, but not the same Ceph cluster. Performing a copy");
 
-                    Rados rSrc = new Rados(srcPool.getAuthUserName());
-                    rSrc.confSet("mon_host", RbdUtils.getRbdMonitors(srcPool.getSourceHost(), srcPool.getSourcePort()));
-                    rSrc.confSet("key", srcPool.getAuthSecret());
-                    rSrc.confSet("client_mount_timeout", "30");
-                    rSrc.connect();
+                    Rados rSrc = connectToCeph(srcPool);
                     logger.debug("Successfully connected to source Ceph cluster at " + rSrc.confGet("mon_host"));
 
-                    Rados rDest = new Rados(destPool.getAuthUserName());
-                    rDest.confSet("mon_host", RbdUtils.getRbdMonitors(destPool.getSourceHost(), destPool.getSourcePort()));
-                    rDest.confSet("key", destPool.getAuthSecret());
-                    rDest.confSet("client_mount_timeout", "30");
+                    Rados rDest = connectToCeph(destPool);
                     if (dataPool != null) {
                         logger.debug("Setting RBD data pool to " + dataPool + " on the destination cluster for the new image " + disk.getName());
                         rDest.confSet(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL, dataPool);
                     }
-                    rDest.connect();
                     logger.debug("Successfully connected to source Ceph cluster at " + rDest.confGet("mon_host"));
 
                     IoCTX sIO = rSrc.ioCtxCreate(srcPool.getSourceDir());
@@ -1741,11 +1718,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         RbdImage templateImage = null;
         long cloneSize;
         try {
-            radosConnection = new Rados(destPool.getAuthUserName());
-            radosConnection.confSet("mon_host", RbdUtils.getRbdMonitors(destPool.getSourceHost(), destPool.getSourcePort()));
-            radosConnection.confSet("key", destPool.getAuthSecret());
-            radosConnection.confSet("client_mount_timeout", "30");
-            radosConnection.connect();
+            radosConnection = connectToCeph(destPool);
             ioContext = radosConnection.ioCtxCreate(destPool.getSourceDir());
             rbdClient = new Rbd(ioContext);
             templateImage = rbdClient.open(template.getName());
@@ -1832,11 +1805,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         Rados radosConnection = null;
         IoCTX ioContext = null;
         try {
-            radosConnection = new Rados(destPool.getAuthUserName());
-            radosConnection.confSet("mon_host", RbdUtils.getRbdMonitors(destPool.getSourceHost(), destPool.getSourcePort()));
-            radosConnection.confSet("key", destPool.getAuthSecret());
-            radosConnection.confSet("client_mount_timeout", "30");
-            radosConnection.connect();
+            radosConnection = connectToCeph(destPool);
             ioContext = radosConnection.ioCtxCreate(destPool.getSourceDir());
             Rbd rbdClient = new Rbd(ioContext);
             rbdClient.create(newUuid, imageSizeWithLuksHeader, RBD_FEATURES, rbdOrder);

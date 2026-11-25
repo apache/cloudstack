@@ -47,11 +47,11 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.hypervisor.kvm.storage.LibvirtStorageAdaptor;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.utils.RbdUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
@@ -64,11 +64,6 @@ import static com.cloud.hypervisor.kvm.storage.KVMStorageProcessor.poolTypesToDe
 
 @ResourceWrapper(handles = RevertSnapshotCommand.class)
 public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSnapshotCommand, Answer, LibvirtComputingResource> {
-
-    private static final String MON_HOST = "mon_host";
-    private static final String KEY = "key";
-    private static final String CLIENT_MOUNT_TIMEOUT = "client_mount_timeout";
-    private static final String RADOS_CONNECTION_TIMEOUT = "30";
 
     protected Set<StoragePoolType> storagePoolTypesThatSupportRevertSnapshot = new HashSet<>(Arrays.asList(StoragePoolType.RBD, StoragePoolType.Filesystem,
             StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint));
@@ -96,11 +91,7 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
             KVMStoragePool primaryPool = snapshotDisk.getPool();
 
             if (primaryPool.getType() == StoragePoolType.RBD) {
-                Rados rados = new Rados(primaryPool.getAuthUserName());
-                rados.confSet(MON_HOST, RbdUtils.getRbdMonitors(primaryPool.getSourceHost(), primaryPool.getSourcePort()));
-                rados.confSet(KEY, primaryPool.getAuthSecret());
-                rados.confSet(CLIENT_MOUNT_TIMEOUT, RADOS_CONNECTION_TIMEOUT);
-                rados.connect();
+                Rados rados = LibvirtStorageAdaptor.connectToCeph(primaryPool);
 
                 String[] rbdPoolAndVolumeAndSnapshot = snapshotRelPath.split("/");
                 int snapshotIndex = rbdPoolAndVolumeAndSnapshot.length - 1;

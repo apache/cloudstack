@@ -157,7 +157,6 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateLocation;
-import com.cloud.utils.RbdUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -181,9 +180,6 @@ public class KVMStorageProcessor implements StorageProcessor {
     private static final String MANAGE_SNAPSTHOT_CREATE_OPTION = "-c";
     private static final String NAME_OPTION = "-n";
     private static final String CEPH_MON_HOST = "mon_host";
-    private static final String CEPH_AUTH_KEY = "key";
-    private static final String CEPH_CLIENT_MOUNT_TIMEOUT = "client_mount_timeout";
-    private static final String CEPH_DEFAULT_MOUNT_TIMEOUT = "30";
 
     // libvirt < 10.1.0 has an object apply-order bug (fixed in 10.1.0) that breaks hot-plug of an encrypted
     // blockdev: on attach the disk is opened before its LUKS secret object is defined, so the attach fails with
@@ -2925,11 +2921,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     protected Rados radosConnect(final KVMStoragePool primaryPool) throws RadosException {
-        Rados r = new Rados(primaryPool.getAuthUserName());
-        r.confSet(CEPH_MON_HOST, RbdUtils.getRbdMonitors(primaryPool.getSourceHost(), primaryPool.getSourcePort()));
-        r.confSet(CEPH_AUTH_KEY, primaryPool.getAuthSecret());
-        r.confSet(CEPH_CLIENT_MOUNT_TIMEOUT, CEPH_DEFAULT_MOUNT_TIMEOUT);
-        r.connect();
+        Rados r = LibvirtStorageAdaptor.connectToCeph(primaryPool);
         logger.debug("Successfully connected to Ceph cluster at " + r.confGet(CEPH_MON_HOST));
         return r;
     }
@@ -3142,11 +3134,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         try {
 
-            r = new Rados(srcPool.getAuthUserName());
-            r.confSet("mon_host", RbdUtils.getRbdMonitors(srcPool.getSourceHost(), srcPool.getSourcePort()));
-            r.confSet("key", srcPool.getAuthSecret());
-            r.confSet("client_mount_timeout", "30");
-            r.connect();
+            r = radosConnect(srcPool);
 
             io = r.ioCtxCreate(srcPool.getSourceDir());
             rbd = new Rbd(io);
