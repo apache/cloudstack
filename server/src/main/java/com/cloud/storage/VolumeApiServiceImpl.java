@@ -1487,13 +1487,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * until it next starts. So a system VM's volume can only be resized while the system VM is stopped.
      */
     protected void validateSystemVmIsStoppedForResize(VolumeVO volume) {
-        if (volume.getInstanceId() == null) {
-            return;
-        }
-        VMInstanceVO vm = _vmInstanceDao.findById(volume.getInstanceId());
-        if (vm != null && vm.getType().isUsedBySystem() && !State.Stopped.equals(vm.getState())) {
-            throw new InvalidParameterValueException(String.format("Cannot resize volume [%s] of system VM %s while it is in state %s. "
-                    + "Stop the system VM before resizing its volume.", volume.getName(), vm.getInstanceName(), vm.getState()));
+        if (volume.getInstanceId() != null) {
+            VMInstanceVO vm = _vmInstanceDao.findById(volume.getInstanceId());
+            if (vm != null && vm.getType().isUsedBySystem() && !State.Stopped.equals(vm.getState())) {
+                throw new InvalidParameterValueException(String.format("Cannot resize volume [%s] of system VM %s while it is in state %s. "
+                        + "Stop the system VM before resizing its volume.", volume.getName(), vm.getInstanceName(), vm.getState()));
+            }
         }
     }
 
