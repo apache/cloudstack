@@ -140,7 +140,7 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
      * controllers, balloon), in which case the next free slot above them is used.
      *
      * @return the slot to assign, or {@code null} to let libvirt auto-assign (domain XML unavailable
-     *         or unparseable, or no free slot left).
+     *         or unparseable, PCI Express root complex (q35), or no free slot left).
      */
     protected Integer findNextAvailablePciSlot(final Domain vm, final List<InterfaceDef> pluggedNics) {
         try {
@@ -148,6 +148,12 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
             // getXMLDesc can return null on certain libvirt error paths; fall back to libvirt's own choice.
             if (domXml == null) {
                 logger.debug("Domain XML unavailable, letting libvirt auto-assign PCI slot");
+                return null;
+            }
+            if (hasPcieRootComplex(domXml)) {
+                // q35: bus 0 is the PCIe root complex, which takes no hot-plugged device. Libvirt puts the NIC on the lowest
+                // free hot-pluggable root port, which is above the ports used at start.
+                logger.debug("Domain uses a PCI Express root complex, letting libvirt choose a free root port for the NIC");
                 return null;
             }
             final Set<Integer> usedSlots = getUsedPciSlots(domXml);
@@ -163,6 +169,28 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
             logger.warn("Failed to get domain XML for PCI slot calculation, letting libvirt auto-assign", e);
             return null;
         }
+    }
+
+    /**
+     * True when the domain XML has a {@code pcie-root} controller (q35). Its bus 0 does not support hot-plug, so pinning a
+     * hot-plugged NIC to a bus 0 slot would make libvirt refuse the attach. Returns {@code false} if the XML cannot be parsed,
+     * which keeps the slot selection below unchanged.
+     */
+    protected boolean hasPcieRootComplex(final String domXml) {
+        try {
+            final DocumentBuilder builder = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder();
+            final Document doc = builder.parse(new InputSource(new StringReader(domXml)));
+            final NodeList controllers = doc.getElementsByTagName("controller");
+            for (int i = 0; i < controllers.getLength(); i++) {
+                final Element controller = (Element) controllers.item(i);
+                if ("pci".equals(controller.getAttribute("type")) && "pcie-root".equals(controller.getAttribute("model"))) {
+                    return true;
+                }
+            }
+        } catch (final ParserConfigurationException | SAXException | IOException e) {
+            logger.warn("Failed to parse domain XML to find the PCI root controller", e);
+        }
+        return false;
     }
 
     /**

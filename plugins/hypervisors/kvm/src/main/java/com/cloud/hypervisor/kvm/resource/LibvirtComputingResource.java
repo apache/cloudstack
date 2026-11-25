@@ -341,6 +341,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final VideoDef.VideoModel X86_DEFAULT_VIDEO_MODEL = VideoDef.VideoModel.VGA;
     private static final int X86_DEFAULT_VIDEO_RAM_KIB = 32768;
     private static final String Q35 = "q35";
+    /**
+     * Number of pcie-root-port controllers declared for every x86 q35 guest. The q35 pcie-root bus has 32 slots, of which the
+     * host bridge, the VGA device and the ICH9 functions always take some; 28 is also the maximum OpenStack Nova allows.
+     */
+    protected static final int Q35_PCIE_ROOT_PORTS = 28;
     private static final String PTY = "pty";
     private static final String VNC = "vnc";
 
@@ -3293,7 +3298,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             boolean isIothreadsEnabled = details != null && details.containsKey(VmDetailConstants.IOTHREADS);
             addSCSIControllers(devices, vcpus, vmTO.getDisks().length, isIothreadsEnabled);
         }
+
+        int pcieRootPortCount = getPcieRootPortCount(vmTO, guest);
+        if (pcieRootPortCount > 0) {
+            LOGGER.debug("Declaring {} PCIe root ports for Instance {}.", pcieRootPortCount, vmTO.getName());
+        }
+        devices.setPcieRootPorts(pcieRootPortCount);
         return devices;
+    }
+
+    /**
+     * Returns how many pcie-root-port controllers to declare for the Instance, or 0 to leave the PCIe topology to libvirt.
+     * <br>
+     * Only x86 KVM guests with a q35 machine type get ports, always {@link #Q35_PCIE_ROOT_PORTS}. Without them libvirt creates one
+     * root port per PCIe device present at start plus a single spare one, so at most one volume or NIC can be hot-plugged
+     * (<a href="https://github.com/apache/cloudstack/issues/11212">#11212</a>). aarch64 and s390x keep their own layout.
+     */
+    protected int getPcieRootPortCount(VirtualMachineTO vmTO, GuestDef guest) {
+        if (guest == null || guest.getGuestType() != GuestDef.GuestType.KVM || !isGuestX86(vmTO) || !isQ35MachineType(guest.getMachineType())) {
+            return 0;
+        }
+        return Q35_PCIE_ROOT_PORTS;
+    }
+
+    protected static boolean isQ35MachineType(String machineType) {
+        return machineType != null && machineType.toLowerCase().contains(Q35);
     }
 
     protected void attachGpuDevices(final VirtualMachineTO vmTO, final DevicesDef devicesDef) {

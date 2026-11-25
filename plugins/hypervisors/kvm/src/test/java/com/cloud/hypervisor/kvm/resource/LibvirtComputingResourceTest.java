@@ -177,6 +177,7 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -513,6 +514,167 @@ public class LibvirtComputingResourceTest {
         assertNodeExists(domainDoc, "/devices/controller[@model='virtio-scsi']");
         assertNodeExists(domainDoc, "/devices/controller/address[@type='pci']");
         assertNodeExists(domainDoc, "/devices/controller/driver[@queues='" + (to.getCpus() + 1) + "']");
+    }
+
+    private GuestDef createKvmGuest(String machineType) {
+        GuestDef guest = new GuestDef();
+        guest.setGuestType(GuestType.KVM);
+        guest.setMachineType(machineType);
+        return guest;
+    }
+
+    private static int countNodes(Document doc, String xPathExpr) {
+        try {
+            return ((Number) XPathFactory.newInstance().newXPath().evaluate("count(" + xPathExpr + ")", doc, XPathConstants.NUMBER)).intValue();
+        } catch (XPathExpressionException e) {
+            Assert.fail(e.getMessage());
+            return -1;
+        }
+    }
+
+    @Test
+    public void testCreateDevicesDefQ35AddsPcieRootPortsAfterAllDevices() {
+        VirtualMachineTO to = createDefaultVM(false);
+
+        DevicesDef devicesDef = libvirtComputingResourceSpy.createDevicesDef(to, createKvmGuest("q35"), to.getCpus(), true);
+        verifyDevices(devicesDef, to);
+        Assert.assertEquals(LibvirtComputingResource.Q35_PCIE_ROOT_PORTS, devicesDef.getPcieRootPorts());
+
+        Document domainDoc = parse(devicesDef.toString());
+        Assert.assertEquals(1, countNodes(domainDoc, "/devices/controller[@type='pci'][@model='pcie-root']"));
+        Assert.assertEquals(LibvirtComputingResource.Q35_PCIE_ROOT_PORTS, countNodes(domainDoc, "/devices/controller[@type='pci'][@model='pcie-root-port']"));
+        Assert.assertEquals(0, countNodes(domainDoc, "/devices/controller[@model='pcie-to-pci-bridge']"));
+        // no index and no address, so libvirt numbers and places them, and they come after every device
+        Assert.assertEquals(0, countNodes(domainDoc, "/devices/controller[@type='pci'][@index]"));
+        Assert.assertEquals(0, countNodes(domainDoc, "/devices/controller[@type='pci']/address"));
+        Assert.assertEquals(0, countNodes(domainDoc, "/devices/controller[@model='pcie-root']/following-sibling::*[not(self::controller[@type='pci'][@model='pcie-root-port'])]"));
+        Assert.assertEquals(0, countNodes(domainDoc, "/devices/controller[@model='pcie-root']/preceding-sibling::controller[@type='pci']"));
+    }
+
+    @Test
+    public void testCreateDevicesDefQ35VersionedMachineTypeAddsPcieRootPorts() {
+        VirtualMachineTO to = createDefaultVM(false);
+
+        DevicesDef devicesDef = libvirtComputingResourceSpy.createDevicesDef(to, createKvmGuest("pc-q35-rhel9.0.0"), to.getCpus(), false);
+        Assert.assertEquals(LibvirtComputingResource.Q35_PCIE_ROOT_PORTS, devicesDef.getPcieRootPorts());
+    }
+
+    @Test
+    public void testCreateDevicesDefI440fxHasNoPcieControllers() {
+        VirtualMachineTO to = createDefaultVM(false);
+
+        for (String machineType : new String[] {"pc", "pc-i440fx-rhel7.6.0", null}) {
+            DevicesDef devicesDef = libvirtComputingResourceSpy.createDevicesDef(to, createKvmGuest(machineType), to.getCpus(), false);
+            Assert.assertEquals(0, devicesDef.getPcieRootPorts());
+            Document domainDoc = parse(devicesDef.toString());
+            Assert.assertEquals(0, countNodes(domainDoc, "/devices/controller[@type='pci']"));
+        }
+    }
+
+    @Test
+    public void testCreateDevicesDefQ35KeepsExplicitScsiControllerAddress() {
+        VirtualMachineTO to = createDefaultVM(false);
+        to.setDetails(new HashMap<>());
+        to.setPlatformEmulator("Other PV Virtio-SCSI");
+        to.setDisks(new DiskTO[]{Mockito.mock(DiskTO.class)});
+
+        DevicesDef devicesDef = libvirtComputingResourceSpy.createDevicesDef(to, createKvmGuest("q35"), to.getCpus(), true);
+
+        Document domainDoc = parse(devicesDef.toString());
+        assertXpath(domainDoc, "/devices/controller[@model='virtio-scsi']/address/@bus", "0x00");
+        assertXpath(domainDoc, "/devices/controller[@model='virtio-scsi']/address/@slot", "0x09");
+        Assert.assertEquals(1, countNodes(domainDoc, "/devices/controller[@model='virtio-scsi']/following-sibling::controller[@model='pcie-root']"));
+        Assert.assertEquals(LibvirtComputingResource.Q35_PCIE_ROOT_PORTS, countNodes(domainDoc, "/devices/controller[@type='pci'][@model='pcie-root-port']"));
+    }
+
+    @Test
+    public void testCreateDevicesDefAarch64KeepsItsPcieLayout() {
+        VirtualMachineTO to = createDefaultVM(false);
+        to.setArch("aarch64");
+        libvirtComputingResourceSpy.guestCpuArch = "aarch64";
+        libvirtComputingResourceSpy.hypervisorPath = "/usr/bin/qemu-system-aarch64";
+
+        for (String machineType : new String[] {"virt", "q35"}) {
+            DevicesDef devicesDef = libvirtComputingResourceSpy.createDevicesDef(to, createKvmGuest(machineType), to.getCpus(), true);
+            Assert.assertEquals(0, devicesDef.getPcieRootPorts());
+            Document domainDoc = parse(devicesDef.toString());
+            Assert.assertEquals(1, countNodes(domainDoc, "/devices/controller[@type='pci'][@model='pcie-root']"));
+            Assert.assertEquals(32, countNodes(domainDoc, "/devices/controller[@type='pci'][@model='pcie-root-port']"));
+            Assert.assertEquals(1, countNodes(domainDoc, "/devices/controller[@type='pci'][@model='pcie-to-pci-bridge']"));
+        }
+    }
+
+    @Test
+    public void testGetPcieRootPortCountIsFixedForLargeInstances() {
+        VirtualMachineTO to = createDefaultVM(false);
+        NicTO[] nics = new NicTO[30];
+        for (int i = 0; i < nics.length; i++) {
+            nics[i] = new NicTO();
+        }
+        to.setNics(nics);
+        to.setDisks(new DiskTO[] {new DiskTO(), new DiskTO(), new DiskTO()});
+        to.setGpuDevice(new GPUDeviceTO("group", "passthrough", 2, new HashMap<>(),
+                Arrays.asList(Mockito.mock(VgpuTypesInfo.class), Mockito.mock(VgpuTypesInfo.class))));
+
+        // fixed count, whatever the devices; libvirt adds ports itself for start-time devices beyond these
+        Assert.assertEquals(28, libvirtComputingResourceSpy.getPcieRootPortCount(to, createKvmGuest("q35")));
+    }
+
+    @Test
+    public void testGetPcieRootPortCountOnlyForX86KvmQ35Guests() {
+        VirtualMachineTO to = createDefaultVM(false);
+        Assert.assertEquals(0, libvirtComputingResourceSpy.getPcieRootPortCount(to, null));
+
+        GuestDef lxcGuest = new GuestDef();
+        lxcGuest.setGuestType(GuestType.LXC);
+        lxcGuest.setMachineType("q35");
+        Assert.assertEquals(0, libvirtComputingResourceSpy.getPcieRootPortCount(to, lxcGuest));
+
+        to.setArch("s390x");
+        Assert.assertEquals(0, libvirtComputingResourceSpy.getPcieRootPortCount(to, createKvmGuest("q35")));
+    }
+
+    @Test
+    public void testCreateVMFromSpecUefiInstanceGetsPcieRootPorts() {
+        VirtualMachineTO to = createDefaultVM(false);
+        Map<String, String> details = new HashMap<>();
+        details.put(GuestDef.BootType.UEFI.toString(), "legacy");
+        to.setDetails(details);
+
+        LibvirtVMDef vm = libvirtComputingResourceSpy.createVMFromSpec(to);
+        vm.setHvsType(hyperVisorType);
+
+        Document domainDoc = parse(vm.toString());
+        assertXpath(domainDoc, "/domain/os/type/@machine", "q35");
+        Assert.assertEquals(1, countNodes(domainDoc, "/domain/devices/controller[@type='pci'][@model='pcie-root']"));
+        Assert.assertEquals(LibvirtComputingResource.Q35_PCIE_ROOT_PORTS, countNodes(domainDoc, "/domain/devices/controller[@type='pci'][@model='pcie-root-port']"));
+    }
+
+    @Test
+    public void testCreateVMFromSpecBiosQ35InstanceGetsPcieRootPorts() {
+        VirtualMachineTO to = createDefaultVM(false);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE, "q35");
+        to.setDetails(details);
+
+        LibvirtVMDef vm = libvirtComputingResourceSpy.createVMFromSpec(to);
+        vm.setHvsType(hyperVisorType);
+
+        Document domainDoc = parse(vm.toString());
+        assertXpath(domainDoc, "/domain/os/type/@machine", "q35");
+        Assert.assertEquals(0, countNodes(domainDoc, "/domain/os/loader"));
+        Assert.assertEquals(LibvirtComputingResource.Q35_PCIE_ROOT_PORTS, countNodes(domainDoc, "/domain/devices/controller[@type='pci'][@model='pcie-root-port']"));
+    }
+
+    @Test
+    public void testCreateVMFromSpecBiosInstanceGetsNoPcieRootPorts() {
+        VirtualMachineTO to = createDefaultVM(false);
+
+        LibvirtVMDef vm = libvirtComputingResourceSpy.createVMFromSpec(to);
+        vm.setHvsType(hyperVisorType);
+
+        Document domainDoc = parse(vm.toString());
+        Assert.assertEquals(0, countNodes(domainDoc, "/domain/devices/controller[@type='pci']"));
     }
 
     @Test
