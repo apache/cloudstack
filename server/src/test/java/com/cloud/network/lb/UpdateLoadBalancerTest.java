@@ -19,20 +19,22 @@ package com.cloud.network.lb;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.UUID;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -70,6 +72,7 @@ public class UpdateLoadBalancerTest {
     private LoadBalancingServiceProvider lbServiceProvider= Mockito.mock(LoadBalancingServiceProvider.class);
 
     private static long domainId = 5L;
+    private static long lbRuleId = 10L;
     private static String accountName = "admin";
 
     @Before
@@ -83,11 +86,13 @@ public class UpdateLoadBalancerTest {
         _lbMgr._lb2stickinesspoliciesDao = Mockito.mock(LBStickinessPolicyDao.class);
         _lbMgr._lb2VmMapDao = Mockito.mock(LoadBalancerVMMapDao.class);
         _lbMgr._lbCertMapDao = Mockito.mock(LoadBalancerCertMapDao.class);
+        _lbMgr._firewallRuleDetailsDao = Mockito.mock(FirewallRuleDetailsDao.class);
         _lbMgr._lbDao = lbDao;
         _lbMgr._lbProviders = new ArrayList<LoadBalancingServiceProvider>();
         _lbMgr._lbProviders.add(lbServiceProvider);
 
         updateLbRuleCmd = new UpdateLoadBalancerRuleCmd();
+        ReflectionTestUtils.setField(updateLbRuleCmd, ApiConstants.ID, lbRuleId);
 
         AccountVO account = new AccountVO(accountName, domainId, "networkDomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
@@ -99,18 +104,18 @@ public class UpdateLoadBalancerTest {
 
         LoadBalancerVO lb = new LoadBalancerVO(null, null, null, 0L, 0, 0, null, 0L, 0L, domainId, null, null);
 
-        when(lbDao.findById(isNull())).thenReturn(lb);
+        when(lbDao.findById(lbRuleId)).thenReturn(lb);
         when(netModel.getPublicIpAddress(anyLong())).thenReturn(Mockito.mock(PublicIpAddress.class));
         when(netDao.findById(anyLong())).thenReturn(Mockito.mock(NetworkVO.class));
         when(lbServiceProvider.validateLBRule(any(Network.class), any(LoadBalancingRule.class))).thenReturn(true);
-        when(lbDao.update(isNull(), eq(lb))).thenReturn(true);
+        when(lbDao.update(eq(lbRuleId), eq(lb))).thenReturn(true);
         when(netDao.findById(nullable(Long.class))).thenReturn(Mockito.mock(NetworkVO.class));
         when(ntwkOffServiceMapDao.canProviderSupportServiceInNetworkOffering(nullable(Long.class), any(Network.Service.class), any(Network.Provider.class))).thenReturn(false);
         _lbMgr.updateLoadBalancerRule(updateLbRuleCmd);
 
         InOrder inOrder = Mockito.inOrder(lbServiceProvider, lbDao);
         inOrder.verify(lbServiceProvider).validateLBRule(any(Network.class), any(LoadBalancingRule.class));
-        inOrder.verify(lbDao).update(isNull(),eq(lb));
+        inOrder.verify(lbDao).update(eq(lbRuleId), eq(lb));
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -118,7 +123,7 @@ public class UpdateLoadBalancerTest {
 
         LoadBalancerVO lb = new LoadBalancerVO(null, null, null, 0L, 0, 0, null, 0L, 0L, domainId, null, null);
 
-        when(lbDao.findById(anyLong())).thenReturn(lb);
+        when(lbDao.findById(lbRuleId)).thenReturn(lb);
         when(netModel.getPublicIpAddress(anyLong())).thenReturn(Mockito.mock(PublicIpAddress.class));
         when(netDao.findById(anyLong())).thenReturn(Mockito.mock(NetworkVO.class));
         when(lbServiceProvider.validateLBRule(any(Network.class), any(LoadBalancingRule.class))).thenReturn(false);

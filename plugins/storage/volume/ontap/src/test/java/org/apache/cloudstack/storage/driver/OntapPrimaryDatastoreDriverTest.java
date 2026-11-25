@@ -100,6 +100,15 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class OntapPrimaryDatastoreDriverTest {
 
+    /**
+     * A real serial number taken from an ONTAP array, and the WWID NetApp derives from it as its
+     * OUI plus the serial's ASCII bytes in hex. The serial deliberately contains a '/', which is
+     * why volume paths carry the WWID: the raw serial would break the '/targetIQN/LUN' parsing that
+     * every hypervisor resource applies to the path.
+     */
+    private static final String LUN_SERIAL_NUMBER = "x0M-8?/kEsJT";
+    private static final String LUN_WWID = "600a098078304d2d383f2f6b45734a54";
+
     @Mock
     private StoragePoolDetailsDao storagePoolDetailsDao;
 
@@ -210,7 +219,7 @@ class OntapPrimaryDatastoreDriverTest {
         when(storagePoolDao.findById(1L)).thenReturn(storagePool);
         when(storagePool.getId()).thenReturn(1L);
         when(storagePool.getName()).thenReturn("vol1");
-        when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.Iscsi);
+        when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.OntapiSCSI);
         when(storagePool.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
 
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
@@ -322,23 +331,17 @@ class OntapPrimaryDatastoreDriverTest {
         when(dataStore.getId()).thenReturn(1L);
         when(dataStore.getName()).thenReturn("ontap-pool");
         when(volumeInfo.getType()).thenReturn(VOLUME);
-        when(volumeInfo.getId()).thenReturn(100L);
         when(volumeInfo.getName()).thenReturn("test-volume");
 
         when(storagePoolDao.findById(1L)).thenReturn(storagePool);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
-        when(volumeDao.findById(100L)).thenReturn(volumeVO);
 
-        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class, CALLS_REAL_METHODS)) {
-            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any())).thenReturn(sanStrategy);
+        driver.createAsync(dataStore, volumeInfo, createCallback);
 
-            driver.createAsync(dataStore, volumeInfo, createCallback);
-
-            ArgumentCaptor<CreateCmdResult> resultCaptor = ArgumentCaptor.forClass(CreateCmdResult.class);
-            verify(createCallback).complete(resultCaptor.capture());
-            assertFalse(resultCaptor.getValue().isSuccess());
-            assertTrue(resultCaptor.getValue().getResult().contains("Unsupported protocol FC"));
-        }
+        ArgumentCaptor<CreateCmdResult> resultCaptor = ArgumentCaptor.forClass(CreateCmdResult.class);
+        verify(createCallback).complete(resultCaptor.capture());
+        assertFalse(resultCaptor.getValue().isSuccess());
+        assertTrue(resultCaptor.getValue().getResult().contains("Unsupported protocol [FC]"));
     }
 
     @Test
@@ -548,6 +551,7 @@ class OntapPrimaryDatastoreDriverTest {
 
             when(sanStrategy.getAccessGroup(any())).thenReturn(existingAccessGroup);
             when(sanStrategy.ensureLunMapped(anyString(), anyString(), anyString())).thenReturn("0");
+            when(sanStrategy.getLunSerialNumber(anyString(), anyString())).thenReturn(LUN_SERIAL_NUMBER);
 
             // Execute
             boolean result = driver.grantAccess(volumeInfo, host, dataStore);
@@ -600,6 +604,7 @@ class OntapPrimaryDatastoreDriverTest {
             when(sanStrategy.getAccessGroup(any())).thenReturn(null);
             when(sanStrategy.createAccessGroup(any())).thenReturn(createdAccessGroup);
             when(sanStrategy.ensureLunMapped(anyString(), anyString(), anyString())).thenReturn("0");
+            when(sanStrategy.getLunSerialNumber(anyString(), anyString())).thenReturn(LUN_SERIAL_NUMBER);
 
             // Execute
             boolean result = driver.grantAccess(volumeInfo, hostVO, dataStore);
@@ -1304,7 +1309,7 @@ class OntapPrimaryDatastoreDriverTest {
         // getId is only used after snapshot_details validation succeeds; lenient for early-fail tests.
         lenient().when(storagePool.getId()).thenReturn(1L);
         lenient().when(storagePool.getName()).thenReturn("vol1");
-        lenient().when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.Iscsi);
+        lenient().when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.OntapiSCSI);
         lenient().when(storagePool.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
 
@@ -1348,7 +1353,7 @@ class OntapPrimaryDatastoreDriverTest {
         when(storagePoolDao.findById(1L)).thenReturn(storagePool);
         when(storagePool.getId()).thenReturn(1L);
         lenient().when(storagePool.getName()).thenReturn("vol1");
-        lenient().when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.Iscsi);
+        lenient().when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.OntapiSCSI);
         lenient().when(storagePool.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
 
@@ -1397,10 +1402,11 @@ class OntapPrimaryDatastoreDriverTest {
 
             when(sanStrategy.getAccessGroup(any())).thenReturn(existingAccessGroup);
             when(sanStrategy.ensureLunMapped(eq("svm1"), eq("/vol/vol1/cs_tmpl_50"), eq("igroup1"))).thenReturn("3");
+            when(sanStrategy.getLunSerialNumber(eq("svm1"), eq("/vol/vol1/cs_tmpl_50"))).thenReturn(LUN_SERIAL_NUMBER);
 
             assertTrue(driver.grantAccess(templateInfo, host, primaryDataStore));
 
-            String expectedPath = "/iqn.1992-08.com.netapp:sn.123456/3";
+            String expectedPath = "/iqn.1992-08.com.netapp:sn.123456/" + LUN_WWID;
             verify(templatePoolRef).setInstallPath(expectedPath);
             verify(vmTemplatePoolDao).update(eq(7L), any(VMTemplateStoragePoolVO.class));
 
@@ -1452,6 +1458,7 @@ class OntapPrimaryDatastoreDriverTest {
 
             when(sanStrategy.getAccessGroup(any())).thenReturn(existingAccessGroup);
             when(sanStrategy.ensureLunMapped(eq("svm1"), eq("/vol/vol1/cs_tmpl_50"), eq("igroup1"))).thenReturn("3");
+            when(sanStrategy.getLunSerialNumber(eq("svm1"), eq("/vol/vol1/cs_tmpl_50"))).thenReturn(LUN_SERIAL_NUMBER);
             when(sanStrategy.getCloudStackVolume(argThat(map ->
                     map != null && "/vol/vol1/cs_tmpl_50".equals(map.get("name")))))
                     .thenReturn(cachedTemplate);
@@ -1767,11 +1774,12 @@ class OntapPrimaryDatastoreDriverTest {
             when(sanStrategy.getAccessGroup(any())).thenReturn(null);
             when(sanStrategy.createAccessGroup(any())).thenReturn(createdAccessGroup);
             when(sanStrategy.ensureLunMapped(eq("svm1"), eq("/vol/vol1/cs_tmpl_50"), eq("igroup1"))).thenReturn("3");
+            when(sanStrategy.getLunSerialNumber(eq("svm1"), eq("/vol/vol1/cs_tmpl_50"))).thenReturn(LUN_SERIAL_NUMBER);
 
             assertTrue(driver.grantAccess(templateInfo, hostVo, primaryDataStore));
 
             verify(sanStrategy).createAccessGroup(any());
-            verify(templatePoolRef).setInstallPath("/iqn.1992-08.com.netapp:sn.123456/3");
+            verify(templatePoolRef).setInstallPath("/iqn.1992-08.com.netapp:sn.123456/" + LUN_WWID);
         }
     }
 
@@ -1945,7 +1953,7 @@ class OntapPrimaryDatastoreDriverTest {
         SnapshotInfo snapshotInfo = stubSnapshotToVolumeCopy(dbVolume);
         when(volumeInfo.getVolume()).thenReturn(inMemoryVolume);
         stubSnapshotCloneSource(ProtocolType.ISCSI.name());
-        when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.Iscsi);
+        when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.OntapiSCSI);
 
         Lun clonedLun = new Lun();
         clonedLun.setName("/vol/vol1/cs_tmp_snap_200_100");
@@ -2092,7 +2100,7 @@ class OntapPrimaryDatastoreDriverTest {
         when(storagePool.getId()).thenReturn(1L);
         when(storagePool.getScope()).thenReturn(ScopeType.CLUSTER);
         when(storagePool.getPath()).thenReturn("iqn.1992-08.com.netapp:sn.123456");
-        when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.Iscsi);
+        when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.OntapiSCSI);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
         when(volumeDao.findById(100L)).thenReturn(dbVolume);
         when(host.getUuid()).thenReturn("host-uuid-1");

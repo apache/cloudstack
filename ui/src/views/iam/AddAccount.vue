@@ -25,6 +25,13 @@
         :loading="loading"
         layout="vertical"
         @finish="handleSubmit">
+        <div style="margin-bottom: 10px">
+          <a-alert type="warning">
+            <template #message>
+              <div v-html="$t('message.add.account.warning')"></div>
+            </template>
+          </a-alert>
+        </div>
         <a-form-item ref="roleid" name="roleid">
           <template #label>
             <tooltip-label :title="$t('label.role')" :tooltip="apiParams.roleid.description"/>
@@ -53,7 +60,7 @@
             v-model:value="form.username"
             :placeholder="apiParams.username.description" />
         </a-form-item>
-        <a-row :gutter="12">
+        <a-row :gutter="12" v-if="!form.samlenable">
           <a-col :md="24" :lg="12">
             <a-form-item ref="password" name="password">
               <template #label>
@@ -75,6 +82,12 @@
             </a-form-item>
           </a-col>
         </a-row>
+        <a-alert
+          v-else
+          type="info"
+          show-icon
+          :message="$t('message.saml.account.no.password')"
+          style="margin-bottom: 12px;" />
         <a-form-item ref="email" name="email">
           <template #label>
             <tooltip-label :title="$t('label.email')" :tooltip="apiParams.email.description"/>
@@ -250,6 +263,14 @@ export default {
         }
       },
       immediate: false
+    },
+    'form.samlenable' (samlEnabled) {
+      // a SAML-authenticated account never logs in with a native password
+      this.rules.password = samlEnabled ? [] : [{ required: true, message: this.$t('message.error.required.input') }]
+      this.rules.confirmpassword = samlEnabled ? [] : [
+        { required: true, message: this.$t('message.error.required.input') },
+        { validator: this.validateConfirmPassword }
+      ]
     }
   },
   methods: {
@@ -408,11 +429,13 @@ export default {
         const params = {
           roleid: values.roleid,
           username: values.username,
-          password: values.password,
           email: values.email,
           firstname: values.firstname,
           lastname: values.lastname,
           domainid: values.domainid
+        }
+        if (!values.samlenable) {
+          params.password = values.password
         }
         if (this.isValidValueForKey(values, 'account') && values.account.length > 0) {
           params.account = values.account
