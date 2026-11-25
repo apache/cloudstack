@@ -906,17 +906,24 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
 
     ProviderAdapterContext newManagedVolumeContext(DataObject obj) {
         ProviderAdapterContext ctx = new ProviderAdapterContext();
+        // Include removed rows: the record may already be marked removed when its copy on the array is cleaned up
         if (obj instanceof VolumeInfo) {
-            VolumeVO vol = _volumeDao.findById(obj.getId());
-            ctx.setAccountId(vol.getAccountId());
-            ctx.setDomainId(vol.getDomainId());
+            VolumeVO vol = _volumeDao.findByIdIncludingRemoved(obj.getId());
+            if (vol != null) {
+                ctx.setAccountId(vol.getAccountId());
+                ctx.setDomainId(vol.getDomainId());
+            }
         } else if (obj instanceof SnapshotInfo) {
-            SnapshotVO snap = _snapshotDao.findById(obj.getId());
-            ctx.setAccountId(snap.getAccountId());
-            ctx.setDomainId(snap.getDomainId());
+            SnapshotVO snap = _snapshotDao.findByIdIncludingRemoved(obj.getId());
+            if (snap != null) {
+                ctx.setAccountId(snap.getAccountId());
+                ctx.setDomainId(snap.getDomainId());
+            }
         } else if (obj instanceof TemplateInfo) {
-            VMTemplateVO template = _vmTemplateDao.findById(obj.getId());
-            ctx.setAccountId(template.getAccountId());
+            VMTemplateVO template = _vmTemplateDao.findByIdIncludingRemoved(obj.getId());
+            if (template != null) {
+                ctx.setAccountId(template.getAccountId());
+            }
             // templates don't have a domain ID so always set to 0
             ctx.setDomainId(0L);
         }
