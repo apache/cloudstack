@@ -43,10 +43,21 @@ CALL `cloud_usage`.`IDEMPOTENT_ADD_UNIQUE_INDEX`('cloud_usage.usage_volume', 'id
 -- Reclaim VNETs belonging to Netris deleted networks
 UPDATE op_dc_vnet_alloc a
     JOIN networks n ON n.broadcast_uri = CONCAT('netris://', a.vnet)
+        AND n.data_center_id = a.data_center_id
     SET a.account_id = NULL,
         a.reservation_id = NULL,
         a.taken = NULL
-WHERE n.removed IS NOT NULL;
+WHERE n.removed IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM networks l
+                  WHERE l.removed IS NULL
+                    AND l.data_center_id = a.data_center_id
+                    AND l.broadcast_uri = n.broadcast_uri)
+  AND NOT EXISTS (SELECT 1 FROM network_details d
+                  JOIN networks l ON l.id = d.network_id
+                  WHERE d.name = 'netrisvxlanid'
+                    AND d.value = a.vnet
+                    AND l.removed IS NULL
+                    AND l.data_center_id = a.data_center_id);
 
 -- Scope routed network/VPC subnets to a zone, so that the same CIDR can be used in more than one zone. See #14419.
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.ip4_guest_subnet_network_map', 'data_center_id', 'bigint unsigned DEFAULT NULL COMMENT "zone it belongs to"');
