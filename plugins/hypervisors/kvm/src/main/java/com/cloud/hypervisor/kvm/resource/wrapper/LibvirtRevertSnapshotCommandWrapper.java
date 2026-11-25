@@ -51,6 +51,7 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.RbdUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
@@ -96,7 +97,7 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
 
             if (primaryPool.getType() == StoragePoolType.RBD) {
                 Rados rados = new Rados(primaryPool.getAuthUserName());
-                rados.confSet(MON_HOST, primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
+                rados.confSet(MON_HOST, RbdUtils.getRbdMonitors(primaryPool.getSourceHost(), primaryPool.getSourcePort()));
                 rados.confSet(KEY, primaryPool.getAuthSecret());
                 rados.confSet(CLIENT_MOUNT_TIMEOUT, RADOS_CONNECTION_TIMEOUT);
                 rados.connect();

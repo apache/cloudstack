@@ -53,6 +53,7 @@ SELECT
     `disk_offering`.`iops_write_rate_max` AS `iops_write_rate_max`,
     `disk_offering`.`iops_write_rate_max_length` AS `iops_write_rate_max_length`,
     `disk_offering`.`cache_mode` AS `cache_mode`,
+    `disk_offering`.`error_policy` AS `error_policy`,
     `disk_offering`.`disk_size` AS `root_disk_size`,
     `disk_offering`.`encrypt` AS `encrypt_root`,
     `service_offering`.`cpu` AS `cpu`,

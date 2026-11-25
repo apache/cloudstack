@@ -705,12 +705,51 @@ public class LibvirtComputingResourceTest {
     public void testCreateVideoDef() {
         VirtualMachineTO to = createDefaultVM(false);
         libvirtComputingResourceSpy.videoRam = 200;
+        libvirtComputingResourceSpy.videoHw = "VmVGA";
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        Document domainDoc = parse(videoDef.toString());
+        assertXpath(domainDoc, "/video/model/@type", "vmvga");
+        assertXpath(domainDoc, "/video/model/@vram", "200");
+    }
+
+    @Test
+    public void testCreateVideoDefIgnoresUnsupportedAgentProperty() {
+        VirtualMachineTO to = createDefaultVM(false);
         libvirtComputingResourceSpy.videoHw = "vGPU";
 
         VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
         Document domainDoc = parse(videoDef.toString());
-        assertXpath(domainDoc, "/video/model/@type", "vGPU");
-        assertXpath(domainDoc, "/video/model/@vram", "200");
+        assertXpath(domainDoc, "/video/model/@type", "vga");
+        assertXpath(domainDoc, "/video/model/@vram", "32768");
+    }
+
+    @Test
+    public void testCreateVideoDefIgnoresInjectedDetail() {
+        VirtualMachineTO to = createDefaultVM(false);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.VIDEO_HARDWARE, "virtio'/></video><disk type='file' device='disk'><driver name='qemu' type='raw'/>"
+                + "<source file='/etc/shadow'/><target dev='vdz' bus='virtio'/></disk><video><model type='virtio");
+        to.setDetails(details);
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        String xml = videoDef.toString();
+        assertFalse(xml.contains("<disk"));
+        Document domainDoc = parse(xml);
+        assertXpath(domainDoc, "/video/model/@type", "vga");
+    }
+
+    @Test
+    public void testCreateVideoDefUnknownDetailKeepsAgentProperty() {
+        VirtualMachineTO to = createDefaultVM(false);
+        libvirtComputingResourceSpy.videoHw = "qxl";
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.VIDEO_HARDWARE, "bogus");
+        to.setDetails(details);
+
+        VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
+        Document domainDoc = parse(videoDef.toString());
+        assertXpath(domainDoc, "/video/model/@type", "qxl");
     }
 
     @Test
@@ -1749,10 +1788,12 @@ public class LibvirtComputingResourceTest {
         final VirtualMachineTO vmTO = Mockito.mock(VirtualMachineTO.class);
         final boolean executeInSequence = false;
         DiskTO[] diskTOS = new DiskTO[]{};
+        final NicTO[] nicTOs = new NicTO[]{};
         final MigrateCommand command = new MigrateCommand(vmName, destIp, isWindows, vmTO, executeInSequence );
 
         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         when(vmTO.getDisks()).thenReturn(diskTOS);
+        when(vmTO.getNics()).thenReturn(nicTOs);
         try {
             when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
             when(libvirtUtilitiesHelper.retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system")).thenReturn(dconn);
@@ -3216,7 +3257,8 @@ public class LibvirtComputingResourceTest {
         final Answer answer = wrapper.execute(command, libvirtComputingResourceMock);
         assertTrue(answer.getResult());
         assertTrue(answer instanceof CheckOnHostAnswer);
-        assertFalse(((CheckOnHostAnswer)answer).isAlive());
+        // the host monitors no storage pool, so it can not tell: it must not say that the host is dead
+        assertTrue(((CheckOnHostAnswer)answer).isAlive());
 
         verify(libvirtComputingResourceMock, times(1)).getMonitor();
     }
@@ -7755,5 +7797,37 @@ public class LibvirtComputingResourceTest {
         Pair<Integer, Long> expectedResult = new Pair<>(expectedPeriod, expectedQuota);
         Pair<Integer, Long> result = libvirtComputingResourceSpy.getPeriodAndQuota(cpuQuotaPercentage);
         Assert.assertEquals(expectedResult, result);
+    }
+
+    // getEffectiveGuestBridgeName() must mirror BridgeVifDriver#plugTrunkVlanNic's resolution
+
+    @Test
+    public void getEffectiveGuestBridgeNameFallsBackToGuestNetworkDeviceWhenNoLabelReported() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        Assert.assertEquals("cloudbr1", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+    }
+
+    @Test
+    public void getEffectiveGuestBridgeNamePrefersGuestTrafficLabelOverGuestNetworkDeviceWhenTheyDiffer() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        libvirtComputingResourceSpy.setGuestTrafficLabel("cloudbr2");
+        Assert.assertEquals("cloudbr2", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+    }
+
+    @Test
+    public void getEffectiveGuestBridgeNameRevertsToGuestNetworkDeviceOnceLabelIsCleared() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        libvirtComputingResourceSpy.setGuestTrafficLabel("cloudbr2");
+        Assert.assertEquals("cloudbr2", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+
+        libvirtComputingResourceSpy.setGuestTrafficLabel(null);
+        Assert.assertEquals("cloudbr1", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
+    }
+
+    @Test
+    public void getEffectiveGuestBridgeNameTreatsBlankLabelAsNoLabel() {
+        libvirtComputingResourceSpy.guestBridgeName = "cloudbr1";
+        libvirtComputingResourceSpy.setGuestTrafficLabel("   ");
+        Assert.assertEquals("cloudbr1", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
     }
 }

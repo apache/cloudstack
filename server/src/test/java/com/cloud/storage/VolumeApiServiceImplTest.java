@@ -55,6 +55,7 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -2058,6 +2059,75 @@ public class VolumeApiServiceImplTest {
             verify(volumeServiceMock, times(0)).resize(any(VolumeInfo.class));
         }
     }
+
+    @Test
+    public void testResizeVolumeNoChangeSkipsDriver() throws ResourceAllocationException, ExecutionException, InterruptedException {
+        ResizeVolumeCmd cmd = new ResizeVolumeCmd();
+        ReflectionTestUtils.setField(cmd, "id", volumeMockId);
+
+        testResizeVolumeSetup();
+        when(storageMgr.storagePoolHasEnoughSpaceForResize(any(), nullable(Long.class), nullable(Long.class))).thenReturn(true);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            Volume result = volumeApiServiceImpl.resizeVolume(cmd);
+
+            Assert.assertSame(volumeVoMock, result);
+            verify(volumeServiceMock, times(0)).resize(any(VolumeInfo.class));
+            verify(volumeDaoMock, times(0)).updateDiskOffering(anyLong(), anyLong());
+        }
+    }
+
+    @Test
+    public void testResizeVolumeSameDiskOfferingSkipsDriver() throws ResourceAllocationException, ExecutionException, InterruptedException {
+        ResizeVolumeCmd cmd = new ResizeVolumeCmd();
+        ReflectionTestUtils.setField(cmd, "id", volumeMockId);
+        ReflectionTestUtils.setField(cmd, "newDiskOfferingId", newDiskOfferingMockId);
+
+        testResizeVolumeSetup();
+        when(newDiskOfferingMock.getDiskSize()).thenReturn(volumeSizeMock);
+        when(diskOfferingMock.getId()).thenReturn(diskOfferingMockId);
+        when(newDiskOfferingMock.getId()).thenReturn(diskOfferingMockId);
+        when(storageMgr.storagePoolHasEnoughSpaceForResize(any(), nullable(Long.class), nullable(Long.class))).thenReturn(true);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            Volume result = volumeApiServiceImpl.resizeVolume(cmd);
+
+            Assert.assertSame(volumeVoMock, result);
+            verify(volumeServiceMock, times(0)).resize(any(VolumeInfo.class));
+            verify(volumeDaoMock, times(0)).updateDiskOffering(anyLong(), anyLong());
+        }
+    }
+
+    @Test
+    public void testResizeVolumeNewDiskOfferingSameSizeUpdatesOfferingWithoutResize() throws ResourceAllocationException, ExecutionException, InterruptedException {
+        ResizeVolumeCmd cmd = new ResizeVolumeCmd();
+        ReflectionTestUtils.setField(cmd, "id", volumeMockId);
+        ReflectionTestUtils.setField(cmd, "newDiskOfferingId", newDiskOfferingMockId);
+
+        testResizeVolumeSetup();
+        when(newDiskOfferingMock.getDiskSize()).thenReturn(volumeSizeMock);
+        when(diskOfferingMock.getId()).thenReturn(diskOfferingMockId);
+        when(newDiskOfferingMock.getId()).thenReturn(newDiskOfferingMockId);
+        when(storageMgr.storagePoolHasEnoughSpaceForResize(any(), nullable(Long.class), nullable(Long.class))).thenReturn(true);
+
+        DataStore offeringStore = Mockito.mock(DataStore.class);
+        PrimaryDataStoreDriver driver = Mockito.mock(PrimaryDataStoreDriver.class);
+        when(dataStoreMgr.getDataStore(anyLong(), eq(DataStoreRole.Primary))).thenReturn(offeringStore);
+        when(offeringStore.getDriver()).thenReturn(driver);
+        when(driver.informStorageForDiskOfferingChange()).thenReturn(true);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            Mockito.clearInvocations(volumeDaoMock);
+            Volume result = volumeApiServiceImpl.resizeVolume(cmd);
+
+            Assert.assertSame(volumeVoMock, result);
+            verify(volumeDaoMock).updateDiskOffering(volumeMockId, newDiskOfferingMockId);
+            verify(volumeDaoMock, times(2)).findById(volumeMockId);
+            verify(driver).updateStorageWithTheNewDiskOffering(volumeVoMock, newDiskOfferingMock);
+            verify(volumeServiceMock, times(0)).resize(any(VolumeInfo.class));
+        }
+    }
+
     private UserVmVO getMockedVm() {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         Mockito.when(vm.getId()).thenReturn(1L);

@@ -825,29 +825,35 @@ class TestVolumes(cloudstackTestCase):
         self.assertTrue(hasattr(root_volume, "vmname"))
         self.assertEqual(root_volume.vmname, list_vm.name)
 
-        self.assertTrue(hasattr(root_volume, "clustername"))
-        self.assertTrue(root_volume.clustername is not None)
-
-        self.assertTrue(hasattr(root_volume, "clusterid"))
-        self.assertTrue(root_volume.clusterid is not None)
-
         self.assertTrue(hasattr(root_volume, "storageid"))
         self.assertTrue(root_volume.storageid is not None)
 
         self.assertTrue(hasattr(root_volume, "storage"))
         self.assertTrue(root_volume.storage is not None)
 
+        volume_pool = list_storage_pools(self.apiclient, id=root_volume.storageid)[0]
+        if volume_pool.scope == "ZONE":
+            # A zone-wide storage pool isn't bound to a single pod/cluster,
+            # so volumes on it have no pod/cluster association.
+            self.debug("Skipping pod/cluster checks: storage pool %s is zone-wide" % volume_pool.id)
+        else:
+            self.assertTrue(hasattr(root_volume, "clustername"))
+            self.assertTrue(root_volume.clustername is not None)
+
+            self.assertTrue(hasattr(root_volume, "clusterid"))
+            self.assertTrue(root_volume.clusterid is not None)
+
+            self.assertTrue(hasattr(root_volume, "podid"))
+            self.assertEqual(root_volume.podid, list_pods.id)
+
+            self.assertTrue(hasattr(root_volume, "podname"))
+            self.assertEqual(root_volume.podname, list_pods.name)
+
         self.assertTrue(hasattr(root_volume, "zoneid"))
         self.assertEqual(root_volume.zoneid, self.zone.id)
 
         self.assertTrue(hasattr(root_volume, "zonename"))
         self.assertEqual(root_volume.zonename, self.zone.name)
-
-        self.assertTrue(hasattr(root_volume, "podid"))
-        self.assertEqual(root_volume.podid, list_pods.id)
-
-        self.assertTrue(hasattr(root_volume, "podname"))
-        self.assertEqual(root_volume.podname, list_pods.name)
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_11_attach_volume_with_unstarted_vm(self):
@@ -1110,6 +1116,12 @@ class TestVolumeEncryption(cloudstackTestCase):
             # Volume Encryption currently supported for KVM hypervisor
             cls.unsupportedHypervisor = True
             return
+
+        list_volume_pool_response = list_storage_pools(cls.apiclient)
+        volume_pool = list_volume_pool_response[0]
+        # RBD pools are encrypted natively by librbd (LUKS2, engine='librbd'); any other pool type
+        # goes through qemu-native encryption (LUKS1, no engine attribute).
+        cls.storage_pool_type = volume_pool.type
 
         # Get Zone and Domain
         cls.domain = get_domain(cls.apiclient)
@@ -1447,12 +1459,7 @@ class TestVolumeEncryption(cloudstackTestCase):
         list_volume_response = Volume.list(
             self.apiclient,
             id=volume.id)
-        vol_sz = str(list_volume_response[0].size)
-        list_volume_pool_response = list_storage_pools(self.apiclient, id=list_volume_response[0].storageid)
-        volume_pool = list_volume_pool_response[0]
-        if volume_pool.type.lower() == "powerflex":
-            vol_sz = int(vol_sz)
-            vol_sz = str(vol_sz - (128 << 20) - ((vol_sz >> 30) * 200704))
+        vol_sz = self.get_expected_guest_visible_size(list_volume_response[0], list_volume_response[0].size)
 
         volume_name = "/dev/vd" + chr(ord('a') + int(list_volume_response[0].deviceid))
         self.debug(" Using KVM volume_name: %s" % (volume_name))
@@ -1467,13 +1474,21 @@ class TestVolumeEncryption(cloudstackTestCase):
 
     @attr(tags=["advanced", "smoke", "diskencrypt"], required_hardware="true")
     def test_03_root_and_data_volume_encryption(self):
-        """Test Root and Data Volumes Encryption
+        """Test Root and Data Volumes Encryption, plus resize of the encrypted data volume
 
         # Validate the following
         # 1. Create VM using the service offering with encryptroot true
         # 2. Verify VM created and Root Volume
         # 3. Create Data Volume using the disk offering with encrypt true
         # 4. Verify Data Volume
+        # 5. Resize the encrypted data volume online (VM stays running) -> for RBD this is
+        #    routed through virsh blockresize; for any other pool type it goes through the
+        #    same virsh blockresize NOTIFYONLY path used for qemu-native LUKS.
+        # 6. Detach and resize it again offline -> for RBD this uses `rbd resize
+        #    --encryption-passphrase-file`; for any other pool type it uses qemu-img
+        #    (LibvirtResizeVolumeCommandWrapper.resizeEncryptedQcowFile).
+        # Resize is folded into this test (reusing its VM and volume) rather than a separate
+        # test, since spinning up another VM just for resize coverage would cost a lot more time.
         """
 
         virtual_machine = VirtualMachine.create(
@@ -1585,12 +1600,7 @@ class TestVolumeEncryption(cloudstackTestCase):
         list_volume_response = Volume.list(
             self.apiclient,
             id=volume.id)
-        vol_sz = str(list_volume_response[0].size)
-        list_volume_pool_response = list_storage_pools(self.apiclient, id=list_volume_response[0].storageid)
-        volume_pool = list_volume_pool_response[0]
-        if volume_pool.type.lower() == "powerflex":
-            vol_sz = int(vol_sz)
-            vol_sz = str(vol_sz - (128 << 20) - ((vol_sz >> 30) * 200704))
+        vol_sz = self.get_expected_guest_visible_size(list_volume_response[0], list_volume_response[0].size)
 
         volume_name = "/dev/vd" + chr(ord('a') + int(list_volume_response[0].deviceid))
         self.debug(" Using KVM volume_name: %s" % (volume_name))
@@ -1599,9 +1609,89 @@ class TestVolumeEncryption(cloudstackTestCase):
 
         self.check_volume_encryption(virtual_machine, 3)
 
+        # Resize the attached encrypted data volume, online then offline, reusing this VM
+        # instead of provisioning a separate one just for resize coverage.
+        #
+        # Online (VM stays running): for RBD this is routed through virsh blockresize; for
+        # any other pool type it goes through the same virsh blockresize NOTIFYONLY path used
+        # for qemu-native LUKS.
+        disk_offering_encrypt_2gb = DiskOffering.create(
+            self.apiclient,
+            self.services["disk_offering"],
+            name="Encrypted-2GB",
+            disksize=2,
+            encrypt=True
+        )
+        self.cleanup.append(disk_offering_encrypt_2gb)
+
+        volume.resize(self.apiclient, diskofferingid=disk_offering_encrypt_2gb.id)
+
+        # Online resize only grows the block device live; picking up the new capacity in the
+        # guest still needs a rescan or reboot depending on the guest OS/kernel (this template's
+        # CentOS 5.5 predates reliable virtio-blk live-capacity notification), so verify success
+        # through the volume's own reported size here. Guest-visible size is verified below after
+        # the offline resize, once the volume is freshly re-attached.
+        list_volume_response = Volume.list(self.apiclient, id=volume.id)
+        expected_raw_size = disk_offering_encrypt_2gb.disksize << 30
+        if self.storage_pool_type == "RBD" and getattr(list_volume_response[0], "encryptformat", None):
+            expected_raw_size += (16 << 20)
+        self.assertEqual(
+            int(list_volume_response[0].size),
+            expected_raw_size,
+            "Check that the online resize grew the volume to the expected size"
+        )
+        self.assertEqual(list_volume_response[0].state, 'Ready', "Check that the online-resized volume is Ready")
+
+        # Offline (volume detached first): for RBD this uses `rbd resize
+        # --encryption-passphrase-file`; for any other pool type it uses qemu-img
+        # (LibvirtResizeVolumeCommandWrapper.resizeEncryptedQcowFile).
         virtual_machine.detach_volume(self.apiclient, volume)
-        self.assertEqual(ret[0], SUCCESS, "Check if promised disk size actually available")
+
+        disk_offering_encrypt_3gb = DiskOffering.create(
+            self.apiclient,
+            self.services["disk_offering"],
+            name="Encrypted-3GB",
+            disksize=3,
+            encrypt=True
+        )
+        self.cleanup.append(disk_offering_encrypt_3gb)
+
+        volume.resize(self.apiclient, diskofferingid=disk_offering_encrypt_3gb.id)
+
+        virtual_machine.attach_volume(self.apiclient, volume)
+        self.check_volume_encryption(virtual_machine, 3)
+
+        ssh = virtual_machine.get_ssh_client(reconnect=True)
+        list_volume_response = Volume.list(self.apiclient, id=volume.id)
+        vol_sz = self.get_expected_guest_visible_size(list_volume_response[0], list_volume_response[0].size)
+        # After a detach + reattach, libvirt is not guaranteed to reuse the same target device
+        # letter the volume had before (it may pick a fresh one), so the offering's deviceid no
+        # longer reliably maps to /dev/vdX here. Match by the reported byte count instead.
+        fdisk_output = ssh.execute("/sbin/fdisk -l | grep Disk")
+        self.debug("Offline resize - Volume Size Expected %s - guest disks: %s" % (vol_sz, fdisk_output))
+        self.assertTrue(
+            any(" %s bytes" % vol_sz in line for line in fdisk_output),
+            "Check if the offline-resized encrypted volume size is available in the guest"
+        )
+
+        virtual_machine.detach_volume(self.apiclient, volume)
         time.sleep(self.services["sleep"])
+
+    def get_expected_guest_visible_size(self, volume, vol_sz):
+        """Some pool types/encryption mechanisms reserve overhead out of the requested size, so the
+        guest sees fewer usable bytes than the volume's nominal size. Returns the byte count the
+        guest should actually report for the given volume.
+        """
+        list_volume_pool_response = list_storage_pools(self.apiclient, id=volume.storageid)
+        volume_pool = list_volume_pool_response[0]
+        vol_sz = int(vol_sz)
+        if volume_pool.type.lower() == "powerflex":
+            vol_sz = vol_sz - (128 << 20) - ((vol_sz >> 30) * 200704)
+        elif volume_pool.type.lower() == "rbd" and getattr(volume, "encryptformat", None):
+            # RBD volumes are encrypted natively by librbd: the LUKS2 header/keyslots (16 MiB) are
+            # reserved out of the volume's own size, so the guest sees size - header.
+            vol_sz = vol_sz - (16 << 20)
+        return str(vol_sz)
 
     def does_host_with_encryption_support_exists(self):
         hosts = Host.list(
@@ -1610,6 +1700,19 @@ class TestVolumeEncryption(cloudstackTestCase):
             type='Routing',
             hypervisor='KVM',
             state='Up')
+
+        if self.storage_pool_type == "RBD":
+            # host.volume.encryption ("encryptionsupported" in the API response) only reflects
+            # qemu-native LUKS support; librbd RBD encryption is tracked separately in
+            # host_details as host.volume.encryption.rbd, which is not surfaced on HostResponse.
+            for host in hosts:
+                rbd_supported = self.dbclient.execute(
+                    "select hd.value from host_details hd join host h on h.id=hd.host_id "
+                    "where h.uuid='%s' and hd.name='host.volume.encryption.rbd'" % host.id
+                )
+                if rbd_supported and rbd_supported[0][0].lower() == 'true':
+                    return True
+            return False
 
         for host in hosts:
             if host.encryptionsupported:
@@ -1640,16 +1743,29 @@ class TestVolumeEncryption(cloudstackTestCase):
         parser = etree.XMLParser(remove_blank_text=True)
         virshxml_root = ET.fromstring(xml_as_str, parser=parser)
 
-        encryption_format = virshxml_root.findall(".devices/disk/encryption[@format='luks']")
-        self.assertIsNotNone(encryption_format, "The volume encryption format is not luks")
+        # RBD volumes are encrypted natively by librbd: <encryption format='luks2' engine='librbd'>.
+        # Any other pool type keeps using qemu-native LUKS1: <encryption format='luks'> (no engine).
+        encryption_format_value = 'luks2' if self.storage_pool_type == "RBD" else 'luks'
+        encryption_format = virshxml_root.findall(".devices/disk/encryption[@format='%s']" % encryption_format_value)
+        self.assertGreater(len(encryption_format), 0,
+                           "No volume is encrypted with the %s format in the domain XML of %s" % (encryption_format_value, instance_name))
         self.assertEqual(
             len(encryption_format),
             volumes_count,
-            "Check the number of volumes encrypted with luks format"
+            "Check the number of volumes encrypted with %s format" % encryption_format_value
         )
 
+        if self.storage_pool_type == "RBD":
+            librbd_engine = [e for e in encryption_format if e.get('engine') == 'librbd']
+            self.assertEqual(
+                len(librbd_engine),
+                volumes_count,
+                "Check the number of RBD volumes encrypted with the librbd engine"
+            )
+
         secret_type = virshxml_root.findall(".devices/disk/encryption/secret[@type='passphrase']")
-        self.assertIsNotNone(secret_type, "The volume encryption secret type is not passphrase")
+        self.assertGreater(len(secret_type), 0,
+                           "No encryption secret of type passphrase in the domain XML of %s" % instance_name)
         self.assertEqual(
             len(secret_type),
             volumes_count,

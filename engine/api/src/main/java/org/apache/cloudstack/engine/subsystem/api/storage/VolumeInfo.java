@@ -21,6 +21,7 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering.DiskCacheMode;
+import com.cloud.offering.DiskOffering.DiskErrorPolicy;
 import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
@@ -78,6 +79,8 @@ public interface VolumeInfo extends DownloadableDataInfo, Volume {
     Long getIopsWriteRateMaxLength();
 
     DiskCacheMode getCacheMode();
+
+    DiskErrorPolicy getErrorPolicy();
 
     /**
      * Currently available for KVM volumes
