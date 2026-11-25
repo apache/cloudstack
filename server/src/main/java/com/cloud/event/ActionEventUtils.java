@@ -32,6 +32,10 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.commons.lang3.ObjectUtils;
@@ -60,6 +64,7 @@ public class ActionEventUtils {
     protected static Logger LOGGER = LogManager.getLogger(ActionEventUtils.class);
 
     private static EventDao s_eventDao;
+    private static AsyncJobManager s_jobMgr;
     private static AccountDao s_accountDao;
     private static ProjectDao s_projectDao;
     protected static UserDao s_userDao;
@@ -75,6 +80,8 @@ public class ActionEventUtils {
 
     @Inject
     EventDao eventDao;
+    @Inject
+    AsyncJobManager jobMgr;
     @Inject
     AccountDao accountDao;
     @Inject
@@ -92,6 +99,7 @@ public class ActionEventUtils {
     @PostConstruct
     void init() {
         s_eventDao = eventDao;
+        s_jobMgr = jobMgr;
         s_accountDao = accountDao;
         s_userDao = userDao;
         s_projectDao = projectDao;
@@ -106,6 +114,19 @@ public class ActionEventUtils {
         publishOnEventBus(event, userId, accountId, domainId, EventCategory.ACTION_EVENT.getName(), type,
                 com.cloud.event.Event.State.Completed, description, resourceDetails.second(), resourceDetails.third());
         return event.getId();
+    }
+
+    public static void linkEventsToJob(final long jobId, final Long... eventIds) {
+        for (final Long eventId : eventIds) {
+            if (eventId == null || eventId == 0) {
+                continue;
+            }
+            final EventVO event = s_eventDao.findById(eventId);
+            if (event != null && event.getAsyncJobId() == null) {
+                event.setAsyncJobId(jobId);
+                s_eventDao.update(eventId, event);
+            }
+        }
     }
 
     /*
@@ -183,6 +204,11 @@ public class ActionEventUtils {
         event.setState(state);
         event.setDescription(description);
         event.setDisplay(eventDisplayEnabled);
+        Long jobId = currentJobId();
+        if (jobId == null && ApiCommandResourceType.Job.toString().equals(resourceType)) {
+            jobId = resourceId;
+        }
+        event.setAsyncJobId(jobId);
 
         if (domainId != null) {
             event.setDomainId(domainId);
@@ -203,6 +229,26 @@ public class ActionEventUtils {
         }
         event = s_eventDao.persist(event);
         return event;
+    }
+
+    /** Why the job running on this thread is being or has been cancelled; null when it is not. */
+    public static String cancellationReasonOfCurrentJob() {
+        final Long jobId = currentJobId();
+        return jobId != null && s_jobMgr != null ? s_jobMgr.getCancellationReason(jobId) : null;
+    }
+
+    /** The API job this thread works for (a VM work job's parent), or null outside a job. */
+    private static Long currentJobId() {
+        final AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrent();
+        if (context == null || context.getJob() == null) {
+            return null;
+        }
+        final AsyncJob job = context.getJob();
+        if (AsyncJobVO.JOB_DISPATCHER_PSEUDO.equals(job.getDispatcher())) {
+            return null;
+        }
+        final String related = job.getRelated();
+        return StringUtils.isNotEmpty(related) ? Long.valueOf(related) : job.getId();
     }
 
     private static void publishOnEventBus(Event eventRecord, long userId, long accountId, Long domainId,

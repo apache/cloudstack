@@ -670,4 +670,62 @@ public class SnapshotManagerTest {
         Mockito.verify(snapshotSrv).syncVolumeSnapshotsToRegionStore(TEST_VOLUME_ID, imageStoreEntityMock);
         Mockito.verify(snapshotStoreDao).update(TEST_SNAPSHOTDATASTORE_ID, snapshotStoreMock);
     }
+
+    @Test
+    public void removeAllocatedSnapshotUndoesTheAllocationCounts() {
+        SnapshotManagerImpl mgr = Mockito.spy(_snapshotMgr);
+        doReturn(true).when(mgr).isBackupSnapshotToSecondaryForZone(anyLong());
+        when(snapshotMock.getState()).thenReturn(Snapshot.State.Allocated);
+        when(snapshotMock.getAccountId()).thenReturn(7L);
+        when(snapshotMock.getSize()).thenReturn(1024L);
+        when(snapshotMock.getLocationType()).thenReturn(null);
+
+        mgr.removeAllocatedSnapshot(TEST_SNAPSHOT_ID);
+
+        Mockito.verify(_resourceLimitMgr).decrementResourceCount(7L, ResourceType.snapshot);
+        Mockito.verify(_resourceLimitMgr).decrementResourceCount(7L, ResourceType.secondary_storage, 1024L);
+        Mockito.verify(_snapshotDao).remove(TEST_SNAPSHOT_ID);
+    }
+
+    @Test
+    public void removeAllocatedSnapshotCountsPrimaryStorageWhenTheSnapshotStaysOnPrimary() {
+        SnapshotManagerImpl mgr = Mockito.spy(_snapshotMgr);
+        doReturn(true).when(mgr).isBackupSnapshotToSecondaryForZone(anyLong());
+        when(snapshotMock.getState()).thenReturn(Snapshot.State.Allocated);
+        when(snapshotMock.getAccountId()).thenReturn(7L);
+        when(snapshotMock.getSize()).thenReturn(1024L);
+        when(snapshotMock.getLocationType()).thenReturn(Snapshot.LocationType.PRIMARY);
+
+        mgr.removeAllocatedSnapshot(TEST_SNAPSHOT_ID);
+
+        Mockito.verify(_resourceLimitMgr).decrementResourceCount(7L, ResourceType.primary_storage, 1024L);
+        Mockito.verify(_snapshotDao).remove(TEST_SNAPSHOT_ID);
+    }
+
+    @Test
+    public void removeAllocatedSnapshotLeavesASnapshotWhoseWorkStarted() {
+        when(snapshotMock.getState()).thenReturn(Snapshot.State.Creating);
+
+        _snapshotMgr.removeAllocatedSnapshot(TEST_SNAPSHOT_ID);
+
+        Mockito.verify(_resourceLimitMgr, Mockito.never()).decrementResourceCount(anyLong(), any(ResourceType.class));
+        Mockito.verify(_snapshotDao, Mockito.never()).remove(anyLong());
+    }
+
+    @Test
+    public void endLastChainIfNeededAcceptsADetachedVolumeWithNoCluster() {
+        SnapshotDataStoreVO olderChainMember = Mockito.mock(SnapshotDataStoreVO.class);
+        when(olderChainMember.getCreated()).thenReturn(new java.util.Date(1000L));
+        when(olderChainMember.getKvmCheckpointPath()).thenReturn("/checkpoints/old");
+        when(olderChainMember.isEndOfChain()).thenReturn(false);
+        SnapshotDataStoreVO newest = Mockito.mock(SnapshotDataStoreVO.class);
+        when(newest.getCreated()).thenReturn(new java.util.Date(2000L));
+        when(snapshotStoreDao.listReadyByVolumeId(5L)).thenReturn(new java.util.ArrayList<>(java.util.Arrays.asList(olderChainMember, newest)));
+
+        // a detached volume has no VM and so no cluster; this used to unbox a null
+        _snapshotMgr.endLastChainIfNeeded(null, 5L);
+
+        Mockito.verify(olderChainMember).setEndOfChain(true);
+        Mockito.verify(snapshotStoreDao).update(Mockito.anyLong(), Mockito.eq(olderChainMember));
+    }
 }

@@ -25,5 +25,5 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "startVirtualMachine", responseObject = UserVmResponse.class, description = "Starts  an Instance.", responseView = ResponseView.Full, entityType = {VirtualMachine.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, cancellable = true)
 public class StartVMCmdByAdmin extends StartVMCmd implements AdminCmd {}

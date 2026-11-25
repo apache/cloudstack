@@ -63,6 +63,8 @@ public final class XenServer610MigrateWithStorageCommandWrapper extends CommandW
         final List<Pair<VolumeTO, StorageFilerTO>> volumeToFiler = command.getVolumeToFilerAsList();
         final String vmName = vmSpec.getName();
         Task task = null;
+        final Map<SR, Set<VDI>> onDestBefore = new HashMap<>();
+        final Map<VDI, SR> migratingVdis = new HashMap<>();
 
         final XsHost xsHost = xenServer610Resource.getHost();
         final String uuid = xsHost.getUuid();
@@ -91,6 +93,10 @@ public final class XenServer610MigrateWithStorageCommandWrapper extends CommandW
                         xenServer610Resource.getStorageRepository(connection,
                                 CitrixHelper.getSRNameLabel(storageFiler.getUuid(), storageFiler.getType(), storageFiler.getPath())));
             }
+            for (final SR destSr : vdiMap.values()) {
+                onDestBefore.computeIfAbsent(destSr, sr -> xenServer610Resource.vdisOn(connection, sr));
+            }
+            migratingVdis.putAll(vdiMap);
 
             // Get the vm to migrate.
             final Set<VM> vms = VM.getByNameLabel(connection, vmSpec.getName());
@@ -127,7 +133,19 @@ public final class XenServer610MigrateWithStorageCommandWrapper extends CommandW
             vmToMigrate.setAffinity(connection, host);
             return new MigrateWithStorageAnswer(command, volumeToList);
         } catch (final Exception e) {
-            logger.warn("Catch Exception " + e.getClass().getName() + ". Storage motion failed due to " + e.toString(), e);
+            if (xenServer610Resource.wasCurrentRequestCancelled()) {
+                logger.info("Storage motion of " + vmName + " was cancelled: " + e.getMessage());
+                // the copies migrate_send was writing on the destination SRs are not cleaned up by XAPI
+                for (final Map.Entry<VDI, SR> entry : migratingVdis.entrySet()) {
+                    try {
+                        xenServer610Resource.destroyVdisLeftBy(connection, entry.getValue(), onDestBefore.get(entry.getValue()), entry.getKey().getNameLabel(connection));
+                    } catch (final Exception cleanup) {
+                        logger.debug("Unable to clean up after the cancelled storage motion of " + vmName + ": " + cleanup.getMessage());
+                    }
+                }
+            } else {
+                logger.warn("Catch Exception " + e.getClass().getName() + ". Storage motion failed due to " + e.toString(), e);
+            }
             return new MigrateWithStorageAnswer(command, e);
         } finally {
             if (task != null) {

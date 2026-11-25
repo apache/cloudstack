@@ -18,8 +18,11 @@ package org.apache.cloudstack.usage;
 
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListUsageJobsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UsageJobResponse;
 
 import java.util.List;
 import java.util.TimeZone;
@@ -61,4 +64,6 @@ public interface UsageService {
     TimeZone getUsageTimezone();
 
     boolean removeRawUsageRecords(RemoveRawUsageRecordsCmd cmd);
+
+    ListResponse<UsageJobResponse> getUsageJobs(ListUsageJobsCmd cmd);
 }

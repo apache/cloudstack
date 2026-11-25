@@ -39,6 +39,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import com.xensource.xenapi.VDI;
+import java.util.Collections;
+import java.util.Arrays;
 import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
 import org.mockito.InOrder;
@@ -68,6 +71,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static com.cloud.hypervisor.xenserver.resource.CitrixResourceBase.PLATFORM_CORES_PER_SOCKET_KEY;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.doReturn;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -615,5 +619,55 @@ public class CitrixResourceBaseTest {
         Assert.assertFalse(listAnswer.getIsDirs().get(0));
         Assert.assertEquals(1024L, listAnswer.getSizes().get(0).longValue());
         Assert.assertEquals(123456789000L, listAnswer.getLastModified().get(0).longValue());
+    }
+
+    @Test
+    public void testUnknownRequestSequenceIsNotCancellable() {
+        Assert.assertNotNull(citrixResourceBase.checkRequestSequenceIsNotCancellable(4242L));
+        assertFalse(citrixResourceBase.cancelRequestSequence(4242L));
+    }
+
+    @Test
+    public void destroyVdisLeftByRemovesOnlyWhatAppearedWithTheMovedVdisName() throws Exception {
+        final Connection conn = Mockito.mock(Connection.class);
+        final SR sr = Mockito.mock(SR.class);
+        final VDI existing = Mockito.mock(VDI.class);
+        final VDI leftover = Mockito.mock(VDI.class);
+        final VDI someoneElses = Mockito.mock(VDI.class);
+        Mockito.when(sr.getVDIs(conn)).thenReturn(new HashSet<>(Arrays.asList(existing, leftover, someoneElses)));
+        Mockito.when(leftover.getNameLabel(conn)).thenReturn("DATA-7");
+        Mockito.when(someoneElses.getNameLabel(conn)).thenReturn("ROOT-9");
+
+        citrixResourceBase.destroyVdisLeftBy(conn, sr, new HashSet<>(Collections.singletonList(existing)), "DATA-7");
+
+        Mockito.verify(leftover).destroy(conn);
+        Mockito.verify(existing, Mockito.never()).destroy(conn);
+        Mockito.verify(someoneElses, Mockito.never()).destroy(conn);
+    }
+
+    @Test
+    public void destroyVdisLeftByOnADedicatedSrRemovesEverythingNew() throws Exception {
+        final Connection conn = Mockito.mock(Connection.class);
+        final SR sr = Mockito.mock(SR.class);
+        final VDI previousBackup = Mockito.mock(VDI.class);
+        final VDI partialCopy = Mockito.mock(VDI.class);
+        Mockito.when(sr.getVDIs(conn)).thenReturn(new HashSet<>(Arrays.asList(previousBackup, partialCopy)));
+
+        citrixResourceBase.destroyVdisLeftBy(conn, sr, new HashSet<>(Collections.singletonList(previousBackup)), null);
+
+        Mockito.verify(partialCopy).destroy(conn);
+        Mockito.verify(previousBackup, Mockito.never()).destroy(conn);
+    }
+
+    @Test
+    public void destroyVdisLeftByDoesNothingWithoutABeforeSnapshot() throws Exception {
+        final Connection conn = Mockito.mock(Connection.class);
+        final SR sr = Mockito.mock(SR.class);
+
+        citrixResourceBase.destroyVdisLeftBy(conn, sr, null, null);
+        citrixResourceBase.destroyVdisLeftBy(conn, null, new HashSet<>(), null);
+
+        Mockito.verify(sr, Mockito.never()).getVDIs(Mockito.any());
+        Assert.assertNull(citrixResourceBase.vdisOn(conn, null));
     }
 }

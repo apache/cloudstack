@@ -53,6 +53,7 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -255,10 +256,16 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             cmd.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         }
         Answer answer;
-        if (hostId != null) {
-            answer = agentMgr.easySend(hostId, cmd);
-        } else {
-            answer = agentMgr.sendTo(sourcePool.getDataCenterId(), HypervisorType.VMware, cmd);
+        try {
+            if (hostId != null) {
+                answer = agentMgr.easySend(hostId, cmd);
+            } else {
+                answer = agentMgr.sendTo(sourcePool.getDataCenterId(), HypervisorType.VMware, cmd);
+            }
+        } catch (OperationCancelledException e) {
+            logger.info("Migration of volume {} was cancelled: {}", srcData.getName(), e.getMessage());
+            resetVolumeState(srcData, volDao.findById(destData.getId()));
+            throw e;
         }
         handleAnswerAndUpdateVolumeAfterMigration(answer, srcData, destData);
         CopyCommandResult result = new CopyCommandResult(null, answer);
@@ -291,7 +298,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         if (!(answer instanceof MigrateVolumeAnswer)) {
             // OfflineVmwareMigration: reset states and such
             resetVolumeState(srcData, destinationVO);
-            throw new CloudRuntimeException("unexpected answer from hypervisor agent: " + answer.getDetails());
+            throw new CloudRuntimeException(answer == null ? "no answer from the hypervisor agent" : "unexpected answer from hypervisor agent: " + answer.getDetails());
         }
         MigrateVolumeAnswer ans = (MigrateVolumeAnswer) answer;
         if (!answer.getResult()) {

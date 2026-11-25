@@ -212,7 +212,7 @@ public class VolumeServiceImpl implements VolumeService {
     @Inject
     private VolumeDetailsDao _volumeDetailsDao;
     @Inject
-    private VMTemplateDao templateDao;
+    VMTemplateDao templateDao;
     @Inject
     private TemplateDataFactory tmplFactory;
     @Inject
@@ -434,8 +434,8 @@ public class VolumeServiceImpl implements VolumeService {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Marking volume that was never created as destroyed: {}", vol);
                 }
-                VMTemplateVO template = templateDao.findById(vol.getTemplateId());
-                if (template != null && !template.isDeployAsIs()) {
+                VMTemplateVO template = vol.getTemplateId() != null ? templateDao.findById(vol.getTemplateId()) : null;
+                if (template == null || !template.isDeployAsIs()) {
                     snapshotMgr.deletePoliciesForVolume(vol.getId());
                     volDao.remove(vol.getId());
                     future.complete(result);

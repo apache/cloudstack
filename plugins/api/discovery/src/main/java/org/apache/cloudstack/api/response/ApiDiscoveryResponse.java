@@ -43,6 +43,10 @@ public class ApiDiscoveryResponse extends BaseResponse {
     @Param(description = "True if API is asynchronous")
     private Boolean isAsync;
 
+    @SerializedName("cancellable")
+    @Param(description = "True if a job running this API can be cancelled with cancelAsyncJob", since = "24.0")
+    private Boolean cancellable;
+
     @SerializedName("related")
     @Param(description = "Comma separated related apis")
     private String related;
@@ -67,6 +71,7 @@ public class ApiDiscoveryResponse extends BaseResponse {
         params = new HashSet<ApiParameterResponse>();
         apiResponse = new HashSet<ApiResponseResponse>();
         isAsync = false;
+        cancellable = false;
     }
 
     public ApiDiscoveryResponse(ApiDiscoveryResponse another) {
@@ -74,6 +79,7 @@ public class ApiDiscoveryResponse extends BaseResponse {
         this.description = another.getDescription();
         this.since = another.getSince();
         this.isAsync = another.getAsync();
+        this.cancellable = another.getCancellable();
         this.related = another.getRelated();
         this.params = new HashSet<>(another.getParams());
         this.apiResponse = new HashSet<>(another.getApiResponse());
@@ -112,6 +118,14 @@ public class ApiDiscoveryResponse extends BaseResponse {
 
     public boolean getAsync() {
         return isAsync;
+    }
+
+    public void setCancellable(Boolean cancellable) {
+        this.cancellable = cancellable;
+    }
+
+    public boolean getCancellable() {
+        return Boolean.TRUE.equals(cancellable);
     }
 
     public String getRelated() {

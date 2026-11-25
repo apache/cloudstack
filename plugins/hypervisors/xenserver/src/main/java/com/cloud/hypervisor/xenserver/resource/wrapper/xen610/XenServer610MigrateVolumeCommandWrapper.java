@@ -21,6 +21,7 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xen610;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 
 import com.cloud.agent.api.Answer;
@@ -46,10 +47,13 @@ public final class XenServer610MigrateVolumeCommandWrapper extends CommandWrappe
         Connection connection = xenServer610Resource.getConnection();
         String srcVolumeUuid = command.getVolumePath();
         SR destPool = null;
+        Set<VDI> onDestBefore = null;
+        String srcVolumeName = null;
         Map<String, String> destDetails = command.getDestDetails();
 
         try {
             VDI srcVolume = xenServer610Resource.getVDIbyUuid(connection, srcVolumeUuid);
+            srcVolumeName = srcVolume.getNameLabel(connection);
 
             if (destDetails != null && Boolean.parseBoolean(destDetails.get(DiskTO.MANAGED))) {
                 String iScsiName = destDetails.get(DiskTO.IQN);
@@ -69,6 +73,7 @@ public final class XenServer610MigrateVolumeCommandWrapper extends CommandWrappe
 
             other.put("live", "true");
 
+            onDestBefore = xenServer610Resource.vdisOn(connection, destPool);
             // Live migrate the VDI.
             Task task = srcVolume.poolMigrateAsync(connection, destPool, other);
 
@@ -81,13 +86,22 @@ public final class XenServer610MigrateVolumeCommandWrapper extends CommandWrappe
 
             return new MigrateVolumeAnswer(command, true, null, destVdi.getUuid(connection));
         } catch (Exception ex) {
+            final boolean cancelled = xenServer610Resource.wasCurrentRequestCancelled();
+            if (cancelled) {
+                // the mirror pool_migrate was writing on the destination is not cleaned up by XAPI
+                xenServer610Resource.destroyVdisLeftBy(connection, destPool, onDestBefore, srcVolumeName);
+            }
             if (destDetails != null && Boolean.parseBoolean(destDetails.get(DiskTO.MANAGED)) && destPool != null) {
                 xenServer610Resource.removeSR(connection, destPool);
             }
 
             String msg = "Caught exception " + ex.getClass().getName() + " due to the following: " + ex.toString();
 
-            logger.error(msg, ex);
+            if (cancelled) {
+                logger.info("Migration of volume " + srcVolumeUuid + " was cancelled: " + ex.getMessage());
+            } else {
+                logger.error(msg, ex);
+            }
 
             return new MigrateVolumeAnswer(command, false, msg, null);
         }

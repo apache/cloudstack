@@ -1,0 +1,171 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+import { shallowRef, defineAsyncComponent } from 'vue'
+import store from '@/store'
+import { cancelJobAction } from '@/utils/asyncjob'
+
+export default {
+  name: 'activity',
+  title: 'label.activity',
+  icon: 'AuditOutlined',
+  children: [
+    {
+      name: 'jobs',
+      title: 'label.jobs',
+      icon: 'ClockCircleOutlined',
+      permission: ['listAsyncJobs'],
+      columns: [
+        { field: 'cmd', customTitle: 'command' },
+        { field: 'jobstatus', customTitle: 'status' },
+        { field: 'jobinstancetype', customTitle: 'resourcetype' },
+        { field: 'jobinstancename', customTitle: 'resource' },
+        'account',
+        { field: 'domainpath', customTitle: 'domain' },
+        'managementservername',
+        'created',
+        'completed',
+        'jobresult'
+      ],
+      filters: () => {
+        return ['pending', 'cancelling', 'succeeded', 'failed', 'cancelled', 'all']
+      },
+      searchFilters: ['domainid', 'account', 'resourcetype', 'duration'],
+      related: [{
+        name: 'event',
+        title: 'label.events',
+        param: 'jobid'
+      }],
+      tabs: [{
+        name: 'details',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/activity/JobDetailsTab.vue')))
+      }],
+      actions: [cancelJobAction]
+    },
+    {
+      name: 'event',
+      title: 'label.events',
+      icon: 'ScheduleOutlined',
+      docHelp: 'adminguide/events.html',
+      permission: ['listEvents'],
+      columns: () => {
+        var fields = ['level', 'type', 'state', 'description', 'resource', 'username', 'account']
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
+        fields.push(...['domain', 'created'])
+        return fields
+      },
+      details: ['username', 'id', 'description', 'resourcetype', 'resourceid', 'jobid', 'state', 'level', 'type', 'account', 'domain', 'created'],
+      searchFilters: ['level', 'domainid', 'account', 'keyword', 'resourcetype', 'state', 'jobid'],
+      related: [{
+        name: 'event',
+        title: 'label.event.timeline',
+        param: 'startid'
+      }],
+      filters: () => {
+        return ['active', 'archived']
+      },
+      actions: [
+        {
+          api: 'archiveEvents',
+          icon: 'book-outlined',
+          label: 'label.archive.events',
+          message: 'message.confirm.archive.selected.events',
+          docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',
+          dataView: true,
+          successMessage: 'label.event.archived',
+          groupAction: true,
+          groupMap: (selection) => { return [{ ids: selection.join(',') }] },
+          args: ['ids'],
+          mapping: {
+            ids: {
+              value: (record) => { return record.id }
+            }
+          },
+          show: (record) => {
+            return !(record.archived)
+          },
+          groupShow: (selectedItems) => {
+            return selectedItems.filter(x => { return !(x.archived) }).length > 0
+          }
+        },
+        {
+          api: 'deleteEvents',
+          icon: 'delete-outlined',
+          label: 'label.delete.events',
+          message: 'message.confirm.remove.selected.events',
+          docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',
+          dataView: true,
+          successMessage: 'label.event.deleted',
+          groupAction: true,
+          groupMap: (selection) => { return [{ ids: selection.join(',') }] },
+          args: ['ids'],
+          mapping: {
+            ids: {
+              value: (record) => { return record.id }
+            }
+          }
+        }
+      ]
+    },
+    {
+      name: 'alert',
+      title: 'label.alerts',
+      icon: 'FlagOutlined',
+      docHelp: 'adminguide/management.html#administrator-alerts',
+      permission: ['listAlerts'],
+      columns: ['name', 'description', 'type', 'sent'],
+      details: ['name', 'id', 'type', 'sent', 'description'],
+      searchFilters: ['name', 'type'],
+      actions: [
+        {
+          api: 'archiveAlerts',
+          icon: 'book-outlined',
+          label: 'label.archive.alerts',
+          message: 'message.confirm.archive.selected.alerts',
+          docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',
+          dataView: true,
+          groupAction: true,
+          groupMap: (selection) => { return [{ ids: selection.join(',') }] },
+          args: ['ids'],
+          mapping: {
+            ids: {
+              value: (record) => { return record.id }
+            }
+          }
+        },
+        {
+          api: 'deleteAlerts',
+          icon: 'delete-outlined',
+          label: 'label.delete.alerts',
+          message: 'message.confirm.remove.selected.alerts',
+          docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',
+          dataView: true,
+          groupAction: true,
+          groupMap: (selection) => { return [{ ids: selection.join(',') }] },
+          args: ['ids'],
+          mapping: {
+            ids: {
+              value: (record) => { return record.id }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

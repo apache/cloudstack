@@ -805,7 +805,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
      * <br></br>
      * <b>This method should only be called when kvm.incremental.snapshot = false and for volumes in KVM</b>
      * */
-    protected void endLastChainIfNeeded(long clusterId, long volumeId) {
+    protected void endLastChainIfNeeded(Long clusterId, long volumeId) {
+        // null for a detached volume: the setting's global value applies
         if (kvmIncrementalSnapshot.valueIn(clusterId)) {
             return;
         }
@@ -2049,6 +2050,19 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void removeAllocatedSnapshot(final long snapshotId) {
+        final SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+        if (snapshot == null || snapshot.getState() != Snapshot.State.Allocated) {
+            return;
+        }
+        final ResourceType storeResourceType = !isBackupSnapshotToSecondaryForZone(snapshot.getDataCenterId()) || Snapshot.LocationType.PRIMARY.equals(snapshot.getLocationType())
+                ? ResourceType.primary_storage : ResourceType.secondary_storage;
+        _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.snapshot);
+        _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), storeResourceType, snapshot.getSize());
+        _snapshotDao.remove(snapshotId);
     }
 
     @Override

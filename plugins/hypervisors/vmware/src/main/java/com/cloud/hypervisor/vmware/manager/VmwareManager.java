@@ -31,6 +31,9 @@ import com.vmware.vim25.ManagedObjectReference;
 public interface VmwareManager {
     public final String CONTEXT_STOCK_NAME = "vmwareMgr";
 
+    public static final ConfigKey<Integer> s_vmwareCancelTaskWait = new ConfigKey<Integer>("Advanced", Integer.class, "vmware.cancel.task.wait", "120",
+            "Seconds to wait for vCenter to stop a task after a job cancel asked for it; a Storage vMotion takes 30 to 40 seconds to unwind. A task still running afterwards is left to complete and the cancel is refused.", true, ConfigKey.Scope.Global);
+
     public static final ConfigKey<Long> s_vmwareNicHotplugWaitTimeout = new ConfigKey<Long>("Advanced", Long.class, "vmware.nic.hotplug.wait.timeout", "15000",
             "Wait timeout (milli seconds) for hot plugged NIC of VM to be detected by guest OS.", false, ConfigKey.Scope.Global);
 

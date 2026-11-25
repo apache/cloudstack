@@ -33,10 +33,12 @@ import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ServerResource;
 
+import org.apache.cloudstack.jobs.JobCancellationHandler;
+
 /**
  * AgentManager manages hosts. It directly coordinates between the DAOs and the connections it manages.
  */
-public interface AgentManager {
+public interface AgentManager extends JobCancellationHandler {
     ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, "wait", "1800", "Time in seconds to wait for control commands to return",
             true);
     ConfigKey<Boolean> EnableKVMAutoEnableDisable = new ConfigKey<>(Boolean.class,
@@ -178,4 +180,10 @@ public interface AgentManager {
     boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs, boolean excludeHostsInMaintenance);
 
     int getHostSshPort(HostVO host);
+
+    Long getAsyncJobId();
+
+    /** Answered from an in-memory view kept by the cancelled-jobs poller. */
+    boolean isJobCancelled(Long jobId);
+
 }

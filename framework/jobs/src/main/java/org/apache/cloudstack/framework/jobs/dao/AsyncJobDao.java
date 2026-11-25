@@ -70,4 +70,22 @@ public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
     long countPendingNonPseudoJobs(Long... msIds);
 
     List<Long> listPendingJobIdsForAccount(long accountId);
+
+    AsyncJobVO getRelatedJob(String jobId);
+
+    List<AsyncJobVO> listChildJobs(long parentJobId);
+
+    List<AsyncJobVO> getCancelRequestedJobs(long executingMsid);
+
+    /** In-progress work jobs this server executes on behalf of another job. */
+    List<AsyncJobVO> getRunningWorkJobs(long executingMsid);
+
+    /** Flags the job's cancel as delivered to its worker; true only for the caller that flipped the flag. */
+    boolean claimCancelDelivery(long jobId);
+
+    /** Records a cancel request with its result on a job that is still in progress and not yet being cancelled; false once the job completed or is already being cancelled. */
+    boolean requestCancel(long jobId, int resultCode, String result);
+
+    /** Takes a cancel request back from a job that is still in progress, reopening its result; false if there was none to take back. */
+    boolean withdrawCancel(long jobId);
 }

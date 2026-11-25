@@ -19,8 +19,12 @@ package com.cloud.agent.manager;
 import java.nio.channels.ClosedChannelException;
 
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CancelCommand;
+import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.transport.Request;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.nio.Link;
@@ -31,6 +35,7 @@ import com.cloud.utils.nio.Link;
 public class ConnectedAgentAttache extends AgentAttache {
 
     protected Link _link;
+    private static final int CANCEL_COMMAND_WAIT_SECONDS = 60;
 
     public ConnectedAgentAttache(final AgentManagerImpl agentMgr, final long id, final String uuid, final String name, final Hypervisor.HypervisorType hypervisorType, final Link link, final boolean maintenance) {
         super(agentMgr, id, uuid, name, hypervisorType, maintenance);
@@ -49,6 +54,45 @@ public class ConnectedAgentAttache extends AgentAttache {
     @Override
     public synchronized boolean isClosed() {
         return _link == null;
+    }
+
+    /** Only the agent knows whether its backend work can be stopped; an agent that does not understand the question answers unsupported. */
+    @Override
+    protected String checkExecutionIsNotCancellable(final long seq) {
+        final Answer answer = requestAgentToCancel(seq, true);
+        if (answer == null) {
+            return "the agent on this host does not support cancelling a running command";
+        }
+        return answer.getResult() ? null : answer.getDetails();
+    }
+
+    @Override
+    protected boolean cancelRunning(final long seq) {
+        final Answer answer = requestAgentToCancel(seq, false);
+        return answer != null && answer.getResult();
+    }
+
+    /** The agent's answer; null when it does not understand the question. */
+    private Answer requestAgentToCancel(final long seq, final boolean checkOnly) {
+        if (_agentMgr == null) {
+            return null;
+        }
+        final CancelCommand cmd = new CancelCommand(seq, "Job cancelled", checkOnly);
+        cmd.setWait(CANCEL_COMMAND_WAIT_SECONDS);
+        try {
+            final Answer answer = _agentMgr.send(_id, cmd);
+            if (answer == null || answer instanceof UnsupportedAnswer) {
+                logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Agent does not support cancellation, treating as not cancellable");
+                return null;
+            }
+            if (!answer.getResult()) {
+                logger.debug(LOG_SEQ_FORMATTED_STRING, seq, (checkOnly ? "Not cancellable: " : "Not cancelled: ") + answer.getDetails());
+            }
+            return answer;
+        } catch (final AgentUnavailableException | OperationTimedoutException e) {
+            logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Unable to request the agent about cancellation: " + e.getMessage());
+            return new Answer(cmd, false, "unable to request the agent on this host: " + e.getMessage());
+        }
     }
 
     @Override

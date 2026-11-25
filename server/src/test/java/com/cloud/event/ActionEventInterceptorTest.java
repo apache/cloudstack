@@ -310,4 +310,18 @@ public class ActionEventInterceptorTest {
             return false;
         }
     }
+
+    @Test
+    public void testInterceptExceptionOfARefusalIsAWarningWithTheReason() throws NoSuchMethodException {
+        CallContext.current().putContextParameter(CallContext.REFUSAL_REASON_PARAM, "Cannot cancel job-7, its work cannot be stopped at this point");
+        TestActionEventManagerImpl tester = new TestActionEventManagerImpl();
+        Method m = tester.getClass().getMethod("testMethod");
+        actionEventInterceptor.interceptException(m, tester, null);
+
+        Assert.assertEquals(1, persistedEvents.size());
+        EventVO eventVO = persistedEvents.get(0);
+        Assert.assertEquals(EventVO.LEVEL_WARN, eventVO.getLevel());
+        Assert.assertTrue(eventVO.getDescription(), eventVO.getDescription().endsWith("refused: Cannot cancel job-7, its work cannot be stopped at this point"));
+        Assert.assertEquals(com.cloud.event.Event.State.Completed, eventVO.getState());
+    }
 }

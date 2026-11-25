@@ -28,7 +28,8 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "destroyVirtualMachine", description = "Destroys  an Instance. Once destroyed, only the administrator can recover it.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = true)
+        responseHasSensitiveInfo = true,
+        cancellable = true)
 public class DestroyVMCmdByAdmin extends DestroyVMCmd implements AdminCmd {
 
     @Parameter( name = ApiConstants.FORCED,

@@ -583,6 +583,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
             Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
             if (jobResult != null) {
+                removeVMSnapshotIfCancelledBeforeItRan(vmSnapshotId);
                 if (jobResult instanceof ConcurrentOperationException)
                     throw (ConcurrentOperationException)jobResult;
                 else if (jobResult instanceof CloudRuntimeException)
@@ -594,6 +595,14 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
                 CallContext.current().putContextParameter(VMSnapshot.class, result.getUuid());
             }
             return result;
+        }
+    }
+
+    protected void removeVMSnapshotIfCancelledBeforeItRan(final long vmSnapshotId) {
+        final VMSnapshotVO vmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
+        if (vmSnapshot != null && vmSnapshot.getState() == VMSnapshot.State.Allocated && isCurrentJobCancelled()) {
+            logger.info("Instance Snapshot {} was cancelled before its work started, removing it", vmSnapshot);
+            removeCancelledVMSnapshot(vmSnapshot);
         }
     }
 
@@ -626,9 +635,24 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             return snapshot;
         } catch (Exception e) {
             String errMsg = String.format("Failed to create Instance Snapshot: [%s] due to: %s", vmSnapshot, e.getMessage());
-            logger.debug(errMsg, e);
+            if (isCurrentJobCancelled()) {
+                logger.info("Creation of Instance Snapshot {} was cancelled, removing it: {}", vmSnapshot, e.getMessage());
+                removeCancelledVMSnapshot(vmSnapshot);
+            } else {
+                logger.debug(errMsg, e);
+            }
             throw new CloudRuntimeException(errMsg, e);
         }
+    }
+
+    protected boolean isCurrentJobCancelled() {
+        final AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrentExecutionContext();
+        return context != null && context.getJob() != null && _jobMgr.getCancellationReason(context.getJob().getId()) != null;
+    }
+
+    protected void removeCancelledVMSnapshot(VMSnapshotVO vmSnapshot) {
+        annotationDao.removeByEntityType(AnnotationService.EntityType.VM_SNAPSHOT.name(), vmSnapshot.getUuid());
+        _vmSnapshotDao.remove(vmSnapshot.getId());
     }
 
     public VMSnapshotManagerImpl() {

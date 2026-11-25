@@ -37,11 +37,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.OperationCancelledException;
 import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
@@ -55,6 +57,9 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.maintenance.ManagementServerMaintenanceListener;
 import org.apache.cloudstack.maintenance.ManagementServerMaintenanceManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -62,6 +67,7 @@ import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -143,6 +149,8 @@ import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.time.InaccurateClock;
 
+import static org.apache.cloudstack.jobs.AsyncJobService.CancelledJobInterval;
+
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
  **/
@@ -159,6 +167,21 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected List<Long> _loadingAgents = new ArrayList<>();
     protected Map<String, Integer> _commandTimeouts = new HashMap<>();
     private int _monitorId = 0;
+    // a job can have several commands in flight on several hosts
+    protected final Map<Long, Set<Pair<Long, Long>>> _jobToHostIdAndReqSequenceMap = new ConcurrentHashMap<>();
+    // sticky on purpose: workers consult it after the job row has been finalised
+    protected final Map<Long, CancelledJob> _cancelledJobs = new ConcurrentHashMap<>();
+
+    protected static final class CancelledJob {
+        final long since = System.currentTimeMillis();
+        volatile boolean handedToWorker;
+        // a refused attempt is retried, but not on every check and not while another thread is at it
+        volatile long retryAfter;
+        volatile int refusals;
+        final AtomicBoolean attempting = new AtomicBoolean();
+    }
+    private static final long CANCELLED_JOB_MEMORY_MS = TimeUnit.HOURS.toMillis(1);
+    protected static final long CANCEL_RETRY_MS = TimeUnit.SECONDS.toMillis(10);
 
     @Inject
     protected CAManager caService;
@@ -182,6 +205,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected ConfigurationDao _configDao = null;
     @Inject
     protected ClusterDao _clusterDao = null;
+    @Inject
+    protected AsyncJobManager asyncJobManager = null;
 
     @Inject
     protected HighAvailabilityManager _haMgr = null;
@@ -210,6 +235,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected ScheduledExecutorService _directAgentExecutor;
     protected ScheduledExecutorService _cronJobExecutor;
     protected ScheduledExecutorService _monitorExecutor;
+    protected ScheduledExecutorService _cancelledJobsCheckExecutor;
 
     private int _directAgentThreadCap;
 
@@ -390,6 +416,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public void onManagementServerMaintenance() {
         logger.debug("Management server maintenance enabled");
         _monitorExecutor.shutdownNow();
+        _cancelledJobsCheckExecutor.shutdownNow();
         newAgentConnectionsMonitor.shutdownNow();
         if (_connection != null) {
             _connection.stop();
@@ -421,6 +448,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (_monitorExecutor.isShutdown()) {
             initAndScheduleMonitorExecutor();
         }
+        if (_cancelledJobsCheckExecutor.isShutdown()) {
+            initAndScheduleCancelJobExecutor();
+        }
         if (newAgentConnectionsMonitor.isShutdown()) {
             initAndScheduleAgentConnectionsMonitor();
         }
@@ -435,6 +465,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     private void initAndScheduleMonitorExecutor() {
         _monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("AgentMonitor"));
         _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
+    }
+
+    private void initAndScheduleCancelJobExecutor() {
+        _cancelledJobsCheckExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("CancelledJobsCheck"));
+        _cancelledJobsCheckExecutor.scheduleWithFixedDelay(new CancelledJobsCheckTask(), CancelledJobInterval.value(), CancelledJobInterval.value(), TimeUnit.SECONDS);
     }
 
     private void initAndScheduleAgentConnectionsMonitor() {
@@ -494,6 +529,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 try {
                     final long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(host.getId(), cmd, host.getHypervisorType());
                     answer = easySend(targetHostId, cmd);
+                } catch (final OperationCancelledException e) {
+                    throw e;
                 } catch (final Exception e) {
                     String errorMsg = String.format("Error sending command %s to host %s, due to %s", cmd.getClass().getName(),
                             host, e.getLocalizedMessage());
@@ -637,6 +674,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             throw new AgentUnavailableException(-1);
         }
 
+        final Long jobId = getAsyncJobId();
+        if (refusesCommandsOf(jobId)) {
+            logger.info("Not sending commands {} to host {}: job-{} was cancelled", commands, hostId, jobId);
+            throw OperationCancelledException.updateCmdsNotSent(commands.toCommands(), hostId, jobId);
+        }
+
         int wait = getTimeout(commands, timeout);
         logger.debug("Wait time setting on {} is {} seconds", commands, wait);
         for (Command cmd : commands) {
@@ -666,16 +709,29 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         final Request req = new Request(hostId, agent.getName(), _nodeId, cmds, commands.stopOnError(), true);
         req.setSequence(agent.getNextSequence());
+        final Pair<Long, Long> inFlight = new Pair<>(hostId, req.getSequence());
+        if (jobId != null) {
+            _jobToHostIdAndReqSequenceMap.computeIfAbsent(jobId, k -> ConcurrentHashMap.newKeySet()).add(inFlight);
+        }
 
-        reconcileCommandService.persistReconcileCommands(hostId, req.getSequence(), cmds);
+        try {
+            reconcileCommandService.persistReconcileCommands(hostId, req.getSequence(), cmds);
 
-        final Answer[] answers = agent.send(req, wait);
+            final Answer[] answers = agent.send(req, wait);
 
-        reconcileCommandService.processAnswers(req.getSequence(), cmds, answers);
+            reconcileCommandService.processAnswers(req.getSequence(), cmds, answers);
 
-        notifyAnswersToMonitors(hostId, req.getSequence(), answers);
-        commands.setAnswers(answers);
-        return answers;
+            notifyAnswersToMonitors(hostId, req.getSequence(), answers);
+            commands.setAnswers(answers);
+            return answers;
+        } finally {
+            if (jobId != null) {
+                _jobToHostIdAndReqSequenceMap.computeIfPresent(jobId, (k, v) -> {
+                    v.remove(inFlight);
+                    return v.isEmpty() ? null : v;
+                });
+            }
+        }
     }
 
     protected Status investigate(final AgentAttache agent) {
@@ -975,6 +1031,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         ManagementServerHostVO msHost = _mshostDao.findByMsid(_nodeId);
         if (msHost != null && (ManagementServerHost.State.Maintenance.equals(msHost.getState()) || ManagementServerHost.State.PreparingForMaintenance.equals(msHost.getState()))) {
             _monitorExecutor.shutdownNow();
+            _cancelledJobsCheckExecutor.shutdownNow();
             newAgentConnectionsMonitor.shutdownNow();
             return true;
         }
@@ -991,6 +1048,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         initAndScheduleMonitorExecutor();
+        initAndScheduleCancelJobExecutor();
         initAndScheduleAgentConnectionsMonitor();
         return true;
     }
@@ -1153,6 +1211,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _connectExecutor.shutdownNow();
         _monitorExecutor.shutdownNow();
+        _cancelledJobsCheckExecutor.shutdownNow();
         newAgentConnectionsMonitor.shutdownNow();
         return true;
     }
@@ -1374,6 +1433,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         } catch (final OperationTimedoutException e) {
             logger.warn("Operation timed out: {}", e.getMessage());
             return null;
+        } catch (final OperationCancelledException e) {
+            logger.info(e.getMessage());
+            throw e;
         } catch (final Exception e) {
             logger.warn("Exception while sending", e);
             return null;
@@ -2148,6 +2210,196 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
+    /** Stops in-flight work of jobs cancelled on this management server and acknowledges them. */
+    protected class CancelledJobsCheckTask extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            try {
+                final long now = System.currentTimeMillis();
+                _cancelledJobs.values().removeIf(cancelled -> now - cancelled.since > CANCELLED_JOB_MEMORY_MS);
+
+                for (final AsyncJobVO job : asyncJobManager.listCancelRequestedJobsExecutingOn(_nodeId)) {
+                    // a work job's commands are keyed by the API job it runs for
+                    final long key = commandKeyOf(job);
+                    _cancelledJobs.computeIfAbsent(key, id -> new CancelledJob());
+                    if (_jobToHostIdAndReqSequenceMap.containsKey(key) && !stopInFlightCommandsOfJob(key, now)) {
+                        continue;
+                    }
+                    if (key == job.getId()) {
+                        asyncJobManager.finalizeCancelledJob(job.getId());
+                    }
+                }
+
+                // commands in flight here for a job cancelled on another server, keyed by that job
+                for (final Long jobId : _jobToHostIdAndReqSequenceMap.keySet()) {
+                    final CancelledJob known = _cancelledJobs.get(jobId);
+                    if (known != null && (known.handedToWorker || now < known.retryAfter)) {
+                        continue;
+                    }
+                    final AsyncJobVO job = asyncJobManager.getAsyncJob(jobId);
+                    if (job != null && (job.isCancelRequested() || job.getStatus() == JobInfo.Status.CANCELLED)) {
+                        stopInFlightCommandsOfJob(jobId, now);
+                    }
+                }
+            } catch (final Throwable e) {
+                logger.error("Unexpected exception in the cancelled jobs check task", e);
+            }
+        }
+    }
+
+    /** One attempt per retry interval, and none while another thread (the cancel API) is already stopping the job's commands. */
+    protected boolean stopInFlightCommandsOfJob(final long jobId, final long now) {
+        final CancelledJob cancelled = _cancelledJobs.computeIfAbsent(jobId, id -> new CancelledJob());
+        if (cancelled.handedToWorker) {
+            return true;
+        }
+        if (cancelled.attempting.get() || now < cancelled.retryAfter) {
+            return false;
+        }
+        logger.info("Cancellation of job-{} was requested, stopping its in-flight commands", jobId);
+        if (cancelJobExecutionHere(jobId, "Job was cancelled")) {
+            return true;
+        }
+        cancelled.retryAfter = now + CANCEL_RETRY_MS;
+        if (cancelled.refusals++ == 0) {
+            logger.warn("Not every in-flight command of cancelled job-{} could be stopped; retrying every {} s", jobId, CANCEL_RETRY_MS / 1000);
+        } else {
+            logger.debug("Not every in-flight command of cancelled job-{} could be stopped; retry {}", jobId, cancelled.refusals);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isJobCancelled(final Long jobId) {
+        return jobId != null && _cancelledJobs.containsKey(jobId);
+    }
+
+    /** True once per job across the cluster: the worker that has not yet seen its cancellation is stopped at this command; the commands it then sends to undo its work pass. */
+    protected boolean refusesCommandsOf(final Long jobId) {
+        final CancelledJob cancelled = jobId == null ? null : _cancelledJobs.get(jobId);
+        if (cancelled == null || cancelled.handedToWorker) {
+            return false;
+        }
+        if (asyncJobManager.claimJobCancelDelivery(jobId)) {
+            cancelled.handedToWorker = true;
+            return true;
+        }
+        if (asyncJobManager.getCancellationReason(jobId) == null) {
+            // withdrawn: the job runs on
+            _cancelledJobs.remove(jobId);
+        } else {
+            // delivered through a command of the job on another server
+            cancelled.handedToWorker = true;
+        }
+        return false;
+    }
+
+    static long commandKeyOf(final AsyncJobVO job) {
+        if (StringUtils.isNotBlank(job.getRelated())) {
+            try {
+                return Long.parseLong(job.getRelated());
+            } catch (final NumberFormatException ignored) {
+                return job.getId();
+            }
+        }
+        return job.getId();
+    }
+
+    @Override
+    public void jobCancelWithdrawn(final long jobId) {
+        _cancelledJobs.remove(jobId);
+    }
+
+    @Override
+    public String checkJobCannotBeCancelled(final long jobId) {
+        final Set<Pair<Long, Long>> inFlight = _jobToHostIdAndReqSequenceMap.get(jobId);
+        if (CollectionUtils.isEmpty(inFlight)) {
+            return null;
+        }
+
+        for (final Pair<Long, Long> request : inFlight) {
+            final AgentAttache attache = findAttache(request.first());
+            if (attache == null) {
+                logger.debug("Agent {} for job-{} is no longer attached, treating sequence {} as not cancellable",
+                        request.first(), jobId, request.second());
+                return "host " + request.first() + " running its command is no longer connected";
+            }
+            if (attache.isExecutionFinished(request.second())) {
+                // answered, its sender is just about to drop it from the map
+                continue;
+            }
+            final String reason = attache.checkExecutionIsNotCancellable(request.second());
+            if (reason != null) {
+                logger.info("Job-{} cannot be cancelled, sequence {} on host {}: {}", jobId, request.second(), attache.getName(), reason);
+                return reason + " (host " + attache.getName() + ")";
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean cancelJobExecution(final long jobId, final String reason) {
+        return cancelJobExecutionHere(jobId, reason);
+    }
+
+    /** This server's part of the job: what the clustered manager asks of each peer. */
+    protected boolean cancelJobExecutionHere(final long jobId, final String reason) {
+        // mark first, so a worker that carries on to its next command is refused there
+        final CancelledJob cancelled = _cancelledJobs.computeIfAbsent(jobId, id -> new CancelledJob());
+        final Set<Pair<Long, Long>> inFlight = _jobToHostIdAndReqSequenceMap.get(jobId);
+        if (CollectionUtils.isEmpty(inFlight)) {
+            return true;
+        }
+        if (cancelled.handedToWorker || asyncJobManager.isJobCancelDelivered(jobId)) {
+            // the worker already knows: what it has in flight now is its cleanup
+            cancelled.handedToWorker = true;
+            logger.debug("Job-{} already received its cancellation, leaving its commands in flight alone", jobId);
+            return true;
+        }
+
+        cancelled.attempting.set(true);
+        try {
+            boolean allCancelled = true;
+            for (final Pair<Long, Long> request : inFlight) {
+                final AgentAttache attache = findAttache(request.first());
+                if (attache == null) {
+                    logger.debug("Agent {} for job-{} is no longer attached, cannot cancel sequence {}",
+                            request.first(), jobId, request.second());
+                    allCancelled = false;
+                    continue;
+                }
+                if (attache.isExecutionFinished(request.second())) {
+                    continue;
+                }
+                final String refusal = attache.checkExecutionIsNotCancellable(request.second());
+                if (refusal != null) {
+                    logger.info("Not cancelling sequence {} on host {} for job-{}, letting it run to completion: {}",
+                            request.second(), request.first(), jobId, refusal);
+                    allCancelled = false;
+                    continue;
+                }
+                logger.debug("Cancelling sequence {} on host {} for job-{} ({})", request.second(), request.first(), jobId, reason);
+                if (attache.cancelExecution(request.second(), reason)) {
+                    cancelled.handedToWorker = true;
+                    asyncJobManager.claimJobCancelDelivery(jobId);
+                } else {
+                    allCancelled = false;
+                }
+            }
+            return allCancelled;
+        } finally {
+            cancelled.attempting.set(false);
+        }
+    }
+
+    private AgentAttache findAttache(final Long hostId) {
+        try {
+            return getAttache(hostId);
+        } catch (final AgentUnavailableException e) {
+            return null;
+        }
+    }
+
     protected class AgentNewConnectionsMonitorTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
@@ -2388,6 +2640,21 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         return Integer.parseInt(hostPort);
+    }
+
+    @Override
+    public Long getAsyncJobId() {
+        Long jobId = null;
+        final AsyncJobExecutionContext context = AsyncJobExecutionContext.getCurrent();
+        if (context != null && context.getJob() != null) {
+            AsyncJob job = context.getJob();
+            if (StringUtils.isNotEmpty(job.getRelated())) {
+                jobId = Long.parseLong(job.getRelated());
+            } else {
+                jobId = job.getId();
+            }
+        }
+        return jobId;
     }
 
     private GlobalLock getHostJoinLock(Long hostId) {

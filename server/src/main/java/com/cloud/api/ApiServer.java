@@ -911,6 +911,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             logger.warn(errorMsg);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMsg);
         }
+        ActionEventUtils.linkEventsToJob(jobId, startEventId, eventId);
         return new AsyncCmdResult(objectId, objectUuid, asyncCmd, jobId);
     }
 

@@ -38,7 +38,7 @@ import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "attachVolume", description = "Attaches a disk volume to  an Instance.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, cancellable = true)
 public class AttachVolumeCmd extends BaseAsyncCmd implements UserCmd {
     private static final String s_name = "attachvolumeresponse";
 

@@ -838,6 +838,8 @@ public class SnapshotServiceImpl implements SnapshotService {
                     srcSnapshot.processEvent(Snapshot.Event.OperationFailed);
 
                     _snapshotDetailsDao.removeDetail(srcSnapshot.getId(), AsyncJob.Constants.MS_ID);
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_OFF_PRIMARY, srcSnapshot.getAccountId(), srcSnapshot.getDataCenterId(), srcSnapshot.getId(),
+                            srcSnapshot.getName(), null, null, 0L, 0L, srcSnapshot.getClass().getName(), srcSnapshot.getUuid());
                     _snapshotDao.remove(srcSnapshot.getId());
                 } catch (NoTransitionException ex) {
                     logger.debug("Failed to create backup " + ex.toString());

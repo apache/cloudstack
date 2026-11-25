@@ -33,8 +33,12 @@ import com.vmware.vim25.OvfCreateImportSpecResult;
 import com.vmware.vim25.OvfFileItem;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareTaskRegistry;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class HttpNfcLeaseMO extends BaseMO {
+
+    private volatile boolean aborted;
 
     public HttpNfcLeaseMO(VmwareContext context, ManagedObjectReference morHttpNfcLease) {
         super(context, morHttpNfcLease);
@@ -67,9 +71,15 @@ public class HttpNfcLeaseMO extends BaseMO {
         HttpNfcLeaseState state;
         while (true) {
             state = getState();
-            if (state == HttpNfcLeaseState.READY || state == HttpNfcLeaseState.ERROR)
-                return state;
+            if (state == HttpNfcLeaseState.READY || state == HttpNfcLeaseState.ERROR) {
+                break;
+            }
         }
+        if (state == HttpNfcLeaseState.READY && VmwareTaskRegistry.leaseStarted(this)) {
+            abortLease();
+            throw new CloudRuntimeException("the request was cancelled before its transfer started");
+        }
+        return state;
     }
 
     public HttpNfcLeaseInfo getLeaseInfo() throws Exception {
@@ -84,15 +94,39 @@ public class HttpNfcLeaseMO extends BaseMO {
         return _context.getService().httpNfcLeaseGetManifest(_mor);
     }
 
+    /** Set by abortLease, read by the transfer loops: a lease aborted by a cancel is not completed, progressed or aborted a second time; vCenter answers those with InvalidState. */
+    public boolean isAborted() {
+        return aborted;
+    }
+
     public void completeLease() throws Exception {
-        _context.getService().httpNfcLeaseComplete(_mor);
+        try {
+            if (aborted) {
+                logger.debug("Lease " + _mor.getValue() + " was aborted, not completing it");
+                return;
+            }
+            _context.getService().httpNfcLeaseComplete(_mor);
+        } finally {
+            VmwareTaskRegistry.leaseFinished(this);
+        }
     }
 
     public void abortLease() throws Exception {
-        _context.getService().httpNfcLeaseAbort(_mor, null);
+        try {
+            if (aborted) {
+                return;
+            }
+            aborted = true;
+            _context.getService().httpNfcLeaseAbort(_mor, null);
+        } finally {
+            VmwareTaskRegistry.leaseFinished(this);
+        }
     }
 
     public void updateLeaseProgress(int percent) throws Exception {
+        if (aborted) {
+            return;
+        }
         // make sure percentage is in right range
         if (percent < 0)
             percent = 0;
@@ -164,6 +198,9 @@ public class HttpNfcLeaseMO extends BaseMO {
                         logger.info("ProgressReporter is interrupted, quitting");
                     break;
                 } catch (Exception e) {
+                    if (aborted) {
+                        break;
+                    }
                     logger.warn("Unexpected exception ", e);
                 }
             }
