@@ -30,6 +30,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -57,6 +58,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -80,6 +82,8 @@ public class StorageSystemDataMotionStrategyTest {
     private ImageStore destinationStore;
     @Mock
     private PrimaryDataStoreDao primaryDataStoreDao;
+    @Mock
+    private VolumeDao volumeDaoMock;
 
     @Mock
     StoragePoolVO sourceStoragePoolVoMock, destinationStoragePoolVoMock;
@@ -368,5 +372,36 @@ public class StorageSystemDataMotionStrategyTest {
         listTypes[2] = StoragePoolType.RBD;
 
         assertFalse(strategy.isStoragePoolTypeInList(StoragePoolType.SharedMountPoint, listTypes));
+    }
+
+    private VolumeInfo temporaryVolume(PrimaryDataStoreDriver driver) {
+        PrimaryDataStore store = mock(PrimaryDataStore.class);
+        Mockito.when(store.getDriver()).thenReturn(driver);
+        VolumeInfo tempVolume = mock(VolumeInfo.class);
+        Mockito.when(tempVolume.getDataStore()).thenReturn(store);
+        Mockito.when(tempVolume.getId()).thenReturn(45L);
+        return tempVolume;
+    }
+
+    @Test
+    public void deleteTemporaryVolumeCopyOfSnapshotRemovesArrayVolumeAndRecord() {
+        PrimaryDataStoreDriver driver = mock(PrimaryDataStoreDriver.class);
+        VolumeInfo tempVolume = temporaryVolume(driver);
+
+        strategy.deleteTemporaryVolumeCopyOfSnapshot(tempVolume);
+
+        Mockito.verify(driver).deleteAsync(tempVolume.getDataStore(), tempVolume, null);
+        Mockito.verify(volumeDaoMock).remove(45L);
+    }
+
+    @Test
+    public void deleteTemporaryVolumeCopyOfSnapshotRemovesRecordWhenArrayDeleteFails() {
+        PrimaryDataStoreDriver driver = mock(PrimaryDataStoreDriver.class);
+        VolumeInfo tempVolume = temporaryVolume(driver);
+        Mockito.doThrow(new RuntimeException("array unreachable")).when(driver).deleteAsync(Mockito.any(), Mockito.any(), Mockito.any());
+
+        strategy.deleteTemporaryVolumeCopyOfSnapshot(tempVolume);
+
+        Mockito.verify(volumeDaoMock).remove(45L);
     }
 }
