@@ -763,6 +763,29 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
+    /**
+     * Stores whether a KVM host honours the {@link com.cloud.vm.VmDetailConstants#KVM_HONOUR_DISK_CONTROLLER} VM detail,
+     * as its agent reports with {@link Host#HOST_HONOUR_DISK_CONTROLLER} when it connects. An agent that does not report
+     * it (an older version) gets "false", so that a host moved back to an older agent does not keep "true".
+     */
+    protected void syncHonourDiskControllerCapability(HostVO host, Map<String, String> detailsMap) {
+        if (host == null || host.getHypervisorType() != HypervisorType.KVM) {
+            return;
+        }
+        String reported = Boolean.toString(detailsMap != null && Boolean.parseBoolean(detailsMap.get(Host.HOST_HONOUR_DISK_CONTROLLER)));
+        _hostDao.loadDetails(host);
+        if (host.getDetails() == null) {
+            host.setDetails(new HashMap<>());
+        }
+        String stored = host.getDetails().get(Host.HOST_HONOUR_DISK_CONTROLLER);
+        if (reported.equals(stored) || (stored == null && !Boolean.parseBoolean(reported))) {
+            return;
+        }
+        logger.info("Host {} reports {}={}, it was {}", host, Host.HOST_HONOUR_DISK_CONTROLLER, reported, stored);
+        host.getDetails().put(Host.HOST_HONOUR_DISK_CONTROLLER, reported);
+        _hostDao.saveDetails(host);
+    }
+
     protected AgentAttache notifyMonitorsOfConnection(final AgentAttache attache, final StartupCommand[] cmds, final boolean forRebalance) throws ConnectionException {
         final long hostId = attache.getId();
         final HostVO host = _hostDao.findById(hostId);
@@ -805,6 +828,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (answer instanceof ReadyAnswer) {
             ReadyAnswer readyAnswer = (ReadyAnswer)answer;
             Map<String, String> detailsMap = readyAnswer.getDetailsMap();
+            syncHonourDiskControllerCapability(host, detailsMap);
             if (detailsMap != null) {
                 _hostDao.loadDetails(host);
                 if (host.getDetails() == null) {

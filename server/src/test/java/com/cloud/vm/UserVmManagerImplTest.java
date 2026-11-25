@@ -5253,4 +5253,162 @@ public class UserVmManagerImplTest {
         Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
         Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
     }
+
+    private static final String HONOUR = VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER;
+    private static final String ROOT_CONTROLLER = VmDetailConstants.ROOT_DISK_CONTROLLER;
+    private static final String DATA_CONTROLLER = VmDetailConstants.DATA_DISK_CONTROLLER;
+
+    private Map<String, String> detailsOf(String... keysAndValues) {
+        Map<String, String> details = new HashMap<>();
+        for (int i = 0; i < keysAndValues.length; i += 2) {
+            details.put(keysAndValues[i], keysAndValues[i + 1]);
+        }
+        return details;
+    }
+
+    private VirtualMachineTemplate templateWithDetails(String... keysAndValues) {
+        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
+        Mockito.when(template.getDetails()).thenReturn(detailsOf(keysAndValues));
+        return template;
+    }
+
+    @Test
+    public void shouldHonourDiskControllerOnlyWithAnExplicitController() {
+        Assert.assertFalse(userVmManagerImpl.shouldHonourDiskController(templateWithDetails(), new HashMap<>(), null, null));
+        Assert.assertFalse(userVmManagerImpl.shouldHonourDiskController(templateWithDetails(HONOUR, "true"), new HashMap<>(), null, null));
+        Assert.assertFalse(userVmManagerImpl.shouldHonourDiskController(templateWithDetails(),
+                detailsOf(ROOT_CONTROLLER, "osdefault", DATA_CONTROLLER, "virtio-blk"), null, null));
+        Assert.assertTrue(userVmManagerImpl.shouldHonourDiskController(templateWithDetails(), detailsOf(ROOT_CONTROLLER, "virtio"), null, null));
+        Assert.assertTrue(userVmManagerImpl.shouldHonourDiskController(null, detailsOf(DATA_CONTROLLER, "SATA"), null, null));
+    }
+
+    @Test
+    public void shouldHonourDiskControllerUsesTheValueGivenInTheDetails() {
+        Assert.assertTrue(userVmManagerImpl.shouldHonourDiskController(null, detailsOf(HONOUR, "true"), null, null));
+        Assert.assertFalse(userVmManagerImpl.shouldHonourDiskController(null, detailsOf(HONOUR, "false", ROOT_CONTROLLER, "virtio"), null, null));
+    }
+
+    @Test
+    public void shouldHonourDiskControllerInheritedFromTemplateOnlyWhenTheTemplateHasTheDetail() {
+        Assert.assertTrue(userVmManagerImpl.shouldHonourDiskController(templateWithDetails(ROOT_CONTROLLER, "virtio", HONOUR, "true"),
+                new HashMap<>(), null, null));
+        // a template registered before the change, or captured from a VM that booted on another bus
+        Assert.assertFalse(userVmManagerImpl.shouldHonourDiskController(templateWithDetails(ROOT_CONTROLLER, "virtio"), new HashMap<>(), null, null));
+        // the root disk controller still comes from that template
+        Assert.assertFalse(userVmManagerImpl.shouldHonourDiskController(templateWithDetails(ROOT_CONTROLLER, "virtio"),
+                detailsOf(DATA_CONTROLLER, "virtio"), null, null));
+        // the deploy details replace the controller of the template
+        Assert.assertTrue(userVmManagerImpl.shouldHonourDiskController(templateWithDetails(ROOT_CONTROLLER, "virtio"),
+                detailsOf(ROOT_CONTROLLER, "sata"), null, null));
+        Assert.assertFalse(userVmManagerImpl.shouldHonourDiskController(templateWithDetails(ROOT_CONTROLLER, "virtio"),
+                detailsOf(ROOT_CONTROLLER, "osdefault"), null, null));
+    }
+
+    @Test
+    public void shouldHonourDiskControllerOfVmFromVolumeOrSnapshotFollowsTheSourceVm() {
+        VirtualMachineTemplate template = templateWithDetails(ROOT_CONTROLLER, "virtio", HONOUR, "true");
+        Volume volume = Mockito.mock(Volume.class);
+        Mockito.when(volume.getInstanceId()).thenReturn(5L);
+        Mockito.when(vmInstanceDetailsDao.findDetail(5L, HONOUR)).thenReturn(new VMInstanceDetailVO(5L, HONOUR, "true", false));
+        Assert.assertTrue(userVmManagerImpl.shouldHonourDiskController(template, new HashMap<>(), volume, null));
+
+        Mockito.when(vmInstanceDetailsDao.findDetail(5L, HONOUR)).thenReturn(null);
+        Assert.assertFalse(userVmManagerImpl.shouldHonourDiskController(template, new HashMap<>(), volume, null));
+
+        Mockito.when(volume.getInstanceId()).thenReturn(null);
+        Assert.assertFalse(userVmManagerImpl.shouldHonourDiskController(template, new HashMap<>(), volume, null));
+
+        com.cloud.storage.Snapshot snapshot = Mockito.mock(com.cloud.storage.Snapshot.class);
+        Mockito.when(snapshot.getVolumeId()).thenReturn(7L);
+        VolumeVO snapshotVolume = Mockito.mock(VolumeVO.class);
+        Mockito.when(snapshotVolume.getInstanceId()).thenReturn(5L);
+        Mockito.when(volumeDaoMock.findByIdIncludingRemoved(7L)).thenReturn(snapshotVolume);
+        Mockito.when(vmInstanceDetailsDao.findDetail(5L, HONOUR)).thenReturn(new VMInstanceDetailVO(5L, HONOUR, "true", false));
+        Assert.assertTrue(userVmManagerImpl.shouldHonourDiskController(template, new HashMap<>(), null, snapshot));
+
+        // a controller named in the deploy details is honoured, whatever the source
+        Assert.assertTrue(userVmManagerImpl.shouldHonourDiskController(templateWithDetails(), detailsOf(ROOT_CONTROLLER, "virtio"), volume, null));
+    }
+
+    @Test
+    public void setHonourDiskControllerDetailHidesTheDetailOrRemovesTheOneCopiedFromTheTemplate() {
+        UserVmVO vm = new UserVmVO(1L, "i-2-1-VM", "vm", 1L, Hypervisor.HypervisorType.KVM, 1L, false, false, 1L, 1L, 1L, 1L,
+                null, null, null, "vm");
+        vm.setDetails(new HashMap<>());
+        List<String> hiddenDetails = new ArrayList<>();
+        userVmManagerImpl.setHonourDiskControllerDetail(vm, templateWithDetails(), detailsOf(ROOT_CONTROLLER, "virtio"), null, null, hiddenDetails);
+        Assert.assertEquals("true", vm.getDetail(HONOUR));
+        Assert.assertEquals(List.of(HONOUR), hiddenDetails);
+
+        hiddenDetails.clear();
+        userVmManagerImpl.setHonourDiskControllerDetail(vm, templateWithDetails(ROOT_CONTROLLER, "virtio"), new HashMap<>(), null, null,
+                hiddenDetails);
+        Assert.assertNull(vm.getDetail(HONOUR));
+        Assert.assertTrue(hiddenDetails.isEmpty());
+    }
+
+    private DeployDestination destinationOnHostWithHonourCapability(String capability) {
+        Host destinationHost = Mockito.mock(Host.class);
+        Mockito.when(destinationHost.getId()).thenReturn(2L);
+        DeployDestination destination = Mockito.mock(DeployDestination.class);
+        Mockito.when(destination.getHost()).thenReturn(destinationHost);
+        HostVO hostVO = Mockito.mock(HostVO.class);
+        Mockito.when(hostVO.getDetail(Host.HOST_HONOUR_DISK_CONTROLLER)).thenReturn(capability);
+        Mockito.when(hostDao.findById(2L)).thenReturn(hostVO);
+        return destination;
+    }
+
+    @Test
+    public void removeHonourDiskControllerDetailKeepsItOnHostWithTheCapability() {
+        Map<String, String> details = detailsOf(HONOUR, "true");
+        Mockito.when(userVmVoMock.getDetails()).thenReturn(details);
+        Mockito.when(userVmVoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+
+        userVmManagerImpl.removeHonourDiskControllerDetailIfHostCannotHonourIt(userVmVoMock, destinationOnHostWithHonourCapability("true"));
+
+        Assert.assertEquals("true", details.get(HONOUR));
+        Mockito.verify(vmInstanceDetailsDao, Mockito.never()).removeDetail(Mockito.anyLong(), Mockito.anyString());
+    }
+
+    @Test
+    public void removeHonourDiskControllerDetailOnHostWithoutTheCapability() {
+        for (String capability : new String[] {null, "false"}) {
+            Map<String, String> details = detailsOf(HONOUR, "true");
+            Mockito.when(userVmVoMock.getDetails()).thenReturn(details);
+            Mockito.when(userVmVoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+            Mockito.when(userVmVoMock.getId()).thenReturn(1L);
+
+            userVmManagerImpl.removeHonourDiskControllerDetailIfHostCannotHonourIt(userVmVoMock, destinationOnHostWithHonourCapability(capability));
+
+            Assert.assertNull(details.get(HONOUR));
+        }
+        Mockito.verify(vmInstanceDetailsDao, Mockito.times(2)).removeDetail(1L, HONOUR);
+    }
+
+    @Test
+    public void removeHonourDiskControllerDetailIgnoresVmsWithoutItAndOtherHypervisors() {
+        Mockito.when(userVmVoMock.getDetails()).thenReturn(detailsOf(ROOT_CONTROLLER, "virtio"));
+        Mockito.when(userVmVoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        userVmManagerImpl.removeHonourDiskControllerDetailIfHostCannotHonourIt(userVmVoMock, Mockito.mock(DeployDestination.class));
+
+        Mockito.when(userVmVoMock.getDetails()).thenReturn(detailsOf(HONOUR, "true"));
+        Mockito.when(userVmVoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.VMware);
+        userVmManagerImpl.removeHonourDiskControllerDetailIfHostCannotHonourIt(userVmVoMock, Mockito.mock(DeployDestination.class));
+
+        Mockito.verify(vmInstanceDetailsDao, Mockito.never()).removeDetail(Mockito.anyLong(), Mockito.anyString());
+    }
+
+    @Test
+    public void applyHonourDiskControllerDetailFromBackupFollowsTheBackedUpVm() {
+        UserVm vm = Mockito.mock(UserVm.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(vm.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+
+        userVmManagerImpl.applyHonourDiskControllerDetailFromBackup(vm, "{\"honour.disk.controller\":\"true\",\"rootDiskController\":\"virtio\"}");
+        Mockito.verify(vmInstanceDetailsDao).addDetail(1L, HONOUR, "true", false);
+
+        userVmManagerImpl.applyHonourDiskControllerDetailFromBackup(vm, "{\"rootDiskController\":\"virtio\"}");
+        userVmManagerImpl.applyHonourDiskControllerDetailFromBackup(vm, null);
+        Mockito.verify(vmInstanceDetailsDao, Mockito.times(2)).removeDetail(1L, HONOUR);
+    }
 }

@@ -447,6 +447,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3;
 
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
+    /**
+     * rootDiskController and dataDiskController values that name a disk bus the KVM agent uses as given.
+     */
+    private static final List<String> KVM_EXPLICIT_DISK_CONTROLLERS = Arrays.asList("virtio", "scsi", "sata", "ide");
     private static final String BACKUP_VALIDATION_NETWORK = "BackupValidationNetwork";
     private static final String DEFAULT_SHARED_NETWORK_OFFERING_WITH_NO_SERVICE = "DefaultSharedNetworkOfferingWithNoService";
 
@@ -5229,6 +5233,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (customParameters.containsKey(VmDetailConstants.NAME_ON_HYPERVISOR)) {
             hiddenDetails.add(VmDetailConstants.NAME_ON_HYPERVISOR);
         }
+        if (HypervisorType.KVM.equals(hypervisorType)) {
+            setHonourDiskControllerDetail(vm, template, customParameters, volume, snapshot, hiddenDetails);
+        }
         _vmDao.saveDetails(vm, hiddenDetails);
         if (!isImport) {
             logger.debug("Allocating in the DB for VM");
@@ -5723,11 +5730,127 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         logger.info("cmdline details: "+ buf);
     }
 
+    /**
+     * Sets the hidden {@link VmDetailConstants#KVM_HONOUR_DISK_CONTROLLER} detail on a new KVM VM, or removes the one
+     * copied from its template. The KVM agent honours the rootDiskController and dataDiskController details only on VMs
+     * with this detail. It must only be set when the disks of the VM boot from the buses those details name, because
+     * Windows only keeps the storage driver it booted from ready for boot.
+     */
+    protected void setHonourDiskControllerDetail(UserVmVO vm, VirtualMachineTemplate template, Map<String, String> customParameters,
+            Volume volume, Snapshot snapshot, List<String> hiddenDetails) {
+        if (shouldHonourDiskController(template, customParameters, volume, snapshot)) {
+            vm.setDetail(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER, Boolean.TRUE.toString());
+            hiddenDetails.add(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER);
+        } else {
+            vm.details.remove(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER);
+        }
+    }
+
+    /**
+     * Whether a new KVM VM gets the {@link VmDetailConstants#KVM_HONOUR_DISK_CONTROLLER} detail. It must mean that the VM
+     * only ever boots from the buses its disk controller details name:
+     * <ul>
+     *     <li>a value passed in the deploy or import details is used as given;</li>
+     *     <li>no, when the VM gets no disk controller that names a bus (nothing to honour);</li>
+     *     <li>yes, when only the deploy or import details name the disk controllers (the operator chose them for this
+     *     VM; imports pass the bus the source disk used);</li>
+     *     <li>a disk controller inherited from the template: only when the template has the detail (registered from the
+     *     version that introduced it, or captured from a VM that has it); for a VM made from an existing volume or
+     *     snapshot, only when the VM that owns that volume has it.</li>
+     * </ul>
+     */
+    protected boolean shouldHonourDiskController(VirtualMachineTemplate template, Map<String, String> customParameters, Volume volume,
+            Snapshot snapshot) {
+        Map<String, String> parameters = customParameters != null ? customParameters : Collections.emptyMap();
+        if (parameters.containsKey(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER)) {
+            return Boolean.parseBoolean(parameters.get(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER));
+        }
+        Map<String, String> templateDetails = template != null && template.getDetails() != null ? template.getDetails() : Collections.emptyMap();
+        boolean parametersNameController = false;
+        boolean templateNamesController = false;
+        for (String controllerDetail : Arrays.asList(VmDetailConstants.ROOT_DISK_CONTROLLER, VmDetailConstants.DATA_DISK_CONTROLLER)) {
+            if (parameters.containsKey(controllerDetail)) {
+                parametersNameController |= isExplicitKvmDiskController(parameters.get(controllerDetail));
+            } else {
+                templateNamesController |= isExplicitKvmDiskController(templateDetails.get(controllerDetail));
+            }
+        }
+        if (!templateNamesController) {
+            return parametersNameController;
+        }
+        if (volume == null && snapshot == null) {
+            return Boolean.parseBoolean(templateDetails.get(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER));
+        }
+        Long sourceVmId = volume != null ? volume.getInstanceId() : null;
+        if (snapshot != null) {
+            VolumeVO snapshotVolume = _volsDao.findByIdIncludingRemoved(snapshot.getVolumeId());
+            sourceVmId = snapshotVolume != null ? snapshotVolume.getInstanceId() : null;
+        }
+        if (sourceVmId == null) {
+            return false;
+        }
+        VMInstanceDetailVO sourceVmDetail = vmInstanceDetailsDao.findDetail(sourceVmId, VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER);
+        return sourceVmDetail != null && Boolean.parseBoolean(sourceVmDetail.getValue());
+    }
+
+    /**
+     * Whether a rootDiskController or dataDiskController value names a disk bus the KVM agent uses as given.
+     */
+    protected static boolean isExplicitKvmDiskController(String controller) {
+        return controller != null && KVM_EXPLICIT_DISK_CONTROLLERS.stream().anyMatch(controller::equalsIgnoreCase);
+    }
+
+    /**
+     * Removes the {@link VmDetailConstants#KVM_HONOUR_DISK_CONTROLLER} detail for good when a KVM VM starts on a host whose
+     * agent does not honour it (an agent not upgraded yet). That agent boots the VM on its own disk buses, and the VM must
+     * stay on them, because Windows only keeps the storage driver it booted from ready for boot.
+     */
+    protected void removeHonourDiskControllerDetailIfHostCannotHonourIt(UserVmVO vm, DeployDestination dest) {
+        Map<String, String> details = vm.getDetails();
+        if (!HypervisorType.KVM.equals(vm.getHypervisorType()) || details == null
+                || !Boolean.parseBoolean(details.get(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER))
+                || dest == null || dest.getHost() == null) {
+            return;
+        }
+        HostVO host = _hostDao.findById(dest.getHost().getId());
+        if (host != null) {
+            _hostDao.loadDetails(host);
+            if (Boolean.parseBoolean(host.getDetail(Host.HOST_HONOUR_DISK_CONTROLLER))) {
+                return;
+            }
+        }
+        logger.warn("VM {} starts on host {}, whose agent does not honour the {} detail. Removing the detail from the VM, so that it "
+                + "keeps the disk buses it boots from now.", vm, dest.getHost(), VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER);
+        vmInstanceDetailsDao.removeDetail(vm.getId(), VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER);
+        details.remove(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER);
+    }
+
+    /**
+     * A KVM VM created from a backup boots from the disks of the backed-up VM, so it gets the
+     * {@link VmDetailConstants#KVM_HONOUR_DISK_CONTROLLER} detail only when the settings saved in the backup have it.
+     */
+    protected void applyHonourDiskControllerDetailFromBackup(UserVm vm, String vmSettingsFromBackup) {
+        if (vm == null || !HypervisorType.KVM.equals(vm.getHypervisorType())) {
+            return;
+        }
+        boolean honour = false;
+        if (vmSettingsFromBackup != null) {
+            Map<String, String> settings = new Gson().fromJson(vmSettingsFromBackup, new TypeToken<Map<String, String>>(){}.getType());
+            honour = settings != null && Boolean.parseBoolean(settings.get(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER));
+        }
+        if (honour) {
+            vmInstanceDetailsDao.addDetail(vm.getId(), VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER, Boolean.TRUE.toString(), false);
+        } else {
+            vmInstanceDetailsDao.removeDetail(vm.getId(), VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER);
+        }
+    }
+
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
         UserVmVO vm = _vmDao.findById(profile.getId());
         Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
+        removeHonourDiskControllerDetailIfHostCannotHonourIt(vm, dest);
         StringBuilder buf = profile.getBootArgsBuilder();
         if (CKS_NODE.equals(vm.getUserVmType()) || SHAREDFSVM.equals(vm.getUserVmType())) {
             addUserVMCmdlineArgs(vm.getId(), profile, dest, buf);
@@ -10399,6 +10522,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             _vmDao.saveDetails(vmVO);
         }
+        applyHonourDiskControllerDetailFromBackup(vm, vmSettingsFromBackup);
 
         return vm;
     }
@@ -10727,6 +10851,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vmVO != null) {
             _vmDao.saveDetails(vmVO);
         }
+        applyHonourDiskControllerDetailFromBackup(vm, vmSettingsFromBackup);
 
         return vm;
     }

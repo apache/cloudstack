@@ -172,4 +172,40 @@ public class AgentManagerImplTest {
         int hostSshPort = mgr.getHostSshPort(host);
         Assert.assertEquals(3922, hostSshPort);
     }
+
+    private void syncHonourDiskControllerCapability(Hypervisor.HypervisorType hypervisorType, String stored, Map<String, String> reported) {
+        host.setHypervisorType(hypervisorType);
+        Map<String, String> details = new HashMap<>();
+        if (stored != null) {
+            details.put(Host.HOST_HONOUR_DISK_CONTROLLER, stored);
+        }
+        host.setDetails(details);
+        mgr.syncHonourDiskControllerCapability(host, reported);
+    }
+
+    @Test
+    public void syncHonourDiskControllerCapabilityStoresTheCapabilityOfAnUpgradedKvmAgent() {
+        syncHonourDiskControllerCapability(Hypervisor.HypervisorType.KVM, null, Map.of(Host.HOST_HONOUR_DISK_CONTROLLER, "true"));
+        Assert.assertEquals("true", host.getDetails().get(Host.HOST_HONOUR_DISK_CONTROLLER));
+        Mockito.verify(hostDao).saveDetails(host);
+    }
+
+    @Test
+    public void syncHonourDiskControllerCapabilitySetsFalseForAnOlderKvmAgent() {
+        syncHonourDiskControllerCapability(Hypervisor.HypervisorType.KVM, "true", new HashMap<>());
+        Assert.assertEquals("false", host.getDetails().get(Host.HOST_HONOUR_DISK_CONTROLLER));
+        Mockito.verify(hostDao).saveDetails(host);
+
+        syncHonourDiskControllerCapability(Hypervisor.HypervisorType.KVM, "true", null);
+        Assert.assertEquals("false", host.getDetails().get(Host.HOST_HONOUR_DISK_CONTROLLER));
+    }
+
+    @Test
+    public void syncHonourDiskControllerCapabilityWritesNothingWithoutAChange() {
+        syncHonourDiskControllerCapability(Hypervisor.HypervisorType.KVM, "true", Map.of(Host.HOST_HONOUR_DISK_CONTROLLER, "true"));
+        syncHonourDiskControllerCapability(Hypervisor.HypervisorType.KVM, null, new HashMap<>());
+        syncHonourDiskControllerCapability(Hypervisor.HypervisorType.VMware, null, Map.of(Host.HOST_HONOUR_DISK_CONTROLLER, "true"));
+        Assert.assertNull(host.getDetails().get(Host.HOST_HONOUR_DISK_CONTROLLER));
+        Mockito.verify(hostDao, Mockito.never()).saveDetails(host);
+    }
 }

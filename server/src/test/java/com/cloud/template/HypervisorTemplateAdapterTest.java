@@ -555,4 +555,17 @@ public class HypervisorTemplateAdapterTest {
         Mockito.when(dataStoreManagerMock.getImageStoresByScope(Mockito.any())).thenReturn(new ArrayList<>());
         _adapter.checkZoneImageStores(templateVO, List.of(1L));
     }
+
+    @Test
+    public void addHonourDiskControllerDetailMarksNewKvmTemplatesOnly() {
+        String honour = com.cloud.vm.VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER;
+        Map<String, String> details = TemplateAdapterBase.addHonourDiskControllerDetail(false, com.cloud.hypervisor.Hypervisor.HypervisorType.KVM, null);
+        Assert.assertEquals("true", details.get(honour));
+
+        details = new HashMap<>(Map.of(honour, "false"));
+        Assert.assertEquals("false", TemplateAdapterBase.addHonourDiskControllerDetail(false, com.cloud.hypervisor.Hypervisor.HypervisorType.KVM, details).get(honour));
+
+        Assert.assertNull(TemplateAdapterBase.addHonourDiskControllerDetail(true, com.cloud.hypervisor.Hypervisor.HypervisorType.KVM, null));
+        Assert.assertNull(TemplateAdapterBase.addHonourDiskControllerDetail(false, com.cloud.hypervisor.Hypervisor.HypervisorType.VMware, null));
+    }
 }

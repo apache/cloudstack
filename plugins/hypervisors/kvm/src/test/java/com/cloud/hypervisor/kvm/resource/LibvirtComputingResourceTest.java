@@ -156,6 +156,7 @@ import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
+import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
@@ -1971,6 +1972,14 @@ public class LibvirtComputingResourceTest {
 
         final Answer answer = wrapper.execute(command, libvirtComputingResourceMock);
         assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testReadyCommandReportsThatTheHostHonoursDiskControllers() {
+        final Answer answer = LibvirtRequestWrapper.getInstance().execute(new ReadyCommand(1L), libvirtComputingResourceMock);
+
+        assertTrue(answer instanceof ReadyAnswer);
+        assertEquals("true", ((ReadyAnswer) answer).getDetailsMap().get(com.cloud.host.Host.HOST_HONOUR_DISK_CONTROLLER));
     }
 
     @Test
@@ -7396,7 +7405,19 @@ public class LibvirtComputingResourceTest {
     private static final String[] WINDOWS_SERVER_GUEST_OSES = {"Windows Server 2019 (64-bit)", "Windows Server 2022 (64-bit)",
             "Windows Server 2025 (64-bit)"};
 
+    /**
+     * Details of a VM created or imported from the version that honours disk controllers (it has the honour detail).
+     */
     private Map<String, String> diskControllerTestDetails(String uefiMode, String rootDiskController, String dataDiskController) {
+        Map<String, String> details = diskControllerTestDetailsOfOlderVm(uefiMode, rootDiskController, dataDiskController);
+        details.put(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER, "true");
+        return details;
+    }
+
+    /**
+     * Details of a VM created before that version (no honour detail): it keeps the disk buses it has always booted from.
+     */
+    private Map<String, String> diskControllerTestDetailsOfOlderVm(String uefiMode, String rootDiskController, String dataDiskController) {
         Map<String, String> details = new HashMap<>();
         if (uefiMode != null) {
             details.put(GuestDef.BootType.UEFI.toString(), uefiMode);
@@ -7675,6 +7696,73 @@ public class LibvirtComputingResourceTest {
                 diskControllerTestVolume(Volume.Type.DATADISK, 1, StoragePoolType.RBD));
         assertEquals(DiskDef.DiskBus.SATA, disks.get(0).getBusType());
         assertEquals(DiskDef.DiskBus.SATA, disks.get(1).getBusType());
+    }
+
+    @Test
+    public void createVbdKeepsSataForOlderWindowsUefiSecureBootVmWithExplicitVirtio() throws Exception {
+        // An older VM imported with virtio that has always booted on SATA would stop with INACCESSIBLE_BOOT_DEVICE on virtio
+        for (String os : WINDOWS_SERVER_GUEST_OSES) {
+            List<DiskDef> disks = createVbdForDiskControllerTest(os, diskControllerTestDetailsOfOlderVm("SECURE", "virtio", "virtio"),
+                    Volume.Type.ROOT, Volume.Type.DATADISK);
+
+            assertEquals(4, disks.size());
+            assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sda");
+            assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sdb");
+            assertDiskDef(disks.get(2), DiskDef.DeviceType.CDROM, DiskDef.DiskBus.SATA, "sdd");
+            assertDiskDef(disks.get(3), DiskDef.DeviceType.CDROM, DiskDef.DiskBus.SATA, "sde");
+        }
+    }
+
+    @Test
+    public void createVbdKeepsSataWhenHonourDetailIsFalse() throws Exception {
+        Map<String, String> details = diskControllerTestDetails("SECURE", "virtio", "virtio");
+        details.put(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER, "false");
+        List<DiskDef> disks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, details, Volume.Type.ROOT, Volume.Type.DATADISK);
+
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sda");
+        assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sdb");
+    }
+
+    @Test
+    public void createVbdKeepsTodaysBusesOfOlderVms() throws Exception {
+        // Windows UEFI legacy: the data disks follow the root disk
+        List<DiskDef> disks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, diskControllerTestDetailsOfOlderVm("LEGACY", "virtio", "sata"),
+                Volume.Type.ROOT, Volume.Type.DATADISK);
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vda");
+        assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vdb");
+
+        // Linux UEFI Secure Boot: the root disk is virtio, whatever is set
+        disks = createVbdForDiskControllerTest(LINUX_GUEST_OS, diskControllerTestDetailsOfOlderVm("SECURE", "scsi", null),
+                Volume.Type.ROOT, Volume.Type.DATADISK);
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vda");
+        assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SCSI, "sdb");
+
+        // PowerFlex: SATA for Windows UEFI
+        disks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, diskControllerTestDetailsOfOlderVm("SECURE", "virtio", "virtio"),
+                StoragePoolType.PowerFlex, PhysicalDiskFormat.RAW,
+                diskControllerTestVolume(Volume.Type.ROOT, 0, StoragePoolType.PowerFlex),
+                diskControllerTestVolume(Volume.Type.DATADISK, 1, StoragePoolType.PowerFlex));
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sda");
+        assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sdb");
+
+        // RBD: the data disks use the root disk bus
+        disks = createVbdForDiskControllerTest(LINUX_GUEST_OS, diskControllerTestDetailsOfOlderVm(null, "virtio", "scsi"),
+                StoragePoolType.RBD, PhysicalDiskFormat.RAW,
+                diskControllerTestVolume(Volume.Type.ROOT, 0, StoragePoolType.RBD),
+                diskControllerTestVolume(Volume.Type.DATADISK, 1, StoragePoolType.RBD));
+        assertEquals(DiskDef.DiskBus.VIRTIO, disks.get(0).getBusType());
+        assertEquals(DiskDef.DiskBus.VIRTIO, disks.get(1).getBusType());
+    }
+
+    @Test
+    public void getExplicitDiskBusReturnsNullForOlderVms() {
+        VirtualMachineTO to = Mockito.mock(VirtualMachineTO.class);
+        Mockito.when(to.getDetails()).thenReturn(diskControllerTestDetailsOfOlderVm("SECURE", "virtio", "virtio"));
+        assertNull(libvirtComputingResourceSpy.getExplicitDiskBus(to, Volume.Type.ROOT, true, true));
+        assertNull(libvirtComputingResourceSpy.getExplicitDiskBus(to, Volume.Type.DATADISK, true, true));
+
+        Mockito.when(to.getDetails()).thenReturn(null);
+        assertNull(libvirtComputingResourceSpy.getExplicitDiskBus(to, Volume.Type.ROOT, true, true));
     }
 
     @Test

@@ -5138,16 +5138,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * Returns the bus set for a disk of the VM with the rootDiskController (ROOT volume) or the dataDiskController
      * (DATADISK volume) VM detail. This bus is used whatever the guest OS, the boot mode and the storage pool type.
      * <ul>
+     *     <li>Only VMs with the {@link VmDetailConstants#KVM_HONOUR_DISK_CONTROLLER} detail set to true get it. The
+     *     management server sets it on the VMs it creates or imports with an explicit disk controller, from the version
+     *     that introduced it. Older VMs keep the buses they have always booted from: Windows only keeps the storage
+     *     driver it booted from ready for boot, so moving such a VM from SATA to virtio stops it with
+     *     INACCESSIBLE_BOOT_DEVICE.</li>
      *     <li>The data disks of a Windows VM with UEFI follow the root disk when dataDiskController is not set, as
      *     they do when no controller is set at all.</li>
      *     <li>UEFI VMs use the q35 machine type, which has no IDE bus: "ide" gives SATA, as for their CD-ROMs.</li>
      * </ul>
      *
-     * @return the disk bus, or null when the detail is not set or is not one of virtio, scsi, sata and ide (for
-     * example "osdefault"). The bus for the guest OS, the boot mode and the storage pool type is used then.
+     * @return the disk bus, or null when the VM does not have the {@link VmDetailConstants#KVM_HONOUR_DISK_CONTROLLER}
+     * detail, or the controller detail is not set or is not one of virtio, scsi, sata and ide (for example
+     * "osdefault"). The bus for the guest OS, the boot mode and the storage pool type is used then.
      */
     protected DiskDef.DiskBus getExplicitDiskBus(VirtualMachineTO vmSpec, Volume.Type volumeType, boolean isWindowsTemplate,
             boolean isUefiEnabled) {
+        if (!MapUtils.getBoolean(vmSpec.getDetails(), VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER, false)) {
+            return null;
+        }
         DiskDef.DiskBus bus;
         if (volumeType != Volume.Type.DATADISK) {
             bus = getDiskModelFromVMDetail(vmSpec);
