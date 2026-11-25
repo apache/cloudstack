@@ -529,6 +529,8 @@ public interface ResponseGenerator {
 
     public NicResponse createNicResponse(Nic result);
 
+    public NicResponse createNicResponse(Nic result, Long networkId);
+
     ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(ApplicationLoadBalancerRule lb,
             Map<Ip, UserVm> lbInstances);
 

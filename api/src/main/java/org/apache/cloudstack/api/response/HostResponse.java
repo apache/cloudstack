@@ -315,6 +315,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if the host supports instance conversion (using virt-v2v)", since = "4.19.1")
     private Boolean instanceConversionSupported;
 
+    @SerializedName(ApiConstants.VLAN_FILTERING_ENABLED)
+    @Param(description = "true if vlan_filtering is enabled on this host's guest bridge, so it can accept multi-VLAN trunk nics", since = "24.0.0")
+    private Boolean vlanFilteringEnabled;
+
+    @SerializedName(ApiConstants.VLAN_TRUNK_XML_SUPPORTED)
+    @Param(description = "true if this host's libvirt version supports trunk vlan tap membership natively", since = "24.0.0")
+    private Boolean vlanTrunkXmlSupported;
+
     @SerializedName(ApiConstants.ARCH)
     @Param(description = "CPU Arch of the host", since = "4.20")
     private String arch;
@@ -904,6 +912,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.instanceConversionSupported = instanceConversionSupported;
     }
 
+    public void setVlanFilteringEnabled(Boolean vlanFilteringEnabled) {
+        this.vlanFilteringEnabled = vlanFilteringEnabled;
+    }
+
+    public void setVlanTrunkXmlSupported(Boolean vlanTrunkXmlSupported) {
+        this.vlanTrunkXmlSupported = vlanTrunkXmlSupported;
+    }
+
     public Boolean getIsTagARule() {
         return isTagARule;
     }
@@ -998,6 +1014,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public Boolean getInstanceConversionSupported() {
         return instanceConversionSupported;
+    }
+
+    public Boolean getVlanFilteringEnabled() {
+        return vlanFilteringEnabled;
+    }
+
+    public Boolean getVlanTrunkXmlSupported() {
+        return vlanTrunkXmlSupported;
     }
 
     public void setExtensionId(String extensionId) {
