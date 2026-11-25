@@ -71,6 +71,12 @@ for fchost in $(ls /sys/class/fc_host | sed -e 's/host//g'); do
    fi
 done
 
+## a map left behind with no working paths would stop the scan below, so flush it first
+if [ -b /dev/mapper/3${WWID} ] && ! multipath -ll 3${WWID} 2>/dev/null | grep -q "active ready"; then
+   logger -t "CS_SCSI_VOL_FIND" "${WWID} has a multipath map with no active paths, flushing it before scanning"
+   multipath -f 3${WWID} || logger -t "CS_SCSI_VOL_FIND" "${WWID} stale multipath map could not be flushed, it may be in use"
+fi
+
 logger -t "CS_SCSI_VOL_FIND" "${WWID} awaiting disk path at /dev/mapper/3${WWID}"
 
 # wait for multipath to map the new lun to the WWID

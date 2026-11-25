@@ -434,7 +434,6 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         if (waitTimeInSec < 60) {
             waitTimeInSec = 60;
         }
-        KVMPhysicalDisk physicalDisk = null;
 
         // Rescan before checking for the physical disk
         int tries = 0;
@@ -463,13 +462,12 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
                             output.append(" ");
                         }
 
-                        physicalDisk = getPhysicalDisk(address, pool);
-                        if (physicalDisk != null && physicalDisk.getSize() > 0) {
+                        // check the device directly, going through getPhysicalDisk would start another connect
+                        if (isConnected(address.getPath()) && getPhysicalDiskSize(address.getPath()) > 0) {
                             LOGGER.debug("Found the volume using id: " + address.getPath() + " of the storage pool: " + pool.getUuid());
                             return true;
                         }
-
-                        break;
+                        LOGGER.debug("Volume " + address.getPath() + " is not usable yet after discovery - try " + tries);
                     } else {
                         LOGGER.warn("Failure discovering LUN via " + connectScript);
                         BufferedReader error = new BufferedReader(new InputStreamReader(p.getErrorStream()));
@@ -504,15 +502,30 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     }
 
     boolean isConnected(String path) {
-        // run a command to test if this is a binary device at this path
+        if (!isBlockDevice(path)) {
+            return false;
+        }
+        // A multipath map whose paths have all failed still exists as a block device but cannot be read
+        if (!hasActivePath(path)) {
+            LOGGER.warn("Device {} exists but has no active paths, treating it as not connected", path);
+            return false;
+        }
+        return true;
+    }
+
+    boolean isBlockDevice(String path) {
         Script blockTest = new Script("/bin/test", LOGGER);
         blockTest.add("-b", path);
         blockTest.execute();
-        int rc = blockTest.getExitValue();
-        if (rc == 0) {
-            return true;
-        }
-        return false;
+        return blockTest.getExitValue() == 0;
+    }
+
+    boolean hasActivePath(String path) {
+        Script pathTest = new Script("/bin/bash", LOGGER);
+        pathTest.add("-c");
+        pathTest.add(String.format("multipath -ll '%s' 2>/dev/null | grep -q 'active ready'", path));
+        pathTest.execute();
+        return pathTest.getExitValue() == 0;
     }
 
     long getPhysicalDiskSize(String diskPath) {
