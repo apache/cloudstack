@@ -28,6 +28,7 @@
 - [Bug fixes](#bug-fixes)
 - [Developing new features](#developing-new-features)
 - [PendingReleaseNotes file](#pendingreleasenotes-file)
+- [AI-assisted contributions](#ai-assisted-contributions)
 - [Fork the code](#fork-the-code)
 - [Making changes](#making-changes)
 - [Rebase `feature_x` to include updates from `upstream/main`](#rebase-feature_x-to-include-updates-from-upstreammain)
@@ -66,6 +67,20 @@ use this file as a source of information when compiling the Release Notes for a 
 When adding information to the PendingReleaseNotes file make sure that you write a good and understandable description of the new feature or change which you have developed.
 
 Updating the PendingReleaseNotes file is preferably a part of the original Pull Request, but that is up to the developers' discretion.
+
+## AI-assisted contributions
+
+Contributions made with the help of AI tools are welcome and appreciated. Generating an issue or a pull request with AI is cheap for the submitter, though; reviewing, reproducing and fixing it is not cheap for the volunteers who maintain ACS.
+
+If you use AI to submit an issue of any kind (bug report, improvement, feature idea, documentation report, security finding) or a pull request, you are expected to spend the extra tokens and include the work that makes it actionable:
+
+- **Documentation**: a clear description of the problem or change, the affected versions and components, and, for new or changed behaviour, the documentation or PendingReleaseNotes text that goes with it.
+- **Tests**: a reproducer for bugs (steps, a unit test or a Marvin test) and unit and/or integration tests for proposed changes.
+- **Suggested code**: a proposed fix or implementation, preferably as a pull request against the right branch (see [Bug fixes](#bug-fixes) and [Developing new features](#developing-new-features)), or at least as a patch or code snippet in the issue.
+
+Review and verify AI output before you submit it. You are responsible for the accuracy of what you submit, and for making sure it compiles, passes the tests and actually addresses the issue. Please mention in the issue or pull request that AI tools were used.
+
+Issues or pull requests that are clearly AI-generated but lack these elements may be closed or put on hold until they are completed.
 
 ## Fork the code
 

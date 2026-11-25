@@ -2,6 +2,11 @@
 Verify first that your issue/request is not already reported on GitHub.
 Also test if the latest release and main branch are affected too.
 Always add information AFTER of these HTML comments, but no need to delete the comments.
+
+AI-assisted issues are appreciated, but if you use AI to write this issue, please spend the
+extra tokens to also generate documentation, tests (a reproducer for bugs) and suggested code
+(a patch or, preferably, a pull request), and verify them before submitting. Mention that AI
+was used. See the "AI-assisted contributions" section in CONTRIBUTING.md.
 -->
 
 ##### ISSUE TYPE
@@ -71,3 +76,9 @@ For new features, show how the feature would be used.
 ~~~
 
 ~~~
+
+##### AI ASSISTANCE
+<!--
+If AI was used to write this issue, say so here and add (or link to) the generated
+documentation, tests and suggested code. Delete this section if no AI was used.
+-->
