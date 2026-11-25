@@ -803,6 +803,8 @@ class TestReleaseIP(cloudstackTestCase):
             self.zone.id,
             self.hypervisor
         )
+        if template == FAILED:
+            self.fail("get_test_template() failed to return template")
         self.services["virtual_machine"]["zoneid"] = self.zone.id
 
         # Create an account, network, VM, Port forwarding rule, LB rules
@@ -1006,6 +1008,8 @@ class TestDeleteAccount(cloudstackTestCase):
             self.zone.id,
             self.hypervisor
         )
+        if template == FAILED:
+            self.fail("get_test_template() failed to return template")
         self.services["virtual_machine"]["zoneid"] = self.zone.id
 
         # Create an account, network, VM and IP addresses
@@ -1419,6 +1423,8 @@ class TestL2Networks(cloudstackTestCase):
             cls.zone.id,
             cls.hypervisor
         )
+        if cls.template == FAILED:
+            assert False, "get_test_template() failed to return template"
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
@@ -1668,6 +1674,8 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
                 cls.zone.id,
                 cls.hypervisor
             )
+            if cls.template == FAILED:
+                assert False, "get_test_template() failed to return template"
             cls.service_offering = ServiceOffering.create(
                 cls.apiclient,
                 cls.services["service_offerings"]["tiny"]

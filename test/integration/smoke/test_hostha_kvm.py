@@ -18,6 +18,7 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
+from marvin.codes import FAILED
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
@@ -85,6 +86,8 @@ class TestHAKVM(cloudstackTestCase):
             self.zone.id,
             self.hypervisor
         )
+        if self.template == FAILED:
+            self.fail("get_test_template() failed to return template")
 
         self.configureAndDisableHostHa()
         self.cleanup = [self.service_offering]

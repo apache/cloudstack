@@ -662,6 +662,8 @@ class TestIsolatedNetworks(cloudstackTestCase):
             cls.zone.id,
             cls.hypervisor
         )
+        if cls.template == FAILED:
+            assert False, "get_test_template() failed to return template"
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         # Create an account, network, VM and IP addresses

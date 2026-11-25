@@ -21,6 +21,7 @@ import math
 
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.codes import FAILED
 from marvin.lib.base import (VirtualMachine, Volume, DiskOffering, ServiceOffering, Template)
 from marvin.lib.common import (get_zone, get_domain, get_test_template, list_storage_pools)
 from nose.plugins.attrib import attr
@@ -53,6 +54,8 @@ class TestRestoreVM(cloudstackTestCase):
 
         # the first template is the shared public test template, the restore needs another one
         template_t1 = get_test_template(cls.apiclient, cls.zone.id, cls.hypervisor)
+        if template_t1 == FAILED:
+            assert False, "get_test_template() failed to return template"
         cls.template_t1 = Template.list(cls.apiclient, templatefilter='all', id=template_t1.id)[0]
 
         template_t2 = Template.register(cls.apiclient, cls.services["test_templates"][
