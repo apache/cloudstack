@@ -1114,7 +1114,7 @@ export default {
           }
         }
       }).catch(error => {
-        if (!error || !error.message) {
+        if (!error || !error.message || sourceToken.isCancel(error)) {
           console.log('API request likely got cancelled due to route change:', this.apiName)
           return
         }
