@@ -1675,4 +1675,56 @@ public class SystemVmTemplateRegistrationTest {
             SystemVmTemplateRegistration.CS_TINY_VERSION = previousTiny;
         }
     }
+
+    @Test
+    public void createTemplateObjectInDB_KvmTemplateIsDynamicallyScalable() {
+        assertTrue(createTemplateObject(Hypervisor.HypervisorType.KVM).isDynamicallyScalable());
+    }
+
+    @Test
+    public void createTemplateObjectInDB_OtherHypervisorTemplateIsNotDynamicallyScalable() {
+        assertFalse(createTemplateObject(Hypervisor.HypervisorType.VMware).isDynamicallyScalable());
+    }
+
+    private VMTemplateVO createTemplateObject(Hypervisor.HypervisorType hypervisorType) {
+        SystemVmTemplateRegistration.SystemVMTemplateDetails details = new SystemVmTemplateRegistration.SystemVMTemplateDetails(
+                "uuid", "systemvm", new java.sql.Date(System.currentTimeMillis()), "http://localhost/systemvm.qcow2", "d41d8cd98f00b204e9800998ecf8427e",
+                Storage.ImageFormat.QCOW2, 1, hypervisorType, CPU.CPUArch.amd64, 1L);
+        when(vmTemplateDao.getNextInSequence(Long.class, "id")).thenReturn(1L);
+        when(vmTemplateDao.persist(any(VMTemplateVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        return systemVmTemplateRegistration.createTemplateObjectInDB(details);
+    }
+
+    @Test
+    public void updateRegisteredTemplateDetails_PreRegisteredKvmTemplateBecomesDynamicallyScalable() {
+        VMTemplateVO template = updateRegisteredTemplate(Storage.TemplateType.USER, Hypervisor.HypervisorType.KVM);
+        assertEquals(Storage.TemplateType.SYSTEM, template.getTemplateType());
+        assertTrue(template.isDynamicallyScalable());
+    }
+
+    @Test
+    public void updateRegisteredTemplateDetails_KvmSystemTemplateKeepsItsFlag() {
+        assertFalse(updateRegisteredTemplate(Storage.TemplateType.SYSTEM, Hypervisor.HypervisorType.KVM).isDynamicallyScalable());
+    }
+
+    @Test
+    public void updateRegisteredTemplateDetails_PreRegisteredOtherHypervisorTemplateIsNotDynamicallyScalable() {
+        assertFalse(updateRegisteredTemplate(Storage.TemplateType.USER, Hypervisor.HypervisorType.VMware).isDynamicallyScalable());
+    }
+
+    private VMTemplateVO updateRegisteredTemplate(Storage.TemplateType currentType, Hypervisor.HypervisorType hypervisorType) {
+        long templateId = 1L;
+        VMTemplateVO template = new VMTemplateVO();
+        template.setTemplateType(currentType);
+        template.setDynamicallyScalable(false);
+        SystemVmTemplateRegistration.MetadataTemplateDetails templateDetails =
+                Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
+        when(templateDetails.getHypervisorType()).thenReturn(hypervisorType);
+        when(vmTemplateDao.findById(templateId)).thenReturn(template);
+        when(vmTemplateDao.update(template.getId(), template)).thenReturn(true);
+        doNothing().when(systemVmTemplateRegistration).updateSystemVMEntries(templateId, hypervisorType);
+        doNothing().when(systemVmTemplateRegistration).updateConfigurationParams(any(), any(), any());
+        systemVmTemplateRegistration.updateRegisteredTemplateDetails(templateId, templateDetails, null);
+        return template;
+    }
 }

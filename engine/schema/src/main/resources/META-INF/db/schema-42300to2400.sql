@@ -294,3 +294,7 @@ WHERE   sp.`storage_provider_name` = 'NetApp ONTAP'
 
 -- Rename persisted FlashArray provider name (plugin getName() changed from 'Flash Array' to 'FlashArray')
 UPDATE `cloud`.`storage_pool` SET `storage_provider_name` = 'FlashArray' WHERE `storage_provider_name` = 'Flash Array';
+
+-- KVM SystemVM templates are dynamically scalable, so CKS nodes created from them can be scaled live.
+-- Existing VMs keep their own flag; only VMs created from now on pick it up.
+UPDATE `cloud`.`vm_template` SET `dynamically_scalable` = 1 WHERE `type` = 'SYSTEM' AND `hypervisor_type` = 'KVM' AND `removed` IS NULL;
