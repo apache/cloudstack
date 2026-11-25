@@ -858,8 +858,6 @@ public enum Config {
             "30",
             "Garbage collection interval to destroy unused ELB vms in minutes. Minimum of 5",
             null),
-    EnableEC2API("Advanced", ManagementServer.class, Boolean.class, "enable.ec2.api", "false", "enable EC2 API on CloudStack", null),
-    EnableS3API("Advanced", ManagementServer.class, Boolean.class, "enable.s3.api", "false", "enable Amazon S3 API on CloudStack", null),
     RecreateSystemVmEnabled(
             "Advanced",
             ManagementServer.class,
@@ -1496,7 +1494,6 @@ public enum Config {
             "3600",
             "The interval (in seconds) between cleanup for Inactive VPCs",
             null),
-    VpcMaxNetworks("Advanced", ManagementServer.class, Integer.class, "vpc.max.networks", "3", "Maximum number of networks per vpc", null),
     DetailBatchQuerySize("Advanced", ManagementServer.class, Integer.class, "detail.batch.query.size", "2000", "Default entity detail batch query size for listing", null),
     NetworkIPv6SearchRetryMax(
             "Network",
