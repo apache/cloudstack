@@ -69,6 +69,52 @@ def checkIdletimeout(haproxyData, haCfgSections):
         return False
     return True
 
+def hasOption(cfgSection, option):
+    return option in cfgSection.get("option", [])
+
+
+def timeoutValue(cfgSection, kind):
+    for tline in cfgSection.get("timeout", []):
+        parts = tline.strip().split(None, 1)
+        if len(parts) == 2 and parts[0].strip() == kind:
+            return parts[1].strip()
+    return None
+
+
+def checkRuleConnectionSettings(lbSec, cfgSection, secName, httpModeExpected):
+    """
+    Per rule keepalive and timeouts, which live in the rule's own listen section rather than in
+    defaults. An empty value means the rule inherits, so there is nothing to check.
+    """
+    correct = True
+
+    keepAlive = lbSec.get("ruleKeepAlive", "")
+    if keepAlive != "" and httpModeExpected:
+        expected = "http-keep-alive" if keepAlive == "true" else "httpclose"
+        if not hasOption(cfgSection, expected):
+            print("Expected 'option " + expected + "' in " + secName)
+            correct = False
+
+    idleTimeout = lbSec.get("ruleIdleTimeout", "")
+    if idleTimeout != "":
+        for kind in ("client", "server"):
+            found = timeoutValue(cfgSection, kind)
+            if found != idleTimeout:
+                print("Expected 'timeout " + kind + " " + idleTimeout + "' in " + secName +
+                      " but found " + str(found))
+                correct = False
+
+    keepAliveTimeout = lbSec.get("ruleKeepAliveTimeout", "")
+    if keepAliveTimeout != "" and keepAlive == "true" and httpModeExpected:
+        found = timeoutValue(cfgSection, "http-keep-alive")
+        if found != keepAliveTimeout:
+            print("Expected 'timeout http-keep-alive " + keepAliveTimeout + "' in " + secName +
+                  " but found " + str(found))
+            correct = False
+
+    return correct
+
+
 def checkLoadBalance(haproxyData, haCfgSections):
     correct = True
     for lbSec in haproxyData:
@@ -94,11 +140,19 @@ def checkLoadBalance(haproxyData, haCfgSections):
                     print("Incorrect bind string found. Expected " + bindStr + " but found " + cfgSection["bind"][0] + ".")
                     correct = False
 
-                if (lbSec["sourcePortStart"] == "80" and lbSec["sourcePortEnd"] == "80" and lbSec["keepAliveEnabled"] == "false") \
-                        or (lbSec["stickiness"].find("AppCookie") != -1 or lbSec["stickiness"].find("LbCookie") != -1):
+                # A rule that sets keepalive itself stays in http mode on port 80. Without it, the
+                # network offering decides, and keepalive there drops the rule to tcp mode.
+                onHttpPort = lbSec["sourcePortStart"] == "80" and lbSec["sourcePortEnd"] == "80"
+                ruleKeepAlive = lbSec.get("ruleKeepAlive", "")
+                httpModeExpected = (onHttpPort and (ruleKeepAlive != "" or lbSec["keepAliveEnabled"] == "false")) \
+                    or lbSec["stickiness"].find("AppCookie") != -1 or lbSec["stickiness"].find("LbCookie") != -1
+                if httpModeExpected:
                     if not ("mode" in cfgSection and cfgSection["mode"][0] == "http"):
                         print("Expected HTTP mode but not found")
                         correct = False
+
+                if not checkRuleConnectionSettings(lbSec, cfgSection, secName, httpModeExpected):
+                    correct = False
 
                 expectedServerIps = lbSec["vmIps"].split(" ")
                 for expectedServerIp in expectedServerIps:

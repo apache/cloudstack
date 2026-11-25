@@ -33,7 +33,8 @@ import java.util.List;
  */
 public interface HighAvailabilityManager extends Manager {
 
-    List<StoragePoolType> LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT = List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint);
+    List<StoragePoolType> LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT = List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint,
+            StoragePoolType.RBD);
 
     ConfigKey<Boolean> ForceHA = new ConfigKey<>("Advanced", Boolean.class, "force.ha", "false",
         "Force High-Availability to happen even if the VM says no.", true, Cluster);

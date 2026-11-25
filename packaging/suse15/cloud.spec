@@ -120,6 +120,9 @@ Requires: cifs-utils
 Requires: (edk2-ovmf or qemu-ovmf-x86_64)
 Requires: swtpm
 Requires: (python3-libvirt or python3-libvirt-python)
+Suggests: ceph-common
+Suggests: (python3-rados or python3-ceph-common)
+Suggests: (python3-rbd or python3-ceph-common)
 Requires: (qemu-img or qemu-tools)
 Requires: qemu-kvm
 Requires: cryptsetup
@@ -127,6 +130,12 @@ Requires: rng-tools
 Requires: (libgcrypt > 1.8.3 or libgcrypt20)
 Requires: (selinux-tools if selinux-tools)
 Requires: sysstat
+Requires: file
+Requires: openssl
+Requires: bzip2
+Requires: gzip
+Requires: unzip
+Requires: xz
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent

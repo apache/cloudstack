@@ -377,6 +377,7 @@ public class ApiConstants {
     public static final String IS_ISO = "isiso";
     public static final String IS_PORTABLE = "isportable";
     public static final String IS_PUBLIC = "ispublic";
+    public static final String IDLE_TIMEOUT = "idletimeout";
     public static final String IS_PERSISTENT = "ispersistent";
     public static final String EGRESS_DEFAULT_POLICY = "egressdefaultpolicy";
     public static final String IS_READY = "isready";
@@ -388,6 +389,8 @@ public class ApiConstants {
     public static final String JAVA_VERSION = "javaversion";
     public static final String JOB_ID = "jobid";
     public static final String JOB_STATUS = "jobstatus";
+    public static final String KEEPALIVE = "keepalive";
+    public static final String KEEPALIVE_TIMEOUT = "keepalivetimeout";
     public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
     public static final String KERNEL_VERSION = "kernelversion";
     public static final String KEYPAIR_ID = "keypairid";
@@ -955,7 +958,6 @@ public class ApiConstants {
     public static final String HA_HOST = "hahost";
     public static final String CUSTOM_DISK_OFF_MIN_SIZE = "customdiskofferingminsize";
     public static final String CUSTOM_DISK_OFF_MAX_SIZE = "customdiskofferingmaxsize";
-    public static final String DEFAULT_ZONE_ID = "defaultzoneid";
     public static final String LIVE_MIGRATE = "livemigrate";
     public static final String MIGRATE_ALLOWED = "migrateallowed";
     public static final String MIGRATE_TO = "migrateto";
@@ -1253,6 +1255,7 @@ public class ApiConstants {
     public static final String OVM3_POOL = "ovm3pool";
     public static final String OVM3_CLUSTER = "ovm3cluster";
     public static final String OVM3_VIP = "ovm3vip";
+    public static final String CLEAN_UP_CONNECTION_SETTINGS = "cleanupconnectionsettings";
     public static final String CLEAN_UP_DETAILS = "cleanupdetails";
     public static final String CLEAN_UP_EXTERNAL_DETAILS = "cleanupexternaldetails";
     public static final String CLEAN_UP_EXTRA_CONFIG = "cleanupextraconfig";
@@ -1538,6 +1541,7 @@ public class ApiConstants {
     public static final String SCHEDULED = "scheduled";
     public static final String SCHEDULED_DATE = "scheduleddate";
     public static final String BACKUP_PROVIDER = "backupprovider";
+    public static final String COMPRESS_ASYNC = "compressasync";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

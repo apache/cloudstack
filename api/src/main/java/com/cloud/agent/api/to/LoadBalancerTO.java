@@ -54,6 +54,9 @@ public class LoadBalancerTO {
     final static int MAX_HEALTHCHECK_POLICIES = 1;
 
     private String cidrList;
+    private Boolean keepAlive;
+    private Long idleTimeout;
+    private Long keepAliveTimeout;
 
     public LoadBalancerTO(String uuid, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, boolean inline,
             List<LbDestination> destinations) {
@@ -247,6 +250,30 @@ public class LoadBalancerTO {
 
     public String getCidrList() {
         return cidrList;
+    }
+
+    public void setKeepAlive(Boolean keepAlive) {
+        this.keepAlive = keepAlive;
+    }
+
+    public Boolean getKeepAlive() {
+        return keepAlive;
+    }
+
+    public void setIdleTimeout(Long idleTimeout) {
+        this.idleTimeout = idleTimeout;
+    }
+
+    public Long getIdleTimeout() {
+        return idleTimeout;
+    }
+
+    public void setKeepAliveTimeout(Long keepAliveTimeout) {
+        this.keepAliveTimeout = keepAliveTimeout;
+    }
+
+    public Long getKeepAliveTimeout() {
+        return keepAliveTimeout;
     }
 
     public static class StickinessPolicyTO {
