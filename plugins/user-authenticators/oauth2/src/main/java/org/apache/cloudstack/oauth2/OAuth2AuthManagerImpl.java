@@ -19,7 +19,6 @@
 package org.apache.cloudstack.oauth2;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -125,13 +124,30 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public UserOAuth2Authenticator getUserOAuth2AuthenticationProvider(String providerName) {
+        return getUserOAuth2AuthenticationProvider(providerName, null);
+    }
+
+    @Override
+    public UserOAuth2Authenticator getUserOAuth2AuthenticationProvider(String providerName, Long domainId) {
         if (StringUtils.isEmpty(providerName)) {
             throw new CloudRuntimeException("OAuth2 authentication provider name is empty");
         }
-        if (!userOAuth2AuthenticationProvidersMap.containsKey(providerName.toLowerCase())) {
+        UserOAuth2Authenticator authenticator = userOAuth2AuthenticationProvidersMap.get(providerName.toLowerCase());
+        if (authenticator == null) {
+            authenticator = findAuthenticatorByRegisteredType(providerName, domainId);
+        }
+        if (authenticator == null) {
             throw new CloudRuntimeException(String.format("Failed to find OAuth2 authentication provider by the name: %s.", providerName));
         }
-        return userOAuth2AuthenticationProvidersMap.get(providerName.toLowerCase());
+        return authenticator;
+    }
+
+    protected UserOAuth2Authenticator findAuthenticatorByRegisteredType(String providerName, Long domainId) {
+        OauthProviderVO registration = _oauthProviderDao.findByProviderAndDomainWithGlobalFallback(providerName, domainId);
+        if (registration == null || StringUtils.isBlank(registration.getType())) {
+            return null;
+        }
+        return userOAuth2AuthenticationProvidersMap.get(registration.getType().toLowerCase());
     }
 
     public List<UserOAuth2Authenticator> getUserOAuth2AuthenticationProviders() {
@@ -152,8 +168,8 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public String verifySecretCodeAndFetchEmail(String code, String provider, Long domainId) {
-        UserOAuth2Authenticator authenticator = getUserOAuth2AuthenticationProvider(provider);
-        String email = authenticator.verifySecretCodeAndFetchEmail(code, domainId);
+        UserOAuth2Authenticator authenticator = getUserOAuth2AuthenticationProvider(provider, domainId);
+        String email = authenticator.verifySecretCodeAndFetchEmail(code, domainId, provider);
 
         return email;
     }
@@ -169,9 +185,20 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         String authorizeUrl = StringUtils.trim(cmd.getAuthorizeUrl());
         String tokenUrl = StringUtils.trim(cmd.getTokenUrl());
         Boolean enabled = cmd.getEnabled();
+        String type = StringUtils.trim(cmd.getType());
+        String issuerUrl = StringUtils.trim(cmd.getIssuerUrl());
 
         if (!isOAuthPluginEnabled(domainId)) {
             throw new CloudRuntimeException("OAuth is not enabled, please enable to register");
+        }
+
+        if (StringUtils.isNotBlank(type) && !userOAuth2AuthenticationProvidersMap.containsKey(type.toLowerCase())) {
+            throw new CloudRuntimeException(String.format("No OAuth2 provider plugin is available for the type %s", type));
+        }
+
+        if (StringUtils.isNotBlank(type) && userOAuth2AuthenticationProvidersMap.containsKey(provider.toLowerCase())) {
+            throw new CloudRuntimeException(String.format(
+                    "The name %s is reserved by a built-in OAuth2 provider, so the type would be ignored; use a different name for an OIDC registration", provider));
         }
 
         // Check for existing provider with same name and domain
@@ -184,22 +211,30 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
             }
         }
 
-        return saveOauthProvider(provider, description, clientId, secretKey, redirectUri, authorizeUrl, tokenUrl, domainId, enabled);
+        return saveOauthProvider(provider, description, clientId, secretKey, redirectUri, authorizeUrl, tokenUrl, domainId, type, issuerUrl, enabled);
     }
 
     @Override
     public List<OauthProviderVO> listOauthProviders(String provider, String uuid, Long domainId) {
         List<OauthProviderVO> providers;
         if (uuid != null) {
-            providers = Collections.singletonList(_oauthProviderDao.findByUuid(uuid));
+            providers = singleOrEmpty(_oauthProviderDao.findByUuid(uuid));
         } else if (StringUtils.isNotBlank(provider) && domainId != null) {
-            providers = Collections.singletonList(_oauthProviderDao.findByProviderAndDomain(provider, domainId));
+            providers = singleOrEmpty(_oauthProviderDao.findByProviderAndDomain(provider, domainId));
         } else if (StringUtils.isNotBlank(provider)) {
-            providers = Collections.singletonList(_oauthProviderDao.findByProviderAndDomain(provider, null));
+            providers = singleOrEmpty(_oauthProviderDao.findByProviderAndDomain(provider, null));
         } else if (domainId != null) {
             providers = _oauthProviderDao.listByDomainIncludingGlobal(domainId);
         } else {
             providers = _oauthProviderDao.listAll();
+        }
+        return providers;
+    }
+
+    private List<OauthProviderVO> singleOrEmpty(OauthProviderVO provider) {
+        List<OauthProviderVO> providers = new ArrayList<>();
+        if (provider != null) {
+            providers.add(provider);
         }
         return providers;
     }
@@ -213,6 +248,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         String secretKey = StringUtils.trim(cmd.getSecretKey());
         String authorizeUrl = StringUtils.trim(cmd.getAuthorizeUrl());
         String tokenUrl = StringUtils.trim(cmd.getTokenUrl());
+        String issuerUrl = StringUtils.trim(cmd.getIssuerUrl());
         Boolean enabled = cmd.getEnabled();
 
         OauthProviderVO providerVO = _oauthProviderDao.findById(id);
@@ -262,6 +298,9 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         if (StringUtils.isNotEmpty(tokenUrl)) {
             providerVO.setTokenUrl(tokenUrl);
         }
+        if (StringUtils.isNotEmpty(issuerUrl)) {
+            providerVO.setIssuerUrl(issuerUrl);
+        }
         if (enabled != null) {
             providerVO.setEnabled(enabled);
         }
@@ -272,7 +311,8 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         return _oauthProviderDao.findById(id);
     }
 
-    private OauthProviderVO saveOauthProvider(String provider, String description, String clientId, String secretKey, String redirectUri, String authorizeUrl, String tokenUrl, Long domainId, Boolean enabled) {
+    private OauthProviderVO saveOauthProvider(String provider, String description, String clientId, String secretKey, String redirectUri, String authorizeUrl,
+            String tokenUrl, Long domainId, String type, String issuerUrl, Boolean enabled) {
         final OauthProviderVO oauthProviderVO = new OauthProviderVO();
 
         oauthProviderVO.setProvider(provider);
@@ -283,6 +323,8 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         oauthProviderVO.setDomainId(domainId);
         oauthProviderVO.setAuthorizeUrl(authorizeUrl);
         oauthProviderVO.setTokenUrl(tokenUrl);
+        oauthProviderVO.setType(StringUtils.lowerCase(type));
+        oauthProviderVO.setIssuerUrl(issuerUrl);
         // If enabled is null, default to true (enabled), NPE safeguard for Boolean unboxing
         oauthProviderVO.setEnabled(enabled == null || enabled);
 
@@ -362,6 +404,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {OAuth2IsPluginEnabled, OAuth2Plugins, OAuth2PluginsExclude};
+        return new ConfigKey<?>[] {OAuth2IsPluginEnabled, OAuth2Plugins, OAuth2PluginsExclude, OIDCRequireVerifiedEmail,
+                OIDCRequireHttps};
     }
 }

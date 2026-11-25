@@ -57,8 +57,34 @@ public interface UserOAuth2Authenticator extends Adapter {
     String verifySecretCodeAndFetchEmail(String secretCode, Long domainId);
 
     /**
+     * Verifies the user against the registration identified by providerName. Implementations that
+     * serve a single registration ignore the name; implementations shared by several registrations
+     * use it to select the one to authenticate against.
+     * @return true if it's a valid user, otherwise false
+     */
+    default boolean verifyUser(String email, String secretCode, Long domainId, String providerName) {
+        return verifyUser(email, secretCode, domainId);
+    }
+
+    /**
+     * Verifies the secret code against the registration identified by providerName and fetches email.
+     * @return email for the specified registration
+     */
+    default String verifySecretCodeAndFetchEmail(String secretCode, Long domainId, String providerName) {
+        return verifySecretCodeAndFetchEmail(secretCode, domainId);
+    }
+
+    /**
      * Fetches email using the accessToken
      * @return returns email
      */
     String getUserEmailAddress() throws CloudRuntimeException;
+
+    /**
+     * Validate an issuer URL at provider registration so a misconfigured issuer is rejected at register
+     * time instead of silently failing at the first login. Providers that need no pre-flight validation
+     * leave this as a no-op.
+     */
+    default void validateIssuer(String issuerUrl) {
+    }
 }

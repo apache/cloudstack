@@ -145,6 +145,40 @@ public class OAuth2AuthManagerImplTest {
     }
 
     @Test
+    public void testRegisterRejectsBuiltinNameWithType() {
+        OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.put("oidc", Mockito.mock(org.apache.cloudstack.auth.UserOAuth2Authenticator.class));
+        OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.put("google", Mockito.mock(org.apache.cloudstack.auth.UserOAuth2Authenticator.class));
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
+        RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+        when(cmd.getProvider()).thenReturn("google");
+        when(cmd.getType()).thenReturn("oidc");
+        when(cmd.getDomainId()).thenReturn(null);
+        try {
+            _authManager.registerOauthProvider(cmd);
+            Assert.fail("Expected CloudRuntimeException was not thrown");
+        } catch (CloudRuntimeException e) {
+            assertTrue(e.getMessage().contains("reserved by a built-in"));
+        }
+    }
+
+    @Test
+    public void testRegisterNormalizesTypeCasing() {
+        OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.put("oidc", Mockito.mock(org.apache.cloudstack.auth.UserOAuth2Authenticator.class));
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
+        RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+        when(cmd.getProvider()).thenReturn("corp-idp");
+        when(cmd.getType()).thenReturn("OIDC");
+        when(cmd.getDomainId()).thenReturn(null);
+        when(_authManager._oauthProviderDao.findByProviderAndDomain(Mockito.anyString(), Mockito.isNull())).thenReturn(null);
+        org.mockito.ArgumentCaptor<OauthProviderVO> captor = org.mockito.ArgumentCaptor.forClass(OauthProviderVO.class);
+        when(_authManager._oauthProviderDao.persist(captor.capture())).thenReturn(new OauthProviderVO());
+
+        _authManager.registerOauthProvider(cmd);
+
+        assertEquals("oidc", captor.getValue().getType());
+    }
+
+    @Test
     public void testUpdateOauthProvider() {
         Long id = 1L;
         String description = "updated description";
@@ -549,6 +583,67 @@ public class OAuth2AuthManagerImplTest {
         }
     }
 
+    @Test
+    public void testGetUserOAuth2AuthenticationProviderResolvesRegistrationByType() {
+        org.apache.cloudstack.auth.UserOAuth2Authenticator oidcProvider =
+                Mockito.mock(org.apache.cloudstack.auth.UserOAuth2Authenticator.class);
+        OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.put("oidc", oidcProvider);
+        try {
+            OauthProviderVO registration = new OauthProviderVO();
+            registration.setProvider("corp-idp");
+            registration.setType("oidc");
+            when(_oauthProviderDao.findByProviderAndDomainWithGlobalFallback("corp-idp", 5L)).thenReturn(registration);
+
+            assertEquals(oidcProvider, _authManager.getUserOAuth2AuthenticationProvider("corp-idp", 5L));
+        } finally {
+            OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.remove("oidc");
+        }
+    }
+
+    @Test
+    public void testGetUserOAuth2AuthenticationProviderRejectsRegistrationWithoutType() {
+        OauthProviderVO registration = new OauthProviderVO();
+        registration.setProvider("corp-idp");
+        when(_oauthProviderDao.findByProviderAndDomainWithGlobalFallback("corp-idp", null)).thenReturn(registration);
+
+        try {
+            _authManager.getUserOAuth2AuthenticationProvider("corp-idp", null);
+            Assert.fail("Expected CloudRuntimeException was not thrown");
+        } catch (CloudRuntimeException e) {
+            assertTrue(e.getMessage().contains("corp-idp"));
+        }
+    }
+
+    @Test
+    public void testGetUserOAuth2AuthenticationProviderPrefersRegisteredPluginName() {
+        org.apache.cloudstack.auth.UserOAuth2Authenticator githubProvider =
+                Mockito.mock(org.apache.cloudstack.auth.UserOAuth2Authenticator.class);
+        OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.put("github", githubProvider);
+        try {
+            assertEquals(githubProvider, _authManager.getUserOAuth2AuthenticationProvider("github", 5L));
+            Mockito.verify(_oauthProviderDao, Mockito.never())
+                    .findByProviderAndDomainWithGlobalFallback(Mockito.anyString(), Mockito.anyLong());
+        } finally {
+            OAuth2AuthManagerImpl.userOAuth2AuthenticationProvidersMap.remove("github");
+        }
+    }
+
+    @Test
+    public void testRegisterOauthProviderRejectsUnknownType() {
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
+        RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+        when(cmd.getProvider()).thenReturn("corp-idp");
+        when(cmd.getType()).thenReturn("saml");
+
+        try {
+            _authManager.registerOauthProvider(cmd);
+            Assert.fail("Expected CloudRuntimeException was not thrown");
+        } catch (CloudRuntimeException e) {
+            assertTrue(e.getMessage().contains("saml"));
+        }
+        Mockito.verify(_oauthProviderDao, Mockito.never()).persist(Mockito.any(OauthProviderVO.class));
+    }
+
     //  Multiple-domain OAuth tests
 
     @Test
@@ -698,6 +793,26 @@ public class OAuth2AuthManagerImplTest {
 
         verify(_oauthProviderDao).listByDomain(domainId);
         verify(_oauthProviderDao, Mockito.times(2)).expunge(Mockito.anyLong());
+    }
+
+    @Test
+    public void testListOauthProvidersReturnsEmptyWhenUuidMatchesNothing() {
+        when(_oauthProviderDao.findByUuid("missing")).thenReturn(null);
+
+        List<OauthProviderVO> result = _authManager.listOauthProviders(null, "missing", null);
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testListOauthProvidersReturnsEmptyWhenProviderMatchesNothing() {
+        when(_oauthProviderDao.findByProviderAndDomain("missing", null)).thenReturn(null);
+
+        List<OauthProviderVO> result = _authManager.listOauthProviders("missing", null, null);
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isEmpty());
     }
 
 }
