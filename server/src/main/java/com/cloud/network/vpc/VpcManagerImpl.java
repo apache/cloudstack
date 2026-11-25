@@ -153,6 +153,7 @@ import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpn.RemoteAccessVpnService;
@@ -341,7 +342,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             Provider.JuniperContrailVpcRouter, Provider.Ovs, Provider.BigSwitchBcf, Provider.ConfigDrive, Provider.Nsx, Provider.Netris);
 
     int _cleanupInterval;
-    int _maxNetworks;
     SearchBuilder<IPAddressVO> IpAddressSearch;
 
     protected final List<HypervisorType> hTypes = new ArrayList<HypervisorType>();
@@ -516,9 +516,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Map<String, String> configs = _configDao.getConfiguration(params);
         final String value = configs.get(Config.VpcCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60); // 1 hour
-
-        final String maxNtwks = configs.get(Config.VpcMaxNetworks.key());
-        _maxNetworks = NumbersUtil.parseInt(maxNtwks, 3); // max=3 is default
 
         IpAddressSearch = _ipAddressDao.createSearchBuilder();
         IpAddressSearch.and("accountId", IpAddressSearch.entity().getAllocatedToAccountId(), Op.EQ);
@@ -729,10 +726,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Service redundantRouterService = Service.SourceNat;
         if (CollectionUtils.isNotEmpty(sourceNatServiceProviders)) {
             svcProviderMap.put(Service.Gateway, sourceNatServiceProviders);
-        } else if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode) && org.apache.commons.lang3.StringUtils.isBlank(externalProvider)) {
-            // For Routed mode, add the Gateway service except for external providers such as NSX, Netris to not override the svcProviderMap mapping
-            svcProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VPCVirtualRouter));
+        } else if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode)) {
             redundantRouterService = Service.Gateway;
+            if (org.apache.commons.lang3.StringUtils.isBlank(externalProvider)) {
+                svcProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VPCVirtualRouter));
+            }
         }
 
         validateConnectivtyServiceCapabilities(svcProviderMap.get(Service.Connectivity), serviceCapabilityList);
@@ -1077,6 +1075,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             Boolean specifyAsNumberFieldValue = getRawFieldValue(cmd, "specifyAsNumber", Boolean.class);
             if (specifyAsNumberFieldValue == null) {
                 ConfigurationManagerImpl.setField(cmd, "specifyAsNumber", sourceOffering.isSpecifyAsNumber());
+            }
+
+            Boolean conserveModeFieldValue = getRawFieldValue(cmd, "conserveMode", Boolean.class);
+            if (conserveModeFieldValue == null) {
+                ConfigurationManagerImpl.setField(cmd, "conserveMode", sourceOffering.isConserveMode());
             }
 
             if (cmd.getInternetProtocol() == null) {
@@ -2580,9 +2583,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
                 try {
                     // check number of active networks in vpc
-                    if (_ntwkDao.countVpcNetworks(vpc.getId()) >= _maxNetworks) {
-                        logger.warn(String.format("Failed to create a new VPC Guest Network because the number of networks per VPC has reached its maximum capacity of [%s]. Increase it by modifying global config [%s].", _maxNetworks, Config.VpcMaxNetworks));
-                        throw new CloudRuntimeException(String.format("Number of networks per VPC cannot surpass [%s].", _maxNetworks));
+                    final int maxNetworks = VpcMaxNetworks.value();
+                    if (_ntwkDao.countVpcNetworks(vpc.getId()) >= maxNetworks) {
+                        logger.warn("Failed to create a new network in VPC [{}] because it has reached the maximum of [{}] networks. "
+                                + "Increase it by modifying the global setting [{}].", vpc, maxNetworks, VpcMaxNetworks.key());
+                        throw new InvalidParameterValueException(String.format("VPC %s has reached the maximum of %d networks. "
+                                + "Delete an unused network or contact your platform administrator to raise the limit.", vpc.getName(), maxNetworks));
                     }
 
                     // 1) CIDR is required
@@ -3721,7 +3727,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{
                 VpcTierNamePrepend,
-                VpcTierNamePrependDelimiter
+                VpcTierNamePrependDelimiter,
+                VpcMaxNetworks
         };
     }
 
@@ -4185,7 +4192,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             return ipAddressForVR;
         } else if (ipAddress != null) {
             if (ipAddress.isSourceNat()) {
-                throw new InvalidParameterValueException("Vpn service can not be configured on the Source NAT IP of VPC id=" + ipAddress.getVpcId());
+                throw new InvalidParameterValueException(String.format("Vpn service can not be configured on the Source NAT IP of VPC id = %s. Please acquire another IP to setup VPN", ipAddress.getVpcId()));
             }
             return ipAddress;
         }
@@ -4246,7 +4253,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         String newRouterIp = null;
         List<NetworkVO> networks = _ntwkDao.listByVpc(vpc.getId());
         for (NetworkVO network : networks) {
-            NicVO newNic = nicDao.findNonPlaceHolderByNetworkIdAndType(network.getId(), VirtualMachine.Type.DomainRouter);
+            NicVO newNic = getActiveVpcVrNic(network.getId());
             if (newNic != null) {
                 logger.debug("Got VPC VR NIC for network {}: {}", network.getId(), newNic);
                 newNetworkId = network.getId();
@@ -4289,10 +4296,25 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
         } else if (currentRouterId == null || !currentRouterId.equals(newRouterId)) {
-            // (5) otherwise, If VPC VR ID does not exist or is changed, update the VM ID.
+            // (5) active VR changed on the same network (e.g. redundant VR failover)
+            logger.debug("Active VPC VR changed for network {}: router {} -> {}", currentNetworkId, currentRouterId, newRouterId);
+            boolean isNetris = isProviderSupportServiceInVpc(vpc.getId(), Service.SourceNat, Provider.Netris);
+            CallContext ctx = CallContext.current();
+            if (isNetris && currentRouterId != null) {
+                // Netris rule names are keyed by vmId, so revoke the old router's rule before
+                // creating the new one, or it's left behind as an orphan
+                if (!rulesManager.applyStaticNatForIp(ipAddress.getId(), false, ctx.getCallingAccount(), true)) {
+                    throw new CloudRuntimeException("Failed to revoke static nat for VPC VR before router change");
+                }
+            }
             ipAddress.setAssociatedWithVmId(newRouterId);
             ipAddress.setVmIp(newRouterIp);
             _ipAddressDao.update(ipAddress.getId(), ipAddress);
+            if (isNetris) {
+                if (!rulesManager.applyStaticNatForIp(ipAddress.getId(), false, ctx.getCallingAccount(), false)) {
+                    throw new CloudRuntimeException("Failed to reapply static nat for VPC VR after router change");
+                }
+            }
         }
         return true;
     }
@@ -4306,11 +4328,27 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
     }
 
+    // Select the PRIMARY router's NIC, or the NIC of the router with the lower DB id if redundant state isn't known yet.
+    private NicVO getActiveVpcVrNic(long networkId) {
+        List<NicVO> nics = nicDao.listNonPlaceholderNicsByNetworkIdAndType(networkId, VirtualMachine.Type.DomainRouter);
+        NicVO fallback = null;
+        for (NicVO nic : nics) {
+            if (fallback == null || nic.getInstanceId() < fallback.getInstanceId()) {
+                fallback = nic;
+            }
+            DomainRouterVO router = routerDao.findById(nic.getInstanceId());
+            if (router != null && router.getIsRedundantRouter() && router.getRedundantState() == VirtualRouter.RedundantState.PRIMARY) {
+                return nic;
+            }
+        }
+        return fallback;
+    }
+
     private String getFirstGuestIpAddressForVpcVr(Long vpcId) {
         String nextHop = null;
         List<NetworkVO> networks = _ntwkDao.listByVpc(vpcId);
         for (NetworkVO network : networks) {
-            NicVO nic = nicDao.findNonPlaceHolderByNetworkIdAndType(network.getId(), VirtualMachine.Type.DomainRouter);
+            NicVO nic = getActiveVpcVrNic(network.getId());
             if (nic != null) {
                 nextHop = nic.getIPv4Address();
                 break;

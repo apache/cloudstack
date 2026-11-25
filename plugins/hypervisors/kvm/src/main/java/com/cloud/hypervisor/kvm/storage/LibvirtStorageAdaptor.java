@@ -57,6 +57,7 @@ import org.libvirt.StorageVol;
 
 import com.ceph.rados.IoCTX;
 import com.ceph.rados.Rados;
+import com.ceph.rados.exceptions.ErrorCode;
 import com.ceph.rados.exceptions.RadosException;
 import com.ceph.rbd.Rbd;
 import com.ceph.rbd.RbdException;
@@ -77,6 +78,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeXMLParser;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
+import com.cloud.utils.RbdUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.TemplateDownloaderUtil;
@@ -646,6 +648,19 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     public KVMPhysicalDisk getPhysicalDisk(String volumeUuid, KVMStoragePool pool) {
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool)pool;
 
+        /*
+         * An RBD volume is looked up through librbd rather than through libvirt.
+         * A volume that was created by another host is not in the libvirt pool
+         * cache, so looking it up through libvirt misses and forces a refresh of
+         * the whole pool. Refreshing an RBD pool stats every image in it, so that
+         * cost grows with the number of volumes in the pool and is paid on every
+         * VM start. Every other RBD operation in this class already uses librbd
+         * directly.
+         */
+        if (pool.getType() == StoragePoolType.RBD) {
+            return getRbdPhysicalDisk(volumeUuid, libvirtPool);
+        }
+
         try {
             StorageVol vol = getVolume(libvirtPool.getPool(), volumeUuid);
             if (vol == null) {
@@ -684,6 +699,74 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         } catch (LibvirtException e) {
             logger.debug("Failed to get volume from libvirt: " + e.getMessage());
             throw new CloudRuntimeException(e.toString());
+        }
+    }
+
+    /**
+     * Looks an RBD volume up directly through librbd.
+     *
+     * The size reported by librbd is used for both the size and the virtual size of
+     * the disk, matching what this class already does after converting an image into
+     * an RBD volume.
+     */
+    private KVMPhysicalDisk getRbdPhysicalDisk(String volumeUuid, LibvirtStoragePool pool) {
+        Rados r = new Rados(pool.getAuthUserName());
+        try {
+            r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
+            /*
+             * The secret is null when the pool has no cephx user, and librados
+             * aborts the process rather than returning an error if it is handed a
+             * null value here.
+             */
+            if (pool.getAuthUserName() != null) {
+                r.confSet("key", pool.getAuthSecret());
+            } else {
+                r.confSet("auth_client_required", "none");
+            }
+            r.confSet("client_mount_timeout", "30");
+            r.connect();
+
+            IoCTX io = r.ioCtxCreate(pool.getSourceDir());
+            try {
+                Rbd rbd = new Rbd(io);
+                // The image is only stat'ed, so it is opened read only and cannot take the exclusive lock.
+                RbdImage image = rbd.openReadOnly(volumeUuid);
+                try {
+                    RbdImageInfo rbdInfo = image.stat();
+                    KVMPhysicalDisk disk = new KVMPhysicalDisk(pool.getSourceDir() + "/" + volumeUuid, volumeUuid, pool);
+                    disk.setFormat(PhysicalDiskFormat.RAW);
+                    disk.setSize(rbdInfo.size);
+                    disk.setVirtualSize(rbdInfo.size);
+                    return disk;
+                } finally {
+                    closeRbdImage(rbd, image, volumeUuid);
+                }
+            } finally {
+                r.ioCtxDestroy(io);
+            }
+        } catch (RadosException e) {
+            logger.error("A Ceph RADOS operation failed (" + e.getReturnValue() + "). The error was: " + e.getMessage()
+                    + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
+            throw new CloudRuntimeException(e.toString(), e);
+        } catch (RbdException e) {
+            logger.error("A Ceph RBD operation failed (" + e.getReturnValue() + "). The error was: " + e.getMessage()
+                    + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
+            throw new CloudRuntimeException(e.toString(), e);
+        } finally {
+            r.shutDown();
+        }
+    }
+
+    /**
+     * Closes an RBD image without throwing, so that a failure to close cannot discard a
+     * successful result or hide the exception that is already on its way out.
+     */
+    private void closeRbdImage(Rbd rbd, RbdImage image, String volumeUuid) {
+        try {
+            rbd.close(image);
+        } catch (RbdException e) {
+            logger.warn("Failed to close RBD image " + volumeUuid + " (" + e.getReturnValue() + "): "
+                    + e.getMessage() + " - " + ErrorCode.getErrorMessage(e.getReturnValue()));
         }
     }
 
@@ -1353,7 +1436,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     logger.debug("Trying to perform a RBD clone (layering) since we are operating in the same storage pool");
 
                     Rados r = new Rados(srcPool.getAuthUserName());
-                    r.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
+                    r.confSet("mon_host", RbdUtils.getRbdMonitors(srcPool.getSourceHost(), srcPool.getSourcePort()));
                     r.confSet("key", srcPool.getAuthSecret());
                     r.confSet("client_mount_timeout", "30");
                     if (dataPool != null) {
@@ -1426,14 +1509,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     logger.debug("Both the source and destination are RBD, but not the same Ceph cluster. Performing a copy");
 
                     Rados rSrc = new Rados(srcPool.getAuthUserName());
-                    rSrc.confSet("mon_host", srcPool.getSourceHost() + ":" + srcPool.getSourcePort());
+                    rSrc.confSet("mon_host", RbdUtils.getRbdMonitors(srcPool.getSourceHost(), srcPool.getSourcePort()));
                     rSrc.confSet("key", srcPool.getAuthSecret());
                     rSrc.confSet("client_mount_timeout", "30");
                     rSrc.connect();
                     logger.debug("Successfully connected to source Ceph cluster at " + rSrc.confGet("mon_host"));
 
                     Rados rDest = new Rados(destPool.getAuthUserName());
-                    rDest.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+                    rDest.confSet("mon_host", RbdUtils.getRbdMonitors(destPool.getSourceHost(), destPool.getSourcePort()));
                     rDest.confSet("key", destPool.getAuthSecret());
                     rDest.confSet("client_mount_timeout", "30");
                     if (dataPool != null) {
@@ -1498,7 +1581,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         RbdImage templateImage = null;
         try {
             radosConnection = new Rados(destPool.getAuthUserName());
-            radosConnection.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+            radosConnection.confSet("mon_host", RbdUtils.getRbdMonitors(destPool.getSourceHost(), destPool.getSourcePort()));
             radosConnection.confSet("key", destPool.getAuthSecret());
             radosConnection.confSet("client_mount_timeout", "30");
             radosConnection.connect();
@@ -1559,7 +1642,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         IoCTX ioContext = null;
         try {
             radosConnection = new Rados(destPool.getAuthUserName());
-            radosConnection.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+            radosConnection.confSet("mon_host", RbdUtils.getRbdMonitors(destPool.getSourceHost(), destPool.getSourcePort()));
             radosConnection.confSet("key", destPool.getAuthSecret());
             radosConnection.confSet("client_mount_timeout", "30");
             radosConnection.connect();
@@ -1738,7 +1821,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                 /* We have to stat the RBD image to see how big it became afterwards */
                 Rados r = new Rados(destPool.getAuthUserName());
-                r.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
+                r.confSet("mon_host", RbdUtils.getRbdMonitors(destPool.getSourceHost(), destPool.getSourcePort()));
                 r.confSet("key", destPool.getAuthSecret());
                 r.confSet("client_mount_timeout", "30");
                 r.connect();

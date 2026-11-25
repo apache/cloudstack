@@ -95,6 +95,7 @@ import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBusBase;
@@ -223,6 +224,8 @@ public class ConfigurationManagerTest {
     Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
     @Mock
     MessageBusBase messageBus;
+    @Mock
+    TemplateService _templateService;
 
     VlanVO vlan = new VlanVO(Vlan.VlanType.VirtualNetwork, "vlantag", "vlangateway", "vlannetmask", 1L, "iprange", 1L, 1L, null, null, null);
 
@@ -1085,18 +1088,34 @@ public class ConfigurationManagerTest {
 
     @Test
     public void shouldUpdateDiskOfferingTests(){
-        assertTrue(configurationMgr.shouldUpdateDiskOffering(Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyString(), Mockito.any(DiskOffering.State.class)));
-        assertTrue(configurationMgr.shouldUpdateDiskOffering(Mockito.anyString(), nullable(String.class), nullable(Integer.class), nullable(Boolean.class), nullable(String.class), nullable(String.class), nullable(DiskOffering.State.class)));
-        assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), nullable(Integer.class), nullable(Boolean.class), nullable(String.class), nullable(String.class), Mockito.any(DiskOffering.State.class)));
-        assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), Mockito.anyString(), nullable(Integer.class), nullable(Boolean.class), nullable(String.class), nullable(String.class), nullable(DiskOffering.State.class)));
-        assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), Mockito.anyInt(), nullable(Boolean.class), nullable(String.class), nullable(String.class), nullable(DiskOffering.State.class)));
-        assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), nullable(int.class), Mockito.anyBoolean(), nullable(String.class), nullable(String.class), nullable(DiskOffering.State.class)));
-        assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), nullable(int.class), nullable(Boolean.class), Mockito.anyString(), Mockito.anyString(), nullable(DiskOffering.State.class)));
+        assertTrue(configurationMgr.shouldUpdateDiskOffering(Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyString(), nullable(String.class), Mockito.any(DiskOffering.State.class)));
+        assertTrue(configurationMgr.shouldUpdateDiskOffering(Mockito.anyString(), nullable(String.class), nullable(Integer.class), nullable(Boolean.class), nullable(String.class), nullable(String.class), nullable(String.class), nullable(DiskOffering.State.class)));
+        assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), nullable(Integer.class), nullable(Boolean.class), nullable(String.class), nullable(String.class), nullable(String.class), Mockito.any(DiskOffering.State.class)));
+        assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), Mockito.anyString(), nullable(Integer.class), nullable(Boolean.class), nullable(String.class), nullable(String.class), nullable(String.class), nullable(DiskOffering.State.class)));
+        assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), Mockito.anyInt(), nullable(Boolean.class), nullable(String.class), nullable(String.class), nullable(String.class), nullable(DiskOffering.State.class)));
+        assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), nullable(int.class), Mockito.anyBoolean(), nullable(String.class), nullable(String.class), nullable(String.class), nullable(DiskOffering.State.class)));
+        assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), nullable(int.class), nullable(Boolean.class), Mockito.anyString(), Mockito.anyString(), nullable(String.class), nullable(DiskOffering.State.class)));
+        assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), nullable(int.class), nullable(Boolean.class), nullable(String.class), nullable(String.class), Mockito.anyString(), nullable(DiskOffering.State.class)));
     }
 
     @Test
     public void shouldUpdateDiskOfferingTestFalse(){
-        assertFalse(configurationMgr.shouldUpdateDiskOffering(null, null, null, null, null, null, null));
+        assertFalse(configurationMgr.shouldUpdateDiskOffering(null, null, null, null, null, null, null, null));
+    }
+
+    @Test
+    public void testValidateErrorPolicy() {
+        configurationMgr.validateErrorPolicy(null);
+        configurationMgr.validateErrorPolicy("report");
+        configurationMgr.validateErrorPolicy("stop");
+        configurationMgr.validateErrorPolicy("ignore");
+        configurationMgr.validateErrorPolicy("enospace");
+        configurationMgr.validateErrorPolicy("REPORT");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateErrorPolicyInvalid() {
+        configurationMgr.validateErrorPolicy("invalid_error_policy_type");
     }
 
     @Test

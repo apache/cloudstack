@@ -35,6 +35,8 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
@@ -184,6 +186,8 @@ import com.google.gson.reflect.TypeToken;
 public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements LoadBalancingRulesManager, LoadBalancingRulesService {
 
     @Inject
+    FirewallRuleDetailsDao _firewallRuleDetailsDao;
+    @Inject
     NetworkOrchestrationService _networkMgr;
     @Inject
     NetworkModel _networkModel;
@@ -280,6 +284,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     NicSecondaryIpDao _nicSecondaryIpDao;
 
     private static final int DNS_PORT = 53;
+    private static final List<String> CONNECTION_SETTINGS = List.of(LoadBalancer.KEEPALIVE, LoadBalancer.IDLE_TIMEOUT, LoadBalancer.KEEPALIVE_TIMEOUT);
     // Will return a string. For LB Stickiness this will be a json, for
     // autoscale this will be "," separated values
     @Override
@@ -977,8 +982,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                                     List<LoadBalancerVMMapVO> lbVmMaps = _lb2VmMapDao.listByLoadBalancerId(ulb.getId());
                                     for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
                                         UserVm vm = _vmDao.findById(lbVmMap.getInstanceId());
-                                        Nic nic = _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(ulb.getNetworkId(), vm.getId());
-                                        String dstIp = lbVmMap.getInstanceIp() == null ? nic.getIPv4Address(): lbVmMap.getInstanceIp();
+                                        String dstIp = lbVmMap.getInstanceIp() == null ? getLbDestinationIp(vm.getId(), ulb.getNetworkId()) : lbVmMap.getInstanceIp();
 
                                         for (int i = 0; i < lbto.getDestinations().length; i++) {
                                             LoadBalancerTO.DestinationTO des = lbto.getDestinations()[i];
@@ -1097,9 +1101,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             Network loadBalancerNetwork = _networkDao.findById(loadBalancer.getNetworkId());
             _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, loadBalancerNetwork);
 
-            Nic vmNicInLb = getVmNicInLoadBalancer(vm, loadBalancer, loadBalancerNetwork, vmIdNetworkMap, vmOwner);
+            Pair<Nic, Network.IpAddresses> vmNicAndIpInLb = getVmNicInLoadBalancer(vm, loadBalancer, loadBalancerNetwork, vmIdNetworkMap, vmOwner);
+            Nic vmNicInLb = vmNicAndIpInLb.first();
 
-            String priIp = vmNicInLb.getIPv4Address();
+            String priIp = vmNicAndIpInLb.second().getIp4Address();
 
             if (existingVmIdIps.containsKey(instanceId)) {
                 // now check for ip address
@@ -1123,13 +1128,14 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             if (vmIpsList != null) {
 
-                //check if the ips belongs to nic secondary ip
+                //check if the ips belongs to nic secondary ip - scoped by network, since the same nic can carry
+                //secondary ips across more than one of its associated networks
                 for (String ip: vmIpsList) {
                     // skip the primary ip from vm secondary ip comparisions
                     if (ip.equals(priIp)) {
                         continue;
                     }
-                    if(_nicSecondaryIpDao.findByIp4AddressAndNicId(ip,vmNicInLb.getId()) == null) {
+                    if(_nicSecondaryIpDao.findByIp4AddressAndNetworkIdAndInstanceId(loadBalancer.getNetworkId(), instanceId, ip) == null) {
                         throw new InvalidParameterValueException("Instance IP "+ ip + " specified does not belong to " +
                                 "NIC in Network " + vmNicInLb.getNetworkId());
                     }
@@ -1221,11 +1227,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return success;
     }
 
-    protected Nic getVmNicInLoadBalancer(UserVm vm, LoadBalancerVO loadBalancer, Network loadBalancerNetwork, Map<Long, Long> vmIdNetworkMap, Account vmOwner) {
+    protected Pair<Nic, Network.IpAddresses> getVmNicInLoadBalancer(UserVm vm, LoadBalancerVO loadBalancer, Network loadBalancerNetwork, Map<Long, Long> vmIdNetworkMap, Account vmOwner) {
         boolean isVpcConserveModeEnabled = _vpcMgr.isNetworkOnVpcEnabledConserveMode(loadBalancerNetwork);
 
         boolean isNetworkPassedVpcConserveMode = isVpcConserveModeEnabled && MapUtils.isNotEmpty(vmIdNetworkMap) && vmIdNetworkMap.containsKey(vm.getId());
-        Nic vmNicInLb = isNetworkPassedVpcConserveMode ?
+        Pair<Nic, Network.IpAddresses> vmNicInLb = isNetworkPassedVpcConserveMode ?
                 getNicForVmInVpcConserveModeTierNetwork(vm, vmIdNetworkMap, vmOwner, loadBalancerNetwork) :
                 getNicForVmLbNetwork(vm, loadBalancer);
 
@@ -1241,29 +1247,40 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     }
 
     /**
-     * For Isolated Networks or Network tiers of VPCs not using Conserve mode, use the same network as the load balancer
-     * @return the nic of the VM in the load balancer network
+     * For Isolated Networks or Network tiers of VPCs not using Conserve mode, use the same network as the load balancer -
+     * either as the vm's primary nic, or (for a trunk nic) one of its associated networks.
+     * @return the nic and guest ip of the VM in the load balancer network
      */
-    protected Nic getNicForVmLbNetwork(UserVm vm, LoadBalancerVO loadBalancer) {
-        List<? extends Nic> nics = _networkModel.getNics(vm.getId());
-        for (Nic nic : nics) {
-            if (nic.getNetworkId() == loadBalancer.getNetworkId()) {
-                return nic;
-            }
-        }
-        return null;
+    protected Pair<Nic, Network.IpAddresses> getNicForVmLbNetwork(UserVm vm, LoadBalancerVO loadBalancer) {
+        return _networkModel.getNicAndIpInNetwork(vm.getId(), loadBalancer.getNetworkId());
     }
 
     /**
      * On VPC Conserve Mode, VMs from multiple VPC networks tiers can be assigned to the same load balancer.
-     * @return the nic of the VM in the specified tier network in `vmIdNetworkMap`
+     * @return the nic and guest ip of the VM in the specified tier network in `vmIdNetworkMap`
      */
-    protected Nic getNicForVmInVpcConserveModeTierNetwork(UserVm vm, Map<Long, Long> vmIdNetworkMap, Account vmOwner, Network loadBalancerNetwork) {
+    protected Pair<Nic, Network.IpAddresses> getNicForVmInVpcConserveModeTierNetwork(UserVm vm, Map<Long, Long> vmIdNetworkMap, Account vmOwner, Network loadBalancerNetwork) {
         Long vmNetworkId = vmIdNetworkMap.get(vm.getId());
         Network vmNetwork = _networkDao.findById(vmNetworkId);
         _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, vmNetwork);
         checkNetworkBelongsToLoadBalancerVpc(vmNetwork, loadBalancerNetwork);
-        return _networkModel.getNicInNetwork(vm.getId(), vmNetworkId);
+        return _networkModel.getNicAndIpInNetwork(vm.getId(), vmNetworkId);
+    }
+
+    /**
+     * Resolves the guest ip a VM answers on for a LB rule's network - the nic's own primary network match when one
+     * exists, or a trunk nic's association (from nic_network_map) otherwise. Falls back further to a since-removed
+     * nic's last-known address (matching this method's replaced call sites' original use of
+     * NicDao.findByInstanceIdAndNetworkIdIncludingRemoved) so a VM whose nic was unplugged after being added to
+     * this LB rule still resolves to its last-known ip, same as before. Returns null only if none of these match.
+     */
+    private String getLbDestinationIp(long vmId, long networkId) {
+        Pair<Nic, Network.IpAddresses> nicAndIp = _networkModel.getNicAndIpInNetwork(vmId, networkId);
+        if (nicAndIp != null) {
+            return nicAndIp.second().getIp4Address();
+        }
+        Nic removedNic = _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(networkId, vmId);
+        return removedNic != null ? removedNic.getIPv4Address() : null;
     }
 
     protected void checkNetworkBelongsToLoadBalancerVpc(Network vmNetwork, Network loadBalancerNetwork) {
@@ -2277,12 +2294,92 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         String dstIp = null;
         for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
             UserVm vm = _vmDao.findById(lbVmMap.getInstanceId());
-            Nic nic = _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(lb.getNetworkId(), vm.getId());
-            dstIp = lbVmMap.getInstanceIp() == null ? nic.getIPv4Address(): lbVmMap.getInstanceIp();
+            dstIp = lbVmMap.getInstanceIp() == null ? getLbDestinationIp(vm.getId(), lb.getNetworkId()) : lbVmMap.getInstanceIp();
             LbDestination lbDst = new LbDestination(lb.getDefaultPortStart(), lb.getDefaultPortEnd(), dstIp, lbVmMap.isRevoke());
             dstList.add(lbDst);
         }
         return dstList;
+    }
+
+    /**
+     * Haproxy rejects a negative timeout, and one above 2147483647 ms ("timer overflow"). A
+     * rejected file leaves every rule on the router running its previous config, so refuse the
+     * value here rather than let it reach the VR.
+     */
+    protected void validateConnectionTimeout(String name, Long value) {
+        if (value == null) {
+            return;
+        }
+        if (value < 0) {
+            throw new InvalidParameterValueException(String.format("%s must be 0 or greater, got [%s]. 0 means no timeout.", name, value));
+        }
+        if (value > Integer.MAX_VALUE) {
+            throw new InvalidParameterValueException(String.format("%s must be at most %d milliseconds, the largest timeout HAProxy accepts, got [%s].",
+                    name, Integer.MAX_VALUE, value));
+        }
+    }
+
+    @Override
+    public void validateLoadBalancerConnectionSettings(Long idleTimeout, Long keepAliveTimeout) {
+        validateConnectionTimeout(ApiConstants.IDLE_TIMEOUT, idleTimeout);
+        validateConnectionTimeout(ApiConstants.KEEPALIVE_TIMEOUT, keepAliveTimeout);
+    }
+
+    @Override
+    public boolean updateLoadBalancerConnectionSettings(long lbRuleId, Boolean keepAlive, Long idleTimeout, Long keepAliveTimeout, boolean cleanup) {
+        validateLoadBalancerConnectionSettings(idleTimeout, keepAliveTimeout);
+
+        Map<String, String> current = getConnectionSettings(lbRuleId);
+        Map<String, String> wanted = cleanup ? new HashMap<>() : new HashMap<>(current);
+        if (keepAlive != null) {
+            wanted.put(LoadBalancer.KEEPALIVE, keepAlive.toString());
+        }
+        if (idleTimeout != null) {
+            wanted.put(LoadBalancer.IDLE_TIMEOUT, idleTimeout.toString());
+        }
+        if (keepAliveTimeout != null) {
+            wanted.put(LoadBalancer.KEEPALIVE_TIMEOUT, keepAliveTimeout.toString());
+        }
+        if (wanted.equals(current)) {
+            return false;
+        }
+        setConnectionSettings(lbRuleId, wanted);
+        return true;
+    }
+
+    /**
+     * The per rule settings the rule holds itself, keyed by detail name. A setting the rule
+     * inherits is absent.
+     */
+    protected Map<String, String> getConnectionSettings(long lbRuleId) {
+        Map<String, String> settings = new HashMap<>();
+        for (String key : CONNECTION_SETTINGS) {
+            FirewallRuleDetailVO detail = _firewallRuleDetailsDao.findDetail(lbRuleId, key);
+            if (detail != null) {
+                settings.put(key, detail.getValue());
+            }
+        }
+        return settings;
+    }
+
+    /**
+     * Makes the rule hold exactly these settings: a key in the map is stored, a key missing
+     * from it is removed so the rule inherits it again.
+     */
+    protected void setConnectionSettings(long lbRuleId, Map<String, String> settings) {
+        for (String key : CONNECTION_SETTINGS) {
+            String value = settings.get(key);
+            FirewallRuleDetailVO existing = _firewallRuleDetailsDao.findDetail(lbRuleId, key);
+            if (existing != null && Objects.equals(value, existing.getValue())) {
+                continue;
+            }
+            if (existing != null) {
+                _firewallRuleDetailsDao.removeDetail(lbRuleId, key);
+            }
+            if (value != null) {
+                _firewallRuleDetailsDao.addDetail(lbRuleId, key, value, true);
+            }
+        }
     }
 
     @Override
@@ -2348,20 +2445,29 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw new InvalidParameterValueException(String.format("Modifications in lb rule %s are not supported.", lb));
         }
 
+        // The settings are written straight to the details table, unlike the fields above that wait
+        // for _lbDao.update, so they are stored only once nothing else can reject the update
+        Map<String, String> settingsBackup = getConnectionSettings(lbRuleId);
+        boolean settingsChanged = updateLoadBalancerConnectionSettings(lbRuleId, cmd.getKeepAlive(), cmd.getIdleTimeout(), cmd.getKeepAliveTimeout(),
+                cmd.isCleanupConnectionSettings());
+
         LoadBalancerVO tmplbVo = _lbDao.findById(lbRuleId);
-        boolean success = _lbDao.update(lbRuleId, lb);
+        // update() reports false when no column of the rule changed, which is the case when only the
+        // connection settings change, since they are kept in firewall_rule_details
+        boolean success = _lbDao.update(lbRuleId, lb) || settingsChanged;
 
         // Check if algorithm, lb protocol, or cidrlist has changed, and reapply the lb config if needed
         boolean algorithmChanged = !Objects.equals(algorithm, tmplbVo.getAlgorithm());
         boolean protocolChanged = !Objects.equals(lbProtocol, tmplbVo.getLbProtocol());
         boolean cidrListChanged = !Objects.equals(tmplbVo.getCidrList(), lb.getCidrList());
 
-        if (algorithmChanged || protocolChanged || cidrListChanged) {
+        if (algorithmChanged || protocolChanged || cidrListChanged || settingsChanged) {
             try {
                 lb.setState(FirewallRule.State.Add);
                 _lbDao.persist(lb);
                 applyLoadBalancerConfig(lbRuleId);
-                if (!lb.getLbProtocol().equals(NetUtils.SSL_PROTO)) {
+                // lb_protocol is null for a rule created through the API without a protocol
+                if (!NetUtils.SSL_PROTO.equals(lb.getLbProtocol())) {
                     removeCertMapIfExists(lb);
                 }
             } catch (ResourceUnavailableException e) {
@@ -2385,6 +2491,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     lb.setState(lbBackup.getState());
                     _lbDao.update(lb.getId(), lb);
                     _lbDao.persist(lb);
+                    if (settingsChanged) {
+                        setConnectionSettings(lbRuleId, settingsBackup);
+                    }
 
                     logger.debug("LB Rollback rule: {} while updating LB rule.", lb);
                 }
@@ -2754,9 +2863,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
             UserVm vm = _vmDao.findById(lbVmMap.getInstanceId());
-            Nic nic = _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(lb.getNetworkId(), vm.getId());
-            Ip ip = new Ip(nic.getIPv4Address());
-            dstList.put(ip, vm);
+            String ip4Address = getLbDestinationIp(vm.getId(), lb.getNetworkId());
+            if (ip4Address != null) {
+                dstList.put(new Ip(ip4Address), vm);
+            }
         }
         return dstList;
     }

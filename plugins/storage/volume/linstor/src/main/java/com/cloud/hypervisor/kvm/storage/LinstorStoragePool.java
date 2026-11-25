@@ -24,11 +24,14 @@ import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
@@ -400,6 +403,25 @@ public class LinstorStoragePool implements KVMStoragePool {
             }
         }
         return false;
+    }
+
+    /**
+     * Thin LVM and ZFS backed resources start out unallocated and read as zeroes, thick LVM hands out
+     * whatever was on the disk before.
+     */
+    @Override
+    public boolean newVolumeReadsAsZero(String volumeUuid) {
+        return LinstorUtil.resourceSupportZeroBlocks(this, LinstorUtil.RSC_PREFIX + volumeUuid);
+    }
+
+    @Override
+    public Pair<String, List<String>> createBackupScratch(String vmName, List<Long> sizes) {
+        return ((LinstorStorageAdaptor) _storageAdaptor).createBackupScratch(this, vmName, sizes);
+    }
+
+    @Override
+    public void deleteBackupScratch(String name) {
+        ((LinstorStorageAdaptor) _storageAdaptor).deleteBackupScratch(this, name);
     }
 
     @Override

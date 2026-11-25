@@ -36,6 +36,7 @@ public class OntapStorageConstants {
     public static final String SIZE = "size";
     public static final String PROTOCOL = "protocol";
     public static final String SVM_NAME = "svmName";
+    public static final String SVM_UUID = "svmUUID";
     public static final String USERNAME = "username";
     public static final String PASSWORD = "password";
     public static final String DATA_LIF = "dataLIF";
@@ -66,11 +67,20 @@ public class OntapStorageConstants {
     public  static final String INITIATORS = "initiators";
     public static final String AGGREGATES = "aggregates";
     public static final String STATE = "state";
+    public static final String AGGREGATE_NODE = "node";
+    public static final String AGGREGATE_SPACE = "space";
     public static final String DATA_NFS = "data_nfs";
     public static final String DATA_ISCSI = "data_iscsi";
     public static final String IP_ADDRESS = "ip.address";
+    public static final String LIF_ENABLED = "enabled";
+    public static final String LIF_STATE_UP = "up";
+    public static final String LIF_LOCATION_HOME_NODE = "location.home_node.name";
+    public static final String LIF_LOCATION_NODE = "location.node.name";
+    public static final String LIF_WARNING = "ONTAP_LIF_WARNING";
     public static final String SERVICES = "services";
     public static final String RETURN_RECORDS = "return_records";
+    public static final String SVM = "svm";
+    public static final String VOLUMES = "volumes";
 
     public static final int JOB_MAX_RETRIES = 100;
     public static final int CREATE_VOLUME_CHECK_SLEEP_TIME = 2000;
@@ -91,6 +101,7 @@ public class OntapStorageConstants {
     public static final String LUN_DOT_NAME = "lun.name";
     public static final String IQN = "iqn";
     public static final String LUN_DOT_UUID = "lun.uuid";
+    public static final String LUN_DOT_SERIAL_NUMBER = "lun.serial_number";
     public static final String LOGICAL_UNIT_NUMBER = "logical_unit_number";
     public static final String IGROUP_DOT_NAME = "igroup.name";
     public static final String IGROUP_DOT_UUID = "igroup.uuid";
@@ -106,7 +117,38 @@ public class OntapStorageConstants {
     public static final String ONTAP_SNAP_SIZE = "ontap_snap_size";
     public static final String FILE_PATH = "file_path";
     public static final int MAX_SNAPSHOT_NAME_LENGTH = 255;
+    public static final String ONTAP_TEMP_CG_PREFIX = "cs-temp-cg-";
+    /** ONTAP CG API: action required when referencing existing FlexVols in a consistency group. */
+    public static final String CG_VOLUME_PROVISIONING_ACTION_ADD = "add";
+    public static final int ONTAP_CG_JOB_MAX_RETRIES = 60;
+    public static final int ONTAP_CG_JOB_POLL_INTERVAL_MS = 2000;
+    public static final int ONTAP_CG_SNAPSHOT_RESOLVE_MAX_RETRIES = 30;
+    public static final int ONTAP_CG_SNAPSHOT_RESOLVE_POLL_INTERVAL_MS = 1000;
+    public static final int ONTAP_SFSR_JOB_MAX_RETRIES = 60;
+    public static final int ONTAP_SFSR_JOB_POLL_INTERVAL_MS = 2000;
+    public static final int ONTAP_SNAPSHOT_DELETE_JOB_MAX_RETRIES = 30;
+    public static final int ONTAP_SNAPSHOT_DELETE_JOB_POLL_INTERVAL_MS = 2000;
+    public static final int ONTAP_FLEXVOL_JOB_POLL_INTERVAL_MS = 2000;
+    public static final int ONTAP_FLEXVOL_RESOLVE_MAX_RETRIES = 30;
 
     /** vm_snapshot_details key for ONTAP FlexVolume-level VM snapshots. */
     public static final String ONTAP_FLEXVOL_SNAPSHOT = "ontapFlexVolSnapshot";
+
+    public static final String SERIAL_NUMBER = "serial_number";
+
+    /**
+     * NAA format designator.
+     * {@code 6} = "IEEE Registered Extended" (128-bit WWID).
+     */
+    public static final String NAA_IEEE_REG_EXT = "6";
+    /**
+     * NetApp's IEEE-registered OUI. Lookup: https://standards-oui.ieee.org/ → "NetApp, Inc."
+     */
+    public static final String NETAPP_OUI = "00a098";
+    /**
+     *  the 4-bit pad nibble
+     * <p>The full WWID is {@code NETAPP_NAA_PREFIX} + {@code serial_number_hex} (12 ASCII
+     * bytes of the LUN serial, hex-encoded), yielding 32 hex chars / 128 bits.</p>
+     */
+    public static final String NETAPP_NAA_PREFIX = NAA_IEEE_REG_EXT + NETAPP_OUI + "0";
 }

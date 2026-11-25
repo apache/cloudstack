@@ -836,6 +836,23 @@ def list_publicIP(apiclient, **kwargs):
     return(apiclient.listPublicIpAddresses(cmd))
 
 
+def release_publicIP(apiclient, ipaddress):
+    """Release (disassociate) the given public IP address.
+
+    VirtualMachine.create and Backup.createVMFromBackup associate a new public IP
+    with a port forwarding rule for every virtual machine (access_ssh_over_nat),
+    and destroying the virtual machine does not release it. A test class which
+    creates many virtual machines can therefore run out of public IPs in a zone
+    with a small public range; release the virtual machine's ssh_ip once it is
+    destroyed.
+
+    The source NAT address of a network is never released.
+    """
+    for ip in list_publicIP(apiclient, ipaddress=ipaddress, listall=True) or []:
+        if not ip.issourcenat:
+            PublicIPAddress({"ipaddress": ip}).delete(apiclient)
+
+
 def list_nat_rules(apiclient, **kwargs):
     """List all NAT rules matching criteria"""
 

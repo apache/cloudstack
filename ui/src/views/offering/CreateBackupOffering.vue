@@ -96,6 +96,9 @@
       <a-form-item name="compress" ref="compress" :label="$t('label.compress')">
         <a-switch v-model:checked="form.compress" />
       </a-form-item>
+      <a-form-item name="compressasync" ref="compressasync" :label="$t('label.compressasync')" v-if="form.compress">
+        <a-switch v-model:checked="form.compressasync" />
+      </a-form-item>
       <a-form-item name="compressionlibrary" ref="compressionlibrary" v-if="form.compress">
         <template #label>
           <tooltip-label :title="$t('label.compressionlibrary')" :tooltip="apiParams.compressionlibrary.description"/>
@@ -193,6 +196,7 @@ export default {
         allowuserdrivenbackups: true,
         ispublic: true,
         compress: false,
+        compressasync: true,
         validate: false,
         allowquickrestore: true,
         allowextractfile: true,

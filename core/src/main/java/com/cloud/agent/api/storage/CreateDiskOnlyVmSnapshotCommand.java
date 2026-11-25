@@ -26,6 +26,7 @@ import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CreateDiskOnlyVmSnapshotCommand extends VMSnapshotBaseCommand {
 
@@ -41,7 +42,8 @@ public class CreateDiskOnlyVmSnapshotCommand extends VMSnapshotBaseCommand {
 
     public CreateDiskOnlyVmSnapshotCommand(String vmName, String vmUuid, VMSnapshotTO snapshot, List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String guestOSType,
             VirtualMachine.State vmState, boolean uefiEnabled) {
-        super(vmName, snapshot, null, guestOSType);
+        super(vmName, snapshot, volumeTosAndNewPaths == null ? null : volumeTosAndNewPaths.stream()
+                .map(Pair::first).collect(Collectors.toList()), guestOSType);
         this.vmUuid = vmUuid;
         this.vmState = vmState;
         this.volumeTosAndNewPaths = volumeTosAndNewPaths;

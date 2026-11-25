@@ -19,6 +19,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ import javax.xml.transform.TransformerException;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.hypervisor.kvm.resource.BridgeVifDriver;
 import com.cloud.hypervisor.kvm.resource.LibvirtGpuDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtXMLParser;
 import com.cloud.resource.CommandWrapper;
@@ -76,6 +78,8 @@ import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.DpdkTO;
+import com.cloud.agent.api.to.NetworkTO;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
@@ -86,6 +90,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.MigrateKVMAsync;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
+import com.cloud.network.Networks;
 
 @ResourceWrapper(handles =  MigrateCommand.class)
 public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCommand, Answer, LibvirtComputingResource> {
@@ -228,6 +233,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     logger.debug("Changed VM {} XML configuration of DPDK interfaces. New XML configuration is {}.", vmName, maskSensitiveInfoInXML(xmlDesc));
                 }
             }
+
+            xmlDesc = replaceVlanTrunkInterfaces(xmlDesc, command, libvirtComputingResource);
 
             xmlDesc = updateVmSharesIfNeeded(command, xmlDesc, libvirtComputingResource);
 
@@ -686,6 +693,166 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         }
 
         return LibvirtXMLParser.getXml(doc);
+    }
+
+    // Rewrites Vlan-broadcast nics' bridge/trunk XML for the destination's capability; fails closed if that capability is unknown.
+    protected String replaceVlanTrunkInterfaces(String xmlDesc, MigrateCommand command, LibvirtComputingResource libvirtComputingResource)
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        NicTO[] nics = command.getVirtualMachine().getNics();
+        boolean sourceVlanFilteringEnabled = libvirtComputingResource.hostSupportsVlanFiltering();
+        // destination-shared-bridge is also a rewrite trigger: a legacy-source nic's bridge name (breth1-<vid>)
+        // doesn't exist on a shared-bridge destination, needs rewriting to cloudbr1 just as much as the reverse
+        boolean destVlanFilteringEnabled = Boolean.TRUE.equals(command.getDestVlanFilteringEnabled());
+        boolean anyNicNeedsHandling = false;
+        for (NicTO nic : nics) {
+            if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && (sourceVlanFilteringEnabled || destVlanFilteringEnabled || nic.isTrunkVlan())) {
+                failIfBroadcastUriMissing(nic);
+                anyNicNeedsHandling = true;
+            }
+        }
+        if (!anyNicNeedsHandling) {
+            return xmlDesc;
+        }
+
+        InputStream in = IOUtils.toInputStream(xmlDesc);
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(in);
+
+        Node domainNode = doc.getFirstChild();
+        NodeList domainChildNodes = domainNode.getChildNodes();
+        for (int i = 0; i < domainChildNodes.getLength(); i++) {
+            Node domainChildNode = domainChildNodes.item(i);
+            if (!"devices".equals(domainChildNode.getNodeName())) {
+                continue;
+            }
+            NodeList devicesChildNodes = domainChildNode.getChildNodes();
+            for (int x = 0; x < devicesChildNodes.getLength(); x++) {
+                Node deviceChildNode = devicesChildNodes.item(x);
+                if (!"interface".equals(deviceChildNode.getNodeName()) || !(deviceChildNode instanceof Element)) {
+                    continue;
+                }
+                Element interfaceElement = (Element) deviceChildNode;
+                String mac = findInterfaceMacAddress(interfaceElement);
+                NicTO nic = mac == null ? null : findNicByMac(nics, mac);
+                if (nic == null || nic.getBroadcastType() != Networks.BroadcastDomainType.Vlan
+                        || !(sourceVlanFilteringEnabled || destVlanFilteringEnabled || nic.isTrunkVlan())) {
+                    continue;
+                }
+                replaceVlanTrunkInterface(doc, interfaceElement, nic, command);
+            }
+        }
+
+        return LibvirtXMLParser.getXml(doc);
+    }
+
+    // A VLAN nic (or associated network) without a broadcast URI would be migrated onto the destination with no VLAN membership.
+    private void failIfBroadcastUriMissing(NicTO nic) {
+        boolean missing = nic.getBroadcastUri() == null;
+        if (nic.getAssociatedNetworks() != null) {
+            for (NetworkTO associatedNetwork : nic.getAssociatedNetworks()) {
+                missing = missing || associatedNetwork.getBroadcastUri() == null;
+            }
+        }
+        if (missing) {
+            throw new CloudRuntimeException(String.format("Refusing to migrate nic %s: the broadcast URI of its primary or an associated network is not set (reboot the router or stop/start the VM to restore it)", nic.getMac()));
+        }
+    }
+
+    private NicTO findNicByMac(NicTO[] nics, String mac) {
+        for (NicTO nic : nics) {
+            if (mac.equalsIgnoreCase(nic.getMac())) {
+                return nic;
+            }
+        }
+        return null;
+    }
+
+    private String findInterfaceMacAddress(Element interfaceElement) {
+        NodeList children = interfaceElement.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if ("mac".equals(child.getNodeName()) && child.getAttributes() != null) {
+                Node addressAttr = child.getAttributes().getNamedItem("address");
+                if (addressAttr != null) {
+                    return addressAttr.getNodeValue();
+                }
+            }
+        }
+        return null;
+    }
+
+    private void replaceVlanTrunkInterface(Document doc, Element interfaceElement, NicTO nic, MigrateCommand command) {
+        String destBridge = command.getNicBridgeMapping().get(nic.getMac());
+        Boolean destVlanFilteringEnabled = command.getDestVlanFilteringEnabled();
+        Boolean destVlanTrunkXmlSupported = command.getDestVlanTrunkXmlSupported();
+        if (StringUtils.isBlank(destBridge) || destVlanFilteringEnabled == null || destVlanTrunkXmlSupported == null) {
+            throw new CloudRuntimeException(String.format(
+                    "Refusing to migrate nic %s: destination host's multi-VLAN capability is unknown to this migration command", nic.getMac()));
+        }
+
+        NodeList children = interfaceElement.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if ("source".equals(child.getNodeName()) && child.getAttributes() != null) {
+                Node bridgeAttr = child.getAttributes().getNamedItem("bridge");
+                if (bridgeAttr != null) {
+                    bridgeAttr.setNodeValue(destBridge);
+                }
+            }
+        }
+
+        Node existingVlanNode = null;
+        for (int i = 0; i < children.getLength(); i++) {
+            if ("vlan".equals(children.item(i).getNodeName())) {
+                existingVlanNode = children.item(i);
+                break;
+            }
+        }
+        if (existingVlanNode != null) {
+            interfaceElement.removeChild(existingVlanNode);
+        }
+
+        boolean untaggedOrdinaryNic = BridgeVifDriver.isUntaggedBroadcast(nic) && !nic.isTrunkVlan();
+        if (destVlanTrunkXmlSupported && !untaggedOrdinaryNic) {
+            interfaceElement.appendChild(buildVlanTrunkElement(doc, nic));
+        }
+        // else: membership is applied manually on the destination tap instead (ensureVlanTrunkMembership)
+    }
+
+    private Element buildVlanTrunkElement(Document doc, NicTO nic) {
+        Element vlanElement = doc.createElement("vlan");
+        vlanElement.setAttribute("trunk", "yes");
+
+        Integer primaryTag = parseVlanTag(nic.getBroadcastUri());
+        appendVlanTagElement(doc, vlanElement, primaryTag, true);
+        if (nic.getAssociatedNetworks() != null) {
+            for (NetworkTO associatedNetwork : nic.getAssociatedNetworks()) {
+                appendVlanTagElement(doc, vlanElement, parseVlanTag(associatedNetwork.getBroadcastUri()), false);
+            }
+        }
+        return vlanElement;
+    }
+
+    private void appendVlanTagElement(Document doc, Element vlanElement, Integer tag, boolean nativeUntagged) {
+        Element tagElement = doc.createElement("tag");
+        tagElement.setAttribute("id", String.valueOf(tag));
+        if (nativeUntagged) {
+            tagElement.setAttribute("nativeMode", "untagged");
+        }
+        vlanElement.appendChild(tagElement);
+    }
+
+    private Integer parseVlanTag(URI broadcastUri) {
+        String vlanValue = broadcastUri == null ? null : Networks.BroadcastDomainType.getValue(broadcastUri);
+        if (StringUtils.isBlank(vlanValue)) {
+            throw new CloudRuntimeException("Cannot determine VLAN from broadcast URI " + broadcastUri + " while preparing migration XML");
+        }
+        try {
+            return Integer.valueOf(vlanValue);
+        } catch (NumberFormatException e) {
+            throw new CloudRuntimeException("Invalid VLAN value '" + vlanValue + "' in broadcast URI " + broadcastUri);
+        }
     }
 
     /**
