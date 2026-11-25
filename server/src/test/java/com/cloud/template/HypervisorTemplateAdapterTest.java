@@ -565,6 +565,15 @@ public class HypervisorTemplateAdapterTest {
         details = new HashMap<>(Map.of(honour, "false"));
         Assert.assertEquals("false", TemplateAdapterBase.addHonourDiskControllerDetail(false, com.cloud.hypervisor.Hypervisor.HypervisorType.KVM, details).get(honour));
 
+        // the details passed in may be read-only, and are not changed
+        Map<String, String> readOnlyDetails = Map.of("rootDiskController", "virtio");
+        details = TemplateAdapterBase.addHonourDiskControllerDetail(false, com.cloud.hypervisor.Hypervisor.HypervisorType.KVM, readOnlyDetails);
+        Assert.assertEquals("true", details.get(honour));
+        Assert.assertEquals("virtio", details.get("rootDiskController"));
+        Assert.assertFalse(readOnlyDetails.containsKey(honour));
+        Assert.assertEquals("true", TemplateAdapterBase.addHonourDiskControllerDetail(false, com.cloud.hypervisor.Hypervisor.HypervisorType.KVM,
+                java.util.Collections.emptyMap()).get(honour));
+
         Assert.assertNull(TemplateAdapterBase.addHonourDiskControllerDetail(true, com.cloud.hypervisor.Hypervisor.HypervisorType.KVM, null));
         Assert.assertNull(TemplateAdapterBase.addHonourDiskControllerDetail(false, com.cloud.hypervisor.Hypervisor.HypervisorType.VMware, null));
     }

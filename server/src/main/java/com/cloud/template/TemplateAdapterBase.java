@@ -266,13 +266,16 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     /**
      * VMs deployed from KVM templates registered or uploaded from this version on get their disk controller details
      * honoured: such a template gets the {@link VmDetailConstants#KVM_HONOUR_DISK_CONTROLLER} detail, unless it is given.
+     *
+     * @return a copy of the details with that detail for a KVM template (the given map may be read-only), else the
+     * given details
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     protected static Map addHonourDiskControllerDetail(boolean isIso, HypervisorType hypervisorType, Map details) {
         if (isIso || !HypervisorType.KVM.equals(hypervisorType)) {
             return details;
         }
-        Map templateDetails = details != null ? details : new HashMap<String, String>();
+        Map templateDetails = details != null ? new HashMap<String, String>(details) : new HashMap<String, String>();
         templateDetails.putIfAbsent(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER, Boolean.TRUE.toString());
         return templateDetails;
     }

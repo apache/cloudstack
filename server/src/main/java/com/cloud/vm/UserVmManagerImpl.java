@@ -5822,7 +5822,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         logger.warn("VM {} starts on host {}, whose agent does not honour the {} detail. Removing the detail from the VM, so that it "
                 + "keeps the disk buses it boots from now.", vm, dest.getHost(), VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER);
         vmInstanceDetailsDao.removeDetail(vm.getId(), VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER);
-        details.remove(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER);
+        Map<String, String> remainingDetails = new HashMap<>(details);
+        remainingDetails.remove(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER);
+        vm.setDetails(remainingDetails);
     }
 
     /**

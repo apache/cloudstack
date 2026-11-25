@@ -198,6 +198,11 @@ public class AgentManagerImplTest {
 
         syncHonourDiskControllerCapability(Hypervisor.HypervisorType.KVM, "true", null);
         Assert.assertEquals("false", host.getDetails().get(Host.HOST_HONOUR_DISK_CONTROLLER));
+
+        // read-only host details are not written to
+        host.setDetails(Map.of(Host.HOST_HONOUR_DISK_CONTROLLER, "true"));
+        mgr.syncHonourDiskControllerCapability(host, Map.of());
+        Assert.assertEquals("false", host.getDetails().get(Host.HOST_HONOUR_DISK_CONTROLLER));
     }
 
     @Test

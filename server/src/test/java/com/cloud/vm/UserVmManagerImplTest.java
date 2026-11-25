@@ -5367,22 +5367,22 @@ public class UserVmManagerImplTest {
         userVmManagerImpl.removeHonourDiskControllerDetailIfHostCannotHonourIt(userVmVoMock, destinationOnHostWithHonourCapability("true"));
 
         Assert.assertEquals("true", details.get(HONOUR));
+        Mockito.verify(userVmVoMock, Mockito.never()).setDetails(Mockito.any());
         Mockito.verify(vmInstanceDetailsDao, Mockito.never()).removeDetail(Mockito.anyLong(), Mockito.anyString());
     }
 
     @Test
     public void removeHonourDiskControllerDetailOnHostWithoutTheCapability() {
         for (String capability : new String[] {null, "false"}) {
-            Map<String, String> details = detailsOf(HONOUR, "true");
-            Mockito.when(userVmVoMock.getDetails()).thenReturn(details);
+            // the details may be read-only; the VM gets a copy without the honour detail
+            Mockito.when(userVmVoMock.getDetails()).thenReturn(Map.of(HONOUR, "true", ROOT_CONTROLLER, "virtio"));
             Mockito.when(userVmVoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
             Mockito.when(userVmVoMock.getId()).thenReturn(1L);
 
             userVmManagerImpl.removeHonourDiskControllerDetailIfHostCannotHonourIt(userVmVoMock, destinationOnHostWithHonourCapability(capability));
-
-            Assert.assertNull(details.get(HONOUR));
         }
         Mockito.verify(vmInstanceDetailsDao, Mockito.times(2)).removeDetail(1L, HONOUR);
+        Mockito.verify(userVmVoMock, Mockito.times(2)).setDetails(Map.of(ROOT_CONTROLLER, "virtio"));
     }
 
     @Test

@@ -774,15 +774,14 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
         String reported = Boolean.toString(detailsMap != null && Boolean.parseBoolean(detailsMap.get(Host.HOST_HONOUR_DISK_CONTROLLER)));
         _hostDao.loadDetails(host);
-        if (host.getDetails() == null) {
-            host.setDetails(new HashMap<>());
-        }
-        String stored = host.getDetails().get(Host.HOST_HONOUR_DISK_CONTROLLER);
+        Map<String, String> hostDetails = host.getDetails() != null ? new HashMap<>(host.getDetails()) : new HashMap<>();
+        String stored = hostDetails.get(Host.HOST_HONOUR_DISK_CONTROLLER);
         if (reported.equals(stored) || (stored == null && !Boolean.parseBoolean(reported))) {
             return;
         }
         logger.info("Host {} reports {}={}, it was {}", host, Host.HOST_HONOUR_DISK_CONTROLLER, reported, stored);
-        host.getDetails().put(Host.HOST_HONOUR_DISK_CONTROLLER, reported);
+        hostDetails.put(Host.HOST_HONOUR_DISK_CONTROLLER, reported);
+        host.setDetails(hostDetails);
         _hostDao.saveDetails(host);
     }
 
