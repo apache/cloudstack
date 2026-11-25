@@ -577,7 +577,6 @@ public class KVMStorageProcessorTest {
         Mockito.lenient().doReturn("cloudstack").when(kvmStoragePoolMock).getAuthUserName();
         Mockito.lenient().doReturn("secret").when(kvmStoragePoolMock).getAuthSecret();
 
-        Mockito.doReturn(radosMock).when(storageProcessorSpy).radosConnect(kvmStoragePoolMock);
         Mockito.doReturn(ioCtxMock).when(radosMock).ioCtxCreate(RBD_POOL_NAME);
         Mockito.lenient().doReturn(SNAPSHOT_SIZE).when(storageProcessorSpy).getRbdSnapshotSize(Mockito.anyString(), Mockito.anyString(),
                 Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
@@ -596,8 +595,10 @@ public class KVMStorageProcessorTest {
         RbdImage rbdImageMock = Mockito.mock(RbdImage.class);
         KVMPhysicalDisk diskMock = prepareRbdSnapshotMocks(radosMock, ioCtxMock);
 
-        try (MockedConstruction<Rbd> rbd = Mockito.mockConstruction(Rbd.class, ((mock, context) ->
+        try (MockedStatic<LibvirtStorageAdaptor> adaptor = Mockito.mockStatic(LibvirtStorageAdaptor.class);
+                MockedConstruction<Rbd> rbd = Mockito.mockConstruction(Rbd.class, ((mock, context) ->
                 Mockito.doReturn(rbdImageMock).when(mock).open(RBD_IMAGE_NAME)))) {
+            adaptor.when(() -> LibvirtStorageAdaptor.connectToCeph(kvmStoragePoolMock)).thenReturn(radosMock);
 
             Long result = storageProcessorSpy.takeRbdVolumeSnapshotOfStoppedVm(kvmStoragePoolMock, diskMock, SNAPSHOT_NAME);
 
@@ -620,8 +621,10 @@ public class KVMStorageProcessorTest {
         KVMPhysicalDisk diskMock = prepareRbdSnapshotMocks(radosMock, ioCtxMock);
         Mockito.doThrow(new RbdException("Failed to create snapshot")).when(rbdImageMock).snapCreate(SNAPSHOT_NAME);
 
-        try (MockedConstruction<Rbd> rbd = Mockito.mockConstruction(Rbd.class, ((mock, context) ->
+        try (MockedStatic<LibvirtStorageAdaptor> adaptor = Mockito.mockStatic(LibvirtStorageAdaptor.class);
+                MockedConstruction<Rbd> rbd = Mockito.mockConstruction(Rbd.class, ((mock, context) ->
                 Mockito.doReturn(rbdImageMock).when(mock).open(RBD_IMAGE_NAME)))) {
+            adaptor.when(() -> LibvirtStorageAdaptor.connectToCeph(kvmStoragePoolMock)).thenReturn(radosMock);
 
             Long result = storageProcessorSpy.takeRbdVolumeSnapshotOfStoppedVm(kvmStoragePoolMock, diskMock, SNAPSHOT_NAME);
 

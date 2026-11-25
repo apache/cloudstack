@@ -179,7 +179,6 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     private static final String MANAGE_SNAPSTHOT_CREATE_OPTION = "-c";
     private static final String NAME_OPTION = "-n";
-    private static final String CEPH_MON_HOST = "mon_host";
 
     // libvirt < 10.1.0 has an object apply-order bug (fixed in 10.1.0) that breaks hot-plug of an encrypted
     // blockdev: on attach the disk is opened before its LUKS secret object is defined, so the attach fails with
@@ -2611,7 +2610,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         Rbd rbd = null;
         RbdImage image = null;
         try {
-            r = radosConnect(primaryPool);
+            r = LibvirtStorageAdaptor.connectToCeph(primaryPool);
 
             io = r.ioCtxCreate(primaryPool.getSourceDir());
             rbd = new Rbd(io);
@@ -2920,12 +2919,6 @@ public class KVMStorageProcessor implements StorageProcessor {
         return ((availablePoolSize * 1d) / (diskSize * 1d)) < MIN_RATE_BETWEEN_AVAILABLE_POOL_AND_DISK_SIZE_TO_TAKE_DISK_SNAPSHOT;
     }
 
-    protected Rados radosConnect(final KVMStoragePool primaryPool) throws RadosException {
-        Rados r = LibvirtStorageAdaptor.connectToCeph(primaryPool);
-        logger.debug("Successfully connected to Ceph cluster at " + r.confGet(CEPH_MON_HOST));
-        return r;
-    }
-
     /**
      * Closes an RBD image if it was opened; never throws. An image left open keeps this client's RBD
      * exclusive-lock, which later makes 'rbd snap rollback' (revertSnapshot) fail with EROFS and keeps
@@ -3134,7 +3127,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         try {
 
-            r = radosConnect(srcPool);
+            r = LibvirtStorageAdaptor.connectToCeph(srcPool);
 
             io = r.ioCtxCreate(srcPool.getSourceDir());
             rbd = new Rbd(io);
@@ -3193,7 +3186,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (primaryPool.getType() == StoragePoolType.RBD) {
                 KVMPhysicalDisk disk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volume.getPath());
                 snapshotFullName = disk.getName() + "@" + snapshotName;
-                Rados r = radosConnect(primaryPool);
+                Rados r = LibvirtStorageAdaptor.connectToCeph(primaryPool);
                 IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
                 Rbd rbd = new Rbd(io);
                 RbdImage image = rbd.open(disk.getName());
