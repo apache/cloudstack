@@ -61,6 +61,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.util.EntityUtils;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -661,10 +662,9 @@ public class FlashArrayAdapter implements ProviderAdapter {
                             "Authentication responded successfully but no api token was returned");
                 }
                 return legacyToken.getApiToken();
-            } else if (statusCode == 401 || statusCode == 403) {
-                throw new CloudRuntimeException(
-                        "Authentication or Authorization to FlashArray [" + url + "] with user [" + username
-                                + "] failed, unable to retrieve session token");
+            } else if (statusCode == 400 || statusCode == 401 || statusCode == 403) {
+                // the legacy login endpoint answers 400 {"msg": "invalid credentials"} for a wrong username or password
+                throw new CloudRuntimeException(legacyLoginFailureMessage(statusCode, readBody(response)));
             } else {
                 throw new CloudRuntimeException(
                         "Unexpected HTTP response code from FlashArray [" + url + "] - [" + statusCode
@@ -678,6 +678,24 @@ public class FlashArrayAdapter implements ProviderAdapter {
                     logger.debug("Error closing legacy auth/apitoken response from FlashArray [" + url + "]", e);
                 }
             }
+        }
+    }
+
+    String legacyLoginFailureMessage(int statusCode, String arrayMessage) {
+        String msg = "Authentication to FlashArray [" + url + "] with user [" + username
+                + "] failed, check the username and password configured for this storage pool (HTTP " + statusCode;
+        if (arrayMessage != null && !arrayMessage.isBlank()) {
+            msg += ": " + arrayMessage.trim();
+        }
+        return msg + ")";
+    }
+
+    private String readBody(CloseableHttpResponse response) {
+        try {
+            return response.getEntity() == null ? null
+                    : EntityUtils.toString(response.getEntity(), "UTF-8");
+        } catch (IOException e) {
+            return null;
         }
     }
 
