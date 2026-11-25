@@ -1649,9 +1649,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         boolean backupSnapToSecondary = isBackupSnapshotToSecondaryForZone(volume.getDataCenterId());
 
         StoragePoolType poolType = volume.getStoragePoolType();
-        boolean isClvmNgIncrementalCandidate = StoragePoolType.CLVM_NG == poolType && kvmIncrementalSnapshot.valueIn(clusterId);
+        boolean isClvmNgIncrementalCandidate = StoragePoolType.CLVM_NG == poolType && backupSnapToSecondary && kvmIncrementalSnapshot.valueIn(clusterId);
 
-        updateSnapshotPayload(volume.getPoolId(), payload, isKvmAndFileBasedStorage, poolType, clusterId);
+        updateSnapshotPayload(volume.getPoolId(), payload, isKvmAndFileBasedStorage, isClvmNgIncrementalCandidate, clusterId);
 
         // NetApp ONTAP managed PRIMARY snapshots remain on primary/array storage (FlexVol).
         // They must not use secondary archive bookkeeping (postSnapshotDirectlyToSecondary) or a physical
@@ -1715,7 +1715,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 snapshotZoneDao.addSnapshotToZone(snapshotId, snapshot.getDataCenterId());
 
                 DataStoreRole dataStoreRole;
-                if (payload.getAsyncBackup() && archiveSnapshotToSecondary && !isKvmAndFileBasedStorage) {
+                if (payload.getAsyncBackup() && archiveSnapshotToSecondary && !isKvmAndFileBasedStorage && !isClvmNgIncrementalCandidate) {
                     dataStoreRole = DataStoreRole.Primary;
                 } else {
                     dataStoreRole = archiveSnapshotToSecondary ? snapshotHelper.getDataStoreRole(snapshot) : DataStoreRole.Primary;
@@ -1914,7 +1914,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
-    private void updateSnapshotPayload(long storagePoolId, CreateSnapshotPayload payload, boolean isKvmAndFileBasedStorage, StoragePoolType poolType, Long clusterId) {
+    private void updateSnapshotPayload(long storagePoolId, CreateSnapshotPayload payload, boolean isKvmAndFileBasedStorage, boolean isClvmNgIncrementalCandidate, Long clusterId) {
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
 
         if (storagePoolVO.isManaged()) {
@@ -1927,7 +1927,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             payload.setLocationType(null);
         }
 
-        if ((isKvmAndFileBasedStorage || StoragePoolType.CLVM_NG == poolType) && kvmIncrementalSnapshot.valueIn(clusterId)) {
+        if ((isKvmAndFileBasedStorage && kvmIncrementalSnapshot.valueIn(clusterId)) || isClvmNgIncrementalCandidate) {
             payload.setKvmIncrementalSnapshot(true);
         }
     }
