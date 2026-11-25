@@ -150,22 +150,17 @@ used for every other UI string). If a matching entry exists, it's used instead o
 server-rendered `errortext`, with `{{placeholder}}` tokens substituted from `errormetadata`;
 otherwise it falls back to `errortext` unchanged.
 
-**Admin variant**: like the server, before trying the base key, `$toLocaleError` first tries
-`<key>.admin` when the current user is a root admin (`roletype === 'Admin'`), falling back to the
-base key if no such entry exists. Only this root-admin case is special-cased, matching
-`error-messages.json`'s own `.admin`-suffix behavior; there's no equivalent variant for resource
+**Admin variant**: `$toLocaleError` applies the same `.admin`-suffix fallback described under
+"Templates" above, checked via `roletype === 'Admin'`; there's no equivalent variant for resource
 admins, domain admins, or regular users.
 
 Practically: to ship a UI-side translation for a specific error, add a key equal to its
 `errortextkey` (optionally suffixed `.admin` for a root-admin-specific variant) to the relevant
 locale file (e.g. `ui/public/locales/hi.json` for Hindi). No server-side change is needed.
 
-Because a UI locale entry is a separate, independently-versioned artifact from
-`error-messages.json`, it can drift out of sync with the server's current wording for that key:
-if an operator reworks the server-side message at runtime and drops a `{{placeholder}}`, that
-field also disappears from `errormetadata` (see above), so a UI locale string still referencing
-it will render the literal, unresolved `{{placeholder}}` token. Keeping locale files in sync with
-whatever wording is actually deployed is the operator's/translator's responsibility.
+A UI locale entry is a separate, independently-versioned artifact, so the same drift risk noted
+under "Example API response" above applies here too: a placeholder dropped from `errormetadata`
+will render unresolved in any locale string still referencing it.
 
 ## Global settings
 

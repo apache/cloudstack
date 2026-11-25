@@ -347,6 +347,9 @@ public class ApiResponseSerializer {
                     for (Map.Entry<?, ?> entry : ((Map<?, ?>)fieldValue).entrySet()) {
                         String entryKey = escapeSpecialXmlChars(String.valueOf(entry.getKey()));
                         String entryValue = escapeSpecialXmlChars(String.valueOf(entry.getValue()));
+                        if (!(obj instanceof ExceptionResponse)) {
+                            entryValue = encodeParam(entryValue);
+                        }
                         sb.append("<").append(entryKey).append(">").append(entryValue).append("</").append(entryKey).append(">");
                         if (logField) {
                             log.append("<").append(entryKey).append(">").append(entryValue).append("</").append(entryKey).append(">");
