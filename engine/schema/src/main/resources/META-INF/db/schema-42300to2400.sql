@@ -294,3 +294,23 @@ WHERE   sp.`storage_provider_name` = 'NetApp ONTAP'
 
 -- Rename persisted FlashArray provider name (plugin getName() changed from 'Flash Array' to 'FlashArray')
 UPDATE `cloud`.`storage_pool` SET `storage_provider_name` = 'FlashArray' WHERE `storage_provider_name` = 'Flash Array';
+
+-- Access tokens for the MCP (Model Context Protocol) server. Only the SHA-256 hash of each token is stored.
+CREATE TABLE IF NOT EXISTS `cloud`.`mcp_token` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `uuid` varchar(40) NOT NULL,
+    `name` varchar(255) NOT NULL,
+    `description` varchar(1024) DEFAULT NULL,
+    `user_id` bigint unsigned NOT NULL COMMENT 'user that owns the token',
+    `account_id` bigint unsigned NOT NULL,
+    `domain_id` bigint unsigned NOT NULL,
+    `token_hash` char(64) NOT NULL COMMENT 'SHA-256 hash of the token, in hexadecimal',
+    `end_date` datetime DEFAULT NULL COMMENT 'expiration date, null if the token does not expire',
+    `created` datetime NOT NULL COMMENT 'date created',
+    `removed` datetime DEFAULT NULL COMMENT 'date removed if not null',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `uc_mcp_token__uuid` UNIQUE (`uuid`),
+    CONSTRAINT `uc_mcp_token__token_hash` UNIQUE (`token_hash`),
+    CONSTRAINT `fk_mcp_token__user_id` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+    INDEX `i_mcp_token__removed` (`removed`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

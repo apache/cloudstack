@@ -26,6 +26,7 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.domain.Domain;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 
 public interface ApiServerService {
@@ -39,6 +40,8 @@ public interface ApiServerService {
     public void logoutUser(long userId);
 
     public boolean verifyUser(Long userId);
+
+    boolean verifyApiKeyAccessAllowed(User user, Account account);
 
     public String getSerializedApiError(int errorCode, String errorText, Map<String, Object[]> apiCommandParams, String responseType);
 

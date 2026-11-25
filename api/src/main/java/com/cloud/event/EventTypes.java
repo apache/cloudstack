@@ -333,6 +333,10 @@ public class EventTypes {
     public static final String EVENT_DELETE_SECRET_API_KEY = "DELETE.USER.KEY";
     public static final String API_KEY_ACCESS_UPDATE = "API.KEY.ACCESS.UPDATE";
 
+    // MCP (Model Context Protocol) server tokens
+    public static final String EVENT_MCP_TOKEN_CREATE = "MCP.TOKEN.CREATE";
+    public static final String EVENT_MCP_TOKEN_REVOKE = "MCP.TOKEN.REVOKE";
+
     // Template Events
     public static final String EVENT_TEMPLATE_CREATE = "TEMPLATE.CREATE";
     public static final String EVENT_TEMPLATE_DELETE = "TEMPLATE.DELETE";
