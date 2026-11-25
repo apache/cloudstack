@@ -60,6 +60,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -341,6 +342,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final VideoDef.VideoModel X86_DEFAULT_VIDEO_MODEL = VideoDef.VideoModel.VGA;
     private static final int X86_DEFAULT_VIDEO_RAM_KIB = 32768;
     private static final String Q35 = "q35";
+    /**
+     * Disk buses which the rootDiskController and dataDiskController VM details can set for the disks of a VM.
+     */
+    private static final Set<DiskDef.DiskBus> EXPLICIT_DISK_BUSES = EnumSet.of(DiskDef.DiskBus.VIRTIO, DiskDef.DiskBus.SCSI,
+            DiskDef.DiskBus.SATA, DiskDef.DiskBus.IDE);
     private static final String PTY = "pty";
     private static final String VNC = "vnc";
 
@@ -3749,17 +3755,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @param devId The device ID for the disk.
      * @param diskBusType The disk bus type to use if not skipping force disk controller.
      * @param diskBusTypeData The disk bus type to use for data disks, if applicable.
+     * @param explicitDiskBus The disk bus set for the disk with the rootDiskController or dataDiskController VM detail
+     *                        (see {@link #getExplicitDiskBus}), or null. When set, it is used whatever the guest OS
+     *                        and the boot mode.
      * @param details A map of VM details containing additional configuration values, such as whether to skip force
      *                disk controller.
      */
     protected void defineDiskForDefaultPoolType(DiskDef disk, DiskTO volume, boolean isWindowsTemplate,
                     boolean isUefiEnabled, boolean isSecureBoot, KVMPhysicalDisk physicalDisk, int devId,
-                    DiskDef.DiskBus diskBusType, DiskDef.DiskBus diskBusTypeData, Map<String, String> details) {
+                    DiskDef.DiskBus diskBusType, DiskDef.DiskBus diskBusTypeData, DiskDef.DiskBus explicitDiskBus,
+                    Map<String, String> details) {
         boolean skipForceDiskController = MapUtils.getBoolean(details, VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER,
                 false);
         if (skipForceDiskController) {
             disk.defFileBasedDisk(physicalDisk.getPath(), devId, Volume.Type.DATADISK.equals(volume.getType()) ?
                     diskBusTypeData : diskBusType, DiskDef.DiskFmtType.QCOW2);
+            return;
+        }
+        if (explicitDiskBus != null) {
+            disk.defFileBasedDisk(physicalDisk.getPath(), devId, explicitDiskBus, DiskDef.DiskFmtType.QCOW2);
             return;
         }
         if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
@@ -3903,6 +3917,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
                 setDiskIoDriver(disk, getIoDriverForTheStorage(ioDriver));
 
+                // A bus set for the disk with the rootDiskController/dataDiskController VM details is used on every
+                // pool type; the choices based on the guest OS, the boot mode and the pool type only apply without it.
+                final DiskDef.DiskBus explicitDiskBus = getExplicitDiskBus(vmSpec, volume.getType(), isWindowsTemplate, isUefiEnabled);
+
                 if (pool.getType() == StoragePoolType.RBD) {
                     /*
                             For RBD pools we use the secret mechanism in libvirt.
@@ -3910,12 +3928,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                             we pass the pool's UUID as the authSecret
                      */
                     disk.defNetworkBasedDisk(physicalDisk.getPath().replace("rbd:", ""), pool.getSourceHost(), pool.getSourcePort(), pool.getAuthUserName(),
-                            pool.getUuid(), devId, diskBusType, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+                            pool.getUuid(), devId, ObjectUtils.defaultIfNull(explicitDiskBus, diskBusType), DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
                 } else if (pool.getType() == StoragePoolType.PowerFlex) {
                     if (isWindowsTemplate && isUefiEnabled) {
                         diskBusTypeData = DiskDef.DiskBus.SATA;
                     }
-                    disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
+                    disk.defBlockBasedDisk(physicalDisk.getPath(), devId, ObjectUtils.defaultIfNull(explicitDiskBus, diskBusTypeData));
                     if (physicalDisk.getFormat().equals(PhysicalDiskFormat.QCOW2)) {
                         disk.setDiskFormatType(DiskDef.DiskFmtType.QCOW2);
                     }
@@ -3924,9 +3942,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     final String path = physicalDisk.getPath();
                     final String glusterVolume = pool.getSourceDir().replace("/", "");
                     disk.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), pool.getSourceHost(), pool.getSourcePort(), null,
-                            null, devId, diskBusType, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
+                            null, devId, ObjectUtils.defaultIfNull(explicitDiskBus, diskBusType), DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
                 } else if (pool.getType() == StoragePoolType.CLVM || pool.getType() == StoragePoolType.CLVM_NG || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
-                    if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
+                    if (explicitDiskBus != null) {
+                        disk.defBlockBasedDisk(physicalDisk.getPath(), devId, explicitDiskBus);
+                    } else if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
                     } else {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
@@ -3942,7 +3962,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     }
                 } else {
                     defineDiskForDefaultPoolType(disk, volume, isWindowsTemplate, isUefiEnabled, isSecureBoot,
-                            physicalDisk, devId, diskBusType, diskBusTypeData, details);
+                            physicalDisk, devId, diskBusType, diskBusTypeData, explicitDiskBus, details);
                 }
                 pool.customizeLibvirtDiskDef(disk);
             }
@@ -5112,6 +5132,37 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
         return null;
+    }
+
+    /**
+     * Returns the bus set for a disk of the VM with the rootDiskController (ROOT volume) or the dataDiskController
+     * (DATADISK volume) VM detail. This bus is used whatever the guest OS, the boot mode and the storage pool type.
+     * <ul>
+     *     <li>The data disks of a Windows VM with UEFI follow the root disk when dataDiskController is not set, as
+     *     they do when no controller is set at all.</li>
+     *     <li>UEFI VMs use the q35 machine type, which has no IDE bus: "ide" gives SATA, as for their CD-ROMs.</li>
+     * </ul>
+     *
+     * @return the disk bus, or null when the detail is not set or is not one of virtio, scsi, sata and ide (for
+     * example "osdefault"). The bus for the guest OS, the boot mode and the storage pool type is used then.
+     */
+    protected DiskDef.DiskBus getExplicitDiskBus(VirtualMachineTO vmSpec, Volume.Type volumeType, boolean isWindowsTemplate,
+            boolean isUefiEnabled) {
+        DiskDef.DiskBus bus;
+        if (volumeType != Volume.Type.DATADISK) {
+            bus = getDiskModelFromVMDetail(vmSpec);
+        } else {
+            bus = getDataDiskModelFromVMDetail(vmSpec);
+            if (bus == null && isWindowsTemplate && isUefiEnabled) {
+                bus = getDiskModelFromVMDetail(vmSpec);
+            }
+        }
+        if (bus == DiskDef.DiskBus.IDE && isUefiEnabled) {
+            LOGGER.debug("The {} disk of the UEFI VM {} is set to the ide bus, which the q35 machine type does not have, using sata",
+                    volumeType, vmSpec.getName());
+            return DiskDef.DiskBus.SATA;
+        }
+        return EXPLICIT_DISK_BUSES.contains(bus) ? bus : null;
     }
 
     private DiskDef.DiskBus getGuestDiskModel(final String platformEmulator, boolean isUefiEnabled) {

@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -69,6 +70,7 @@ import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
@@ -7332,7 +7334,7 @@ public class LibvirtComputingResourceTest {
         details.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, "true");
         Mockito.when(volume.getType()).thenReturn(Volume.Type.DATADISK);
         Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
-        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, null, details);
         Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
     }
 
@@ -7341,7 +7343,7 @@ public class LibvirtComputingResourceTest {
         Map<String, String> details = new HashMap<>();
         Mockito.when(volume.getType()).thenReturn(Volume.Type.DATADISK);
         Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
-        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, null, details);
         Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
     }
 
@@ -7350,7 +7352,7 @@ public class LibvirtComputingResourceTest {
         Map<String, String> details = new HashMap<>();
         Mockito.when(volume.getType()).thenReturn(Volume.Type.ROOT);
         Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
-        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, null, details);
         Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE, DiskDef.DiskFmtType.QCOW2);
     }
 
@@ -7359,7 +7361,7 @@ public class LibvirtComputingResourceTest {
         Map<String, String> details = new HashMap<>();
         Mockito.when(volume.getType()).thenReturn(Volume.Type.ROOT);
         Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
-        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, true, true, true, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, true, true, true, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, null, details);
         Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DiskDef.DiskFmtType.QCOW2, true);
     }
 
@@ -7367,8 +7369,344 @@ public class LibvirtComputingResourceTest {
     public void defineDiskForDefaultPoolTypeHandlesNullDetails() {
         Mockito.when(volume.getType()).thenReturn(Volume.Type.DATADISK);
         Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
-        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, null);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, null, null);
         Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
+    }
+
+    @Test
+    public void defineDiskForDefaultPoolTypeUsesExplicitDiskBusWithSecureBoot() {
+        Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, true, true, true, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, DiskDef.DiskBus.VIRTIO, new HashMap<>());
+        Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.QCOW2);
+    }
+
+    @Test
+    public void defineDiskForDefaultPoolTypeSkipForceDiskControllerKeepsItsBehaviourWithExplicitDiskBus() {
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, "true");
+        Mockito.when(volume.getType()).thenReturn(Volume.Type.DATADISK);
+        Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, true, true, true, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, DiskDef.DiskBus.SATA, details);
+        Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
+    }
+
+    private static final String DISK_CONTROLLER_TEST_POOL_UUID = "5ae0a3f8-2b38-4b7e-9d63-0c5b1e8f7a21";
+    private static final String WINDOWS_GUEST_OS = "Windows Server 2022 (64-bit)";
+    private static final String LINUX_GUEST_OS = "Ubuntu 22.04 LTS";
+    private static final String[] WINDOWS_SERVER_GUEST_OSES = {"Windows Server 2019 (64-bit)", "Windows Server 2022 (64-bit)",
+            "Windows Server 2025 (64-bit)"};
+
+    private Map<String, String> diskControllerTestDetails(String uefiMode, String rootDiskController, String dataDiskController) {
+        Map<String, String> details = new HashMap<>();
+        if (uefiMode != null) {
+            details.put(GuestDef.BootType.UEFI.toString(), uefiMode);
+        }
+        if (rootDiskController != null) {
+            details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDiskController);
+        }
+        if (dataDiskController != null) {
+            details.put(VmDetailConstants.DATA_DISK_CONTROLLER, dataDiskController);
+        }
+        return details;
+    }
+
+    private DiskTO diskControllerTestVolume(Volume.Type type, long deviceId, StoragePoolType poolType) {
+        if (type == Volume.Type.ISO) {
+            return new DiskTO(new TemplateObjectTO(), deviceId, null, type);
+        }
+        PrimaryDataStoreTO store = Mockito.mock(PrimaryDataStoreTO.class);
+        Mockito.when(store.getPoolType()).thenReturn(poolType);
+        Mockito.when(store.getUuid()).thenReturn(DISK_CONTROLLER_TEST_POOL_UUID);
+        String volumeUuid = UUID.randomUUID().toString();
+        VolumeObjectTO volumeObjectTO = new VolumeObjectTO();
+        volumeObjectTO.setUuid(volumeUuid);
+        volumeObjectTO.setPath(volumeUuid);
+        volumeObjectTO.setDataStore(store);
+        DiskTO diskTO = new DiskTO(volumeObjectTO, deviceId, volumeUuid, type);
+        diskTO.setDetails(new HashMap<>());
+        return diskTO;
+    }
+
+    /**
+     * Defines the disks of a User VM the way it is done when the VM starts, and returns the disks and the CD-ROMs.
+     */
+    private List<DiskDef> createVbdForDiskControllerTest(String os, Map<String, String> details, StoragePoolType poolType,
+            PhysicalDiskFormat format, DiskTO... volumes) throws Exception {
+        VirtualMachineTO to = new VirtualMachineTO(1L, "i-2-1-VM", VirtualMachine.Type.User, 2, 1000, 1024L, 1024L,
+                BootloaderType.HVM, os, false, false, "password");
+        to.setPlatformEmulator(os);
+        to.setDetails(details);
+        to.setDisks(volumes);
+
+        KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
+        Mockito.lenient().when(pool.getType()).thenReturn(poolType);
+        KVMStoragePoolManager storagePoolManager = Mockito.mock(KVMStoragePoolManager.class);
+        Mockito.lenient().when(storagePoolManager.getPhysicalDisk(Mockito.eq(poolType), Mockito.eq(DISK_CONTROLLER_TEST_POOL_UUID), Mockito.anyString()))
+                .thenAnswer(invocation -> {
+                    String volumePath = invocation.getArgument(2);
+                    KVMPhysicalDisk physicalDisk = new KVMPhysicalDisk("/mnt/" + DISK_CONTROLLER_TEST_POOL_UUID + "/" + volumePath, volumePath, pool);
+                    physicalDisk.setFormat(format);
+                    return physicalDisk;
+                });
+        Mockito.lenient().doReturn(storagePoolManager).when(libvirtComputingResourceSpy).getStoragePoolMgr();
+        Mockito.lenient().doNothing().when(libvirtComputingResourceSpy).setBackingFileFormat(Mockito.anyString());
+
+        LibvirtVMDef vm = new LibvirtVMDef();
+        vm.addComp(new DevicesDef());
+        libvirtComputingResourceSpy.createVbd(Mockito.mock(Connect.class), to, to.getName(), vm);
+        return vm.getDevices().getDisks();
+    }
+
+    private List<DiskDef> createVbdForDiskControllerTest(String os, Map<String, String> details, Volume.Type... volumeTypes) throws Exception {
+        DiskTO[] volumes = new DiskTO[volumeTypes.length];
+        for (int i = 0; i < volumeTypes.length; i++) {
+            volumes[i] = diskControllerTestVolume(volumeTypes[i], i, StoragePoolType.NetworkFilesystem);
+        }
+        return createVbdForDiskControllerTest(os, details, StoragePoolType.NetworkFilesystem, PhysicalDiskFormat.QCOW2, volumes);
+    }
+
+    private void assertDiskDef(DiskDef disk, DiskDef.DeviceType deviceType, DiskDef.DiskBus bus, String label) {
+        assertEquals(deviceType, disk.getDeviceType());
+        assertEquals(bus, disk.getBusType());
+        assertEquals(label, disk.getDiskLabel());
+        assertTrue(disk.toString().contains(String.format("<target dev='%s' bus='%s'/>", label, bus)));
+    }
+
+    private void assertUniqueDiskLabels(List<DiskDef> disks) {
+        List<String> labels = disks.stream().map(DiskDef::getDiskLabel).collect(Collectors.toList());
+        assertEquals("Duplicate target device names: " + labels, labels.size(), labels.stream().distinct().count());
+    }
+
+    @Test
+    public void createVbdHonoursExplicitVirtioControllersOfWindowsUefiSecureBootVm() throws Exception {
+        for (String os : WINDOWS_SERVER_GUEST_OSES) {
+            List<DiskDef> disks = createVbdForDiskControllerTest(os, diskControllerTestDetails("SECURE", "virtio", "virtio"),
+                    Volume.Type.ROOT, Volume.Type.DATADISK);
+
+            assertEquals(4, disks.size());
+            assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vda");
+            assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vdb");
+            assertDiskDef(disks.get(2), DiskDef.DeviceType.CDROM, DiskDef.DiskBus.SATA, "sdd");
+            assertDiskDef(disks.get(3), DiskDef.DeviceType.CDROM, DiskDef.DiskBus.SATA, "sde");
+        }
+    }
+
+    @Test
+    public void createVbdKeepsSataForWindowsUefiSecureBootVmWithoutControllers() throws Exception {
+        for (String os : WINDOWS_SERVER_GUEST_OSES) {
+            List<DiskDef> disks = createVbdForDiskControllerTest(os, diskControllerTestDetails("SECURE", null, null),
+                    Volume.Type.ROOT, Volume.Type.DATADISK);
+
+            assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sda");
+            assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sdb");
+            assertDiskDef(disks.get(2), DiskDef.DeviceType.CDROM, DiskDef.DiskBus.SATA, "sdd");
+            assertDiskDef(disks.get(3), DiskDef.DeviceType.CDROM, DiskDef.DiskBus.SATA, "sde");
+        }
+    }
+
+    @Test
+    public void createVbdKeepsSataForWindowsUefiSecureBootVmWithOsDefaultControllers() throws Exception {
+        List<DiskDef> disks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, diskControllerTestDetails("SECURE", "osdefault", "osdefault"),
+                Volume.Type.ROOT, Volume.Type.DATADISK);
+
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sda");
+        assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sdb");
+    }
+
+    @Test
+    public void createVbdDataDisksOfWindowsUefiVmFollowExplicitRootController() throws Exception {
+        List<DiskDef> disks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, diskControllerTestDetails("SECURE", "virtio", null),
+                Volume.Type.ROOT, Volume.Type.DATADISK);
+
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vda");
+        assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vdb");
+    }
+
+    @Test
+    public void createVbdHonoursExplicitControllersOfWindowsUefiLegacyVm() throws Exception {
+        List<DiskDef> disks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, diskControllerTestDetails("LEGACY", "virtio", "sata"),
+                Volume.Type.ROOT, Volume.Type.DATADISK);
+
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vda");
+        assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sdb");
+        assertDiskDef(disks.get(2), DiskDef.DeviceType.CDROM, DiskDef.DiskBus.SATA, "sdd");
+    }
+
+    @Test
+    public void createVbdKeepsSataForWindowsUefiLegacyVmWithoutControllers() throws Exception {
+        List<DiskDef> disks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, diskControllerTestDetails("LEGACY", null, null),
+                Volume.Type.ROOT, Volume.Type.DATADISK);
+
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sda");
+        assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sdb");
+    }
+
+    @Test
+    public void createVbdKeepsDefaultsOfLinuxVmsWithoutControllers() throws Exception {
+        List<DiskDef> uefiSecureDisks = createVbdForDiskControllerTest(LINUX_GUEST_OS, diskControllerTestDetails("SECURE", null, null),
+                Volume.Type.ROOT, Volume.Type.DATADISK);
+        assertDiskDef(uefiSecureDisks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vda");
+        assertDiskDef(uefiSecureDisks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vdb");
+        assertDiskDef(uefiSecureDisks.get(2), DiskDef.DeviceType.CDROM, DiskDef.DiskBus.SATA, "sdd");
+
+        List<DiskDef> biosDisks = createVbdForDiskControllerTest(LINUX_GUEST_OS, diskControllerTestDetails(null, null, null),
+                Volume.Type.ROOT, Volume.Type.DATADISK);
+        assertDiskDef(biosDisks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vda");
+        assertDiskDef(biosDisks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vdb");
+        assertDiskDef(biosDisks.get(2), DiskDef.DeviceType.CDROM, DiskDef.DiskBus.IDE, "hdc");
+        assertDiskDef(biosDisks.get(3), DiskDef.DeviceType.CDROM, DiskDef.DiskBus.IDE, "hdd");
+    }
+
+    @Test
+    public void createVbdHonoursExplicitScsiControllerOfLinuxUefiSecureBootVm() throws Exception {
+        List<DiskDef> disks = createVbdForDiskControllerTest(LINUX_GUEST_OS, diskControllerTestDetails("SECURE", "scsi", null),
+                Volume.Type.ROOT, Volume.Type.DATADISK);
+
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SCSI, "sda");
+        assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SCSI, "sdb");
+    }
+
+    @Test
+    public void createVbdKeepsUefiCdromsOnSataWithVirtioDisks() throws Exception {
+        List<DiskDef> disks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, diskControllerTestDetails("SECURE", "virtio", "virtio"),
+                StoragePoolType.NetworkFilesystem, PhysicalDiskFormat.QCOW2,
+                diskControllerTestVolume(Volume.Type.ROOT, 0, StoragePoolType.NetworkFilesystem),
+                diskControllerTestVolume(Volume.Type.ISO, 3, StoragePoolType.NetworkFilesystem));
+
+        assertEquals(3, disks.size());
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vda");
+        assertDiskDef(disks.get(1), DiskDef.DeviceType.CDROM, DiskDef.DiskBus.SATA, "sdd");
+        assertDiskDef(disks.get(2), DiskDef.DeviceType.CDROM, DiskDef.DiskBus.SATA, "sde");
+    }
+
+    @Test
+    public void createVbdUsesSataForExplicitIdeControllerOfUefiVm() throws Exception {
+        List<DiskDef> windowsDisks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, diskControllerTestDetails("SECURE", "ide", null),
+                Volume.Type.ROOT, Volume.Type.DATADISK);
+        assertDiskDef(windowsDisks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sda");
+        assertDiskDef(windowsDisks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sdb");
+
+        List<DiskDef> linuxDisks = createVbdForDiskControllerTest(LINUX_GUEST_OS, diskControllerTestDetails("LEGACY", "ide", null),
+                Volume.Type.ROOT);
+        assertDiskDef(linuxDisks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sda");
+    }
+
+    @Test
+    public void createVbdKeepsForcedBusForVirtioBlkControllerOfWindowsUefiSecureBootVm() throws Exception {
+        List<DiskDef> disks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, diskControllerTestDetails("SECURE", "virtio-blk", null),
+                Volume.Type.ROOT);
+
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sda");
+    }
+
+    @Test
+    public void createVbdSkipForceDiskControllerKeepsItsBehaviour() throws Exception {
+        Map<String, String> details = diskControllerTestDetails("SECURE", null, null);
+        details.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, "true");
+        List<DiskDef> disks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, details, Volume.Type.ROOT, Volume.Type.DATADISK);
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sda");
+        assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vdb");
+
+        details = diskControllerTestDetails("SECURE", "sata", null);
+        details.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, "true");
+        disks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, details, Volume.Type.ROOT, Volume.Type.DATADISK);
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sda");
+        assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vdb");
+
+        details = diskControllerTestDetails("SECURE", "virtio", "virtio");
+        details.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, "true");
+        disks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, details, Volume.Type.ROOT, Volume.Type.DATADISK);
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vda");
+        assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vdb");
+    }
+
+    @Test
+    public void createVbdKeepsTargetDeviceNamesUnique() throws Exception {
+        String[][] controllers = {{null, null}, {"virtio", "virtio"}, {"virtio", null}, {"virtio", "sata"}, {"sata", "virtio"},
+                {"scsi", null}, {"ide", "ide"}};
+        for (String uefiMode : new String[] {"SECURE", "LEGACY", null}) {
+            for (String os : new String[] {WINDOWS_GUEST_OS, LINUX_GUEST_OS}) {
+                for (String[] controller : controllers) {
+                    // 3 data disks: the device ids 3 and 4 are kept for the CD-ROMs, so the third data disk gets the device id 5
+                    List<DiskDef> disks = createVbdForDiskControllerTest(os, diskControllerTestDetails(uefiMode, controller[0], controller[1]),
+                            StoragePoolType.NetworkFilesystem, PhysicalDiskFormat.QCOW2,
+                            diskControllerTestVolume(Volume.Type.ROOT, 0, StoragePoolType.NetworkFilesystem),
+                            diskControllerTestVolume(Volume.Type.DATADISK, 1, StoragePoolType.NetworkFilesystem),
+                            diskControllerTestVolume(Volume.Type.DATADISK, 2, StoragePoolType.NetworkFilesystem),
+                            diskControllerTestVolume(Volume.Type.DATADISK, 5, StoragePoolType.NetworkFilesystem));
+                    assertEquals(6, disks.size());
+                    assertUniqueDiskLabels(disks);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void createVbdHonoursExplicitControllersOnPowerFlex() throws Exception {
+        List<DiskDef> disks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, diskControllerTestDetails("SECURE", "virtio", "virtio"),
+                StoragePoolType.PowerFlex, PhysicalDiskFormat.RAW,
+                diskControllerTestVolume(Volume.Type.ROOT, 0, StoragePoolType.PowerFlex),
+                diskControllerTestVolume(Volume.Type.DATADISK, 1, StoragePoolType.PowerFlex));
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vda");
+        assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.VIRTIO, "vdb");
+
+        disks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, diskControllerTestDetails("SECURE", null, null),
+                StoragePoolType.PowerFlex, PhysicalDiskFormat.RAW,
+                diskControllerTestVolume(Volume.Type.ROOT, 0, StoragePoolType.PowerFlex),
+                diskControllerTestVolume(Volume.Type.DATADISK, 1, StoragePoolType.PowerFlex));
+        assertDiskDef(disks.get(0), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sda");
+        assertDiskDef(disks.get(1), DiskDef.DeviceType.DISK, DiskDef.DiskBus.SATA, "sdb");
+    }
+
+    @Test
+    public void createVbdHonoursExplicitDataDiskControllerOnRbd() throws Exception {
+        List<DiskDef> disks = createVbdForDiskControllerTest(LINUX_GUEST_OS, diskControllerTestDetails(null, "virtio", "scsi"),
+                StoragePoolType.RBD, PhysicalDiskFormat.RAW,
+                diskControllerTestVolume(Volume.Type.ROOT, 0, StoragePoolType.RBD),
+                diskControllerTestVolume(Volume.Type.DATADISK, 1, StoragePoolType.RBD));
+        assertEquals(DiskDef.DiskBus.VIRTIO, disks.get(0).getBusType());
+        assertEquals("vda", disks.get(0).getDiskLabel());
+        assertEquals(DiskDef.DiskBus.SCSI, disks.get(1).getBusType());
+        assertEquals("sdb", disks.get(1).getDiskLabel());
+
+        disks = createVbdForDiskControllerTest(WINDOWS_GUEST_OS, diskControllerTestDetails("SECURE", null, null),
+                StoragePoolType.RBD, PhysicalDiskFormat.RAW,
+                diskControllerTestVolume(Volume.Type.ROOT, 0, StoragePoolType.RBD),
+                diskControllerTestVolume(Volume.Type.DATADISK, 1, StoragePoolType.RBD));
+        assertEquals(DiskDef.DiskBus.SATA, disks.get(0).getBusType());
+        assertEquals(DiskDef.DiskBus.SATA, disks.get(1).getBusType());
+    }
+
+    @Test
+    public void getExplicitDiskBusReturnsNullWithoutControllers() {
+        VirtualMachineTO to = Mockito.mock(VirtualMachineTO.class);
+        Mockito.when(to.getDetails()).thenReturn(diskControllerTestDetails("SECURE", "osdefault", null));
+        assertNull(libvirtComputingResourceSpy.getExplicitDiskBus(to, Volume.Type.ROOT, true, true));
+        assertNull(libvirtComputingResourceSpy.getExplicitDiskBus(to, Volume.Type.DATADISK, true, true));
+        assertNull(libvirtComputingResourceSpy.getExplicitDiskBus(to, Volume.Type.DATADISK, false, true));
+    }
+
+    @Test
+    public void getExplicitDiskBusOfDataDisks() {
+        VirtualMachineTO to = Mockito.mock(VirtualMachineTO.class);
+        Mockito.when(to.getDetails()).thenReturn(diskControllerTestDetails("SECURE", "scsi", null));
+        assertEquals(DiskDef.DiskBus.SCSI, libvirtComputingResourceSpy.getExplicitDiskBus(to, Volume.Type.DATADISK, true, true));
+        assertNull(libvirtComputingResourceSpy.getExplicitDiskBus(to, Volume.Type.DATADISK, false, true));
+        assertNull(libvirtComputingResourceSpy.getExplicitDiskBus(to, Volume.Type.DATADISK, true, false));
+
+        Mockito.when(to.getDetails()).thenReturn(diskControllerTestDetails(null, "scsi", "virtio"));
+        assertEquals(DiskDef.DiskBus.VIRTIO, libvirtComputingResourceSpy.getExplicitDiskBus(to, Volume.Type.DATADISK, true, true));
+        assertEquals(DiskDef.DiskBus.VIRTIO, libvirtComputingResourceSpy.getExplicitDiskBus(to, Volume.Type.DATADISK, false, false));
+    }
+
+    @Test
+    public void getExplicitDiskBusUsesSataForIdeOnUefiOnly() {
+        VirtualMachineTO to = Mockito.mock(VirtualMachineTO.class);
+        Mockito.when(to.getDetails()).thenReturn(diskControllerTestDetails(null, "ide", "IDE"));
+        assertEquals(DiskDef.DiskBus.SATA, libvirtComputingResourceSpy.getExplicitDiskBus(to, Volume.Type.ROOT, false, true));
+        assertEquals(DiskDef.DiskBus.SATA, libvirtComputingResourceSpy.getExplicitDiskBus(to, Volume.Type.DATADISK, false, true));
+        assertEquals(DiskDef.DiskBus.IDE, libvirtComputingResourceSpy.getExplicitDiskBus(to, Volume.Type.ROOT, false, false));
+        assertEquals(DiskDef.DiskBus.IDE, libvirtComputingResourceSpy.getExplicitDiskBus(to, Volume.Type.DATADISK, false, false));
     }
 
     @Test
