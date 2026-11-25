@@ -18,10 +18,13 @@ package com.cloud.hypervisor.kvm.storage;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joda.time.Duration;
@@ -36,11 +39,17 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.RbdUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 public class LibvirtStoragePool implements KVMStoragePool {
+    /** The environment variable which gives the Ceph key to the RBD heartbeat and VM-activity scripts. */
+    protected static final String RBD_KEY_ENVIRONMENT_VARIABLE = "CEPH_KEY";
+    /** The time the RBD heartbeat script has to tell whether the Python bindings of librados and librbd are installed. */
+    protected static final long BINDINGS_CHECK_TIMEOUT_IN_MS = 30000;
+
     protected Logger logger = LogManager.getLogger(getClass());
     protected String uuid;
     protected long capacity;
@@ -357,37 +366,110 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     public String getHearthBeatPath() {
         if (StoragePoolType.NetworkFilesystem.equals(type)) {
-            String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
-            String scriptPath = Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
-            if (scriptPath == null) {
-                throw new CloudRuntimeException("Unable to find heartbeat script 'kvmheartbeat.sh' in directory: " + kvmScriptsDir);
-            }
-            return scriptPath;
+            return findKvmHaScript("kvmheartbeat.sh");
         } else if (StoragePoolType.SharedMountPoint.equals(type)) {
-            String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
-            String scriptPath = Script.findScript(kvmScriptsDir, "kvmsmpheartbeat.sh");
-            if (scriptPath == null) {
-                throw new CloudRuntimeException("Unable to find heartbeat script 'kvmsmpheartbeat.sh' in directory: " + kvmScriptsDir);
-            }
-            return scriptPath;
+            return findKvmHaScript("kvmsmpheartbeat.sh");
+        } else if (StoragePoolType.RBD.equals(type)) {
+            return findKvmHaScript("kvmheartbeat_rbd.py");
         }
         return null;
     }
 
+    private String findKvmHaScript(String scriptName) {
+        String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
+        String scriptPath = Script.findScript(kvmScriptsDir, scriptName);
+        if (scriptPath == null) {
+            throw new CloudRuntimeException(String.format("Unable to find script '%s' in directory: %s", scriptName, kvmScriptsDir));
+        }
+        return scriptPath;
+    }
 
-    public String createHeartBeatCommand(HAStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation) {
+    /**
+     * Returns the environment of a heartbeat/VM-activity check script: for a RBD storage pool with cephx, the
+     * Ceph key, which is not an argument of the script as it would be visible in the process list.
+     */
+    protected Map<String, String> getHeartBeatScriptEnvironment() {
+        // the key is only given with its user, as addRbdConnectionArgs requires
+        if (StoragePoolType.RBD.equals(type) && StringUtils.isNotBlank(authUsername) && StringUtils.isNotBlank(authSecret)) {
+            return Map.of(RBD_KEY_ENVIRONMENT_VARIABLE, authSecret);
+        }
+        return null;
+    }
+
+    /**
+     * Adds the Ceph cluster connection details (monitors, pool and, if cephx is enabled, the user; the key is in
+     * {@link #getHeartBeatScriptEnvironment()}) to a heartbeat/VM-activity check {@link Script} for a RBD storage pool. Mirrors the "mon_host"/"id"/"key"
+     * options that qemu itself uses to talk to RBD (see {@link KVMPhysicalDisk#RBDStringBuilder}).
+     */
+    protected void addRbdConnectionArgs(Script cmd) {
+        boolean hasUser = StringUtils.isNotBlank(authUsername);
+        boolean hasSecret = StringUtils.isNotBlank(authSecret);
+        if (hasUser != hasSecret) {
+            throw new CloudRuntimeException(String.format("The Ceph user and key must be either both set or both unset for the storage pool %s", uuid));
+        }
+        String monitors = StringUtils.isBlank(sourceHost) ? "" : RbdUtils.getRbdMonitors(sourceHost, sourcePort);
+        if (monitors.isEmpty()) {
+            throw new CloudRuntimeException(String.format("The storage pool %s has no Ceph monitors", uuid));
+        }
+        cmd.add("-s", monitors);
+        cmd.add("-o", sourceDir);
+        if (hasUser) {
+            cmd.add("-n", authUsername);
+        }
+    }
+
+    /**
+     * Adds the arguments identifying the storage to a heartbeat/VM-activity check {@link Script}:
+     * the Ceph connection details for a RBD pool, or the NFS server, path and mount point otherwise.
+     */
+    private void addPoolConnectionArgs(Script cmd, HAStoragePool pool) {
+        if (StoragePoolType.RBD.equals(type)) {
+            addRbdConnectionArgs(cmd);
+        } else {
+            cmd.add("-i", pool.getPoolIp());
+            cmd.add("-p", pool.getPoolMountSourcePath());
+            cmd.add("-m", pool.getMountDestPath());
+        }
+    }
+
+    /**
+     * Adds the volumes of the host to a VM-activity check {@link Script}. For a RBD storage pool they are given in
+     * a file, as they can be too many for an argument of a command (the limit is 128 KiB, about 3500 volumes),
+     * which would also be written to the log, with all the volumes, at each check. Otherwise, or if the file can not
+     * be written, they are an argument.
+     *
+     * @return the file, which has to be deleted after the script ran, or null if there is none
+     */
+    protected File addVolumeListArgs(Script cmd, String volumes) {
+        if (StoragePoolType.RBD.equals(type)) {
+            File volumeListFile = null;
+            try {
+                volumeListFile = File.createTempFile("kvmha-volumes-", ".txt");
+                Files.write(volumeListFile.toPath(), volumes.getBytes(StandardCharsets.UTF_8));
+                cmd.add("-U", volumeListFile.getAbsolutePath());
+                return volumeListFile;
+            } catch (IOException e) {
+                logger.warn("Unable to write the list of volumes to a file, giving it to the script as an argument: {}", e.getMessage());
+                if (volumeListFile != null && !volumeListFile.delete()) {
+                    logger.debug("Unable to delete the file {}", volumeListFile);
+                }
+            }
+        }
+        cmd.add("-u", volumes);
+        return null;
+    }
+
+    public String createHeartBeatCommand(HAStoragePool primaryStoragePool, String heartBeatHostId, boolean hostValidation) {
         Script cmd = new Script(primaryStoragePool.getPool().getHearthBeatPath(), HeartBeatUpdateTimeoutInMs, logger);
-        cmd.add("-i", primaryStoragePool.getPoolIp());
-        cmd.add("-p", primaryStoragePool.getPoolMountSourcePath());
-        cmd.add("-m", primaryStoragePool.getMountDestPath());
+        addPoolConnectionArgs(cmd, primaryStoragePool);
 
         if (hostValidation) {
-            cmd.add("-h", hostPrivateIp);
+            cmd.add("-h", heartBeatHostId);
         } else {
             cmd.add("-c");
         }
 
-        return cmd.execute();
+        return cmd.execute(new OutputInterpreter.OutputLogger(logger), getHeartBeatScriptEnvironment());
     }
 
     @Override
@@ -400,54 +482,116 @@ public class LibvirtStoragePool implements KVMStoragePool {
         return null;
     }
 
+    /**
+     * The heartbeat of a host on an RBD pool is named by the GUID of the host, which stays the same if the host
+     * gets a new IP address. On the other pool types it is named by the private IP address of the host.
+     */
+    @Override
+    public String getHeartBeatHostId(String hostPrivateIp, String hostGuid) {
+        if (!StoragePoolType.RBD.equals(type)) {
+            return hostPrivateIp;
+        }
+        if (StringUtils.isBlank(hostGuid)) {
+            throw new CloudRuntimeException(String.format("The host %s has no GUID, which names its heartbeat on the RBD storage pool %s", hostPrivateIp, uuid));
+        }
+        return hostGuid;
+    }
+
+    protected String getHeartBeatHostId(HostTO host) {
+        return getHeartBeatHostId(host.getPrivateNetwork().getIp(), host.getGuid());
+    }
+
+    /**
+     * A RBD pool has no shared mount point to look at, so its script checks the watchers of the volumes, instead of the
+     * files of the volumes as the script of the other pools.
+     */
+    @Override
+    public String getVmActivityCheckPath(String defaultVmActivityCheckPath) {
+        if (StoragePoolType.RBD.equals(type)) {
+            return Script.findScript(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR), "kvmvmactivity_rbd.py");
+        }
+        return defaultVmActivityCheckPath;
+    }
+
+    /**
+     * The RBD scripts need the Python bindings of librados and librbd, which the agent packages only suggest: a host
+     * without them can neither write its heartbeat (and would be fenced because of that), nor check the one of another host.
+     */
+    @Override
+    public String getHeartBeatPrerequisiteError() {
+        if (!StoragePoolType.RBD.equals(type)) {
+            return null;
+        }
+        try {
+            Script cmd = new Script(getHearthBeatPath(), BINDINGS_CHECK_TIMEOUT_IN_MS, logger);
+            cmd.add("--check-bindings");
+            // a result of the script is the error, which is its output
+            return cmd.execute(new OutputInterpreter.OutputLogger(logger));
+        } catch (CloudRuntimeException e) {
+            return e.getMessage();
+        }
+    }
+
     @Override
     public Boolean hasHeartBeat(HAStoragePool pool, HostTO host) {
-        String hostIp = host.getPrivateNetwork().getIp();
+        String heartBeatHostId = getHeartBeatHostId(host);
         Script cmd = new Script(getHearthBeatPath(), HeartBeatCheckerTimeoutInMs, logger);
-        cmd.add("-i", pool.getPoolIp());
-        cmd.add("-p", pool.getPoolMountSourcePath());
-        cmd.add("-m", pool.getMountDestPath());
-        cmd.add("-h", hostIp);
+        addPoolConnectionArgs(cmd, pool);
+        cmd.add("-h", heartBeatHostId);
         cmd.add("-r");
         cmd.add("-t", String.valueOf(HeartBeatUpdateFreqInMs / 1000));
+        if (StoragePoolType.RBD.equals(type)) {
+            // a heartbeat which is alive can be as old as the interval and the time which the agent lets a write take
+            cmd.add("-w", String.valueOf(HeartBeatUpdateTimeoutInMs / 1000));
+        }
         OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        String result = cmd.execute(parser);
+        String result = cmd.execute(parser, getHeartBeatScriptEnvironment());
         String parsedLine = parser.getLine();
 
-        logger.debug("Checking heart beat for host IP {} with KVMHAChecker [{command=\"{}\", result: \"{}\", log: \"{}\", pool: \"{}\"}].", hostIp, cmd.toString(), result, parsedLine, pool.getPoolIp());
+        logger.debug("Checking heart beat for host {} with KVMHAChecker [{command=\"{}\", result: \"{}\", log: \"{}\", pool: \"{}\"}].", heartBeatHostId, cmd.toString(), result, parsedLine, pool.getPoolIp());
 
         if (result == null && parsedLine.contains("DEAD")) {
-            logger.warn("Checking heart beat for host IP {} with KVMHAChecker command [{}] returned [{}]. It may cause a shutdown of the host.", hostIp, cmd.toString(), parsedLine);
+            logger.warn("Checking heart beat for host {} with KVMHAChecker command [{}] returned [{}]. The host is considered dead, which may trigger HA actions, such as fencing it and restarting its VMs on other hosts.", heartBeatHostId, cmd.toString(), parsedLine);
             return false;
         } else {
-            logger.debug("Checking heart beat for host IP {} with KVMHAChecker command [{}] succeeded.", hostIp, cmd.toString());
+            logger.debug("Checking heart beat for host {} with KVMHAChecker command [{}] succeeded.", heartBeatHostId, cmd.toString());
             return true;
         }
     }
 
     @Override
     public Boolean hasVmActivity(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration) {
-        String hostIp = host.getPrivateNetwork().getIp();
+        String heartBeatHostId = getHeartBeatHostId(host);
         Script cmd = new Script(vmActivityCheckPath, activityScriptTimeout.getStandardSeconds(), logger);
-        cmd.add("-i", pool.getPoolIp());
-        cmd.add("-p", pool.getPoolMountSourcePath());
-        cmd.add("-m", pool.getMountDestPath());
-        cmd.add("-h", hostIp);
-        cmd.add("-u", volumeUUIDListString);
+        addPoolConnectionArgs(cmd, pool);
+        cmd.add("-h", heartBeatHostId);
+        File volumeListFile = addVolumeListArgs(cmd, volumeUUIDListString);
+        if (StoragePoolType.RBD.equals(type)) {
+            // the age up to which a heartbeat counts as fresh depends on how often it is written
+            cmd.add("-i", String.valueOf(HeartBeatUpdateFreqInMs / 1000));
+            cmd.add("-w", String.valueOf(HeartBeatUpdateTimeoutInMs / 1000));
+        }
         cmd.add("-t", String.valueOf(System.currentTimeMillis() / 1000));
         cmd.add("-d", String.valueOf(duration));
         OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
 
-        String result = cmd.execute(parser);
+        String result;
+        try {
+            result = cmd.execute(parser, getHeartBeatScriptEnvironment());
+        } finally {
+            if (volumeListFile != null && !volumeListFile.delete()) {
+                logger.debug("Unable to delete the file {}", volumeListFile);
+            }
+        }
         String parsedLine = parser.getLine();
 
-        logger.debug("Checking VM activity for host IP {} with KVMHAVMActivityChecker [{command=\"{}\", result: \"{}\", log: \"{}\", pool: \"{}\"}].", hostIp, cmd.toString(), result, parsedLine, pool.getPoolIp());
+        logger.debug("Checking VM activity for host {} with KVMHAVMActivityChecker [{command=\"{}\", result: \"{}\", log: \"{}\", pool: \"{}\"}].", heartBeatHostId, cmd.toString(), result, parsedLine, pool.getPoolIp());
 
         if (result == null && parsedLine.contains("DEAD")) {
-            logger.warn("Checking VM activity for host IP {} with KVMHAVMActivityChecker command [{}] returned [{}]. It may cause a shutdown of the host.", hostIp, cmd.toString(), parsedLine);
+            logger.warn("Checking VM activity for host {} with KVMHAVMActivityChecker command [{}] returned [{}]. The host is considered dead, which may trigger HA actions, such as fencing it and restarting its VMs on other hosts.", heartBeatHostId, cmd.toString(), parsedLine);
             return false;
         } else {
-            logger.debug("Checking VM activity for host IP {} with KVMHAVMActivityChecker command [{}] succeeded.", hostIp, cmd.toString());
+            logger.debug("Checking VM activity for host {} with KVMHAVMActivityChecker command [{}] succeeded.", heartBeatHostId, cmd.toString());
             return true;
         }
     }
