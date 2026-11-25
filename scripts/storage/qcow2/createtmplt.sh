@@ -88,16 +88,26 @@ create_from_file() {
   local tmpltfs=$1
   local tmpltimg="$2"
   local tmpltname=$3
+  local rc=0
   if [ -b $tmpltimg ]; then
       $qemu_img convert -f raw -O qcow2 "$tmpltimg" /$tmpltfs/$tmpltname
+      rc=$?
   else
     # if backing image exists, we need to combine them, otherwise
     # copy the image to preserve snapshots/compression
     if $qemu_img info "$tmpltimg" | grep -q backing; then
       $qemu_img convert -f qcow2 -O qcow2 "$tmpltimg" /$tmpltfs/$tmpltname >& /dev/null
+      rc=$?
     else
       cp -f $tmpltimg /$tmpltfs/$tmpltname
+      rc=$?
     fi
+  fi
+
+  if [ $rc -ne 0 ]
+  then
+    printf "Failed to create template /$tmpltfs/$tmpltname from $tmpltimg "
+    exit 4
   fi
 
   if [ "$cleanup" == "true" ]
