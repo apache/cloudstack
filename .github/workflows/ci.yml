@@ -120,6 +120,7 @@ jobs:
                   smoke/test_iso
                   smoke/test_kubernetes_clusters
                   smoke/test_kubernetes_supported_versions
+                  smoke/test_kvm_file_based_no_copy_snapshots
                   smoke/test_list_ids_parameter
                   smoke/test_loadbalance
                   smoke/test_login
