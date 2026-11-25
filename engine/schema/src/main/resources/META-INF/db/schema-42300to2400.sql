@@ -294,3 +294,6 @@ WHERE   sp.`storage_provider_name` = 'NetApp ONTAP'
 
 -- Rename persisted FlashArray provider name (plugin getName() changed from 'Flash Array' to 'FlashArray')
 UPDATE `cloud`.`storage_pool` SET `storage_provider_name` = 'FlashArray' WHERE `storage_provider_name` = 'Flash Array';
+-- Generic OIDC OAuth2 provider: a type to select the implementation, and the issuer URL for discovery
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider', 'type', 'VARCHAR(40) DEFAULT NULL COMMENT ''Provider implementation serving this registration, for example oidc; NULL means the provider name selects the implementation'' AFTER `token_url` ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider', 'issuer_url', 'VARCHAR(255) DEFAULT NULL COMMENT ''Issuer URL of the OpenID Connect provider, used to read its discovery document'' AFTER `type` ');
