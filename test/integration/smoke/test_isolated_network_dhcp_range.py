@@ -89,7 +89,8 @@ class TestIsolatedNetworkDhcpRange(cloudstackTestCase):
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
             networkids=[network.id])
-        self.cleanup.append(vm)
+        # delete the VM before the network, otherwise the network delete fails while the VM still exists
+        self.cleanup.insert(0, vm)
 
         octet = int(vm.nic[0].ipaddress.split(".")[-1])
         self.assertTrue(

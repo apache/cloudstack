@@ -271,6 +271,3 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VAR
 
 -- Rename persisted FlashArray provider name (plugin getName() changed from 'Flash Array' to 'FlashArray')
 UPDATE `cloud`.`storage_pool` SET `storage_provider_name` = 'FlashArray' WHERE `storage_provider_name` = 'Flash Array';
--- Custom DHCP (guest IP allocation) range for isolated guest networks
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.networks', 'dhcp_start_ip', 'VARCHAR(15) DEFAULT NULL COMMENT ''start of the custom DHCP range for an isolated network, within its CIDR'' ');
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.networks', 'dhcp_end_ip', 'VARCHAR(15) DEFAULT NULL COMMENT ''end of the custom DHCP range for an isolated network, within its CIDR'' ');

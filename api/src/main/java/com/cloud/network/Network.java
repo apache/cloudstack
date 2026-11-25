@@ -96,6 +96,10 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     String updatingInSequence = "updatingInSequence";
     String hideIpAddressUsage = "hideIpAddressUsage";
+    // Network detail keys for an isolated network's optional custom DHCP range (guest IP allocation
+    // range within the CIDR). Stored as network details rather than dedicated columns.
+    String dhcpStartIp = "dhcpStartIp";
+    String dhcpEndIp = "dhcpEndIp";
 
     class Service {
         private static List<Service> supportedServices = new ArrayList<Service>();
@@ -460,16 +464,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     String getCidr();
 
     void setCidr(String cidr);
-
-    // For an isolated guest network, an optional custom DHCP range within the CIDR that guest IPs
-    // are allocated from; null means the whole CIDR is used, which is the default.
-    String getDhcpStartIp();
-
-    void setDhcpStartIp(String dhcpStartIp);
-
-    String getDhcpEndIp();
-
-    void setDhcpEndIp(String dhcpEndIp);
 
     // "networkcidr" is the network CIDR of the guest network which uses IP reservation.
     // It is the summation of "cidr" and the reservedIPrange(the address space used for non CloudStack purposes).

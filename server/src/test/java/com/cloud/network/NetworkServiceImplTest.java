@@ -107,6 +107,7 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -202,6 +203,8 @@ public class NetworkServiceImplTest {
     UserDao userDao;
     @Mock
     NetworkDao networkDao;
+    @Mock
+    NetworkDetailsDao _networkDetailsDao;
     @Mock
     NicDao nicDao;
     @Mock
@@ -2563,23 +2566,26 @@ public class NetworkServiceImplTest {
 
     @Test
     public void storeIsolatedNetworkDhcpRangeStoresAValidRange() {
-        NetworkVO network = isolatedNetworkForDhcpRange();
+        isolatedNetworkForDhcpRange();
 
         service.storeIsolatedNetworkDhcpRange(5L, "10.1.1.10", "10.1.1.20");
 
-        Mockito.verify(network).setDhcpStartIp("10.1.1.10");
-        Mockito.verify(network).setDhcpEndIp("10.1.1.20");
-        Mockito.verify(networkDao).update(5L, network);
+        Mockito.verify(_networkDetailsDao).persist(Mockito.argThat(d ->
+                Network.dhcpStartIp.equals(d.getName()) && "10.1.1.10".equals(d.getValue())));
+        Mockito.verify(_networkDetailsDao).persist(Mockito.argThat(d ->
+                Network.dhcpEndIp.equals(d.getName()) && "10.1.1.20".equals(d.getValue())));
     }
 
     @Test
     public void storeIsolatedNetworkDhcpRangeDefaultsEndToStart() {
-        NetworkVO network = isolatedNetworkForDhcpRange();
+        isolatedNetworkForDhcpRange();
 
         service.storeIsolatedNetworkDhcpRange(5L, "10.1.1.10", null);
 
-        Mockito.verify(network).setDhcpStartIp("10.1.1.10");
-        Mockito.verify(network).setDhcpEndIp("10.1.1.10");
+        Mockito.verify(_networkDetailsDao).persist(Mockito.argThat(d ->
+                Network.dhcpStartIp.equals(d.getName()) && "10.1.1.10".equals(d.getValue())));
+        Mockito.verify(_networkDetailsDao).persist(Mockito.argThat(d ->
+                Network.dhcpEndIp.equals(d.getName()) && "10.1.1.10".equals(d.getValue())));
     }
 
     @Test(expected = InvalidParameterValueException.class)

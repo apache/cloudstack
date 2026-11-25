@@ -55,6 +55,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkServiceMapVO;
 import com.cloud.network.dao.NetworkVO;
@@ -93,6 +95,8 @@ public class NetworkModelImplTest {
     private VpcDao vpcDao;
     @Mock
     private NetworkDao _networksDao;
+    @Mock
+    private NetworkDetailsDao networkDetailsDao;
     @Inject
     private NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
     @Mock
@@ -513,8 +517,11 @@ public class NetworkModelImplTest {
         NetworkVO network = mock(NetworkVO.class);
         when(network.getCidr()).thenReturn(cidr);
         when(network.getGateway()).thenReturn(gateway);
-        when(network.getDhcpStartIp()).thenReturn(dhcpStart);
-        when(network.getDhcpEndIp()).thenReturn(dhcpEnd);
+        when(network.getId()).thenReturn(1L);
+        when(networkDetailsDao.findDetail(1L, Network.dhcpStartIp))
+                .thenReturn(dhcpStart == null ? null : new NetworkDetailVO(1L, Network.dhcpStartIp, dhcpStart, true));
+        when(networkDetailsDao.findDetail(1L, Network.dhcpEndIp))
+                .thenReturn(dhcpEnd == null ? null : new NetworkDetailVO(1L, Network.dhcpEndIp, dhcpEnd, true));
         Mockito.doReturn(new ArrayList<String>()).when(networkModel).getUsedIpsInNetwork(network);
         return network;
     }

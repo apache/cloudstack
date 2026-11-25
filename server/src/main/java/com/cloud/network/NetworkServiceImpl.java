@@ -2754,9 +2754,28 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             endIP = startIP;
         }
         validateIsolatedNetworkDhcpRange(startIP, endIP, network.getCidr(), network.getGateway());
-        network.setDhcpStartIp(startIP);
-        network.setDhcpEndIp(endIP);
-        _networksDao.update(networkId, network);
+        _networkDetailsDao.persist(new NetworkDetailVO(networkId, Network.dhcpStartIp, startIP, true));
+        _networkDetailsDao.persist(new NetworkDetailVO(networkId, Network.dhcpEndIp, endIP, true));
+    }
+
+    /**
+     * Reject applying a Guest VM CIDR reservation that would leave the isolated network's custom DHCP
+     * range (stored as network details) partly or wholly outside the reserved CIDR, which would starve
+     * guest IP allocation. A network with no custom range is left untouched.
+     */
+    protected void assertCustomDhcpRangeWithinGuestVmCidr(Network network, long startIp, long endIp, String guestVmCidr) {
+        NetworkDetailVO dhcpStartDetail = _networkDetailsDao.findDetail(network.getId(), Network.dhcpStartIp);
+        NetworkDetailVO dhcpEndDetail = _networkDetailsDao.findDetail(network.getId(), Network.dhcpEndIp);
+        if (dhcpStartDetail == null || dhcpEndDetail == null
+                || StringUtils.isAnyBlank(dhcpStartDetail.getValue(), dhcpEndDetail.getValue())) {
+            return;
+        }
+        long dhcpStart = NetUtils.ip2Long(dhcpStartDetail.getValue());
+        long dhcpEnd = NetUtils.ip2Long(dhcpEndDetail.getValue());
+        if (dhcpStart < startIp || dhcpEnd > endIp) {
+            throw new InvalidParameterValueException(String.format("The network has a custom DHCP range %s-%s that falls outside the requested Guest VM CIDR %s. Remove or adjust the DHCP range before applying the reservation.",
+                    dhcpStartDetail.getValue(), dhcpEndDetail.getValue(), guestVmCidr));
+        }
     }
 
     private void validateNetworkCreationSupported(long zoneId, String zoneName, GuestType guestType) {
@@ -4312,14 +4331,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
             // A custom DHCP range must stay within the reserved Guest VM CIDR; reject a reservation that would
             // leave the stored range partly or wholly outside it, otherwise guest IP allocation could be starved.
-            if (StringUtils.isNoneBlank(network.getDhcpStartIp(), network.getDhcpEndIp())) {
-                long dhcpStart = NetUtils.ip2Long(network.getDhcpStartIp());
-                long dhcpEnd = NetUtils.ip2Long(network.getDhcpEndIp());
-                if (dhcpStart < startIp || dhcpEnd > endIp) {
-                    throw new InvalidParameterValueException(String.format("The network has a custom DHCP range %s-%s that falls outside the requested Guest VM CIDR %s. Remove or adjust the DHCP range before applying the reservation.",
-                            network.getDhcpStartIp(), network.getDhcpEndIp(), guestVmCidr));
-                }
-            }
+            assertCustomDhcpRangeWithinGuestVmCidr(network, startIp, endIp, guestVmCidr);
 
             // In some scenarios even though guesVmCidr and network CIDR do not appear similar but
             // the IP ranges exactly matches, in these special cases make sure no Reservation gets applied
