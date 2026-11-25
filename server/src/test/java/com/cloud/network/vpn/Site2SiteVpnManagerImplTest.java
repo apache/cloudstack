@@ -216,6 +216,7 @@ public class Site2SiteVpnManagerImplTest {
         when(cmd.isDisplay()).thenReturn(true);
 
         when(_vpcDao.findById(VPC_ID)).thenReturn(vpc);
+        when(vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(anyLong(), any())).thenReturn(true);
         when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(null);
         when(_ipAddressDao.listByAssociatedVpc(VPC_ID, true)).thenReturn(List.of(ipAddress));
         when(_vpnGatewayDao.persist(any(Site2SiteVpnGatewayVO.class))).thenReturn(vpnGateway);

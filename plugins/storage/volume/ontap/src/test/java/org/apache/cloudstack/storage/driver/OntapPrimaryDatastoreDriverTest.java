@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.driver;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VolumeVO;
@@ -38,6 +39,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.feign.model.Igroup;
 import org.apache.cloudstack.storage.feign.model.Lun;
+import org.apache.cloudstack.storage.service.UnifiedNASStrategy;
 import org.apache.cloudstack.storage.service.UnifiedSANStrategy;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
@@ -77,6 +79,15 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class OntapPrimaryDatastoreDriverTest {
 
+    /**
+     * A real serial number taken from an ONTAP array, and the WWID NetApp derives from it as its
+     * OUI plus the serial's ASCII bytes in hex. The serial deliberately contains a '/', which is
+     * why volume paths carry the WWID: the raw serial would break the '/targetIQN/LUN' parsing that
+     * every hypervisor resource applies to the path.
+     */
+    private static final String LUN_SERIAL_NUMBER = "x0M-8?/kEsJT";
+    private static final String LUN_WWID = "600a098078304d2d383f2f6b45734a54";
+
     @Mock
     private StoragePoolDetailsDao storagePoolDetailsDao;
 
@@ -108,6 +119,9 @@ class OntapPrimaryDatastoreDriverTest {
     private UnifiedSANStrategy sanStrategy;
 
     @Mock
+    private UnifiedNASStrategy nasStrategy;
+
+    @Mock
     private AsyncCompletionCallback<CreateCmdResult> createCallback;
 
     @Mock
@@ -134,6 +148,7 @@ class OntapPrimaryDatastoreDriverTest {
         // so StorageSystemSnapshotStrategy handles snapshot backup to secondary storage
         assertEquals(Boolean.TRUE.toString(), capabilities.get("STORAGE_SYSTEM_SNAPSHOT"));
         assertEquals(Boolean.TRUE.toString(), capabilities.get("CAN_CREATE_VOLUME_FROM_SNAPSHOT"));
+        assertEquals(Boolean.TRUE.toString(), capabilities.get("CAN_REVERT_VOLUME_TO_SNAPSHOT"));
     }
 
     @Test
@@ -165,7 +180,8 @@ class OntapPrimaryDatastoreDriverTest {
 
         when(storagePoolDao.findById(1L)).thenReturn(storagePool);
         when(storagePool.getId()).thenReturn(1L);
-        when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.OntapiSCSI);
+        when(storagePool.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
 
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
         when(volumeDao.findById(100L)).thenReturn(volumeVO);
@@ -201,6 +217,7 @@ class OntapPrimaryDatastoreDriverTest {
 
             verify(volumeDetailsDao).addDetail(eq(100L), eq(OntapStorageConstants.LUN_DOT_UUID), eq("lun-uuid-123"), eq(false));
             verify(volumeDetailsDao).addDetail(eq(100L), eq(OntapStorageConstants.LUN_DOT_NAME), eq("/vol/vol1/lun1"), eq(false));
+            verify(volumeVO).setFormat(Storage.ImageFormat.RAW);
             verify(volumeDao).update(eq(100L), any(VolumeVO.class));
         }
     }
@@ -219,6 +236,7 @@ class OntapPrimaryDatastoreDriverTest {
         when(storagePoolDao.findById(1L)).thenReturn(storagePool);
         when(storagePool.getId()).thenReturn(1L);
         when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        when(storagePool.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
         when(volumeDao.findById(100L)).thenReturn(volumeVO);
         when(volumeVO.getId()).thenReturn(100L);
@@ -227,11 +245,11 @@ class OntapPrimaryDatastoreDriverTest {
 
         try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
             utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(storagePoolDetails))
-                    .thenReturn(sanStrategy);
+                    .thenReturn(nasStrategy);
             utilityMock.when(() -> OntapStorageUtils.createCloudStackVolumeRequestByProtocol(
                     any(), any(), any())).thenReturn(mockCloudStackVolume);
 
-            when(sanStrategy.createCloudStackVolume(any())).thenReturn(mockCloudStackVolume);
+            when(nasStrategy.createCloudStackVolume(any())).thenReturn(mockCloudStackVolume);
 
             // Execute
             driver.createAsync(dataStore, volumeInfo, createCallback);
@@ -243,8 +261,57 @@ class OntapPrimaryDatastoreDriverTest {
             CreateCmdResult result = resultCaptor.getValue();
             assertNotNull(result);
             assertTrue(result.isSuccess());
+            verify(volumeVO).setFormat(Storage.ImageFormat.QCOW2);
             verify(volumeDao).update(eq(100L), any(VolumeVO.class));
         }
+    }
+
+    @Test
+    void testCreateAsync_UnsupportedHypervisor_FailsWithError() {
+        storagePoolDetails.put(OntapStorageConstants.PROTOCOL, ProtocolType.ISCSI.name());
+
+        when(dataStore.getId()).thenReturn(1L);
+        when(dataStore.getName()).thenReturn("ontap-pool");
+        when(volumeInfo.getType()).thenReturn(VOLUME);
+        when(volumeInfo.getId()).thenReturn(100L);
+        when(volumeInfo.getName()).thenReturn("test-volume");
+
+        when(storagePoolDao.findById(1L)).thenReturn(storagePool);
+        when(storagePool.getId()).thenReturn(1L);
+        when(storagePool.getHypervisor()).thenReturn(Hypervisor.HypervisorType.VMware);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
+        when(volumeDao.findById(100L)).thenReturn(volumeVO);
+
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any())).thenReturn(sanStrategy);
+
+            driver.createAsync(dataStore, volumeInfo, createCallback);
+
+            ArgumentCaptor<CreateCmdResult> resultCaptor = ArgumentCaptor.forClass(CreateCmdResult.class);
+            verify(createCallback).complete(resultCaptor.capture());
+            assertFalse(resultCaptor.getValue().isSuccess());
+            assertTrue(resultCaptor.getValue().getResult().contains("Unsupported hypervisor [VMware]"));
+        }
+    }
+
+    @Test
+    void testCreateAsync_KvmUnsupportedProtocol_FailsWithError() {
+        storagePoolDetails.put(OntapStorageConstants.PROTOCOL, "FC");
+
+        when(dataStore.getId()).thenReturn(1L);
+        when(dataStore.getName()).thenReturn("ontap-pool");
+        when(volumeInfo.getType()).thenReturn(VOLUME);
+        when(volumeInfo.getName()).thenReturn("test-volume");
+
+        when(storagePoolDao.findById(1L)).thenReturn(storagePool);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
+
+        driver.createAsync(dataStore, volumeInfo, createCallback);
+
+        ArgumentCaptor<CreateCmdResult> resultCaptor = ArgumentCaptor.forClass(CreateCmdResult.class);
+        verify(createCallback).complete(resultCaptor.capture());
+        assertFalse(resultCaptor.getValue().isSuccess());
+        assertTrue(resultCaptor.getValue().getResult().contains("Unsupported protocol [FC]"));
     }
 
     @Test
@@ -367,6 +434,7 @@ class OntapPrimaryDatastoreDriverTest {
 
             when(sanStrategy.getAccessGroup(any())).thenReturn(existingAccessGroup);
             when(sanStrategy.ensureLunMapped(anyString(), anyString(), anyString())).thenReturn("0");
+            when(sanStrategy.getLunSerialNumber(anyString(), anyString())).thenReturn(LUN_SERIAL_NUMBER);
 
             // Execute
             boolean result = driver.grantAccess(volumeInfo, host, dataStore);
@@ -419,6 +487,7 @@ class OntapPrimaryDatastoreDriverTest {
             when(sanStrategy.getAccessGroup(any())).thenReturn(null);
             when(sanStrategy.createAccessGroup(any())).thenReturn(createdAccessGroup);
             when(sanStrategy.ensureLunMapped(anyString(), anyString(), anyString())).thenReturn("0");
+            when(sanStrategy.getLunSerialNumber(anyString(), anyString())).thenReturn(LUN_SERIAL_NUMBER);
 
             // Execute
             boolean result = driver.grantAccess(volumeInfo, hostVO, dataStore);

@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -60,7 +61,9 @@ import static com.cloud.network.Network.Service.PortForwarding;
 import static com.cloud.network.Network.Service.NetworkACL;
 import static com.cloud.network.Network.Service.UserData;
 import static com.cloud.network.Network.Service.Gateway;
+import static com.cloud.network.Network.Service.Vpn;
 
+import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetris;
 import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetrisNatted;
 import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNetrisRouted;
 import static org.apache.cloudstack.api.command.utils.OfferingUtils.isNsxWithoutLb;
@@ -192,7 +195,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                     NetworkACL.getName(),
                     UserData.getName()
                     ));
-            if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode())) {
+            if (isNetrisNatted(getProvider(), getNetworkMode())) {
                 supportedServices.addAll(Arrays.asList(
                         StaticNat.getName(),
                         SourceNat.getName(),
@@ -201,8 +204,12 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             if (NetworkOffering.NetworkMode.ROUTED.name().equalsIgnoreCase(getNetworkMode())) {
                 supportedServices.add(Gateway.getName());
             }
+
             if (getNsxSupportsLbService() || isNetrisNatted(getProvider(), getNetworkMode())) {
                 supportedServices.add(Lb.getName());
+            }
+            if (isNetrisNatted(getProvider(), getNetworkMode())) {
+                supportedServices.add(Vpn.getName());
             }
         }
         return supportedServices;
@@ -213,7 +220,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     }
 
     public String getNetworkMode() {
-        return networkMode;
+        return isNetris(getProvider()) && Objects.isNull(networkMode) ? NetworkOffering.NetworkMode.NATTED.name() : networkMode;
     }
 
     public boolean getNsxSupportsLbService() {
@@ -249,7 +256,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     private void getServiceProviderMapForExternalProvider(Map<String, List<String>> serviceProviderMap, String provider) {
         List<String> unsupportedServices = new ArrayList<>(List.of("Vpn", "BaremetalPxeService", "SecurityGroup", "Connectivity", "Firewall"));
-        if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode())) {
+        if (isNetrisNatted(getProvider(), getNetworkMode())) {
             unsupportedServices.add("Gateway");
         }
         List<String> routerSupported = List.of("Dhcp", "Dns", "UserData");
@@ -259,7 +266,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                 continue;
             if (routerSupported.contains(service))
                 serviceProviderMap.put(service, List.of(VirtualRouterProvider.Type.VPCVirtualRouter.name()));
-            else if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode()) ||
+            else if (isNetrisNatted(getProvider(), getNetworkMode()) ||
                     Stream.of(NetworkACL.getName(), Gateway.getName()).anyMatch(s -> s.equalsIgnoreCase(service))) {
                 serviceProviderMap.put(service, List.of(provider));
             }
@@ -269,7 +276,20 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, List<String>> getServiceCapabilityList() {
+        // For Netris NATTED, Gateway service is excluded so the redundant-router capability
+        // must reference SourceNat (not Gateway).
+        if (serviceCapabilityList != null
+                && isNetrisNatted(getProvider(), getNetworkMode())) {
+            for (Object capEntry : serviceCapabilityList.values()) {
+                Map<String, String> cap = (Map<String, String>) capEntry;
+                if (Network.Capability.RedundantRouter.getName().equalsIgnoreCase(cap.get("capabilitytype"))
+                        && Gateway.getName().equalsIgnoreCase(cap.get("service"))) {
+                    cap.put("service", SourceNat.getName());
+                }
+            }
+        }
         return serviceCapabilityList;
     }
 

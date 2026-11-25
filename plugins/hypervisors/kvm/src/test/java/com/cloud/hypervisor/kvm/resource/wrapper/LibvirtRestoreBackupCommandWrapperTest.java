@@ -16,11 +16,13 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
@@ -28,16 +30,20 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.RestoreBackupCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -112,6 +118,347 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 Assert.assertTrue(backupAnswer.getResult());
                 Assert.assertEquals("volume-123", backupAnswer.getDetails());
             }
+        }
+    }
+
+    /**
+     * An RBD backup is a chain of `rbd export-diff` streams with no link between them, so the
+     * agent has to recreate the image and replay every diff from the chain's full anchor up to the
+     * backup being restored, in that order.
+     */
+    @Test
+    public void testExecuteRestoresRbdVolumeByReplayingTheWholeDiffChain() throws Exception {
+        when(command.getVmName()).thenReturn("test-vm");
+        // The provider sets both; the chain paths are what an rbddiff restore actually reads.
+        lenient().when(command.getBackupPath()).thenReturn("test-vm/inc1");
+        when(command.getBackupFormat()).thenReturn("rbddiff");
+        when(command.getBackupChainPaths()).thenReturn(Arrays.asList("test-vm/full", "test-vm/inc1"));
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.isVmExists()).thenReturn(true);
+        when(command.getWait()).thenReturn(60);
+        when(command.getMountTimeout()).thenReturn(30);
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        when(primaryDataStore.getUuid()).thenReturn("ceph-pool-uuid");
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+        when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("cephpool/vol-uuid"));
+        when(command.getBackupVolumesUUIDs()).thenReturn(Arrays.asList("vol-uuid"));
+        when(command.getBackupFiles()).thenReturn(Arrays.asList("vol-uuid"));
+
+        KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(any(), anyString())).thenReturn(pool);
+        lenient().when(pool.getSourceHost()).thenReturn("10.0.1.2");
+        lenient().when(pool.getSourcePort()).thenReturn(6789);
+
+        List<String[]> executed = new ArrayList<>();
+        List<Long> importTimeouts = new ArrayList<>();
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+            filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                        .thenAnswer(invocation -> invocation.getArgument(0));
+                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(null);
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
+                scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
+                        .thenAnswer(invocation -> {
+                            // executeCommandForExitValue is varargs, so Mockito hands the
+                            // arguments over either already expanded or still packed.
+                            Object[] raw = invocation.getArguments();
+                            if (raw.length == 1 && raw[0] instanceof String[]) {
+                                executed.add((String[]) raw[0]);
+                            } else {
+                                String[] parts = new String[raw.length];
+                                for (int i = 0; i < raw.length; i++) {
+                                    parts[i] = String.valueOf(raw[i]);
+                                }
+                                executed.add(parts);
+                            }
+                            return 0;
+                        });
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)))
+                        .thenAnswer(invocation -> {
+                            Object[] raw = invocation.getArguments();
+                            String[] parts;
+                            if (raw.length == 2 && raw[1] instanceof String[]) {
+                                parts = (String[]) raw[1];
+                            } else {
+                                parts = new String[raw.length - 1];
+                                for (int i = 1; i < raw.length; i++) {
+                                    parts[i - 1] = String.valueOf(raw[i]);
+                                }
+                            }
+                            executed.add(parts);
+                            if (Arrays.asList(parts).contains("import-diff")) {
+                                importTimeouts.add((Long) raw[0]);
+                            }
+                            return 0;
+                        });
+                // Two piped commands run on this path: `rbd info` for the size and `rbd snap ls`
+                // for what the image carries. They are told apart by the subcommand, since the
+                // info output has a "name" of its own which would otherwise read as a snapshot.
+                scriptMock.when(() -> Script.executePipedCommands(anyList(), anyLong()))
+                        .thenAnswer(invocation -> {
+                            List<String[]> commands = invocation.getArgument(0);
+                            List<String> args = Arrays.asList(commands.get(0));
+                            if (args.contains("snap") && args.contains("ls")) {
+                                return new Pair<>(0, "[]");
+                            }
+                            return new Pair<>(0, "{\"name\":\"vol-uuid\",\"size\":1073741824}");
+                        });
+
+                Answer result = wrapper.execute(command, libvirtComputingResource);
+                Assert.assertTrue(((BackupAnswer) result).getResult());
+            }
+        }
+
+        List<String> importedDiffs = new ArrayList<>();
+        boolean created = false;
+        for (String[] cmd : executed) {
+            List<String> args = Arrays.asList(cmd);
+            if (args.contains("import-diff")) {
+                importedDiffs.add(args.get(args.indexOf("import-diff") + 1));
+            } else if (args.contains("create")) {
+                created = true;
+                Assert.assertTrue("the image must be recreated at its own size, in bytes",
+                        args.contains("1073741824B"));
+                Assert.assertTrue("no diff may be replayed before the image is recreated",
+                        importedDiffs.isEmpty());
+            }
+        }
+        Assert.assertTrue("the target image must be recreated before the chain is replayed", created);
+        Assert.assertEquals("the chain must be replayed full-anchor first",
+                Arrays.asList("/tmp/csbackup.abc123/test-vm/full/root.vol-uuid.rbddiff",
+                              "/tmp/csbackup.abc123/test-vm/inc1/root.vol-uuid.rbddiff"),
+                importedDiffs);
+        Assert.assertEquals("every diff must be replayed with the restore timeout, not the one hour default",
+                Arrays.asList(60000L, 60000L), importTimeouts);
+    }
+
+    private static final String SNAPSHOT_LISTING_FAILS = "rbd snap ls fails";
+    private static final String IMAGE_DOES_NOT_EXIST = "rbd snap ls finds no image";
+
+    private Object[] restoreTwoRbdVolumes(Storage.StoragePoolType secondPoolType, String snapshotsOfSecondImage) throws Exception {
+        when(command.getVmName()).thenReturn("test-vm");
+        lenient().when(command.getBackupPath()).thenReturn("test-vm/inc1");
+        when(command.getBackupFormat()).thenReturn("rbddiff");
+        when(command.getBackupChainPaths()).thenReturn(Arrays.asList("test-vm/full", "test-vm/inc1"));
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.isVmExists()).thenReturn(true);
+        when(command.getWait()).thenReturn(60);
+        when(command.getMountTimeout()).thenReturn(30);
+        PrimaryDataStoreTO firstStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(firstStore.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        lenient().when(firstStore.getUuid()).thenReturn("ceph-pool-uuid");
+        PrimaryDataStoreTO secondStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(secondStore.getPoolType()).thenReturn(secondPoolType);
+        lenient().when(secondStore.getUuid()).thenReturn("second-pool-uuid");
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(firstStore, secondStore));
+        when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("cephpool/vol1", "cephpool/vol2"));
+        when(command.getBackupVolumesUUIDs()).thenReturn(Arrays.asList("vol1", "vol2"));
+        when(command.getBackupFiles()).thenReturn(Arrays.asList("vol1", "vol2"));
+
+        KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        lenient().when(storagePoolMgr.getStoragePool(any(), anyString())).thenReturn(pool);
+        lenient().when(pool.getSourceHost()).thenReturn("10.0.1.2");
+        lenient().when(pool.getSourcePort()).thenReturn(6789);
+
+        List<String[]> executed = new ArrayList<>();
+        Answer result;
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+            filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                        .thenAnswer(invocation -> invocation.getArgument(0));
+                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(null);
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
+                scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
+                        .thenAnswer(invocation -> {
+                            Object[] raw = invocation.getArguments();
+                            if (raw.length == 1 && raw[0] instanceof String[]) {
+                                executed.add((String[]) raw[0]);
+                            } else {
+                                String[] parts = new String[raw.length];
+                                for (int i = 0; i < raw.length; i++) {
+                                    parts[i] = String.valueOf(raw[i]);
+                                }
+                                executed.add(parts);
+                            }
+                            return 0;
+                        });
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)))
+                        .thenAnswer(invocation -> {
+                            Object[] raw = invocation.getArguments();
+                            String[] parts = new String[raw.length - 1];
+                            for (int i = 1; i < raw.length; i++) {
+                                parts[i - 1] = String.valueOf(raw[i]);
+                            }
+                            executed.add(parts);
+                            return 0;
+                        });
+                scriptMock.when(() -> Script.executePipedCommands(anyList(), anyLong()))
+                        .thenAnswer(invocation -> {
+                            List<String[]> commands = invocation.getArgument(0);
+                            List<String> args = Arrays.asList(commands.get(0));
+                            if (args.contains("snap") && args.contains("ls")) {
+                                if (args.contains("cephpool/vol2") && SNAPSHOT_LISTING_FAILS.equals(snapshotsOfSecondImage)) {
+                                    return new Pair<>(1, "");
+                                }
+                                if (args.contains("cephpool/vol2") && IMAGE_DOES_NOT_EXIST.equals(snapshotsOfSecondImage)) {
+                                    return new Pair<>(2, "");
+                                }
+                                return new Pair<>(0, args.contains("cephpool/vol2") ? snapshotsOfSecondImage : "[]");
+                            }
+                            return new Pair<>(0, "{\"name\":\"vol\",\"size\":1073741824}");
+                        });
+                result = wrapper.execute(command, libvirtComputingResource);
+            }
+        }
+        return new Object[] {result, executed};
+    }
+
+    private void assertNoImageWasTouched(Object[] outcome) {
+        @SuppressWarnings("unchecked")
+        List<String[]> executed = (List<String[]>) outcome[1];
+        for (String[] cmd : executed) {
+            List<String> args = Arrays.asList(cmd);
+            Assert.assertFalse("no image may be removed or rewritten when a later volume cannot be restored",
+                    args.contains("rm") || args.contains("purge") || args.contains("import-diff") || args.contains("create"));
+        }
+    }
+
+    @Test
+    public void testExecuteChecksEveryRbdVolumeForForeignSnapshotsBeforeRemovingAny() throws Exception {
+        Object[] outcome = restoreTwoRbdVolumes(Storage.StoragePoolType.RBD, "[{\"name\":\"user-snap\"}]");
+        BackupAnswer answer = (BackupAnswer) outcome[0];
+        Assert.assertFalse(answer.getResult());
+        Assert.assertTrue(answer.getDetails().contains("user-snap"));
+        assertNoImageWasTouched(outcome);
+    }
+
+    @Test
+    public void testExecuteRefusesToRestoreWhenTheSnapshotsOfAnRbdVolumeCannotBeListed() throws Exception {
+        Object[] outcome = restoreTwoRbdVolumes(Storage.StoragePoolType.RBD, SNAPSHOT_LISTING_FAILS);
+        BackupAnswer answer = (BackupAnswer) outcome[0];
+        Assert.assertFalse(answer.getResult());
+        Assert.assertTrue(answer.getDetails().contains("Unable to list the snapshots of RBD image cephpool/vol2"));
+        assertNoImageWasTouched(outcome);
+    }
+
+    @Test
+    public void testExecuteRestoresIntoAnImageThatDoesNotExistYet() throws Exception {
+        // `rbd snap ls` exits with ENOENT for an image which is not there, as when a restore creates a new volume.
+        Object[] outcome = restoreTwoRbdVolumes(Storage.StoragePoolType.RBD, IMAGE_DOES_NOT_EXIST);
+        Assert.assertTrue(((BackupAnswer) outcome[0]).getResult());
+    }
+
+    @Test
+    public void testExecuteRefusesAnRbdBackupForNonRbdTargetBeforeRemovingAnyImage() throws Exception {
+        Object[] outcome = restoreTwoRbdVolumes(Storage.StoragePoolType.NetworkFilesystem, "[]");
+        BackupAnswer answer = (BackupAnswer) outcome[0];
+        Assert.assertFalse(answer.getResult());
+        Assert.assertTrue(answer.getDetails().contains("can only be restored to RBD storage"));
+        assertNoImageWasTouched(outcome);
+    }
+
+    @Test
+    public void testExecuteRefusesToRestoreAnRbdVolumeCarryingAForeignSnapshot() throws Exception {
+        when(command.getVmName()).thenReturn("test-vm");
+        // The provider sets both; the chain paths are what an rbddiff restore actually reads.
+        lenient().when(command.getBackupPath()).thenReturn("test-vm/inc1");
+        when(command.getBackupFormat()).thenReturn("rbddiff");
+        when(command.getBackupChainPaths()).thenReturn(Arrays.asList("test-vm/full", "test-vm/inc1"));
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.isVmExists()).thenReturn(true);
+        when(command.getWait()).thenReturn(60);
+        when(command.getMountTimeout()).thenReturn(30);
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        when(primaryDataStore.getUuid()).thenReturn("ceph-pool-uuid");
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+        when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("cephpool/vol-uuid"));
+        when(command.getBackupVolumesUUIDs()).thenReturn(Arrays.asList("vol-uuid"));
+        when(command.getBackupFiles()).thenReturn(Arrays.asList("vol-uuid"));
+
+        KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(any(), anyString())).thenReturn(pool);
+        lenient().when(pool.getSourceHost()).thenReturn("10.0.1.2");
+        lenient().when(pool.getSourcePort()).thenReturn(6789);
+
+        List<String[]> executed = new ArrayList<>();
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+            filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                        .thenAnswer(invocation -> invocation.getArgument(0));
+                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(null);
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
+                scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
+                        .thenAnswer(invocation -> {
+                            // executeCommandForExitValue is varargs, so Mockito hands the
+                            // arguments over either already expanded or still packed.
+                            Object[] raw = invocation.getArguments();
+                            if (raw.length == 1 && raw[0] instanceof String[]) {
+                                executed.add((String[]) raw[0]);
+                            } else {
+                                String[] parts = new String[raw.length];
+                                for (int i = 0; i < raw.length; i++) {
+                                    parts[i] = String.valueOf(raw[i]);
+                                }
+                                executed.add(parts);
+                            }
+                            return 0;
+                        });
+                // Two piped commands run on this path: `rbd info` for the size and `rbd snap ls`
+                // for what the image carries. They are told apart by the subcommand, since the
+                // info output has a "name" of its own which would otherwise read as a snapshot.
+                scriptMock.when(() -> Script.executePipedCommands(anyList(), anyLong()))
+                        .thenAnswer(invocation -> {
+                            List<String[]> commands = invocation.getArgument(0);
+                            List<String> args = Arrays.asList(commands.get(0));
+                            if (args.contains("snap") && args.contains("ls")) {
+                                return new Pair<>(0, "[{\"name\":\"csbackup-1791\"},{\"name\":\"user-snap\"}]");
+                            }
+                            return new Pair<>(0, "{\"name\":\"vol-uuid\",\"size\":1073741824}");
+                        });
+
+                Answer result = wrapper.execute(command, libvirtComputingResource);
+                // The chain anchor is ours to drop; user-snap is not, so the restore is refused
+                // before the image is touched.
+                Assert.assertFalse(((BackupAnswer) result).getResult());
+                Assert.assertTrue(((BackupAnswer) result).getDetails().contains("user-snap"));
+                Assert.assertFalse(((BackupAnswer) result).getDetails().contains("csbackup-1791"));
+            }
+        }
+
+        for (String[] cmd : executed) {
+            List<String> args = Arrays.asList(cmd);
+            Assert.assertFalse("the image must not be touched when a foreign snapshot is present",
+                    args.contains("rm") || args.contains("purge") || args.contains("import-diff"));
         }
     }
 
@@ -587,6 +934,64 @@ public class LibvirtRestoreBackupCommandWrapperTest {
         }
     }
 
+    /**
+     * The management server sends the volumes to restore into in the order of the backed up volumes (it
+     * matches them by uuid). Their paths do not have to contain the backed up uuid: a volume migrated to
+     * another pool, or created from a snapshot, has a path that differs from its uuid. Each backup file
+     * has to be written into the volume at the same position.
+     */
+    @Test
+    public void testRestoreOfExistingVmWritesEachBackupIntoTheVolumeAtTheSamePosition() throws Exception {
+        when(command.getVmName()).thenReturn("test-vm");
+        when(command.getBackupPath()).thenReturn("backup/path");
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.isVmExists()).thenReturn(true);
+        when(command.getDiskType()).thenReturn("root");
+        PrimaryDataStoreTO pool = Mockito.mock(PrimaryDataStoreTO.class);
+        lenient().when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(pool, pool, pool));
+        // data-vol-a was migrated, so its path is a different name than its uuid
+        when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList(
+                "/var/lib/libvirt/images/root-vol",
+                "/var/lib/libvirt/images/migrated-path-of-a",
+                "/var/lib/libvirt/images/data-vol-b"
+        ));
+        when(command.getBackupVolumesUUIDs()).thenReturn(Arrays.asList("root-vol", "data-vol-a", "data-vol-b"));
+        when(command.getBackupFiles()).thenReturn(Arrays.asList("root-vol", "data-vol-a", "data-vol-b"));
+        when(command.getMountTimeout()).thenReturn(30);
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                        .thenAnswer(invocation -> invocation.getArgument(0));
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class))).thenReturn(0);
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
+                        .thenAnswer(invocation -> {
+                            String command = invocation.getArgument(0);
+                            // No backing chain, so the restore takes the rsync path this test asserts on.
+                            return command.contains("backing-filename") ? 1 : 0;
+                        });
+                filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+                Answer result = wrapper.execute(command, libvirtComputingResource);
+
+                Assert.assertTrue(((BackupAnswer) result).getResult());
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/root.root-vol.qcow2", "/var/lib/libvirt/images/root-vol"})));
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-a.qcow2", "/var/lib/libvirt/images/migrated-path-of-a"})));
+                scriptMock.verify(() -> Script.executeCommandForExitValue(anyLong(), aryEq(new String[] {"rsync", "-az",
+                        "/tmp/csbackup.abc123/backup/path/datadisk.data-vol-b.qcow2", "/var/lib/libvirt/images/data-vol-b"})));
+            }
+        }
+    }
+
     private String invokeGetDeviceToAttachDisk(String vmName) throws Exception {
         Method method = LibvirtRestoreBackupCommandWrapper.class.getDeclaredMethod("getDeviceToAttachDisk", String.class);
         method.setAccessible(true);
@@ -811,5 +1216,68 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 Assert.assertEquals(30 * 1000L, umountTimeout[0]);
             }
         }
+    }
+
+    /**
+     * Restores a backup onto a LINSTOR volume through replaceBlockDeviceWithBackup and returns
+     * the QemuImg instance used for the copy together with its constructor arguments.
+     */
+    private Pair<QemuImg, List<?>> restoreOntoLinstorVolume(boolean createTargetVolume, boolean newVolumeReadsAsZero)
+            throws Exception {
+        Method method = LibvirtRestoreBackupCommandWrapper.class.getDeclaredMethod("replaceBlockDeviceWithBackup",
+                KVMStoragePoolManager.class, PrimaryDataStoreTO.class, String.class, String.class, int.class,
+                boolean.class, Long.class);
+        method.setAccessible(true);
+
+        PrimaryDataStoreTO volumePool = Mockito.mock(PrimaryDataStoreTO.class);
+        when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.Linstor);
+        when(volumePool.getUuid()).thenReturn("pool-uuid");
+        KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        KVMStoragePool linstorPool = Mockito.mock(KVMStoragePool.class);
+        lenient().when(linstorPool.newVolumeReadsAsZero("volume-123")).thenReturn(newVolumeReadsAsZero);
+        when(storagePoolMgr.getStoragePool(Storage.StoragePoolType.Linstor, "pool-uuid")).thenReturn(linstorPool);
+
+        final List<?>[] ctorArgs = new List<?>[1];
+        try (MockedConstruction<QemuImg> qemuMock = mockConstruction(QemuImg.class,
+                (mock, context) -> ctorArgs[0] = context.arguments())) {
+            boolean result = (boolean) method.invoke(wrapper, storagePoolMgr, volumePool,
+                    "/dev/drbd/by-res/cs-volume-123/0", "/mnt/backup/root.volume-123.qcow2", 60,
+                    createTargetVolume, 1024L);
+
+            Assert.assertTrue(result);
+            Assert.assertEquals(1, qemuMock.constructed().size());
+            QemuImg qemu = qemuMock.constructed().get(0);
+            Mockito.verify(qemu).convert(any(QemuImgFile.class), any(QemuImgFile.class));
+            if (!createTargetVolume) {
+                Mockito.verify(linstorPool, Mockito.never()).newVolumeReadsAsZero(anyString());
+            }
+            return new Pair<>(qemu, ctorArgs[0]);
+        }
+    }
+
+    @Test
+    public void testInPlaceLinstorRestoreDoesNotSkipZeroes() throws Exception {
+        // Even on a thin pool: the volume still holds its old data, so the backup's zero regions
+        // must be written.
+        Pair<QemuImg, List<?>> restore = restoreOntoLinstorVolume(false, true);
+
+        Assert.assertEquals(Boolean.FALSE, restore.second().get(1));
+        Mockito.verify(restore.first()).setSkipTargetVolumeCreation(true);
+    }
+
+    @Test
+    public void testLinstorRestoreToNewThickVolumeDoesNotSkipZeroes() throws Exception {
+        Pair<QemuImg, List<?>> restore = restoreOntoLinstorVolume(true, false);
+
+        Assert.assertEquals(Boolean.FALSE, restore.second().get(1));
+        Mockito.verify(restore.first()).setSkipTargetVolumeCreation(true);
+    }
+
+    @Test
+    public void testLinstorRestoreToNewThinVolumeSkipsZeroes() throws Exception {
+        Pair<QemuImg, List<?>> restore = restoreOntoLinstorVolume(true, true);
+
+        Assert.assertEquals(Boolean.TRUE, restore.second().get(1));
+        Mockito.verify(restore.first()).setSkipTargetVolumeCreation(true);
     }
 }

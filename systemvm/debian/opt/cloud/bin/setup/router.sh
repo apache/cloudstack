@@ -70,7 +70,7 @@ setup_router() {
   disable_rpfilter_domR
   enable_fwding 1
   enable_rpsrfs 1
-  enable_passive_ftp 1
+  enable_passive_ftp
   restore_ipv6
 
   # Only allow DNS service for current network

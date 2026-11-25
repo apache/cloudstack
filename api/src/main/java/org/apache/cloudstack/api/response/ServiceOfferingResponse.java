@@ -200,6 +200,10 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "The cache mode to use for this disk offering. none, writeback, writethrough or hypervisor default", since = "4.14")
     private String cacheMode;
 
+    @SerializedName("errorpolicy")
+    @Param(description = "The disk error policy to use for the root disk of this compute offering. report, stop, ignore or enospace", since = "24.0.0")
+    private String errorPolicy;
+
     @SerializedName("vspherestoragepolicy")
     @Param(description = "The vsphere storage policy tagged to the service offering in case of VMware", since = "4.15")
     private String vsphereStoragePolicy;
@@ -551,6 +555,10 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setCacheMode(String cacheMode) {
         this.cacheMode = cacheMode;
+    }
+
+    public void setErrorPolicy(String errorPolicy) {
+        this.errorPolicy = errorPolicy;
     }
 
     public Integer getLeaseDuration() {

@@ -19,14 +19,20 @@
 
 package org.apache.cloudstack.storage.service.model;
 
-import com.cloud.host.HostVO;
+import java.util.List;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.storage.feign.model.ExportPolicy;
 import org.apache.cloudstack.storage.feign.model.Igroup;
 
-import java.util.List;
+import com.cloud.host.HostVO;
 
 public class AccessGroup {
+
+    public enum HostRuleAction {
+        ADD,
+        REMOVE
+    }
 
     private Igroup igroup;
     private ExportPolicy exportPolicy;
@@ -34,6 +40,7 @@ public class AccessGroup {
     private List<HostVO> hostsToConnect;
     private Long storagePoolId;
     private Scope scope;
+    private HostRuleAction hostRuleAction = HostRuleAction.ADD;
 
 
     public Igroup getIgroup() {
@@ -73,5 +80,13 @@ public class AccessGroup {
 
     public void setScope(Scope scope) {
         this.scope = scope;
+    }
+
+    public HostRuleAction getHostRuleAction() {
+        return hostRuleAction;
+    }
+
+    public void setHostRuleAction(HostRuleAction hostRuleAction) {
+        this.hostRuleAction = hostRuleAction;
     }
 }

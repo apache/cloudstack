@@ -18,11 +18,13 @@
 //
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.net.ServerSocket;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Arrays;
 import java.util.List;
@@ -33,6 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -42,14 +45,18 @@ import com.cloud.agent.api.ConvertInstanceCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.RemoteInstanceTO;
+import com.cloud.agent.api.to.VmwareVddkSourceDiskTO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
+import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.Storage;
 import com.cloud.utils.FileUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
@@ -59,6 +66,55 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     private static final List<Hypervisor.HypervisorType> supportedInstanceConvertSourceHypervisors =
             List.of(Hypervisor.HypervisorType.VMware);
     private static final Pattern SHA1_FINGERPRINT_PATTERN = Pattern.compile("(?i)(?:SHA1\\s+)?Fingerprint\\s*=\\s*([0-9A-F:]+)");
+    // virt-v2v's exact wording when the host's virtio-win driver set has no match for the guest.
+    private static final String NO_VIRTIO_DRIVERS_MARKER = "there are no virtio drivers available";
+
+    /**
+     * Logs virt-v2v output like {@link OutputInterpreter.LineByLineOutputLogger} while watching for
+     * the "no virtio drivers available" warning. virt-v2v treats it as non-fatal and finishes the
+     * conversion, but a Windows guest converted without a virtio storage driver cannot boot from
+     * the virtio disk the import gives it - the failure only shows up later as an unbootable VM,
+     * so the conversion itself must refuse instead.
+     */
+    private static class VirtioDriverOutputWatcher extends OutputInterpreter {
+        private final org.apache.logging.log4j.Logger watcherLogger;
+        private final String logPrefix;
+        private boolean noVirtioDriversReported;
+
+        VirtioDriverOutputWatcher(org.apache.logging.log4j.Logger logger, String logPrefix) {
+            this.watcherLogger = logger;
+            this.logPrefix = logPrefix;
+        }
+
+        @Override
+        public boolean drain() {
+            return true;
+        }
+
+        @Override
+        public String interpret(java.io.BufferedReader reader) throws java.io.IOException {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                watcherLogger.info("({}) {}", logPrefix, line);
+                if (line.toLowerCase().contains(NO_VIRTIO_DRIVERS_MARKER)) {
+                    noVirtioDriversReported = true;
+                }
+            }
+            return null;
+        }
+
+        boolean isNoVirtioDriversReported() {
+            return noVirtioDriversReported;
+        }
+    }
+
+    private void failWindowsConversionWithoutVirtioDrivers(String originalVMName) {
+        throw new CloudRuntimeException(String.format(
+                "Conversion of Windows VM %s finished without virtio drivers: the conversion host's virtio-win driver set " +
+                "(/usr/share/virtio-win/virtio-win.iso) has no drivers for this Windows version, and the imported VM would not " +
+                "boot from its virtio disk. Update virtio-win on the conversion host to the upstream latest-virtio ISO and retry.",
+                originalVMName));
+    }
 
     @Override
     public Answer execute(ConvertInstanceCommand cmd, LibvirtComputingResource serverResource) {
@@ -70,6 +126,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         long timeout = (long) cmd.getWait() * 1000;
         String extraParams = cmd.getExtraParams();
         boolean useVddk = cmd.isUseVddk();
+        boolean windowsGuest = cmd.isWindowsGuest();
         String originalVMName = cmd.getOriginalVMName();
 
         if (cmd.getCheckConversionSupport() && !serverResource.hostSupportsInstanceConversion()) {
@@ -89,6 +146,8 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
         final KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
         KVMStoragePool temporaryStoragePool = getTemporaryStoragePool(conversionTemporaryLocation, storagePoolMgr);
+        boolean directRbdVddkImport = isDirectRbdVddkImport(cmd);
+        boolean directLinstorVddkImport = isDirectLinstorVddkImport(cmd);
 
         logger.info(String.format("(%s) Attempting to convert the instance %s from %s to KVM",
                 originalVMName, sourceInstanceName, sourceHypervisorType));
@@ -114,9 +173,27 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 String vddkTransports = resolveVddkSetting(cmd.getVddkTransports(), serverResource.getVddkTransports());
                 String configuredVddkThumbprint = resolveVddkSetting(cmd.getVddkThumbprint(), serverResource.getVddkThumbprint());
                 String passwordOption = serverResource.getDetectedPasswordFileOption();
-                result = performInstanceConversionUsingVddk(sourceInstance, originalVMName, temporaryConvertPath,
-                        vddkLibDir, serverResource.getLibguestfsBackend(), vddkTransports, configuredVddkThumbprint,
-                        timeout, verboseModeEnabled, extraParams, temporaryConvertUuid, passwordOption);
+                if (directRbdVddkImport || directLinstorVddkImport) {
+                    if (directRbdVddkImport && !serverResource.hostSupportsVddkRbdDirectImport(cmd.getVddkLibDir())) {
+                        String err = String.format("Direct RBD VDDK import requires VDDK, qemu-img RBD support, and virt-v2v in-place support on host %s. " +
+                                "Use staged import with temporary conversion storage or select a newer conversion host.", serverResource.getPrivateIp());
+                        logger.error("({}) {}", originalVMName, err);
+                        return new Answer(cmd, false, err);
+                    }
+                    if (directLinstorVddkImport && !serverResource.hostSupportsVirtV2vInPlace()) {
+                        String err = String.format("Direct Linstor VDDK import requires virt-v2v in-place support on host %s. " +
+                                "Use staged import with temporary conversion storage or select a newer conversion host.", serverResource.getPrivateIp());
+                        logger.error("({}) {}", originalVMName, err);
+                        return new Answer(cmd, false, err);
+                    }
+                    result = performInstanceConversionUsingVddkDirectToPool(cmd, temporaryStoragePool, originalVMName,
+                            vddkLibDir, serverResource.getLibguestfsBackend(), vddkTransports, configuredVddkThumbprint,
+                            timeout, verboseModeEnabled, temporaryConvertUuid, serverResource);
+                } else {
+                    result = performInstanceConversionUsingVddk(sourceInstance, originalVMName, temporaryConvertPath,
+                            vddkLibDir, serverResource.getLibguestfsBackend(), vddkTransports, configuredVddkThumbprint,
+                            timeout, verboseModeEnabled, extraParams, temporaryConvertUuid, passwordOption, windowsGuest);
+                }
             } else {
                 logger.info("({}) Using OVF-based conversion (export + local convert)", originalVMName);
                 String sourceOVFDirPath;
@@ -150,7 +227,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 }
 
                 result = performInstanceConversion(originalVMName, sourceOVFDirPath, temporaryConvertPath, temporaryConvertUuid,
-                        timeout, verboseModeEnabled, extraParams, serverResource);
+                        timeout, verboseModeEnabled, extraParams, serverResource, windowsGuest);
             }
 
             if (!result) {
@@ -175,6 +252,20 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
             }
         }
+    }
+
+    private boolean isDirectRbdVddkImport(ConvertInstanceCommand cmd) {
+        return isDirectVddkImportToPoolType(cmd, Storage.StoragePoolType.RBD);
+    }
+
+    private boolean isDirectLinstorVddkImport(ConvertInstanceCommand cmd) {
+        return isDirectVddkImportToPoolType(cmd, Storage.StoragePoolType.Linstor);
+    }
+
+    private boolean isDirectVddkImportToPoolType(ConvertInstanceCommand cmd, Storage.StoragePoolType poolType) {
+        DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
+        return cmd.isUseVddk() && conversionTemporaryLocation instanceof PrimaryDataStoreTO &&
+                ((PrimaryDataStoreTO) conversionTemporaryLocation).getPoolType() == poolType;
     }
 
     protected KVMStoragePool getTemporaryStoragePool(DataStoreTO conversionTemporaryLocation, KVMStoragePoolManager storagePoolMgr) {
@@ -251,7 +342,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                                                 String temporaryConvertFolder,
                                                 String temporaryConvertUuid,
                                                 long timeout, boolean verboseModeEnabled, String extraParams,
-                                                LibvirtComputingResource serverResource) {
+                                                LibvirtComputingResource serverResource, boolean windowsGuest) {
         Script script = new Script("virt-v2v", timeout, logger);
         script.add("--root", "first");
         script.add("-i", "ova");
@@ -266,17 +357,28 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         if (StringUtils.isNotBlank(extraParams)) {
             addExtraParamsToScript(extraParams, script);
         }
-
-        String logPrefix = String.format("(%s) virt-v2v ovf source: %s progress", originalVMName, sourceOVFDirPath);
-        OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
-        Map<String, String> convertInstanceEnv = serverResource.getConvertInstanceEnv();
-        if (MapUtils.isEmpty(convertInstanceEnv)) {
-            script.execute(outputLogger);
-        } else {
-            script.execute(outputLogger, convertInstanceEnv);
+        Path firstbootScript = windowsGuest ? writeWindowsOnlineDisksFirstbootScript(originalVMName) : null;
+        if (firstbootScript != null) {
+            script.add("--firstboot", firstbootScript.toString());
         }
-        int exitValue = script.getExitValue();
-        return exitValue == 0;
+
+        try {
+            String logPrefix = String.format("(%s) virt-v2v ovf source: %s progress", originalVMName, sourceOVFDirPath);
+            VirtioDriverOutputWatcher outputLogger = new VirtioDriverOutputWatcher(logger, logPrefix);
+            Map<String, String> convertInstanceEnv = serverResource.getConvertInstanceEnv();
+            if (MapUtils.isEmpty(convertInstanceEnv)) {
+                script.execute(outputLogger);
+            } else {
+                script.execute(outputLogger, convertInstanceEnv);
+            }
+            if (windowsGuest && outputLogger.isNoVirtioDriversReported()) {
+                failWindowsConversionWithoutVirtioDrivers(originalVMName);
+            }
+            int exitValue = script.getExitValue();
+            return exitValue == 0;
+        } finally {
+            deleteFirstbootScriptQuietly(firstbootScript, originalVMName);
+        }
     }
 
     protected void addExtraParamsToScript(String extraParams, Script script) {
@@ -308,7 +410,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                                                          String libguestfsBackend, String vddkTransports,
                                                          String configuredVddkThumbprint,
                                                          long timeout, boolean verboseModeEnabled, String extraParams,
-                                                         String temporaryConvertUuid, String passwordOption) {
+                                                         String temporaryConvertUuid, String passwordOption, boolean windowsGuest) {
 
         String vcenterPassword = vmwareInstance.getVcenterPassword();
         if (StringUtils.isBlank(vcenterPassword)) {
@@ -328,6 +430,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             return false;
         }
 
+        Path firstbootScript = windowsGuest ? writeWindowsOnlineDisksFirstbootScript(originalVMName) : null;
         try {
             String vpxUrl = buildVpxUrl(vmwareInstance);
 
@@ -372,6 +475,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 cmd.append(extraParams).append(" ");
             }
 
+            if (firstbootScript != null) {
+                cmd.append("--firstboot ").append(shellQuote(firstbootScript.toString())).append(" ");
+            }
+
             Script script = new Script("/bin/bash", timeout, logger);
             script.add("-c");
             script.add(cmd.toString());
@@ -396,7 +503,618 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             } catch (Exception e) {
                 logger.warn("({}) Failed to delete password file {}: {}", originalVMName, passwordFilePath, e.getMessage());
             }
+            deleteFirstbootScriptQuietly(firstbootScript, originalVMName);
         }
+    }
+
+    protected boolean performInstanceConversionUsingVddkDirectToPool(ConvertInstanceCommand cmd,
+                                                                     KVMStoragePool targetPool,
+                                                                     String originalVMName,
+                                                                     String vddkLibDir,
+                                                                     String libguestfsBackend,
+                                                                     String vddkTransports,
+                                                                     String configuredVddkThumbprint,
+                                                                     long timeout,
+                                                                     boolean verboseModeEnabled,
+                                                                     String temporaryConvertUuid,
+                                                                     LibvirtComputingResource serverResource) {
+        RemoteInstanceTO vmwareInstance = cmd.getSourceInstance();
+        List<VmwareVddkSourceDiskTO> sourceDisks = cmd.getVmwareVddkSourceDisks();
+        final boolean linstorTarget = targetPool.getType() == Storage.StoragePoolType.Linstor;
+        final boolean windowsGuest = cmd.isWindowsGuest();
+        if (sourceDisks == null || sourceDisks.isEmpty()) {
+            logger.error("({}) Direct {} VDDK import requires VMware source disk metadata", originalVMName, targetPool.getType());
+            return false;
+        }
+
+        if (linstorTarget) {
+            probeLinstorQemuAccess(targetPool, temporaryConvertUuid);
+        } else {
+            probeRbdQemuAccess(targetPool, temporaryConvertUuid);
+        }
+
+        String vcenterPassword = vmwareInstance.getVcenterPassword();
+        if (StringUtils.isBlank(vcenterPassword)) {
+            logger.error("({}) Could not determine vCenter password for {}", originalVMName, vmwareInstance.getVcenterHost());
+            return false;
+        }
+
+        String vddkThumbprint = StringUtils.trimToNull(configuredVddkThumbprint);
+        if (StringUtils.isBlank(vddkThumbprint)) {
+            vddkThumbprint = getVcenterThumbprint(vmwareInstance.getVcenterHost(), timeout, originalVMName);
+        }
+        if (StringUtils.isBlank(vddkThumbprint)) {
+            logger.error("({}) Could not determine vCenter thumbprint for {}", originalVMName, vmwareInstance.getVcenterHost());
+            return false;
+        }
+
+        String passwordFilePath = String.format("/tmp/v2v.rbd.pass.cloud.%s.%s",
+                StringUtils.defaultIfBlank(vmwareInstance.getVcenterHost(), "unknown"),
+                UUID.randomUUID());
+        List<String> createdImages = new ArrayList<>();
+        List<String> blockDevicePaths = new ArrayList<>();
+        try {
+            Files.writeString(Path.of(passwordFilePath), vcenterPassword);
+            Files.setPosixFilePermissions(Path.of(passwordFilePath), Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+
+            String vddkNbdCompression = serverResource.getVddkNbdCompression();
+            for (int i = 0; i < sourceDisks.size(); i++) {
+                VmwareVddkSourceDiskTO sourceDisk = sourceDisks.get(i);
+                if (linstorTarget) {
+                    String diskName = buildLinstorDiskName(temporaryConvertUuid, i);
+                    createdImages.add(diskName);
+                    String devicePath = copyVddkSourceDiskToLinstor(vmwareInstance, sourceDisk, targetPool, diskName, passwordFilePath,
+                            vddkLibDir, vddkTransports, vddkNbdCompression, vddkThumbprint, timeout, originalVMName, serverResource.hostSupportsNbdcopy());
+                    blockDevicePaths.add(devicePath);
+                } else {
+                    String imageName = buildRbdImageName(temporaryConvertUuid, i);
+                    createdImages.add(imageName);
+                    copyVddkSourceDiskToRbd(vmwareInstance, sourceDisk, targetPool, imageName, passwordFilePath,
+                            vddkLibDir, vddkTransports, vddkNbdCompression, vddkThumbprint, timeout, originalVMName,
+                            serverResource.hostSupportsNbdcopy());
+                }
+            }
+
+            boolean finalized;
+            if (linstorTarget) {
+                Path inputXml = Files.createTempFile("cloudstack-vddk-direct-" + temporaryConvertUuid, ".xml");
+                Files.writeString(inputXml, buildDirectBlockDeviceLibvirtXml(temporaryConvertUuid, blockDevicePaths));
+                finalized = runInPlaceFinalization(inputXml, libguestfsBackend, timeout, verboseModeEnabled, originalVMName, serverResource, windowsGuest);
+                Files.deleteIfExists(inputXml);
+            } else {
+                finalized = runRbdInPlaceFinalizationOverNbdBridges(targetPool, createdImages, temporaryConvertUuid,
+                        libguestfsBackend, timeout, verboseModeEnabled, originalVMName, serverResource, windowsGuest);
+            }
+            if (!finalized) {
+                cleanupDirectImportDisks(targetPool, createdImages, originalVMName);
+            }
+            return finalized;
+        } catch (Exception e) {
+            logger.error("({}) Direct {} VDDK import failed: {}", originalVMName, targetPool.getType(), e.getMessage(), e);
+            cleanupDirectImportDisks(targetPool, createdImages, originalVMName);
+            return false;
+        } finally {
+            try {
+                Files.deleteIfExists(Path.of(passwordFilePath));
+            } catch (Exception e) {
+                logger.warn("({}) Failed to delete password file {}: {}", originalVMName, passwordFilePath, e.getMessage());
+            }
+        }
+    }
+
+    private void copyVddkSourceDiskToRbd(RemoteInstanceTO vmwareInstance, VmwareVddkSourceDiskTO sourceDisk,
+                                         KVMStoragePool targetPool, String imageName, String passwordFilePath,
+                                         String vddkLibDir, String vddkTransports, String vddkNbdCompression,
+                                         String vddkThumbprint, long timeout, String originalVMName, boolean useNbdcopy) {
+        if (StringUtils.isBlank(sourceDisk.getSourceDiskPath())) {
+            throw new CloudRuntimeException(String.format("VMware source disk %s does not have a VMDK path", sourceDisk.getDiskId()));
+        }
+        String rbdImagePath = targetPool.getSourceDir() + "/" + imageName;
+        String qemuRbdTarget = KVMPhysicalDisk.RBDStringBuilder(targetPool, rbdImagePath);
+
+        StringBuilder nbdkit = new StringBuilder();
+        nbdkit.append("nbdkit -r -U - vddk ");
+        nbdkit.append("file=").append(shellQuote(sourceDisk.getSourceDiskPath())).append(" ");
+        nbdkit.append("server=").append(shellQuote(vmwareInstance.getVcenterHost())).append(" ");
+        nbdkit.append("user=").append(shellQuote(vmwareInstance.getVcenterUsername())).append(" ");
+        nbdkit.append("password=+").append(shellQuote(passwordFilePath)).append(" ");
+        if (StringUtils.isNotBlank(vmwareInstance.getVmwareMoref())) {
+            nbdkit.append("vm=").append(shellQuote("moref=" + vmwareInstance.getVmwareMoref())).append(" ");
+        } else {
+            nbdkit.append("vm=").append(shellQuote(vmwareInstance.getInstanceName())).append(" ");
+        }
+        nbdkit.append("libdir=").append(shellQuote(vddkLibDir)).append(" ");
+        nbdkit.append("thumbprint=").append(shellQuote(vddkThumbprint)).append(" ");
+        if (StringUtils.isNotBlank(vddkTransports)) {
+            nbdkit.append("transports=").append(shellQuote(vddkTransports)).append(" ");
+        }
+        if (StringUtils.isNotBlank(vddkNbdCompression)) {
+            nbdkit.append("compression=").append(shellQuote(vddkNbdCompression)).append(" ");
+        }
+
+        boolean bridgeCopy = useNbdcopy && sourceDisk.getCapacityBytes() > 0;
+        Path scriptFile = null;
+        try {
+            Script script;
+            if (bridgeCopy) {
+                // Multi-connection nbdcopy is typically faster than a single-stream qemu-img
+                // convert, but nbdcopy needs both ends as NBD. qemu-img cannot create the
+                // image here (nbdcopy does not), so pre-create it, then serve it over a
+                // localhost qemu-nbd bridge and copy NBD-to-NBD. The fresh raw image reads
+                // as zeros, so --destination-is-zero keeps it sparse.
+                int port = allocateLocalhostPort();
+                Path pidFile = Files.createTempFile("cloudstack-vddk-rbd-nbd-" + imageName + "-", ".pid");
+                Files.deleteIfExists(pidFile);
+                nbdkit.append("--run ").append(shellQuote(
+                        "nbdcopy --destination-is-zero \"$uri\" " + String.format("nbd://localhost:%d", port)));
+
+                StringBuilder scriptBody = new StringBuilder();
+                scriptBody.append("#!/bin/bash\n");
+                scriptBody.append("set -euo pipefail\n");
+                scriptBody.append("cleanup() {\n");
+                scriptBody.append("  set +e\n");
+                scriptBody.append("  if [[ -s ").append(shellQuote(pidFile.toString())).append(" ]]; then\n");
+                scriptBody.append("    pid=$(cat ").append(shellQuote(pidFile.toString())).append(")\n");
+                scriptBody.append("    kill \"$pid\" >/dev/null 2>&1 || true\n");
+                scriptBody.append("    for attempt in {1..20}; do kill -0 \"$pid\" >/dev/null 2>&1 || break; sleep 0.1; done\n");
+                scriptBody.append("  fi\n");
+                scriptBody.append("  rm -f ").append(shellQuote(pidFile.toString())).append("\n");
+                scriptBody.append("}\n");
+                scriptBody.append("trap cleanup EXIT\n");
+                scriptBody.append("qemu-img create -f raw ").append(shellQuote(qemuRbdTarget)).append(" ")
+                        .append(sourceDisk.getCapacityBytes()).append("\n");
+                scriptBody.append("qemu-nbd --fork --persistent --shared=8 --format=raw --bind=127.0.0.1 --port=")
+                        .append(port).append(" --pid-file=").append(shellQuote(pidFile.toString()))
+                        .append(" ").append(shellQuote(qemuRbdTarget)).append("\n");
+                scriptBody.append(nbdkit).append("\n");
+
+                scriptFile = Files.createTempFile("cloudstack-vddk-rbd-copy-" + imageName + "-", ".sh");
+                Files.writeString(scriptFile, scriptBody.toString());
+                Files.setPosixFilePermissions(scriptFile, Set.of(PosixFilePermission.OWNER_READ,
+                        PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE));
+
+                script = new Script("/bin/bash", timeout, logger);
+                script.add(scriptFile.toString());
+            } else {
+                // qemu-img convert creates and writes the RBD image in one step (fallback when
+                // nbdcopy is unavailable or the source capacity is unknown).
+                nbdkit.append("--run ").append(shellQuote("qemu-img convert -f raw -O raw \"$uri\" " + shellQuote(qemuRbdTarget)));
+                script = new Script("/bin/bash", timeout, logger);
+                script.add("-c");
+                script.add(nbdkit.toString());
+            }
+
+            String logPrefix = String.format("(%s) vddk%s to rbd disk %s", originalVMName,
+                    bridgeCopy ? "(nbdcopy)" : "", sourceDisk.getDiskId());
+            OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
+            logger.info("({}) Copying VMware disk {} to RBD image {}{}", originalVMName, sourceDisk.getSourceDiskPath(),
+                    rbdImagePath, bridgeCopy ? " via nbdcopy over qemu-nbd bridge" : "");
+            script.execute(outputLogger);
+            if (script.getExitValue() != 0) {
+                throw new CloudRuntimeException(String.format("Failed to copy VMware disk %s to RBD image %s", sourceDisk.getSourceDiskPath(), rbdImagePath));
+            }
+        } catch (java.io.IOException e) {
+            throw new CloudRuntimeException(String.format("Failed to prepare RBD copy for VMware disk %s: %s",
+                    sourceDisk.getDiskId(), e.getMessage()), e);
+        } finally {
+            deleteQuietly(scriptFile);
+        }
+    }
+
+    private String copyVddkSourceDiskToLinstor(RemoteInstanceTO vmwareInstance, VmwareVddkSourceDiskTO sourceDisk,
+                                               KVMStoragePool targetPool, String diskName, String passwordFilePath,
+                                               String vddkLibDir, String vddkTransports, String vddkNbdCompression,
+                                               String vddkThumbprint, long timeout, String originalVMName, boolean useNbdcopy) {
+        if (StringUtils.isBlank(sourceDisk.getSourceDiskPath())) {
+            throw new CloudRuntimeException(String.format("VMware source disk %s does not have a VMDK path", sourceDisk.getDiskId()));
+        }
+        if (sourceDisk.getCapacityBytes() <= 0) {
+            throw new CloudRuntimeException(String.format("VMware source disk %s does not have a valid capacity, " +
+                    "which is required to pre-create the Linstor target volume", sourceDisk.getDiskId()));
+        }
+        KVMPhysicalDisk targetDisk = targetPool.createPhysicalDisk(diskName, QemuImg.PhysicalDiskFormat.RAW,
+                Storage.ProvisioningType.THIN, sourceDisk.getCapacityBytes(), null);
+        String devicePath = targetDisk.getPath();
+        if (StringUtils.isBlank(devicePath)) {
+            throw new CloudRuntimeException(String.format("Could not resolve a local device path for Linstor volume %s", diskName));
+        }
+        StringBuilder command = new StringBuilder();
+        command.append("nbdkit -r -U - vddk ");
+        command.append("file=").append(shellQuote(sourceDisk.getSourceDiskPath())).append(" ");
+        command.append("server=").append(shellQuote(vmwareInstance.getVcenterHost())).append(" ");
+        command.append("user=").append(shellQuote(vmwareInstance.getVcenterUsername())).append(" ");
+        command.append("password=+").append(shellQuote(passwordFilePath)).append(" ");
+        if (StringUtils.isNotBlank(vmwareInstance.getVmwareMoref())) {
+            command.append("vm=").append(shellQuote("moref=" + vmwareInstance.getVmwareMoref())).append(" ");
+        } else {
+            command.append("vm=").append(shellQuote(vmwareInstance.getInstanceName())).append(" ");
+        }
+        command.append("libdir=").append(shellQuote(vddkLibDir)).append(" ");
+        command.append("thumbprint=").append(shellQuote(vddkThumbprint)).append(" ");
+        if (StringUtils.isNotBlank(vddkTransports)) {
+            command.append("transports=").append(shellQuote(vddkTransports)).append(" ");
+        }
+        if (StringUtils.isNotBlank(vddkNbdCompression)) {
+            command.append("compression=").append(shellQuote(vddkNbdCompression)).append(" ");
+        }
+        // Full-disk copy into the local raw device: prefer nbdcopy (libnbd) when present -
+        // it pipelines many in-flight requests and is typically faster than a single-connection
+        // qemu-img convert - and fall back to qemu-img convert otherwise. Skip writing zero
+        // blocks (nbdcopy --destination-is-zero / qemu-img --target-is-zero) only when the
+        // backend guarantees a freshly created volume reads back as zeros (thin providers);
+        // on backends that do not (e.g. LVM-thick) the zeros must be written or stale data from
+        // a previously deleted volume would leak into the unwritten regions.
+        boolean targetIsZero = targetPool.isVolumeZeroInitialized(diskName);
+        String runCommand = useNbdcopy
+                ? "nbdcopy " + (targetIsZero ? "--destination-is-zero " : "") + "\"$uri\" " + shellQuote(devicePath)
+                : "qemu-img convert -n " + (targetIsZero ? "--target-is-zero " : "") + "-f raw -O raw \"$uri\" " + shellQuote(devicePath);
+        command.append("--run ").append(shellQuote(runCommand));
+
+        Script script = new Script("/bin/bash", timeout, logger);
+        script.add("-c");
+        script.add(command.toString());
+        String logPrefix = String.format("(%s) %s to linstor disk %s", originalVMName,
+                useNbdcopy ? "vddk(nbdcopy)" : "vddk", sourceDisk.getDiskId());
+        OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
+        logger.info("({}) Copying VMware disk {} to Linstor device {}", originalVMName, sourceDisk.getSourceDiskPath(), devicePath);
+        script.execute(outputLogger);
+        if (script.getExitValue() != 0) {
+            throw new CloudRuntimeException(String.format("Failed to copy VMware disk %s to Linstor device %s", sourceDisk.getSourceDiskPath(), devicePath));
+        }
+        return devicePath;
+    }
+
+    private boolean runInPlaceFinalization(Path inputXml, String libguestfsBackend, long timeout,
+                                           boolean verboseModeEnabled, String originalVMName,
+                                           LibvirtComputingResource serverResource, boolean windowsGuest) {
+        Path firstbootScript = windowsGuest ? writeWindowsOnlineDisksFirstbootScript(originalVMName) : null;
+        try {
+            String inPlaceCommand = buildInPlaceCommand(inputXml, libguestfsBackend, verboseModeEnabled, serverResource, firstbootScript);
+            if (inPlaceCommand == null) {
+                logger.error("({}) No virt-v2v in-place finalization method is available", originalVMName);
+                return false;
+            }
+
+            Script script = new Script("/bin/bash", timeout, logger);
+            script.add("-c");
+            script.add(inPlaceCommand);
+            VirtioDriverOutputWatcher outputLogger = new VirtioDriverOutputWatcher(logger,
+                    String.format("(%s) virt-v2v in-place", originalVMName));
+            script.execute(outputLogger);
+            if (windowsGuest && outputLogger.isNoVirtioDriversReported()) {
+                failWindowsConversionWithoutVirtioDrivers(originalVMName);
+            }
+            return script.getExitValue() == 0;
+        } finally {
+            deleteFirstbootScriptQuietly(firstbootScript, originalVMName);
+        }
+    }
+
+    /**
+     * Builds the in-place finalization command, resolving the virt-v2v-in-place
+     * binary through the server resource (EL9 ships it in /usr/libexec, outside
+     * $PATH) and falling back to "virt-v2v --in-place". Returns null when the host
+     * has no in-place method.
+     */
+    private String buildInPlaceCommand(Path inputXml, String libguestfsBackend, boolean verboseModeEnabled,
+                                       LibvirtComputingResource serverResource, Path firstbootScript) {
+        StringBuilder command = new StringBuilder();
+        command.append("export LIBGUESTFS_BACKEND=").append(shellQuote(libguestfsBackend)).append(" && ");
+        String inPlaceBinary = serverResource.getVirtV2vInPlaceBinary();
+        if (inPlaceBinary != null) {
+            // No -O (write updated output XML): nothing consumes it and the option only
+            // exists from virt-v2v 2.5 on, so passing it breaks otherwise capable hosts
+            // such as Ubuntu 24.04 with virt-v2v-in-place 2.4.
+            command.append(inPlaceBinary).append(" --root first -i libvirtxml ")
+                    .append(shellQuote(inputXml.toString())).append(" ");
+        } else if (serverResource.hostSupportsVirtV2vInPlaceOption()) {
+            command.append("virt-v2v --root first -i libvirtxml ")
+                    .append(shellQuote(inputXml.toString())).append(" --in-place ");
+        } else {
+            return null;
+        }
+        if (verboseModeEnabled) {
+            command.append("-v ");
+        }
+        if (firstbootScript != null) {
+            command.append("--firstboot ").append(shellQuote(firstbootScript.toString())).append(" ");
+        }
+        return command.toString();
+    }
+
+    /**
+     * Finalizes direct-RBD import disks with in-place virt-v2v over temporary
+     * localhost qemu-nbd bridges (one per image), mirroring the CBT cutover
+     * approach. Native {@code <disk type='network' protocol='rbd'>} sources cannot
+     * be used here: their cephx {@code <auth>} element references a libvirt secret,
+     * and virt-v2v's {@code -i libvirtxml} input runs without a libvirt connection,
+     * so the secret cannot be resolved and no drives are attached (observed as
+     * "you must call guestfs_add_drive before guestfs_launch" on EL9).
+     */
+    protected boolean runRbdInPlaceFinalizationOverNbdBridges(KVMStoragePool targetPool, List<String> imageNames,
+                                                              String temporaryConvertUuid, String libguestfsBackend,
+                                                              long timeout, boolean verboseModeEnabled,
+                                                              String originalVMName, LibvirtComputingResource serverResource,
+                                                              boolean windowsGuest) {
+        List<Integer> ports = new ArrayList<>();
+        List<Path> pidFiles = new ArrayList<>();
+        Path inputXml = null;
+        Path scriptPath = null;
+        Path firstbootScript = windowsGuest ? writeWindowsOnlineDisksFirstbootScript(originalVMName) : null;
+        try {
+            for (int i = 0; i < imageNames.size(); i++) {
+                ports.add(allocateLocalhostPort());
+                Path pidFile = Files.createTempFile("cloudstack-vddk-rbd-nbd-" + temporaryConvertUuid + "-", ".pid");
+                Files.deleteIfExists(pidFile);
+                pidFiles.add(pidFile);
+            }
+
+            inputXml = Files.createTempFile("cloudstack-vddk-rbd-" + temporaryConvertUuid, ".xml");
+            Files.writeString(inputXml, buildDirectRbdNbdLibvirtXml(temporaryConvertUuid, ports));
+
+            String inPlaceCommand = buildInPlaceCommand(inputXml, libguestfsBackend, verboseModeEnabled, serverResource, firstbootScript);
+            if (inPlaceCommand == null) {
+                logger.error("({}) No virt-v2v in-place finalization method is available", originalVMName);
+                return false;
+            }
+
+            StringBuilder script = new StringBuilder();
+            script.append("#!/bin/bash\n");
+            script.append("set -euo pipefail\n");
+            script.append("cleanup() {\n");
+            script.append("  set +e\n");
+            script.append("  for pid_file in");
+            for (Path pidFile : pidFiles) {
+                script.append(" ").append(shellQuote(pidFile.toString()));
+            }
+            script.append("; do\n");
+            script.append("    if [[ -s \"$pid_file\" ]]; then\n");
+            script.append("      pid=$(cat \"$pid_file\")\n");
+            script.append("      kill \"$pid\" >/dev/null 2>&1 || true\n");
+            script.append("      for attempt in {1..20}; do\n");
+            script.append("        kill -0 \"$pid\" >/dev/null 2>&1 || break\n");
+            script.append("        sleep 0.1\n");
+            script.append("      done\n");
+            script.append("    fi\n");
+            script.append("    rm -f \"$pid_file\"\n");
+            script.append("  done\n");
+            script.append("}\n");
+            script.append("trap cleanup EXIT\n");
+            for (int i = 0; i < imageNames.size(); i++) {
+                String qemuRbdPath = KVMPhysicalDisk.RBDStringBuilder(targetPool,
+                        targetPool.getSourceDir() + "/" + imageNames.get(i));
+                script.append("qemu-nbd --fork --persistent --shared=1 --format=raw --bind=127.0.0.1 --port=")
+                        .append(ports.get(i))
+                        .append(" --pid-file=").append(shellQuote(pidFiles.get(i).toString()))
+                        .append(" ").append(shellQuote(qemuRbdPath)).append("\n");
+            }
+            script.append(inPlaceCommand).append("\n");
+
+            scriptPath = Files.createTempFile("cloudstack-vddk-rbd-finalize-" + temporaryConvertUuid + "-", ".sh");
+            Files.writeString(scriptPath, script.toString());
+            Files.setPosixFilePermissions(scriptPath, Set.of(PosixFilePermission.OWNER_READ,
+                    PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE));
+
+            Script runner = new Script("/bin/bash", timeout, logger);
+            runner.add(scriptPath.toString());
+            VirtioDriverOutputWatcher outputLogger = new VirtioDriverOutputWatcher(logger,
+                    String.format("(%s) virt-v2v rbd in-place", originalVMName));
+            runner.execute(outputLogger);
+            if (windowsGuest && outputLogger.isNoVirtioDriversReported()) {
+                failWindowsConversionWithoutVirtioDrivers(originalVMName);
+            }
+            return runner.getExitValue() == 0;
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.error("({}) RBD in-place finalization over NBD bridges failed: {}", originalVMName, e.getMessage(), e);
+            return false;
+        } finally {
+            deleteQuietly(inputXml);
+            deleteQuietly(scriptPath);
+            deleteQuietly(firstbootScript);
+            for (Path pidFile : pidFiles) {
+                deleteQuietly(pidFile);
+            }
+        }
+    }
+
+    private void deleteQuietly(Path path) {
+        if (path == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(path);
+        } catch (Exception e) {
+            logger.debug("Unable to delete temporary file {}: {}", path, e.getMessage());
+        }
+    }
+
+    private int allocateLocalhostPort() throws java.io.IOException {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            socket.setReuseAddress(false);
+            return socket.getLocalPort();
+        }
+    }
+
+    protected String buildDirectRbdNbdLibvirtXml(String temporaryConvertUuid, List<Integer> ports) {
+        StringBuilder xml = new StringBuilder();
+        xml.append("<domain type='kvm'>\n");
+        xml.append("  <name>").append(xmlEscape("cloudstack-vddk-rbd-" + temporaryConvertUuid)).append("</name>\n");
+        xml.append("  <memory unit='KiB'>1048576</memory>\n");
+        xml.append("  <vcpu>1</vcpu>\n");
+        xml.append("  <os><type>hvm</type><boot dev='hd'/></os>\n");
+        xml.append("  <devices>\n");
+        for (int i = 0; i < ports.size(); i++) {
+            xml.append("    <disk type='network' device='disk'>\n");
+            xml.append("      <driver name='qemu' type='raw'/>\n");
+            xml.append("      <source protocol='nbd'>\n");
+            xml.append("        <host name='localhost' port='").append(ports.get(i)).append("'/>\n");
+            xml.append("      </source>\n");
+            xml.append("      <target dev='").append(diskTargetName(i)).append("' bus='scsi'/>\n");
+            xml.append("    </disk>\n");
+        }
+        xml.append("  </devices>\n");
+        xml.append("</domain>\n");
+        return xml.toString();
+    }
+
+    private String buildDirectBlockDeviceLibvirtXml(String temporaryConvertUuid, List<String> devicePaths) {
+        StringBuilder xml = new StringBuilder();
+        xml.append("<domain type='kvm'>\n");
+        xml.append("  <name>").append(xmlEscape("cloudstack-vddk-direct-" + temporaryConvertUuid)).append("</name>\n");
+        xml.append("  <memory unit='KiB'>1048576</memory>\n");
+        xml.append("  <vcpu>1</vcpu>\n");
+        xml.append("  <os><type>hvm</type><boot dev='hd'/></os>\n");
+        xml.append("  <devices>\n");
+        for (int i = 0; i < devicePaths.size(); i++) {
+            xml.append("    <disk type='block' device='disk'>\n");
+            xml.append("      <driver name='qemu' type='raw'/>\n");
+            xml.append("      <source dev='").append(xmlEscape(devicePaths.get(i))).append("'/>\n");
+            xml.append("      <target dev='").append(diskTargetName(i)).append("' bus='scsi'/>\n");
+            xml.append("    </disk>\n");
+        }
+        xml.append("  </devices>\n");
+        xml.append("</domain>\n");
+        return xml.toString();
+    }
+
+    private String buildRbdImageName(String temporaryConvertUuid, int position) {
+        return String.format("%s-disk-%03d", temporaryConvertUuid, position);
+    }
+
+    /**
+     * Linstor disk names use a shorter position suffix than the RBD naming scheme:
+     * LINSTOR resource names are limited to 48 characters and the "cs-" prefix plus
+     * a 36-character UUID leaves little room ("-d%02d" keeps the name at 43).
+     */
+    private String buildLinstorDiskName(String temporaryConvertUuid, int position) {
+        return String.format("%s-d%02d", temporaryConvertUuid, position);
+    }
+
+    private String diskTargetName(int index) {
+        StringBuilder target = new StringBuilder("sd");
+        int value = index;
+        do {
+            target.insert(2, (char) ('a' + (value % 26)));
+            value = value / 26 - 1;
+        } while (value >= 0);
+        return target.toString();
+    }
+
+    private void probeRbdQemuAccess(KVMStoragePool pool, String temporaryConvertUuid) {
+        String probeName = temporaryConvertUuid + "-probe-" + UUID.randomUUID();
+        String rbdImagePath = pool.getSourceDir() + "/" + probeName;
+        String qemuRbdPath = KVMPhysicalDisk.RBDStringBuilder(pool, rbdImagePath);
+        try {
+            Script qemuImg = new Script("qemu-img", 120000, logger);
+            qemuImg.add("create", "-f", "raw", qemuRbdPath, "4194304");
+            qemuImg.execute();
+            if (qemuImg.getExitValue() != 0) {
+                throw new CloudRuntimeException(String.format("qemu-img could not create RBD probe image %s", rbdImagePath));
+            }
+
+            Script qemuIo = new Script("qemu-io", 120000, logger);
+            qemuIo.add("-f", "raw", "-c", "write -P 0x5a 0 4k", "-c", "read -P 0x5a 0 4k", qemuRbdPath);
+            qemuIo.execute();
+            if (qemuIo.getExitValue() != 0) {
+                throw new CloudRuntimeException(String.format("qemu-io could not verify RBD probe image %s", rbdImagePath));
+            }
+        } finally {
+            try {
+                pool.deletePhysicalDisk(probeName, Storage.ImageFormat.RAW);
+            } catch (Exception e) {
+                logger.warn("Failed to delete RBD probe image {} from pool {}: {}", probeName, pool.getUuid(), e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * First-boot batch script injected into converted Windows guests. virt-v2v runs it once on the
+     * guest's first boot. It brings migrated data disks online and read-write and sets the SAN policy to
+     * OnlineAll, working around the common post-v2v symptom where secondary disks stay Offline/Read-only
+     * under the default Windows SAN policy. The Storage cmdlets used exist on Windows Server 2012+.
+     */
+    protected static final String WINDOWS_ONLINE_DISKS_FIRSTBOOT =
+            "@echo off\r\n" +
+            "rem CloudStack post-migration: online offline disks, clear read-only, set SAN policy OnlineAll\r\n" +
+            "set CSLOG=%SystemDrive%\\cloudstack-firstboot.log\r\n" +
+            "echo [%DATE% %TIME%] CloudStack firstboot: bringing migrated disks online >> \"%CSLOG%\"\r\n" +
+            "powershell -NonInteractive -ExecutionPolicy Bypass -Command \"try { Set-StorageSetting -NewDiskPolicy OnlineAll -ErrorAction SilentlyContinue } catch {}; Get-Disk | Where-Object { $_.IsOffline } | ForEach-Object { Set-Disk -Number $_.Number -IsOffline $false }; Get-Disk | Where-Object { $_.IsReadOnly } | ForEach-Object { Set-Disk -Number $_.Number -IsReadOnly $false }\" >> \"%CSLOG%\" 2>&1\r\n" +
+            "exit /b 0\r\n";
+
+    /**
+     * Writes the Windows online-disks first-boot batch script to a temporary file so it can be passed to
+     * virt-v2v / virt-v2v-in-place via {@code --firstboot}. Returns the path, or {@code null} if it could
+     * not be written (conversion then proceeds without the first-boot fix rather than failing).
+     */
+    protected Path writeWindowsOnlineDisksFirstbootScript(String originalVMName) {
+        try {
+            Path firstbootScript = Files.createTempFile("cloudstack-firstboot-online-disks-", ".bat");
+            Files.writeString(firstbootScript, WINDOWS_ONLINE_DISKS_FIRSTBOOT);
+            logger.info("({}) Windows guest detected; injecting first-boot script to online migrated disks: {}",
+                    originalVMName, firstbootScript);
+            return firstbootScript;
+        } catch (Exception e) {
+            logger.warn("({}) Failed to write Windows online-disks first-boot script; conversion will proceed without it: {}",
+                    originalVMName, e.getMessage());
+            return null;
+        }
+    }
+
+    private void deleteFirstbootScriptQuietly(Path firstbootScript, String originalVMName) {
+        if (firstbootScript == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(firstbootScript);
+        } catch (Exception e) {
+            logger.warn("({}) Failed to delete first-boot script {}: {}", originalVMName, firstbootScript, e.getMessage());
+        }
+    }
+
+    private void probeLinstorQemuAccess(KVMStoragePool pool, String temporaryConvertUuid) {
+        String probeName = temporaryConvertUuid.substring(0, 8) + "-probe";
+        try {
+            KVMPhysicalDisk probeDisk = pool.createPhysicalDisk(probeName, QemuImg.PhysicalDiskFormat.RAW,
+                    Storage.ProvisioningType.THIN, 4194304L, null);
+            Script qemuIo = new Script("qemu-io", 120000, logger);
+            qemuIo.add("-f", "raw", "-c", "write -P 0x5a 0 4k", "-c", "read -P 0x5a 0 4k", probeDisk.getPath());
+            qemuIo.execute();
+            if (qemuIo.getExitValue() != 0) {
+                throw new CloudRuntimeException(String.format("qemu-io could not verify Linstor probe volume %s on pool %s", probeName, pool.getUuid()));
+            }
+        } finally {
+            try {
+                pool.deletePhysicalDisk(probeName, Storage.ImageFormat.RAW);
+            } catch (Exception e) {
+                logger.warn("Failed to delete Linstor probe volume {} from pool {}: {}", probeName, pool.getUuid(), e.getMessage());
+            }
+        }
+    }
+
+    private void cleanupDirectImportDisks(KVMStoragePool pool, List<String> imageNames, String originalVMName) {
+        for (String imageName : imageNames) {
+            try {
+                logger.info("({}) Cleaning up disk {} after failed direct import", originalVMName, imageName);
+                pool.deletePhysicalDisk(imageName, Storage.ImageFormat.RAW);
+            } catch (Exception e) {
+                logger.warn("({}) Failed to delete disk {} from pool {}: {}", originalVMName, imageName, pool.getUuid(), e.getMessage());
+            }
+        }
+    }
+
+    private String shellQuote(String value) {
+        return "'" + StringUtils.defaultString(value).replace("'", "'\"'\"'") + "'";
+    }
+
+    private String xmlEscape(String value) {
+        return StringUtils.defaultString(value)
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;");
     }
 
     protected String getVcenterThumbprint(String vcenterHost, long timeout, String originalVMName) {
