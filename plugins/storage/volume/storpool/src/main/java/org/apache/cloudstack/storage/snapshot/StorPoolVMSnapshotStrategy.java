@@ -41,6 +41,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeDetailVO;
@@ -185,14 +186,34 @@ public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
 
     @Override
     public StrategyPriority canHandle(VMSnapshot vmSnapshot) {
+        if (VMSnapshot.State.Allocated.equals(vmSnapshot.getState()) && VMSnapshot.Type.DiskAndMemory.equals(vmSnapshot.getType())) {
+            return StrategyPriority.CANT_HANDLE;
+        }
         return areAllVolumesOnStorPool(vmSnapshot.getVmId());
     }
 
     public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
         if (snapshotMemory) {
+            if (isAnyVolumeOnStorPool(vmId)) {
+                throw new InvalidParameterValueException("Instance Snapshots with memory are not supported for volumes on StorPool primary storage");
+            }
             return StrategyPriority.CANT_HANDLE;
         }
         return areAllVolumesOnStorPool(vmId);
+    }
+
+    private boolean isAnyVolumeOnStorPool(Long vmId) {
+        List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmId);
+        if (volumeTOs == null) {
+            return false;
+        }
+        for (VolumeObjectTO volumeTO : volumeTOs) {
+            StoragePoolVO pool = storagePool.findById(volumeTO.getPoolId());
+            if (pool != null && StorPoolUtil.SP_PROVIDER_NAME.equals(pool.getStorageProviderName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private StrategyPriority areAllVolumesOnStorPool(Long vmId) {
@@ -278,6 +299,11 @@ public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         logger.debug("Revert Instance Snapshot");
         VMSnapshotVO vmSnapshotVO = (VMSnapshotVO) vmSnapshot;
         UserVmVO userVm = userVmDao.findById(vmSnapshot.getVmId());
+
+        if (vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory) {
+            throw new CloudRuntimeException(String.format("Reverting Instance Snapshot [%s] is not allowed because it is marked as a Snapshot with memory, " +
+                    "but StorPool keeps only the disks and reverting them under the running Instance would corrupt its data", vmSnapshot.getUuid()));
+        }
 
         if (userVm.getState() == VirtualMachine.State.Running && vmSnapshotVO.getType() == VMSnapshot.Type.Disk) {
             throw new CloudRuntimeException("The Instance should be in stopped state for revert operation");
