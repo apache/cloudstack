@@ -616,7 +616,7 @@ export const backupUtilPlugin = {
       if (!provider && typeof provider !== 'string') {
         return false
       }
-      return ['nas'].includes(provider.toLowerCase())
+      return ['nas', 'kboss'].includes(provider.toLowerCase())
     }
   }
 }
