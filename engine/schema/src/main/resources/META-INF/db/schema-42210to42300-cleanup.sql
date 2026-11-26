@@ -66,6 +66,7 @@ UPDATE `cloud`.`ip4_guest_subnet_network_map` m
     SET m.data_center_id = n.data_center_id
 WHERE m.data_center_id IS NULL;
 
+CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.ip4_guest_subnet_network_map', 'fk_ip4_guest_subnet_network_map__data_center_id');
 CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.ip4_guest_subnet_network_map', 'fk_ip4_guest_subnet_network_map__data_center_id', '(`data_center_id`)', '`data_center`(`id`)');
 
 --- Add existing cross zone templates to the missing edge zones
