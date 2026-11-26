@@ -18,7 +18,9 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
@@ -81,6 +83,30 @@ public class LibvirtPlugNicCommandWrapperTest {
             + "  </devices>\n"
             + "</domain>\n";
 
+    /**
+     * q35 layout as libvirt reports it: NICs sit in slot 0 behind pcie-root-port controllers on bus 0.
+     */
+    private static final String Q35_DOMAIN_XML =
+            "<domain type='kvm'>\n"
+            + "  <name>i-2-43-VM</name>\n"
+            + "  <devices>\n"
+            + "    <controller type='pci' index='0' model='pcie-root'/>\n"
+            + "    <controller type='pci' index='1' model='pcie-root-port'>\n"
+            + "      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0' multifunction='on'/>\n"
+            + "    </controller>\n"
+            + "    <controller type='pci' index='2' model='pcie-root-port'>\n"
+            + "      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x1'/>\n"
+            + "    </controller>\n"
+            + "    <interface type='bridge'>\n"
+            + "      <mac address='02:00:7c:98:00:03'/>\n"
+            + "      <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0'/>\n"
+            + "    </interface>\n"
+            + "    <video>\n"
+            + "      <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x0'/>\n"
+            + "    </video>\n"
+            + "  </devices>\n"
+            + "</domain>\n";
+
     @Mock
     private Domain domain;
 
@@ -137,6 +163,20 @@ public class LibvirtPlugNicCommandWrapperTest {
     public void findNextAvailablePciSlotFallsBackWhenLibvirtFails() throws LibvirtException {
         when(domain.getXMLDesc(0)).thenThrow(Mockito.mock(LibvirtException.class));
         assertNull(wrapper.findNextAvailablePciSlot(domain, nicsFromXml()));
+    }
+
+    @Test
+    public void hasPcieRootComplexDetectsQ35Domains() {
+        assertTrue(wrapper.hasPcieRootComplex(Q35_DOMAIN_XML));
+        assertFalse(wrapper.hasPcieRootComplex(DOMAIN_XML));
+        assertFalse(wrapper.hasPcieRootComplex("<domain><devices><interface>"));
+    }
+
+    @Test
+    public void findNextAvailablePciSlotLetsLibvirtChooseOnQ35() throws LibvirtException {
+        when(domain.getXMLDesc(0)).thenReturn(Q35_DOMAIN_XML);
+        // pinning bus 0 would put the NIC on the root complex, which libvirt refuses for hot-plug
+        assertNull(wrapper.findNextAvailablePciSlot(domain, Collections.singletonList(nicAtSlot(0x00))));
     }
 
     @Test

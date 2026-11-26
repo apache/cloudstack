@@ -343,6 +343,10 @@ public class LibvirtVMDef {
             _machine = machine;
         }
 
+        public String getMachineType() {
+            return _machine;
+        }
+
         public void setLoader(String loader) {
             _loader = loader;
         }
@@ -726,6 +730,7 @@ public class LibvirtVMDef {
     public static class DevicesDef {
         private String _emulator;
         private GuestDef.GuestType _guestType;
+        private int pcieRootPorts;
         private final Map<String, List<?>> devices = new HashMap<String, List<?>>();
 
         public boolean addDevice(Object device) {
@@ -747,6 +752,18 @@ public class LibvirtVMDef {
 
         public void setGuestType(GuestDef.GuestType guestType) {
             _guestType = guestType;
+        }
+
+        /**
+         * Number of pcie-root-port controllers to declare for an x86 PCI Express (q35) guest; 0 declares none and
+         * leaves the PCIe topology entirely to libvirt. Not used for aarch64 and s390x, which keep their own layout.
+         */
+        public void setPcieRootPorts(int pcieRootPorts) {
+            this.pcieRootPorts = Math.max(pcieRootPorts, 0);
+        }
+
+        public int getPcieRootPorts() {
+            return pcieRootPorts;
         }
 
         @Override
@@ -780,6 +797,15 @@ public class LibvirtVMDef {
                   devicesBuilder.append("<controller type='pci' model='pcie-root-port'/>\n");
                 }
                 devicesBuilder.append("<controller type='pci' model='pcie-to-pci-bridge'/>\n");
+            } else if (pcieRootPorts > 0) {
+                // Declared after every device and without index or address. libvirt gives index 0 to the
+                // pcie-root (it must come first) and the next free indexes to the ports, then places all
+                // PCI controllers before any device, so devices keep the root ports they use without these
+                // extra ports and the extra ports stay empty for hot-plug.
+                devicesBuilder.append("<controller type='pci' model='pcie-root'/>\n");
+                for (int i = 0; i < pcieRootPorts; i++) {
+                    devicesBuilder.append("<controller type='pci' model='pcie-root-port'/>\n");
+                }
             }
 
             devicesBuilder.append("</devices>\n");

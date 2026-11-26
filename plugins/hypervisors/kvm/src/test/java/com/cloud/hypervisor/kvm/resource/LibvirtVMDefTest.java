@@ -737,6 +737,73 @@ public class LibvirtVMDefTest extends TestCase {
                 "</tpm>\n", tpmDef.toString());
     }
 
+    private static int countOccurrences(String text, String token) {
+        return StringUtils.countMatches(text, token);
+    }
+
+    @Test
+    public void testDevicesDefWithoutPcieRootPortsHasNoPciControllers() {
+        LibvirtVMDef.DevicesDef devicesDef = new LibvirtVMDef.DevicesDef();
+        devicesDef.setEmulatorPath("/usr/libexec/qemu-kvm");
+        devicesDef.addDevice(new MemBalloonDef());
+
+        String xml = devicesDef.toString();
+        assertEquals(0, devicesDef.getPcieRootPorts());
+        assertFalse(xml.contains("type='pci'"));
+    }
+
+    @Test
+    public void testDevicesDefPcieRootPortsAreAppendedAfterTheDevices() {
+        LibvirtVMDef.DevicesDef devicesDef = new LibvirtVMDef.DevicesDef();
+        devicesDef.setEmulatorPath("/usr/libexec/qemu-kvm");
+        DiskDef disk = new DiskDef();
+        disk.defFileBasedDisk("/var/lib/libvirt/images/disk.qcow2", 0, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.QCOW2);
+        devicesDef.addDevice(disk);
+        devicesDef.addDevice(new MemBalloonDef());
+        devicesDef.setPcieRootPorts(4);
+
+        String xml = devicesDef.toString();
+        String expectedTail = "<controller type='pci' model='pcie-root'/>\n"
+                + StringUtils.repeat("<controller type='pci' model='pcie-root-port'/>\n", 4)
+                + "</devices>\n";
+        assertTrue(xml.endsWith(expectedTail));
+        assertEquals(1, countOccurrences(xml, "model='pcie-root'"));
+        assertEquals(4, countOccurrences(xml, "model='pcie-root-port'"));
+        assertFalse(xml.contains("pcie-to-pci-bridge"));
+        assertTrue(xml.indexOf("<disk") < xml.indexOf("model='pcie-root'"));
+        assertTrue(xml.indexOf("<memballoon") < xml.indexOf("model='pcie-root'"));
+    }
+
+    @Test
+    public void testDevicesDefNegativePcieRootPortsMeansNone() {
+        LibvirtVMDef.DevicesDef devicesDef = new LibvirtVMDef.DevicesDef();
+        devicesDef.setEmulatorPath("/usr/libexec/qemu-kvm");
+        devicesDef.setPcieRootPorts(-3);
+
+        assertEquals(0, devicesDef.getPcieRootPorts());
+        assertFalse(devicesDef.toString().contains("type='pci'"));
+    }
+
+    @Test
+    public void testDevicesDefAarch64AndS390xLayoutIsUnchanged() {
+        for (String emulator : new String[] {"/usr/bin/qemu-system-aarch64", "/usr/bin/qemu-system-s390x"}) {
+            for (int requested : new int[] {0, 8, 64}) {
+                LibvirtVMDef.DevicesDef devicesDef = new LibvirtVMDef.DevicesDef();
+                devicesDef.setEmulatorPath(emulator);
+                devicesDef.setPcieRootPorts(requested);
+
+                String xml = devicesDef.toString();
+                String expectedTail = "<controller type='pci' model='pcie-root'/>\n"
+                        + StringUtils.repeat("<controller type='pci' model='pcie-root-port'/>\n", 32)
+                        + "<controller type='pci' model='pcie-to-pci-bridge'/>\n"
+                        + "</devices>\n";
+                assertTrue(xml.endsWith(expectedTail));
+                assertEquals(1, countOccurrences(xml, "model='pcie-root'"));
+                assertEquals(32, countOccurrences(xml, "model='pcie-root-port'"));
+            }
+        }
+    }
+
     @Test
     public void testIsoDiskDefOnIdeBusForTheIdeCdromSlots() {
         for (int[] slot : new int[][] {{3, 'c'}, {4, 'd'}}) {
