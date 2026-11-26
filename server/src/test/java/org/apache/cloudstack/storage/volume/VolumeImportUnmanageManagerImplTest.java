@@ -44,6 +44,8 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -67,6 +69,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Assert;
 import org.junit.Before;
@@ -121,6 +124,8 @@ public class VolumeImportUnmanageManagerImplTest {
     private ResponseGenerator responseGenerator;
     @Mock
     private VolumeDao volumeDao;
+    @Mock
+    private SnapshotManager snapshotManager;
     @Mock
     private PrimaryDataStoreDao primaryDataStoreDao;
     @Mock
@@ -482,6 +487,30 @@ public class VolumeImportUnmanageManagerImplTest {
         }
 
         verify(driver).volumeManagementChanged(storagePoolVO, volumeVO, false);
+    }
+
+    @Test
+    public void testUnmanageVolumeWithKvmFileBasedNoCopySnapshotsIsRefused() {
+        when(volumeVO.getState()).thenReturn(Volume.State.Ready);
+        when(volumeVO.getInstanceId()).thenReturn(null);
+        Mockito.doThrow(new InvalidParameterValueException("has KVM file-based no-copy snapshots")).when(snapshotManager)
+                .validateVolumeHasNoKvmFileBasedNoCopySnapshots(volumeVO, "unmanage it");
+
+        Assert.assertThrows(InvalidParameterValueException.class, () -> volumeImportUnmanageManager.unmanageVolume(volumeId));
+
+        verify(volumeDao, Mockito.never()).update(Mockito.anyLong(), any());
+    }
+
+    @Test
+    public void testCheckIfVolumeForSnapshotMatchesFullAndPoolRelativePaths() {
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        when(pool.getId()).thenReturn(poolId);
+        when(snapshotDataStoreDao.listByStoreAndInstallPaths(poolId, DataStoreRole.Primary, List.of("/mnt/pool/frozen-file", "frozen-file")))
+                .thenReturn(List.of(mock(SnapshotDataStoreVO.class)));
+
+        Assert.assertTrue(volumeImportUnmanageManager.checkIfVolumeForSnapshot(pool, "/mnt/pool/frozen-file", "frozen-file"));
+        Assert.assertFalse(volumeImportUnmanageManager.checkIfVolumeForSnapshot(pool, "/mnt/pool/other-file", "other-file"));
+        Assert.assertFalse(volumeImportUnmanageManager.checkIfVolumeForSnapshot(pool, null, null));
     }
 
     @Test

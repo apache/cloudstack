@@ -7813,4 +7813,52 @@ public class LibvirtComputingResourceTest {
         libvirtComputingResourceSpy.setGuestTrafficLabel("   ");
         Assert.assertEquals("cloudbr1", libvirtComputingResourceSpy.getEffectiveGuestBridgeName());
     }
+
+    private DiskDef mockDiskDefForSnapshot(String label, String path, DiskDef.DeviceType deviceType) {
+        DiskDef disk = Mockito.mock(DiskDef.class);
+        Mockito.lenient().when(disk.getDiskLabel()).thenReturn(label);
+        Mockito.lenient().when(disk.getDiskPath()).thenReturn(path);
+        Mockito.lenient().when(disk.getDeviceType()).thenReturn(deviceType);
+        return disk;
+    }
+
+    @Test
+    public void createSnapshotXmlAndNewVolumePathMapExcludesTheOtherDisksOfTheDomain() {
+        VolumeObjectTO volume = new VolumeObjectTO();
+        volume.setUuid("data-volume");
+        volume.setPath("data-delta");
+        List<DiskDef> disks = List.of(
+                mockDiskDefForSnapshot("vda", "/mnt/pool/root-delta", DiskDef.DeviceType.DISK),
+                mockDiskDefForSnapshot("vdb", "/mnt/pool/data-delta", DiskDef.DeviceType.DISK),
+                mockDiskDefForSnapshot("vdc", "/mnt/pool/other-delta", null),
+                mockDiskDefForSnapshot("hdc", null, DiskDef.DeviceType.CDROM));
+
+        String xml = libvirtComputingResourceSpy.createSnapshotXmlAndNewVolumePathMap(List.of(new Pair<>(volume, "new-delta")), disks, "snapshot").first();
+
+        assertTrue(xml.contains("<disk name='vdb' snapshot='external'>\n<source file='/mnt/pool/new-delta'/>"));
+        assertTrue(xml.contains("<disk name='vda' snapshot='no'/>"));
+        assertTrue(xml.contains("<disk name='vdc' snapshot='no'/>"));
+        assertFalse(xml.contains("vdb' snapshot='no'"));
+        assertFalse(xml.contains("hdc"));
+    }
+
+    @Test
+    public void createSnapshotXmlAndNewVolumePathMapDoesNotExcludeAnyDiskWhenAllAreSnapshotted() {
+        VolumeObjectTO root = new VolumeObjectTO();
+        root.setUuid("root-volume");
+        root.setPath("root-delta");
+        VolumeObjectTO data = new VolumeObjectTO();
+        data.setUuid("data-volume");
+        data.setPath("data-delta");
+        List<DiskDef> disks = List.of(
+                mockDiskDefForSnapshot("vda", "/mnt/pool/root-delta", DiskDef.DeviceType.DISK),
+                mockDiskDefForSnapshot("vdb", "/mnt/pool/data-delta", DiskDef.DeviceType.DISK));
+
+        String xml = libvirtComputingResourceSpy.createSnapshotXmlAndNewVolumePathMap(List.of(new Pair<>(root, "new-root"), new Pair<>(data, "new-data")), disks,
+                "snapshot").first();
+
+        assertFalse(xml.contains("' snapshot='no'/>"));
+        assertTrue(xml.contains("<disk name='vda' snapshot='external'>"));
+        assertTrue(xml.contains("<disk name='vdb' snapshot='external'>"));
+    }
 }

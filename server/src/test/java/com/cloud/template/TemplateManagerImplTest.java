@@ -19,6 +19,7 @@
 package com.cloud.template;
 
 
+import com.cloud.storage.snapshot.SnapshotManager;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -187,6 +188,9 @@ public class TemplateManagerImplTest extends TestCase {
     @Spy
     @InjectMocks
     TemplateManagerImpl templateManager;
+
+    @Mock
+    SnapshotManager snapshotManager;
 
     @Mock
     DataStoreManager dataStoreManager;

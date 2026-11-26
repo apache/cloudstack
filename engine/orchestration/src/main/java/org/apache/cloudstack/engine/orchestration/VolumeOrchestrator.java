@@ -156,6 +156,7 @@ import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -227,6 +228,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     protected VMTemplateDao _templateDao;
     @Inject
     protected SnapshotDao _snapshotDao;
+    @Inject
+    protected SnapshotDetailsDao snapshotDetailsDao;
     @Inject
     protected SnapshotDataStoreDao _snapshotDataStoreDao;
     @Inject
@@ -1887,6 +1890,19 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
     }
 
+    /**
+     * A KVM file-based no-copy snapshot operation that is not serialized with the Instance (deleting or reverting a snapshot of a stopped Instance) may be
+     * replacing or merging the files of the volume: starting the Instance meanwhile would open files that are about to be removed.
+     */
+    protected void checkVolumeIsNotUnderSnapshotOperation(VolumeVO vol) {
+        if ((Volume.State.Snapshotting.equals(vol.getState()) || Volume.State.RevertSnapshotting.equals(vol.getState())) && volumeHasKvmFileBasedNoCopySnapshots(vol.getId())) {
+            throw new CloudRuntimeException(String.format("Volume %s is in state %s: the Instance cannot be started until the snapshot operation on it finishes. If " +
+                    "no operation is running, a KVM file-based no-copy snapshot operation on it did not complete: check the error of that operation if there is one, " +
+                    "otherwise the details of the volume's snapshots and its backing chain on the storage; set the paths and the volume state as needed, and start " +
+                    "the Instance again.", getReflectOnlySelectedFields(vol), vol.getState()));
+        }
+    }
+
     private List<VolumeTask> getTasks(List<VolumeVO> vols, Map<Volume, StoragePool> destVols, VirtualMachineProfile vm) throws StorageUnavailableException {
         boolean recreate = RecreatableSystemVmEnabled.value();
         List<VolumeTask> tasks = new ArrayList<VolumeTask>();
@@ -2290,6 +2306,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             throw new CloudRuntimeException(String.format("ROOT volume is missing, unable to prepare volumes for the VM [%s].", vm.getVirtualMachine()));
         }
 
+        // Checked on all the volumes of the Instance: the usable volumes below leave out the volumes reserved by a snapshot operation, so the Instance would
+        // otherwise start without them.
+        for (VolumeVO vol : _volsDao.findByInstance(vm.getId())) {
+            checkVolumeIsNotUnderSnapshotOperation(vol);
+        }
+
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
 
         VirtualMachine vmInstance = vm.getVirtualMachine();
@@ -2513,12 +2535,35 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     }
 
-    private void cleanupVolumeDuringSnapshotFailure(Long volumeId, Long snapshotId) {
+    /**
+     * @return true if the volume has KVM file-based no-copy snapshots (including one being taken), which are part of its backing chain.
+     */
+    protected boolean volumeHasKvmFileBasedNoCopySnapshots(long volumeId) {
+        return _snapshotDao.listByVolumeId(volumeId).stream()
+                .filter(snapshot -> !Snapshot.State.Destroyed.equals(snapshot.getState()) && !Snapshot.State.Error.equals(snapshot.getState()))
+                .anyMatch(snapshot -> snapshotDetailsDao.findDetail(snapshot.getId(), Snapshot.KVM_FILE_BASED_NO_COPY_SNAPSHOT_DETAIL) != null);
+    }
+
+    protected void cleanupVolumeDuringSnapshotFailure(Long volumeId, Long snapshotId) {
+        if (snapshotId != null && snapshotDetailsDao.findDetail(snapshotId, Snapshot.KVM_FILE_BASED_NO_COPY_SNAPSHOT_DETAIL) != null) {
+            // The outcome of a KVM file-based no-copy snapshot take is unknown: a running Instance may already be writing to the new file. Resetting the volume
+            // with its old path would make the next start lose those writes, so it is left for an administrator (see the snapshot details).
+            logger.warn("Not cleaning up volume [{}] after the failed KVM file-based no-copy snapshot [{}]: check which file of its backing chain is current " +
+                    "(snapshot details [kvmFileBasedNoCopySnapshotPendingVolumePath] and [kvmFileBasedNoCopySnapshotPendingFrozenPath]), set the volume path and the " +
+                    "volume state to Ready, then delete the snapshot: that completes or discards it, depending on the volume path.", volumeId, snapshotId);
+            return;
+        }
         _snapshotSrv.cleanupVolumeDuringSnapshotFailure(volumeId, snapshotId);
         VolumeVO volume = _volsDao.findById(volumeId);
 
         String volumeToString = getReflectOnlySelectedFields(volume);
 
+        if (volume.getState() == Volume.State.Snapshotting && volumeHasKvmFileBasedNoCopySnapshots(volumeId)) {
+            // Another operation on its KVM file-based no-copy snapshots (a take or a delete without an answer) may hold the volume deliberately.
+            logger.warn("Not changing the state of volume [{}] back to Ready, as it has KVM file-based no-copy snapshots: check them, then set its state.",
+                    volumeToString);
+            return;
+        }
         if (volume.getState() == Volume.State.Snapshotting) {
             logger.debug("Changing volume [{}] state back to Ready.", volumeToString);
             volume.setState(Volume.State.Ready);

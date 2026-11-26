@@ -36,6 +36,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering;
 import com.cloud.resourcelimit.ReservationHelper;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
@@ -86,7 +87,6 @@ import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -125,6 +125,8 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     @Inject
     private SnapshotDataStoreDao snapshotDataStoreDao;
     @Inject
+    private SnapshotManager snapshotManager;
+    @Inject
     private DataStoreManager dataStoreManager;
 
     static final String DEFAULT_DISK_OFFERING_NAME = "Default Custom Offering for Volume Import";
@@ -162,7 +164,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         for (VolumeOnStorageTO volume : volumes) {
             if (checkIfVolumeManaged(pool, volume.getPath())
                     || checkIfVolumeForTemplate(pool, volume.getPath())
-                    || checkIfVolumeForSnapshot(pool, volume.getFullPath())) {
+                    || checkIfVolumeForSnapshot(pool, volume.getFullPath(), volume.getPath())) {
                 continue;
             }
             responses.add(createVolumeForImportResponse(volume, pool));
@@ -203,7 +205,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         // 4. get volume info on storage through host and check
         VolumeOnStorageTO volume = getVolumeOnStorageAndCheck(pool, volumePath, false);
 
-        if (checkIfVolumeForSnapshot(pool, volume.getFullPath())) {
+        if (checkIfVolumeForSnapshot(pool, volume.getFullPath(), volume.getPath())) {
             logFailureAndThrowException("Volume is a reference of snapshot on primary: " + volume.getFullPath());
         }
 
@@ -416,9 +418,18 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         return templatePoolDao.findByPoolPath(pool.getId(), volumePath) != null;
     }
 
-    private boolean checkIfVolumeForSnapshot(StoragePoolVO pool, String fullVolumePath) {
-        List<String> absPathList = Collections.singletonList(fullVolumePath);
-        return CollectionUtils.isNotEmpty(snapshotDataStoreDao.listByStoreAndInstallPaths(pool.getId(), DataStoreRole.Primary, absPathList));
+    /**
+     * Snapshots on primary storage record either the full path of their file or, like the KVM file-based no-copy snapshots, its path relative to the pool.
+     */
+    protected boolean checkIfVolumeForSnapshot(StoragePoolVO pool, String fullVolumePath, String volumePath) {
+        List<String> pathList = new ArrayList<>();
+        if (StringUtils.isNotBlank(fullVolumePath)) {
+            pathList.add(fullVolumePath);
+        }
+        if (StringUtils.isNotBlank(volumePath) && !volumePath.equals(fullVolumePath)) {
+            pathList.add(volumePath);
+        }
+        return !pathList.isEmpty() && CollectionUtils.isNotEmpty(snapshotDataStoreDao.listByStoreAndInstallPaths(pool.getId(), DataStoreRole.Primary, pathList));
     }
 
     protected void checkIfVolumeIsLocked(VolumeOnStorageTO volume) {
@@ -572,6 +583,8 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         if (volumeVO.getAttached() != null || volumeVO.getInstanceId() != null) {
             logFailureAndThrowException(String.format("Volume %s is attached to VM (ID: %s)", volumeVO, volumeVO.getInstanceId()));
         }
+        // The unmanaged file would keep the frozen files of KVM file-based no-copy snapshots as its backing chain.
+        snapshotManager.validateVolumeHasNoKvmFileBasedNoCopySnapshots(volumeVO, "unmanage it");
         return volumeVO;
     }
 

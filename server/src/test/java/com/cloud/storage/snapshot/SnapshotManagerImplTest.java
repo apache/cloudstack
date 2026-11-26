@@ -35,6 +35,8 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotZoneDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -120,6 +122,8 @@ public class SnapshotManagerImplTest {
     VolumeDataFactory volFactory;
     @Mock
     UserVmDao userVmDao;
+    @Mock
+    SnapshotDetailsDao snapshotDetailsDao;
 
     @InjectMocks
     SnapshotManagerImpl snapshotManager = new SnapshotManagerImpl();
@@ -821,5 +825,76 @@ public class SnapshotManagerImplTest {
         snapshotManager.endCurrentChainIfNeeded(6L, zoneId);
 
         Mockito.verify(snapshotStoreDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any(SnapshotDataStoreVO.class));
+    }
+
+    private SnapshotVO mockNoCopySnapshot(long id, Snapshot.State state, boolean noCopy) {
+        SnapshotVO snapshot = Mockito.mock(SnapshotVO.class);
+        Mockito.lenient().when(snapshot.getId()).thenReturn(id);
+        Mockito.lenient().when(snapshot.getState()).thenReturn(state);
+        Mockito.lenient().when(snapshotDetailsDao.findDetail(id, SnapshotManager.KVM_FILE_BASED_NO_COPY_SNAPSHOT))
+                .thenReturn(noCopy ? new SnapshotDetailsVO(id, SnapshotManager.KVM_FILE_BASED_NO_COPY_SNAPSHOT, "true", false) : null);
+        return snapshot;
+    }
+
+    @Test
+    public void isKvmFileBasedNoCopySnapshotChecksTheSnapshotDetail() {
+        mockNoCopySnapshot(1L, Snapshot.State.BackedUp, true);
+        mockNoCopySnapshot(2L, Snapshot.State.BackedUp, false);
+        Assert.assertTrue(snapshotManager.isKvmFileBasedNoCopySnapshot(1L));
+        Assert.assertFalse(snapshotManager.isKvmFileBasedNoCopySnapshot(2L));
+    }
+
+    @Test
+    public void volumeHasKvmFileBasedNoCopySnapshotsIgnoresDestroyedAndFailedSnapshots() {
+        SnapshotVO destroyed = mockNoCopySnapshot(1L, Snapshot.State.Destroyed, true);
+        SnapshotVO failed = mockNoCopySnapshot(2L, Snapshot.State.Error, true);
+        SnapshotVO regular = mockNoCopySnapshot(3L, Snapshot.State.BackedUp, false);
+        List<SnapshotVO> snapshots = List.of(destroyed, failed, regular);
+        Mockito.when(snapshotDao.listByVolumeId(10L)).thenReturn(snapshots);
+        Assert.assertFalse(snapshotManager.volumeHasKvmFileBasedNoCopySnapshots(10L));
+
+        SnapshotVO noCopy = mockNoCopySnapshot(4L, Snapshot.State.BackedUp, true);
+        Mockito.when(snapshotDao.listByVolumeId(10L)).thenReturn(List.of(noCopy));
+        Assert.assertTrue(snapshotManager.volumeHasKvmFileBasedNoCopySnapshots(10L));
+    }
+
+    @Test
+    public void validateSnapshotIsNotKvmFileBasedNoCopyRefusesNoCopySnapshots() {
+        SnapshotVO regular = mockNoCopySnapshot(1L, Snapshot.State.BackedUp, false);
+        snapshotManager.validateSnapshotIsNotKvmFileBasedNoCopy(regular, "create a volume");
+        snapshotManager.validateSnapshotIsNotKvmFileBasedNoCopy(null, "create a volume");
+
+        SnapshotVO noCopy = mockNoCopySnapshot(2L, Snapshot.State.BackedUp, true);
+        Assert.assertThrows(InvalidParameterValueException.class, () -> snapshotManager.validateSnapshotIsNotKvmFileBasedNoCopy(noCopy, "create a volume"));
+    }
+
+    @Test
+    public void validateVolumeHasNoKvmFileBasedNoCopySnapshotsRefusesVolumesWithThem() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getId()).thenReturn(10L);
+        SnapshotVO regular = mockNoCopySnapshot(1L, Snapshot.State.BackedUp, false);
+        Mockito.when(snapshotDao.listByVolumeId(10L)).thenReturn(List.of(regular));
+        snapshotManager.validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "migrate it");
+
+        SnapshotVO noCopy = mockNoCopySnapshot(2L, Snapshot.State.BackedUp, true);
+        Mockito.when(snapshotDao.listByVolumeId(10L)).thenReturn(List.of(noCopy));
+        Assert.assertThrows(InvalidParameterValueException.class, () -> snapshotManager.validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "migrate it"));
+    }
+
+    @Test
+    public void revertRegularSnapshotIsRefusedWhileTheVolumeHasNoCopySnapshots() {
+        SnapshotVO regular = mockNoCopySnapshot(1L, Snapshot.State.BackedUp, false);
+        Mockito.when(regular.getVolumeId()).thenReturn(10L);
+        Mockito.when(regular.getTypeDescription()).thenReturn(Snapshot.Type.MANUAL.name());
+        Mockito.when(snapshotDao.findById(1L)).thenReturn(regular);
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getId()).thenReturn(10L);
+        Mockito.when(volume.getState()).thenReturn(com.cloud.storage.Volume.State.Ready);
+        Mockito.when(volumeDao.findById(10L)).thenReturn(volume);
+        SnapshotVO noCopy = mockNoCopySnapshot(2L, Snapshot.State.BackedUp, true);
+        Mockito.when(snapshotDao.listByVolumeId(10L)).thenReturn(List.of(noCopy));
+
+        Assert.assertThrows(InvalidParameterValueException.class, () -> snapshotManager.revertSnapshot(1L));
+        Mockito.verify(volume, Mockito.never()).getInstanceId();
     }
 }

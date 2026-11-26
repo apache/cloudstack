@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
+import com.cloud.storage.dao.SnapshotDetailsDao;
 import org.apache.cloudstack.api.command.user.snapshot.ExtractSnapshotCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -117,6 +118,8 @@ public class SnapshotManagerTest {
 
     @InjectMocks
     SnapshotManagerImpl _snapshotMgr = new SnapshotManagerImpl();
+    @Mock
+    SnapshotDetailsDao snapshotDetailsDao;
     @Mock
     SnapshotDao _snapshotDao;
     @Mock

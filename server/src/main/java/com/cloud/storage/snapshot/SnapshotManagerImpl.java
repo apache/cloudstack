@@ -146,6 +146,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
@@ -286,12 +287,42 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return null;
     }
 
-    protected boolean isBackupSnapshotToSecondaryForZone(long zoneId) {
+    @Override
+    public boolean isBackupSnapshotToSecondaryForZone(long zoneId) {
         if (Boolean.FALSE.equals(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value())) {
             return false;
         }
         DataCenterVO zone = dataCenterDao.findById(zoneId);
         return !DataCenter.Type.Edge.equals(zone.getType());
+    }
+
+    @Override
+    public boolean isKvmFileBasedNoCopySnapshot(long snapshotId) {
+        SnapshotDetailsVO detail = snapshotDetailsDao.findDetail(snapshotId, KVM_FILE_BASED_NO_COPY_SNAPSHOT);
+        return detail != null && Boolean.parseBoolean(detail.getValue());
+    }
+
+    @Override
+    public boolean volumeHasKvmFileBasedNoCopySnapshots(long volumeId) {
+        return _snapshotDao.listByVolumeId(volumeId).stream()
+                .filter(snapshot -> !Snapshot.State.Destroyed.equals(snapshot.getState()) && !Snapshot.State.Error.equals(snapshot.getState()))
+                .anyMatch(snapshot -> isKvmFileBasedNoCopySnapshot(snapshot.getId()));
+    }
+
+    @Override
+    public void validateSnapshotIsNotKvmFileBasedNoCopy(Snapshot snapshot, String operation) {
+        if (snapshot != null && isKvmFileBasedNoCopySnapshot(snapshot.getId())) {
+            throw new InvalidParameterValueException(String.format("Snapshot [%s] is a KVM file-based no-copy snapshot (see the [%s] setting), which is part of the " +
+                    "backing chain of its volume and cannot be used to %s.", snapshot.getUuid(), KvmFileBasedVolumeSnapshotNoCopy.key(), operation));
+        }
+    }
+
+    @Override
+    public void validateVolumeHasNoKvmFileBasedNoCopySnapshots(Volume volume, String operation) {
+        if (volume != null && volumeHasKvmFileBasedNoCopySnapshots(volume.getId())) {
+            throw new InvalidParameterValueException(String.format("Volume [%s] has KVM file-based no-copy snapshots (see the [%s] setting), which are part of its " +
+                    "backing chain. Delete them before trying to %s.", volume.getUuid(), KvmFileBasedVolumeSnapshotNoCopy.key(), operation));
+        }
     }
 
     private ResourceType getStoreResourceType(long dataCenterId, Snapshot.LocationType locationType) {
@@ -311,7 +342,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection,
-                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax, snapshotShowChainSize, UseStorageReplication, KVMSnapshotEnabled};
+                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax, snapshotShowChainSize, UseStorageReplication, KVMSnapshotEnabled,
+                KvmFileBasedVolumeSnapshotNoCopy};
     }
 
     @Override
@@ -381,6 +413,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
         if (volume.getState() != Volume.State.Ready) {
             throw new InvalidParameterValueException("The volume is not in Ready state.");
+        }
+
+        if (!isKvmFileBasedNoCopySnapshot(snapshot.getId())) {
+            // Reverting a full copy would replace the top of the backing chain that the no-copy snapshots depend on.
+            validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "revert a snapshot of it that is not a no-copy snapshot");
         }
 
         Long instanceId = volume.getInstanceId();
@@ -615,6 +652,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @Override
     public Snapshot archiveSnapshot(Long snapshotId) {
+        validateSnapshotIsNotKvmFileBasedNoCopy(_snapshotDao.findById(snapshotId), "archive it to secondary storage");
         SnapshotInfo snapshotOnPrimary = snapshotFactory.getSnapshotOnPrimaryStore(snapshotId);
 
         if (snapshotOnPrimary == null || !snapshotOnPrimary.getStatus().equals(ObjectInDataStoreStateMachine.State.Ready)) {
@@ -2389,6 +2427,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new InvalidParameterValueException("Unable to find snapshot with id");
         }
 
+        validateSnapshotIsNotKvmFileBasedNoCopy(snapshotVO, "copy it to other zones or storage pools");
         Pair<SnapshotVO, Long> snapshotZonePair = getCheckedSnapshotForCopy(snapshotVO, destZoneIds, sourceZoneId, useStorageReplication);
         SnapshotVO snapshot = snapshotZonePair.first();
         sourceZoneId = snapshotZonePair.second();

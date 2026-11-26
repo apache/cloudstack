@@ -25,6 +25,11 @@ import org.apache.cloudstack.api.InternalIdentity;
 import java.util.Date;
 
 public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, StateObject<Snapshot.State> {
+    /**
+     * Name of the snapshot detail that marks a KVM file-based no-copy volume snapshot, which is part of the backing chain of its volume.
+     */
+    String KVM_FILE_BASED_NO_COPY_SNAPSHOT_DETAIL = "kvmFileBasedNoCopySnapshot";
+
     public enum Type {
         MANUAL, RECURRING, TEMPLATE, HOURLY, DAILY, WEEKLY, MONTHLY, GROUP, FROM_GROUP;
         private int max = 8;

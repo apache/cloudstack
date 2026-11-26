@@ -1,0 +1,1091 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.cloudstack.storage.snapshot;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.DeltaMergeTreeTO;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections.CollectionUtils;
+
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.VMSnapshotTO;
+import com.cloud.agent.api.storage.CreateDiskOnlyVmSnapshotAnswer;
+import com.cloud.agent.api.storage.CreateDiskOnlyVmSnapshotCommand;
+import com.cloud.agent.api.storage.DeleteDiskOnlyVmSnapshotCommand;
+import com.cloud.agent.api.storage.MergeDiskOnlyVmSnapshotCommand;
+import com.cloud.agent.api.storage.RevertDiskOnlyVmSnapshotAnswer;
+import com.cloud.agent.api.storage.RevertDiskOnlyVmSnapshotCommand;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.configuration.Resource;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
+import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.CreateSnapshotPayload;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.SnapshotZoneDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+
+/**
+ * Volume snapshots of KVM QCOW2 volumes on file-based primary storage that do not copy the volume (see {@link SnapshotManager#KvmFileBasedVolumeSnapshotNoCopy}).
+ * <br/><br/>
+ * Taking a snapshot freezes the current file of the volume, which becomes the snapshot, and moves the volume onto a new, empty QCOW2 delta on top of it. Reverting
+ * the snapshot replaces the current delta of the volume with a new, empty delta on top of the snapshot. Deleting the snapshot merges its child (the next snapshot of
+ * the volume, or the current delta of the volume) into it. The agent side reuses the commands of the KVM disk-only Instance snapshots
+ * ({@link org.apache.cloudstack.storage.vmsnapshot.KvmFileBasedStorageVmSnapshotStrategy}) for a single volume.
+ * <br/><br/>
+ * The snapshots of a volume always form a single chain ordered by creation: only the most recent snapshot of a volume can be reverted, so no tree of deltas is ever
+ * created.
+ */
+public class KvmFileBasedNoCopySnapshotStrategy extends SnapshotStrategyBase {
+
+    /**
+     * Snapshot detail holding the position of a no-copy snapshot in the backing chain of its volume.
+     */
+    protected static final String KVM_FILE_BASED_NO_COPY_SNAPSHOT_SEQUENCE = "kvmFileBasedNoCopySnapshotSequence";
+
+    /**
+     * Snapshot detail set when deleting the snapshot failed after the merge may have started: its file may already hold data of its child, so it is no longer a
+     * valid point in time and cannot be reverted (deleting it again completes the merge).
+     */
+    protected static final String KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE = "kvmFileBasedNoCopySnapshotMergeIncomplete";
+
+    /**
+     * Snapshot details holding, while a take is in progress, the new file of the volume and the file that becomes the snapshot. They are removed when the take
+     * completes; if they remain (no answer from the host, management server restart), deleting the snapshot uses them to complete or discard it.
+     */
+    protected static final String KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH = "kvmFileBasedNoCopySnapshotPendingVolumePath";
+    protected static final String KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_FROZEN_PATH = "kvmFileBasedNoCopySnapshotPendingFrozenPath";
+
+    /**
+     * Snapshot detail set when a take failed but left its snapshot in place: the failed take released the snapshot resource count of the account
+     * (SnapshotManagerImpl#takeSnapshot), so deleting the snapshot counts it again first, as the delete releases it.
+     */
+    protected static final String KVM_FILE_BASED_NO_COPY_SNAPSHOT_RESOURCE_COUNT_RELEASED = "kvmFileBasedNoCopySnapshotResourceCountReleased";
+
+    /**
+     * Wait for the merge command: at least the agent's own merge timeout (qcow2.delta.merge.timeout, 72 hours by default), so that a long merge is not taken for
+     * a lost answer.
+     */
+    protected static final int MERGE_COMMAND_WAIT_SECONDS = 60 * 60 * 72 + 10 * 60;
+
+    protected static final Set<Storage.StoragePoolType> SUPPORTED_POOL_TYPES = Set.of(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.SharedMountPoint,
+            Storage.StoragePoolType.Filesystem);
+
+    @Inject
+    protected SnapshotDao snapshotDao;
+
+    @Inject
+    protected SnapshotDataStoreDao snapshotStoreDao;
+
+    @Inject
+    protected SnapshotDetailsDao snapshotDetailsDao;
+
+    @Inject
+    protected SnapshotZoneDao snapshotZoneDao;
+
+    @Inject
+    protected SnapshotDataFactory snapshotDataFactory;
+
+    @Inject
+    protected VolumeDao volumeDao;
+
+    @Inject
+    protected VolumeDataFactory volumeDataFactory;
+
+    @Inject
+    protected VMInstanceDao vmInstanceDao;
+
+    @Inject
+    protected VMSnapshotDao vmSnapshotDao;
+
+    @Inject
+    protected PrimaryDataStoreDao storagePoolDao;
+
+    @Inject
+    protected SnapshotManager snapshotManager;
+
+    @Inject
+    protected EndPointSelector endPointSelector;
+
+    @Inject
+    protected AgentManager agentManager;
+    @Inject
+    protected ResourceLimitService resourceLimitService;
+
+    @Inject
+    protected HostDetailsDao hostDetailsDao;
+
+    @Override
+    public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
+        if (SnapshotOperation.TAKE.equals(op)) {
+            return canTakeNoCopySnapshot(snapshot) ? StrategyPriority.HIGHEST : StrategyPriority.CANT_HANDLE;
+        }
+
+        if (!snapshotManager.isKvmFileBasedNoCopySnapshot(snapshot.getId())) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        if (SnapshotOperation.COPY.equals(op)) {
+            logger.debug("Snapshot [{}] is a KVM file-based no-copy snapshot, which cannot be copied.", snapshot.getUuid());
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        // A no-copy snapshot is part of the backing chain of its volume: no other strategy may delete, revert or back it up.
+        return StrategyPriority.HIGHEST;
+    }
+
+    /**
+     * Checks whether the snapshot can be taken as a KVM file-based no-copy snapshot. Any other snapshot is left to the other strategies, so the behaviour only
+     * changes for the storage pools where {@link SnapshotManager#KvmFileBasedVolumeSnapshotNoCopy} is enabled.
+     */
+    protected boolean canTakeNoCopySnapshot(Snapshot snapshot) {
+        SnapshotVO snapshotVO = snapshotDao.findById(snapshot.getId());
+        if (snapshotVO == null || Snapshot.Type.GROUP.name().equals(snapshotVO.getTypeDescription())) {
+            return false;
+        }
+
+        if (!Hypervisor.HypervisorType.KVM.equals(snapshot.getHypervisorType())) {
+            return false;
+        }
+
+        VolumeVO volume = volumeDao.findById(snapshot.getVolumeId());
+        if (volume == null || volume.getPoolId() == null) {
+            return false;
+        }
+
+        StoragePoolVO storagePool = storagePoolDao.findById(volume.getPoolId());
+        if (storagePool == null || storagePool.isManaged() || !SUPPORTED_POOL_TYPES.contains(storagePool.getPoolType())) {
+            return false;
+        }
+
+        if (!isNoCopySnapshotEnabledForStoragePool(storagePool.getId())) {
+            return false;
+        }
+
+        String cantHandleLog = String.format("KVM file-based no-copy snapshot strategy cannot take snapshot [%s] of volume [%s], although [%s] is enabled for storage pool [%s],",
+                snapshot.getUuid(), volume.getUuid(), SnapshotManager.KvmFileBasedVolumeSnapshotNoCopy.key(), storagePool.getUuid());
+
+        if (!Storage.ImageFormat.QCOW2.equals(volume.getFormat())) {
+            logger.debug("{} as the volume format is [{}] and not QCOW2.", cantHandleLog, volume.getFormat());
+            return false;
+        }
+
+        if (volume.getPassphraseId() != null || volume.getKmsKeyId() != null) {
+            logger.debug("{} as the volume is encrypted.", cantHandleLog);
+            return false;
+        }
+
+        if (snapshotManager.isBackupSnapshotToSecondaryForZone(volume.getDataCenterId())) {
+            logger.debug("{} as snapshots are backed up to secondary storage in the zone of the volume ([{}] is true).", cantHandleLog,
+                    SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key());
+            return false;
+        }
+
+        if (!isPayloadSupported(snapshot, cantHandleLog)) {
+            return false;
+        }
+
+        if (volume.getInstanceId() == null) {
+            return true;
+        }
+
+        VMInstanceVO vm = vmInstanceDao.findById(volume.getInstanceId());
+        if (vm == null) {
+            return true;
+        }
+
+        if (!VirtualMachine.State.Running.equals(vm.getState()) && !VirtualMachine.State.Stopped.equals(vm.getState())) {
+            logger.debug("{} as its Instance [{}] is in state [{}] and not Running or Stopped.", cantHandleLog, vm.getUuid(), vm.getState());
+            return false;
+        }
+
+        if (CollectionUtils.isNotEmpty(vmSnapshotDao.findByVm(vm.getId()))) {
+            logger.debug("{} as its Instance [{}] has Instance snapshots, which also change the backing chain of the volume.", cantHandleLog, vm.getUuid());
+            return false;
+        }
+
+        if (vm.getBackupOfferingId() != null) {
+            logger.debug("{} as its Instance [{}] has a backup offering, whose backups may also change the backing chain of the volume.", cantHandleLog, vm.getUuid());
+            return false;
+        }
+
+        if (VirtualMachine.State.Running.equals(vm.getState()) && !hostSupportsSingleVolumeDiskOnlySnapshots(vm.getHostId())) {
+            logger.info("{} as the host [{}] of its running Instance [{}] does not advertise [{}]; the KVM agent must be upgraded. Taking a regular snapshot instead.",
+                    cantHandleLog, vm.getHostId(), vm.getUuid(), Host.HOST_KVM_DISK_ONLY_SNAPSHOT_SINGLE_VOLUME);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Older KVM agents also take an external snapshot of the disks that are not listed in the snapshot XML, which would move the other volumes of the Instance onto
+     * files unknown to CloudStack.
+     */
+    protected boolean hostSupportsSingleVolumeDiskOnlySnapshots(Long hostId) {
+        if (hostId == null) {
+            return false;
+        }
+        DetailVO capability = hostDetailsDao.findDetail(hostId, Host.HOST_KVM_DISK_ONLY_SNAPSHOT_SINGLE_VOLUME);
+        return capability != null && Boolean.parseBoolean(capability.getValue());
+    }
+
+    protected boolean isNoCopySnapshotEnabledForStoragePool(long storagePoolId) {
+        return Boolean.TRUE.equals(SnapshotManager.KvmFileBasedVolumeSnapshotNoCopy.valueIn(storagePoolId));
+    }
+
+    protected boolean isPayloadSupported(Snapshot snapshot, String cantHandleLog) {
+        if (!(snapshot instanceof SnapshotInfo) || !(((SnapshotInfo) snapshot).getPayload() instanceof CreateSnapshotPayload)) {
+            logger.debug("{} as there is no snapshot payload to validate.", cantHandleLog);
+            return false;
+        }
+
+        CreateSnapshotPayload payload = (CreateSnapshotPayload) ((SnapshotInfo) snapshot).getPayload();
+        if (payload.isKvmIncrementalSnapshot()) {
+            logger.debug("{} as KVM incremental snapshots are enabled ([{}] is true).", cantHandleLog, SnapshotManager.kvmIncrementalSnapshot.key());
+            return false;
+        }
+
+        if (CollectionUtils.isNotEmpty(payload.getZoneIds()) || CollectionUtils.isNotEmpty(payload.getStoragePoolIds())) {
+            logger.debug("{} as it would have to be copied to other zones or storage pools.", cantHandleLog);
+            return false;
+        }
+
+        if (payload.getQuiescevm()) {
+            logger.debug("{} as quiescing the Instance was requested.", cantHandleLog);
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public SnapshotInfo takeSnapshot(SnapshotInfo snapshot) {
+        SnapshotVO snapshotVO = snapshotDao.acquireInLockTable(snapshot.getId());
+        if (snapshotVO == null) {
+            throw new CloudRuntimeException(String.format("Failed to get lock on snapshot [%s].", snapshot.getUuid()));
+        }
+
+        try {
+            return takeSnapshotInternal(snapshot);
+        } finally {
+            snapshotDao.releaseFromLockTable(snapshot.getId());
+        }
+    }
+
+    protected SnapshotInfo takeSnapshotInternal(SnapshotInfo snapshot) {
+        VolumeInfo volumeInfo = snapshot.getBaseVolume();
+
+        logger.info("Taking KVM file-based no-copy snapshot [{}] of volume [{}].", snapshot.getUuid(), volumeInfo.getUuid());
+
+        SnapshotVO snapshotVO = snapshotDao.findById(snapshot.getId());
+        reserveVolume(volumeInfo, Volume.Event.SnapshotRequested, snapshotVO);
+
+        SnapshotObject snapshotOnPrimary = null;
+        boolean succeeded = false;
+        boolean hostSucceeded = false;
+        boolean keepVolumeReserved = false;
+        String pendingVolumePath = null;
+        boolean outcomeUnknown = false;
+        try {
+            validateNoIncompleteTakeOfVolume(volumeInfo.getId(), snapshot.getId(), snapshot.getUuid());
+            // Marks the snapshot before anything is done on storage, so that operations refused while a volume has no-copy snapshots (e.g. assigning a backup
+            // offering) also see a take in progress. Then re-checks what such an operation could have changed concurrently.
+            snapshotDetailsDao.addDetail(snapshot.getId(), SnapshotManager.KVM_FILE_BASED_NO_COPY_SNAPSHOT, Boolean.TRUE.toString(), false);
+            VMInstanceVO vm = getAttachedVm(volumeInfo);
+            if (vm != null && vm.getBackupOfferingId() != null) {
+                throw new CloudRuntimeException(String.format("Instance [%s] was assigned to a backup offering while KVM file-based no-copy snapshot [%s] was being " +
+                        "taken; the snapshot is not taken.", vm.getUuid(), snapshot.getUuid()));
+            }
+            boolean vmRunning = isVmRunning(vm);
+
+            // The position of the snapshot in the backing chain, which follows the order of the takes and not the order of the snapshot ids (allocated before
+            // the work is queued). Computed while the volume is reserved.
+            List<SnapshotVO> currentChain = listNoCopySnapshotsOfVolume(volumeInfo.getId());
+            validateChainFilesAreDistinct(currentChain, ((VolumeObjectTO) volumeInfo.getTO()).getPath(), volumeInfo.getUuid());
+            long sequence = currentChain.stream().mapToLong(this::getChainSequence).max().orElse(0L) + 1;
+            snapshotOnPrimary = createSnapshotOnPrimary(snapshot);
+            VolumeObjectTO volumeTO = (VolumeObjectTO) volumeInfo.getTO();
+            String oldVolumePath = volumeTO.getPath();
+            String newVolumePath = UUID.randomUUID().toString();
+
+            VMSnapshotTO target = new VMSnapshotTO(snapshot.getId(), snapshot.getUuid(), VMSnapshot.Type.Disk, null, null, false, null, false);
+            CreateDiskOnlyVmSnapshotCommand command = new CreateDiskOnlyVmSnapshotCommand(vm != null ? vm.getInstanceName() : null, vm != null ? vm.getUuid() : null, target,
+                    List.of(new Pair<>(volumeTO, newVolumePath)), null, vmRunning ? VirtualMachine.State.Running : VirtualMachine.State.Stopped, false);
+
+            // Recorded before the host acts, so that whatever happens next (no answer, management server restart) the files of the take can be found.
+            snapshotDetailsDao.addDetail(snapshot.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH, newVolumePath, false);
+            snapshotDetailsDao.addDetail(snapshot.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_FROZEN_PATH, oldVolumePath, false);
+            pendingVolumePath = newVolumePath;
+
+            Answer answer = sendToHost(getHostIdForOperation(volumeInfo, vm), command);
+            outcomeUnknown = answer == null;
+            if (answer == null && vmRunning) {
+                // The running Instance may already be writing to the new delta: releasing the volume with its old path would make its next start lose those writes.
+                keepVolumeReserved = true;
+                throw new CloudRuntimeException(String.format("No answer from the host while taking KVM file-based no-copy snapshot [%s] of volume [%s] of running " +
+                        "Instance [%s]. The volume stays in state [%s] until an administrator checks whether the Instance uses the new file [%s] (then sets it as the " +
+                        "volume path) or still the file [%s], and then sets the volume state back to Ready. Deleting the snapshot afterwards completes it (if the " +
+                        "volume is on the new file) or discards it (if the volume is still on its old file).", snapshot.getUuid(), volumeInfo.getUuid(), vm.getUuid(),
+                        Volume.State.Snapshotting, newVolumePath, oldVolumePath));
+            }
+            if (!(answer instanceof CreateDiskOnlyVmSnapshotAnswer) || !answer.getResult()) {
+                throw new CloudRuntimeException(String.format("Failed to take KVM file-based no-copy snapshot [%s] of volume [%s] due to [%s].", snapshot.getUuid(),
+                        volumeInfo.getUuid(), getAnswerDetails(answer)));
+            }
+
+            // The volume is now on the new delta: record it first, so that a later failure can never leave the volume pointing to the frozen file. From here on,
+            // the snapshot is never marked as failed: its frozen file is in the backing chain of the volume and must not be cleaned up as a failed snapshot.
+            try {
+                VolumeVO volumeVO = volumeDao.findById(volumeInfo.getId());
+                volumeVO.setPath(newVolumePath);
+                volumeDao.update(volumeVO.getId(), volumeVO);
+            } catch (RuntimeException e) {
+                // The host moved the volume, but the DB does not say so: a running Instance is writing to the new file, so its volume stays reserved.
+                outcomeUnknown = true;
+                keepVolumeReserved = vmRunning;
+                throw new CloudRuntimeException(String.format("KVM file-based no-copy snapshot [%s] was taken on the host, but the new path [%s] of volume [%s] " +
+                        "could not be saved.%s", snapshot.getUuid(), newVolumePath, volumeInfo.getUuid(), vmRunning ? String.format(" The volume stays in state [%s]: " +
+                        "set its path to [%s] and its state to Ready, then delete the snapshot to complete it.", Volume.State.Snapshotting, newVolumePath) : ""), e);
+            }
+            hostSucceeded = true;
+
+            Long frozenFileSize = ((CreateDiskOnlyVmSnapshotAnswer) answer).getMapVolumeToSnapshotSize().get(volumeInfo.getUuid());
+
+            SnapshotObjectTO snapshotTO = new SnapshotObjectTO();
+            snapshotTO.setPath(oldVolumePath);
+            snapshotTO.setPhysicalSize(frozenFileSize);
+            snapshotOnPrimary.processEvent(ObjectInDataStoreStateMachine.Event.OperationSucceeded, new CreateObjectAnswer(snapshotTO));
+            snapshotOnPrimary.processEvent(Snapshot.Event.OperationSucceeded);
+
+            snapshotDetailsDao.addDetail(snapshot.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_SEQUENCE, String.valueOf(sequence), false);
+            removePendingDetails(snapshot.getId());
+
+            logger.info("Took KVM file-based no-copy snapshot [{}] of volume [{}]: the snapshot is [{}] and the volume is now on [{}].", snapshot.getUuid(),
+                    volumeInfo.getUuid(), oldVolumePath, newVolumePath);
+            succeeded = true;
+            return snapshotOnPrimary;
+        } catch (NoTransitionException e) {
+            throw new CloudRuntimeException(String.format("Failed to update the state of snapshot [%s].", snapshot.getUuid()), e);
+        } finally {
+            if (!keepVolumeReserved) {
+                // Once the host has succeeded the volume is on its new file, which is already recorded: the volume is usable even if the snapshot metadata is not.
+                releaseVolume(volumeInfo, succeeded || hostSucceeded ? Volume.Event.OperationSucceeded : Volume.Event.OperationFailed);
+            }
+            if (!succeeded && (keepVolumeReserved || hostSucceeded)) {
+                // The snapshot stays, although the failed take releases its resource count.
+                try {
+                    snapshotDetailsDao.addDetail(snapshot.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_RESOURCE_COUNT_RELEASED, Boolean.TRUE.toString(), false);
+                } catch (RuntimeException e) {
+                    logger.warn("Failed to record that the resource count of snapshot [{}] is released.", snapshot.getUuid(), e);
+                }
+            }
+            if (hostSucceeded && !succeeded) {
+                logger.error("KVM file-based no-copy snapshot [{}] of volume [{}] was taken on storage, but its metadata could not be fully updated. It is not marked as " +
+                        "failed, so that its file (part of the backing chain of the volume) is not cleaned up; deleting the snapshot completes it first.",
+                        snapshot.getUuid(), volumeInfo.getUuid());
+            } else if (!succeeded && !keepVolumeReserved) {
+                // The volume keeps its file (which is not part of any other snapshot), so this is a failed snapshot like any other and its regular cleanup is safe.
+                if (outcomeUnknown) {
+                    logger.warn("No answer from the host while taking KVM file-based no-copy snapshot [{}] of volume [{}], which keeps its file. The new file [{}] may " +
+                            "have been created and, if so, is not used and can be deleted.", snapshot.getUuid(), volumeInfo.getUuid(), pendingVolumePath);
+                }
+                removePendingDetails(snapshot.getId());
+                snapshotDetailsDao.removeDetail(snapshot.getId(), SnapshotManager.KVM_FILE_BASED_NO_COPY_SNAPSHOT);
+                if (snapshotOnPrimary != null) {
+                    markSnapshotOnPrimaryAsFailed(snapshotOnPrimary);
+                }
+            }
+        }
+    }
+
+    protected void removePendingDetails(long snapshotId) {
+        snapshotDetailsDao.removeDetail(snapshotId, KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH);
+        snapshotDetailsDao.removeDetail(snapshotId, KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_FROZEN_PATH);
+    }
+
+    /**
+     * Releases the volume reserved by {@link #reserveVolume}. Never throws, as it runs in finally blocks and must not hide the original failure.
+     */
+    protected void releaseVolume(VolumeInfo volumeInfo, Volume.Event event) {
+        try {
+            if (!volumeInfo.stateTransit(event)) {
+                logger.warn("Volume [{}] could not be released with event [{}]: its state was changed concurrently.", volumeInfo.getUuid(), event);
+            }
+        } catch (RuntimeException e) {
+            logger.warn("Failed to release volume [{}] with event [{}].", volumeInfo.getUuid(), event, e);
+        }
+    }
+
+    protected SnapshotObject createSnapshotOnPrimary(SnapshotInfo snapshot) {
+        try {
+            SnapshotObject snapshotOnPrimary = (SnapshotObject) snapshot.getDataStore().create(snapshot);
+            snapshotOnPrimary.processEvent(Snapshot.Event.CreateRequested);
+            snapshotOnPrimary.processEvent(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested);
+            return snapshotOnPrimary;
+        } catch (NoTransitionException e) {
+            throw new CloudRuntimeException(String.format("Failed to update the state of snapshot [%s].", snapshot.getUuid()), e);
+        }
+    }
+
+    /**
+     * Never throws, as it runs in a finally block and must not hide the original failure.
+     */
+    protected void markSnapshotOnPrimaryAsFailed(SnapshotObject snapshotOnPrimary) {
+        try {
+            snapshotOnPrimary.processEvent(Snapshot.Event.OperationFailed);
+        } catch (NoTransitionException | RuntimeException e) {
+            logger.warn("Failed to mark snapshot [{}] as failed.", snapshotOnPrimary.getUuid(), e);
+        }
+        try {
+            snapshotOnPrimary.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+        } catch (RuntimeException e) {
+            logger.warn("Failed to mark the primary storage reference of snapshot [{}] as failed.", snapshotOnPrimary.getUuid(), e);
+        }
+    }
+
+    @Override
+    public boolean revertSnapshot(SnapshotInfo snapshot) {
+        SnapshotVO snapshotVO = snapshotDao.acquireInLockTable(snapshot.getId());
+        if (snapshotVO == null) {
+            throw new CloudRuntimeException(String.format("Failed to get lock on snapshot [%s].", snapshot.getUuid()));
+        }
+
+        try {
+            return revertSnapshotInternal(snapshotVO);
+        } finally {
+            snapshotDao.releaseFromLockTable(snapshot.getId());
+        }
+    }
+
+    protected boolean revertSnapshotInternal(SnapshotVO snapshotVO) {
+        VolumeInfo volumeInfo = volumeDataFactory.getVolume(snapshotVO.getVolumeId());
+        if (volumeInfo == null) {
+            throw new CloudRuntimeException(String.format("Unable to find the volume of snapshot [%s].", snapshotVO.getUuid()));
+        }
+
+        // Reserve the volume before reading its chain and paths, so that no other snapshot operation can change them underneath.
+        reserveVolume(volumeInfo, Volume.Event.RevertSnapshotRequested, snapshotVO);
+        boolean succeeded = false;
+        boolean keepVolumeReserved = false;
+        try {
+            volumeInfo = volumeDataFactory.getVolume(snapshotVO.getVolumeId());
+            validateNoIncompleteTakeOfVolume(volumeInfo.getId(), snapshotVO.getId(), snapshotVO.getUuid());
+
+            if (snapshotDetailsDao.findDetail(snapshotVO.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE) != null) {
+                throw new InvalidParameterValueException(String.format("Snapshot [%s] cannot be reverted: a previous delete of it failed during the merge, so its file " +
+                        "may already hold newer data. Delete it again to complete the merge.", snapshotVO.getUuid()));
+            }
+
+            List<SnapshotVO> chain = listNoCopySnapshotsOfVolume(volumeInfo.getId());
+            if (chain.isEmpty() || chain.get(chain.size() - 1).getId() != snapshotVO.getId()) {
+                throw new InvalidParameterValueException(String.format("Only the most recent KVM file-based no-copy snapshot of volume [%s] can be reverted. Delete the " +
+                        "snapshots taken after snapshot [%s] before reverting it.", volumeInfo.getUuid(), snapshotVO.getUuid()));
+            }
+
+            // Reverting replaces (and deletes) the current file of the volume, which must not also be the file of a snapshot.
+            validateChainFilesAreDistinct(chain, ((VolumeObjectTO) volumeInfo.getTO()).getPath(), volumeInfo.getUuid());
+
+            VMInstanceVO vm = getAttachedVm(volumeInfo);
+            if (vm != null && !VirtualMachine.State.Stopped.equals(vm.getState())) {
+                throw new InvalidParameterValueException(String.format("The Instance [%s] of volume [%s] must be stopped to revert snapshot [%s]; it is [%s].", vm.getUuid(),
+                        volumeInfo.getUuid(), snapshotVO.getUuid(), vm.getState()));
+            }
+
+            logger.info("Reverting volume [{}] to KVM file-based no-copy snapshot [{}].", volumeInfo.getUuid(), snapshotVO.getUuid());
+
+            SnapshotObjectTO snapshotTO = getSnapshotObjectTO(snapshotVO, volumeInfo);
+            RevertDiskOnlyVmSnapshotCommand command = new RevertDiskOnlyVmSnapshotCommand(List.of(snapshotTO), vm != null ? vm.getInstanceName() : null,
+                    vm != null ? vm.getUuid() : null, false, null);
+
+            Answer answer = sendToHost(getHostIdForOperation(volumeInfo, vm), command);
+            if (answer == null) {
+                // The host may have replaced the file of the volume already: releasing the volume with its old path could start the Instance on a deleted file.
+                keepVolumeReserved = true;
+                throw new CloudRuntimeException(String.format("No answer from the host while reverting volume [%s] to snapshot [%s]. The volume stays in state [%s] " +
+                        "until an administrator checks which file of its backing chain is its current one (a new file backed by [%s] if the revert happened), sets it as " +
+                        "the volume path and sets the volume state back to Ready.", volumeInfo.getUuid(), snapshotVO.getUuid(), Volume.State.RevertSnapshotting,
+                        snapshotTO.getPath()));
+            }
+            if (!(answer instanceof RevertDiskOnlyVmSnapshotAnswer) || !answer.getResult() ||
+                    CollectionUtils.isEmpty(((RevertDiskOnlyVmSnapshotAnswer) answer).getVolumeObjectTos())) {
+                throw new CloudRuntimeException(String.format("Failed to revert volume [%s] to snapshot [%s] due to [%s].", volumeInfo.getUuid(), snapshotVO.getUuid(),
+                        getAnswerDetails(answer)));
+            }
+
+            String newVolumePath = ((RevertDiskOnlyVmSnapshotAnswer) answer).getVolumeObjectTos().get(0).getPath();
+            try {
+                VolumeVO volumeVO = volumeDao.findById(volumeInfo.getId());
+                volumeVO.setPath(newVolumePath);
+                // The size of the volume and the primary storage resource count are updated by SnapshotManagerImpl#revertSnapshot.
+                volumeDao.update(volumeVO.getId(), volumeVO);
+            } catch (RuntimeException e) {
+                // The host replaced the file of the volume, which may already be deleted: the volume must not be used with its old path.
+                keepVolumeReserved = true;
+                throw new CloudRuntimeException(String.format("Volume [%s] was reverted to snapshot [%s] on the host, but its new path [%s] could not be saved. The " +
+                        "volume stays in state [%s]: set its path to [%s] and its state to Ready.", volumeInfo.getUuid(), snapshotVO.getUuid(), newVolumePath,
+                        Volume.State.RevertSnapshotting, newVolumePath), e);
+            }
+
+            logger.info("Reverted volume [{}] to KVM file-based no-copy snapshot [{}]: the volume is now on [{}].", volumeInfo.getUuid(), snapshotVO.getUuid(), newVolumePath);
+            succeeded = true;
+            return true;
+        } finally {
+            if (!keepVolumeReserved) {
+                releaseVolume(volumeInfo, succeeded ? Volume.Event.OperationSucceeded : Volume.Event.OperationFailed);
+            }
+        }
+    }
+
+    @Override
+    public boolean deleteSnapshot(Long snapshotId, Long zoneId) {
+        SnapshotVO snapshotVO = snapshotDao.findById(snapshotId);
+        if (snapshotVO == null || Snapshot.State.Destroyed.equals(snapshotVO.getState())) {
+            return true;
+        }
+
+        if (zoneId != null && zoneId != snapshotVO.getDataCenterId()) {
+            throw new InvalidParameterValueException(String.format("Snapshot [%s] is a KVM file-based no-copy snapshot, which only exists on the primary storage of its volume " +
+                    "in zone [%s].", snapshotVO.getUuid(), snapshotVO.getDataCenterId()));
+        }
+
+        switch (snapshotVO.getState()) {
+            case Allocated:
+                snapshotDao.remove(snapshotId);
+                return true;
+            case Error:
+                removeSnapshotMetadata(snapshotVO);
+                return true;
+            case CreatedOnPrimary:
+            case BackedUp:
+            case Creating:
+                break;
+            default:
+                throw new InvalidParameterValueException(String.format("Snapshot [%s] cannot be deleted while it is in state [%s].", snapshotVO.getUuid(), snapshotVO.getState()));
+        }
+
+        snapshotVO = snapshotDao.acquireInLockTable(snapshotId);
+        if (snapshotVO == null) {
+            throw new CloudRuntimeException(String.format("Failed to get lock on snapshot [%s].", snapshotId));
+        }
+
+        try {
+            // Re-read under the lock: a concurrent delete may have completed while this one waited, and must not be counted twice.
+            SnapshotVO current = snapshotDao.findById(snapshotId);
+            if (current != null && snapshotDetailsDao.findDetail(snapshotId, KVM_FILE_BASED_NO_COPY_SNAPSHOT_RESOURCE_COUNT_RELEASED) != null) {
+                // Counted again while it exists, so that the release by this delete (SnapshotManagerImpl#deleteSnapshot) does not count it twice.
+                resourceLimitService.incrementResourceCount(current.getAccountId(), Resource.ResourceType.snapshot);
+                snapshotDetailsDao.removeDetail(snapshotId, KVM_FILE_BASED_NO_COPY_SNAPSHOT_RESOURCE_COUNT_RELEASED);
+            }
+            if (current != null && Snapshot.State.Creating.equals(current.getState())) {
+                // Holding the lock means that no take of it is running any more: the take did not complete (no answer from the host, or a restart).
+                current = completeOrDiscardIncompleteTake(current);
+                if (current == null) {
+                    return true;
+                }
+            }
+            if (current == null || !(Snapshot.State.BackedUp.equals(current.getState()) || Snapshot.State.CreatedOnPrimary.equals(current.getState()))) {
+                throw new InvalidParameterValueException(String.format("Snapshot [%s] was deleted or changed concurrently (state [%s]).", snapshotVO.getUuid(),
+                        current == null ? null : current.getState()));
+            }
+            return deleteSnapshotInternal(current);
+        } finally {
+            snapshotDao.releaseFromLockTable(snapshotId);
+        }
+    }
+
+    /**
+     * The files of the snapshots of a volume and of the volume itself are distinct, except while an earlier merge is completed on storage but not in the
+     * metadata (the child was then set to the merged file). Until that snapshot is deleted again, which only updates the metadata, any other operation on the
+     * chain could delete or replace a file that is still in use.
+     */
+    protected void validateChainFilesAreDistinct(List<SnapshotVO> chain, String volumePath, String volumeUuid) {
+        List<String> files = new ArrayList<>();
+        for (SnapshotVO chainSnapshot : chain) {
+            SnapshotDataStoreVO storeRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(chainSnapshot.getId(), DataStoreRole.Primary);
+            files.add(storeRef == null ? null : storeRef.getInstallPath());
+        }
+        files.add(volumePath);
+        for (int i = 0; i < chain.size(); i++) {
+            String file = files.get(i);
+            if (file != null && files.subList(i + 1, files.size()).contains(file)) {
+                throw new CloudRuntimeException(String.format("The file [%s] of KVM file-based no-copy snapshot [%s] of volume [%s] is also used by its child: an " +
+                        "earlier merge was not completed in the metadata. Delete snapshot [%s] first, which completes it.", file, chain.get(i).getUuid(), volumeUuid,
+                        chain.get(i).getUuid()));
+            }
+        }
+    }
+
+    /**
+     * While a take of the volume did not complete, the volume's chain in the DB may be missing one file: taking, reverting or deleting another snapshot of it
+     * could then build a wrong chain. The incomplete take must be resolved first, by deleting its snapshot.
+     */
+    protected void validateNoIncompleteTakeOfVolume(long volumeId, long snapshotId, String snapshotUuid) {
+        for (SnapshotVO other : snapshotDao.listByVolumeId(volumeId)) {
+            if (other.getId() != snapshotId && Snapshot.State.Creating.equals(other.getState())
+                    && snapshotDetailsDao.findDetail(other.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH) != null) {
+                throw new InvalidParameterValueException(String.format("Snapshot [%s] cannot be used now: the take of KVM file-based no-copy snapshot [%s] of the same " +
+                        "volume did not complete. Delete snapshot [%s] first (that completes or discards it).", snapshotUuid, other.getUuid(), other.getUuid()));
+            }
+        }
+    }
+
+    /**
+     * Resolves a snapshot whose take did not complete, from the files recorded before the host was asked to take it and the current path of its volume (which an
+     * administrator sets after checking the Instance, as the take failure says).
+     * @return the snapshot, now complete, if the take happened (the caller then deletes it as usual); null if it did not happen and the snapshot was discarded.
+     */
+    protected SnapshotVO completeOrDiscardIncompleteTake(SnapshotVO snapshotVO) {
+        SnapshotDetailsVO pendingVolumePath = snapshotDetailsDao.findDetail(snapshotVO.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_VOLUME_PATH);
+        SnapshotDetailsVO pendingFrozenPath = snapshotDetailsDao.findDetail(snapshotVO.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_PENDING_FROZEN_PATH);
+        VolumeVO volumeVO = volumeDao.findById(snapshotVO.getVolumeId());
+        if (pendingVolumePath == null) {
+            logger.warn("KVM file-based no-copy snapshot [{}] never reached its host; discarding it. If its volume [{}] is still in state [{}] because of this take, " +
+                    "set it back to Ready: its path was not changed.", snapshotVO.getUuid(), snapshotVO.getVolumeId(), Volume.State.Snapshotting);
+            removeSnapshotMetadata(snapshotVO);
+            return null;
+        }
+        if (volumeVO == null) {
+            VolumeVO removedVolume = volumeDao.findByIdIncludingRemoved(snapshotVO.getVolumeId());
+            if (removedVolume != null && Volume.State.Expunged.equals(removedVolume.getState()) && pendingFrozenPath != null &&
+                    !pendingFrozenPath.getValue().equals(removedVolume.getPath())) {
+                // The take happened (the volume had moved off the frozen file), so the expunge left the frozen file behind.
+                SnapshotDataStoreVO storeRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshotVO.getId(), DataStoreRole.Primary);
+                if (storeRef != null) {
+                    storeRef.setInstallPath(pendingFrozenPath.getValue());
+                    snapshotStoreDao.update(storeRef.getId(), storeRef);
+                    deleteFrozenFileOfExpungedVolume(snapshotVO, storeRef);
+                }
+            }
+            logger.info("The volume of KVM file-based no-copy snapshot [{}] is gone; discarding the snapshot.", snapshotVO.getUuid());
+            removeSnapshotMetadata(snapshotVO);
+            return null;
+        }
+        if (pendingFrozenPath == null) {
+            throw new CloudRuntimeException(String.format("KVM file-based no-copy snapshot [%s] did not complete and its files are not fully recorded; it must be " +
+                    "resolved manually.", snapshotVO.getUuid()));
+        }
+        if (!Volume.State.Ready.equals(volumeVO.getState())) {
+            throw new InvalidParameterValueException(String.format("KVM file-based no-copy snapshot [%s] did not complete, and its volume [%s] is in state [%s]. Check " +
+                    "whether the volume uses the new file [%s] or still the file [%s], set that as the volume path and the volume state to Ready, then delete the snapshot " +
+                    "again.", snapshotVO.getUuid(), volumeVO.getUuid(), volumeVO.getState(), pendingVolumePath.getValue(), pendingFrozenPath.getValue()));
+        }
+
+        VolumeInfo volumeInfo = volumeDataFactory.getVolume(volumeVO.getId());
+        reserveVolume(volumeInfo, Volume.Event.SnapshotRequested, snapshotVO);
+        try {
+            volumeVO = volumeDao.findById(volumeVO.getId());
+            if (pendingFrozenPath.getValue().equals(volumeVO.getPath())) {
+                logger.info("The take of KVM file-based no-copy snapshot [{}] did not happen: volume [{}] is still on [{}]. Discarding the snapshot; the file [{}], if it " +
+                        "exists, is not used and can be deleted.", snapshotVO.getUuid(), volumeVO.getUuid(), volumeVO.getPath(), pendingVolumePath.getValue());
+                removeSnapshotMetadata(snapshotVO);
+                return null;
+            }
+            List<SnapshotVO> chain = listNoCopySnapshotsOfVolume(volumeVO.getId());
+            List<String> chainPaths = chain.stream().map(s -> snapshotStoreDao.findOneBySnapshotAndDatastoreRole(s.getId(), DataStoreRole.Primary))
+                    .filter(storeRef -> storeRef != null).map(SnapshotDataStoreVO::getInstallPath).collect(Collectors.toList());
+            if (!pendingVolumePath.getValue().equals(volumeVO.getPath()) && chainPaths.contains(pendingFrozenPath.getValue())) {
+                logger.info("The take of KVM file-based no-copy snapshot [{}] did not happen: its file [{}] was frozen by a later snapshot. Discarding the snapshot; the " +
+                        "file [{}], if it exists, is not used and can be deleted.", snapshotVO.getUuid(), pendingFrozenPath.getValue(), pendingVolumePath.getValue());
+                removeSnapshotMetadata(snapshotVO);
+                return null;
+            }
+            if (!pendingVolumePath.getValue().equals(volumeVO.getPath())) {
+                boolean frozenByALaterTake = chainPaths.contains(pendingVolumePath.getValue());
+                throw new InvalidParameterValueException(String.format("KVM file-based no-copy snapshot [%s] did not complete, and volume [%s] is neither on the new " +
+                        "file [%s] nor on the file [%s] of the take. %s", snapshotVO.getUuid(), volumeVO.getUuid(), pendingVolumePath.getValue(),
+                        pendingFrozenPath.getValue(), frozenByALaterTake ? "Delete the snapshots taken after it first." : "It must be resolved manually."));
+            }
+
+            logger.info("The take of KVM file-based no-copy snapshot [{}] happened: volume [{}] is on [{}]. Completing the snapshot.", snapshotVO.getUuid(),
+                    volumeVO.getUuid(), volumeVO.getPath());
+            long sequence = chain.stream().mapToLong(this::getChainSequence).max().orElse(0L) + 1;
+            SnapshotDataStoreVO storeRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshotVO.getId(), DataStoreRole.Primary);
+            if (storeRef == null) {
+                throw new CloudRuntimeException(String.format("Unable to find the primary storage reference of snapshot [%s].", snapshotVO.getUuid()));
+            }
+            storeRef.setInstallPath(pendingFrozenPath.getValue());
+            storeRef.setState(ObjectInDataStoreStateMachine.State.Ready);
+            snapshotStoreDao.update(storeRef.getId(), storeRef);
+            snapshotDetailsDao.addDetail(snapshotVO.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_SEQUENCE, String.valueOf(sequence), false);
+            removePendingDetails(snapshotVO.getId());
+            snapshotVO.setState(Snapshot.State.BackedUp);
+            snapshotDao.update(snapshotVO.getId(), snapshotVO);
+            return snapshotDao.findById(snapshotVO.getId());
+        } finally {
+            releaseVolume(volumeInfo, Volume.Event.OperationSucceeded);
+        }
+    }
+
+    protected boolean deleteSnapshotInternal(SnapshotVO snapshotVO) {
+        VolumeVO volumeVO = volumeDao.findByIdIncludingRemoved(snapshotVO.getVolumeId());
+        SnapshotDataStoreVO snapshotStoreRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshotVO.getId(), DataStoreRole.Primary);
+
+        if (snapshotStoreRef == null) {
+            logger.debug("KVM file-based no-copy snapshot [{}] has no file on primary storage; only its metadata will be removed.", snapshotVO.getUuid());
+            removeSnapshotMetadata(snapshotVO);
+            return true;
+        }
+
+        if (volumeVO == null || (volumeVO.getRemoved() != null && !Volume.State.Expunged.equals(volumeVO.getState()))) {
+            // The volume row is gone, or the volume was removed without being expunged (e.g. unmanaged): its files are not CloudStack's to delete.
+            logger.debug("The volume of KVM file-based no-copy snapshot [{}] is no longer managed; only the snapshot metadata will be removed.", snapshotVO.getUuid());
+            removeSnapshotMetadata(snapshotVO);
+            return true;
+        }
+
+        if (Volume.State.Expunged.equals(volumeVO.getState())) {
+            // The active file of the volume is gone; its frozen files are not, as nothing else references them (no-copy snapshots cannot be used to create
+            // volumes or templates, and template files are never one of them).
+            deleteFrozenFileOfExpungedVolume(snapshotVO, snapshotStoreRef);
+            removeSnapshotMetadata(snapshotVO);
+            return true;
+        }
+
+        VolumeInfo volumeInfo = volumeDataFactory.getVolume(volumeVO.getId());
+        // Reserve the volume before reading its chain and paths, so that no other snapshot operation can change them underneath.
+        reserveVolume(volumeInfo, Volume.Event.SnapshotRequested, snapshotVO);
+        boolean succeeded = false;
+        boolean keepVolumeReserved = false;
+        try {
+            volumeInfo = volumeDataFactory.getVolume(volumeVO.getId());
+            volumeVO = volumeDao.findById(volumeVO.getId());
+            snapshotStoreRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshotVO.getId(), DataStoreRole.Primary);
+            validateNoIncompleteTakeOfVolume(volumeVO.getId(), snapshotVO.getId(), snapshotVO.getUuid());
+
+            VMInstanceVO vm = getAttachedVm(volumeInfo);
+            if (vm != null && !VirtualMachine.State.Running.equals(vm.getState()) && !VirtualMachine.State.Stopped.equals(vm.getState())) {
+                throw new InvalidParameterValueException(String.format("Snapshot [%s] cannot be deleted while the Instance [%s] of its volume is in state [%s].",
+                        snapshotVO.getUuid(), vm.getUuid(), vm.getState()));
+            }
+            boolean vmRunning = isVmRunning(vm);
+
+            List<SnapshotVO> chain = listNoCopySnapshotsOfVolume(volumeVO.getId());
+            int index = chain.stream().map(SnapshotVO::getId).collect(Collectors.toList()).indexOf(snapshotVO.getId());
+            if (index < 0) {
+                throw new CloudRuntimeException(String.format("Unable to find snapshot [%s] in the backing chain of volume [%s].", snapshotVO.getUuid(), volumeVO.getUuid()));
+            }
+
+            VolumeObjectTO volumeTO = (VolumeObjectTO) volumeInfo.getTO();
+            SnapshotObjectTO parentTO = getSnapshotObjectTO(snapshotVO, volumeInfo);
+            SnapshotVO childSnapshot = index + 1 < chain.size() ? chain.get(index + 1) : null;
+            DeltaMergeTreeTO deltaMergeTree = createDeltaMergeTree(chain, index, volumeInfo, volumeTO, parentTO);
+
+            logger.info("Deleting KVM file-based no-copy snapshot [{}] of volume [{}] by merging [{}] into it.", snapshotVO.getUuid(), volumeVO.getUuid(),
+                    deltaMergeTree.getChild().getPath());
+
+            if (deltaMergeTree.getChild().getPath().equals(parentTO.getPath())) {
+                // A previous merge completed on the host but its metadata was not updated, and the child was then set to the merged file: only the metadata is left.
+                logger.info("The child of KVM file-based no-copy snapshot [{}] is already its merged file [{}]; updating the metadata only.", snapshotVO.getUuid(),
+                        parentTO.getPath());
+                updateMetadataAfterMerge(snapshotVO, snapshotStoreRef, childSnapshot, volumeVO);
+                succeeded = true;
+                return true;
+            }
+
+            // Any other shared file means an earlier merge is not completed in the metadata: merging now could delete a file that is still in use.
+            validateChainFilesAreDistinct(chain, volumeTO.getPath(), volumeVO.getUuid());
+
+            MergeDiskOnlyVmSnapshotCommand command = new MergeDiskOnlyVmSnapshotCommand(List.of(deltaMergeTree), vmRunning, vm != null ? vm.getInstanceName() : null);
+            command.setWait(MERGE_COMMAND_WAIT_SECONDS);
+            long hostId = getHostIdForOperation(volumeInfo, vm);
+            // Recorded before the host acts: once the merge starts, the file of this snapshot may hold data of its child, so it is no longer a valid point in time.
+            // This also holds if the management server stops before an answer comes back.
+            snapshotDetailsDao.addDetail(snapshotVO.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE, Boolean.TRUE.toString(), false);
+            Answer answer;
+            try {
+                answer = sendToHost(hostId, command);
+            } catch (CommandNotSentException e) {
+                snapshotDetailsDao.removeDetail(snapshotVO.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_MERGE_INCOMPLETE);
+                throw e;
+            }
+            if (answer == null) {
+                // The host may still complete the merge and delete the child file: releasing the volume could leave it pointing to a deleted file.
+                keepVolumeReserved = true;
+                throw new CloudRuntimeException(String.format("No answer from the host while deleting KVM file-based no-copy snapshot [%s] of volume [%s] (merging [%s] " +
+                        "into [%s]). The volume stays in state [%s] until an administrator checks whether [%s] still exists: if it does not, set [%s] as the path of %s. " +
+                        "Then set the volume state back to Ready and delete the snapshot again.", snapshotVO.getUuid(), volumeVO.getUuid(),
+                        deltaMergeTree.getChild().getPath(), parentTO.getPath(), Volume.State.Snapshotting, deltaMergeTree.getChild().getPath(), parentTO.getPath(),
+                        childSnapshot == null ? "the volume" : "snapshot " + childSnapshot.getUuid()));
+            }
+            if (!answer.getResult()) {
+                throw new CloudRuntimeException(String.format("Failed to delete KVM file-based no-copy snapshot [%s] of volume [%s] due to [%s]. The snapshot can no " +
+                        "longer be reverted; delete it again to complete the merge.", snapshotVO.getUuid(), volumeVO.getUuid(), getAnswerDetails(answer)));
+            }
+
+            try {
+                updateMetadataAfterMerge(snapshotVO, snapshotStoreRef, childSnapshot, volumeVO);
+            } catch (RuntimeException e) {
+                // The child file is merged and deleted on the host, but the DB may still point to it.
+                keepVolumeReserved = true;
+                throw new CloudRuntimeException(String.format("Snapshot [%s] was merged on the host, but its metadata could not be updated. Volume [%s] stays in state " +
+                        "[%s]: set [%s] as the path of %s (if it is not already), set the volume state to Ready and delete the snapshot again, which then only updates " +
+                        "the metadata.", snapshotVO.getUuid(),
+                        volumeVO.getUuid(), Volume.State.Snapshotting, parentTO.getPath(), childSnapshot == null ? "the volume" : "snapshot " + childSnapshot.getUuid()), e);
+            }
+            succeeded = true;
+            return true;
+        } finally {
+            if (!keepVolumeReserved) {
+                releaseVolume(volumeInfo, succeeded ? Volume.Event.OperationSucceeded : Volume.Event.OperationFailed);
+            }
+        }
+    }
+
+    /**
+     * Deletes the frozen file of a snapshot whose volume was expunged, through any host with access to the storage pool of the snapshot.
+     */
+    protected void deleteFrozenFileOfExpungedVolume(SnapshotVO snapshotVO, SnapshotDataStoreVO snapshotStoreRef) {
+        SnapshotInfo snapshotInfo = snapshotDataFactory.getSnapshot(snapshotVO.getId(), snapshotStoreRef.getDataStoreId(), DataStoreRole.Primary);
+        if (snapshotInfo == null) {
+            logger.warn("Unable to find KVM file-based no-copy snapshot [{}] on primary storage [{}]; its file [{}] may be left behind.", snapshotVO.getUuid(),
+                    snapshotStoreRef.getDataStoreId(), snapshotStoreRef.getInstallPath());
+            return;
+        }
+
+        EndPoint endPoint = endPointSelector.select(snapshotInfo);
+        if (endPoint == null) {
+            throw new CloudRuntimeException(String.format("Unable to find a host with access to the storage pool of snapshot [%s] to delete its file.", snapshotVO.getUuid()));
+        }
+
+        logger.info("Deleting the file [{}] of KVM file-based no-copy snapshot [{}], as its volume was expunged.", snapshotStoreRef.getInstallPath(), snapshotVO.getUuid());
+        Answer answer = sendToHost(endPoint.getId(), new DeleteDiskOnlyVmSnapshotCommand(List.of(snapshotInfo.getTO())));
+        if (answer == null || !answer.getResult()) {
+            throw new CloudRuntimeException(String.format("Failed to delete the file of KVM file-based no-copy snapshot [%s] due to [%s].", snapshotVO.getUuid(),
+                    getAnswerDetails(answer)));
+        }
+    }
+
+    /**
+     * Moves the volume out of Ready, which excludes every other snapshot, migration and attach operation on it until it is released. Fails if the volume is not
+     * Ready or if another operation changed its state concurrently ({@link VolumeInfo#stateTransit} returns false when its optimistic update loses).
+     */
+    protected void reserveVolume(VolumeInfo volumeInfo, Volume.Event event, SnapshotVO snapshotVO) {
+        boolean reserved;
+        try {
+            reserved = volumeInfo.stateTransit(event);
+        } catch (CloudRuntimeException e) {
+            throw new InvalidParameterValueException(String.format("Snapshot [%s] cannot be used while its volume [%s] is in state [%s]: %s", snapshotVO.getUuid(),
+                    volumeInfo.getUuid(), volumeInfo.getState(), e.getMessage()));
+        }
+        if (!reserved) {
+            throw new CloudRuntimeException(String.format("Volume [%s] is busy with another operation; retry the operation on snapshot [%s].", volumeInfo.getUuid(),
+                    snapshotVO.getUuid()));
+        }
+    }
+
+    /**
+     * The child of the snapshot is the next snapshot of the volume or, for the most recent snapshot, the current delta of the volume. The child is committed into the
+     * snapshot, and the file on top of the child (the grandchild) is rebased onto the snapshot.
+     */
+    protected DeltaMergeTreeTO createDeltaMergeTree(List<SnapshotVO> chain, int index, VolumeInfo volumeInfo, VolumeObjectTO volumeTO, SnapshotObjectTO parentTO) {
+        if (index + 1 >= chain.size()) {
+            return new DeltaMergeTreeTO(volumeTO, parentTO, volumeTO, new ArrayList<>());
+        }
+
+        DataTO childTO = getSnapshotObjectTO(chain.get(index + 1), volumeInfo);
+        List<DataTO> grandChildren = new ArrayList<>();
+        grandChildren.add(index + 2 < chain.size() ? getSnapshotObjectTO(chain.get(index + 2), volumeInfo) : volumeTO);
+        return new DeltaMergeTreeTO(volumeTO, parentTO, childTO, grandChildren);
+    }
+
+    /**
+     * After the merge, the file of the deleted snapshot holds the data of its child: the child (the next snapshot, or the volume itself) now points to that file.
+     */
+    protected void updateMetadataAfterMerge(SnapshotVO snapshotVO, SnapshotDataStoreVO snapshotStoreRef, SnapshotVO childSnapshot, VolumeVO volumeVO) {
+        String mergedPath = snapshotStoreRef.getInstallPath();
+        // One transaction, so that a failure cannot leave the child updated while the snapshot remains (deleting it again would then count its size twice).
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                if (childSnapshot == null) {
+                    logger.debug("Volume [{}] is now on [{}].", volumeVO.getUuid(), mergedPath);
+                    volumeVO.setPath(mergedPath);
+                    volumeDao.update(volumeVO.getId(), volumeVO);
+                } else {
+                    SnapshotDataStoreVO childStoreRef = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(childSnapshot.getId(), DataStoreRole.Primary);
+                    logger.debug("Snapshot [{}] is now on [{}].", childSnapshot.getUuid(), mergedPath);
+                    childStoreRef.setInstallPath(mergedPath);
+                    childStoreRef.setPhysicalSize(childStoreRef.getPhysicalSize() + snapshotStoreRef.getPhysicalSize());
+                    snapshotStoreDao.update(childStoreRef.getId(), childStoreRef);
+                }
+                removeSnapshotMetadata(snapshotVO);
+            }
+        });
+    }
+
+    protected void removeSnapshotMetadata(SnapshotVO snapshotVO) {
+        List<SnapshotDataStoreVO> storeRefs = snapshotStoreDao.findBySnapshotId(snapshotVO.getId());
+        for (SnapshotDataStoreVO storeRef : storeRefs) {
+            snapshotStoreDao.expunge(storeRef.getId());
+        }
+        snapshotZoneDao.removeSnapshotFromZones(snapshotVO.getId());
+        snapshotVO.setState(Snapshot.State.Destroyed);
+        snapshotDao.update(snapshotVO.getId(), snapshotVO);
+    }
+
+    @Override
+    public SnapshotInfo backupSnapshot(SnapshotInfo snapshot) {
+        throw new CloudRuntimeException(String.format("Snapshot [%s] is a KVM file-based no-copy snapshot, which cannot be backed up to secondary storage.",
+                snapshot.getUuid()));
+    }
+
+    @Override
+    public void postSnapshotCreation(SnapshotInfo snapshot) {
+    }
+
+    /**
+     * @return the KVM file-based no-copy snapshots of the volume that are part of its backing chain, from the oldest (the bottom of the chain) to the most recent.
+     */
+    protected List<SnapshotVO> listNoCopySnapshotsOfVolume(long volumeId) {
+        return snapshotDao.listByVolumeId(volumeId).stream()
+                .filter(snapshot -> Snapshot.State.BackedUp.equals(snapshot.getState()) || Snapshot.State.CreatedOnPrimary.equals(snapshot.getState()))
+                .filter(snapshot -> snapshotManager.isKvmFileBasedNoCopySnapshot(snapshot.getId()))
+                .sorted(Comparator.comparingLong(this::getChainSequence).thenComparingLong(SnapshotVO::getId))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * @return the position of the snapshot in the backing chain of its volume, recorded when it was taken.
+     */
+    protected long getChainSequence(SnapshotVO snapshotVO) {
+        SnapshotDetailsVO detail = snapshotDetailsDao.findDetail(snapshotVO.getId(), KVM_FILE_BASED_NO_COPY_SNAPSHOT_SEQUENCE);
+        if (detail == null) {
+            return snapshotVO.getId();
+        }
+        try {
+            return Long.parseLong(detail.getValue());
+        } catch (NumberFormatException e) {
+            return snapshotVO.getId();
+        }
+    }
+
+    protected SnapshotObjectTO getSnapshotObjectTO(SnapshotVO snapshotVO, VolumeInfo volumeInfo) {
+        SnapshotInfo snapshotInfo = snapshotDataFactory.getSnapshot(snapshotVO.getId(), volumeInfo.getPoolId(), DataStoreRole.Primary);
+        if (snapshotInfo == null) {
+            throw new CloudRuntimeException(String.format("Unable to find snapshot [%s] on the primary storage of volume [%s].", snapshotVO.getUuid(), volumeInfo.getUuid()));
+        }
+        SnapshotObjectTO snapshotObjectTO = (SnapshotObjectTO) snapshotInfo.getTO();
+        snapshotObjectTO.setVolume((VolumeObjectTO) volumeInfo.getTO());
+        return snapshotObjectTO;
+    }
+
+    protected VMInstanceVO getAttachedVm(VolumeInfo volumeInfo) {
+        return volumeInfo.getInstanceId() == null ? null : vmInstanceDao.findById(volumeInfo.getInstanceId());
+    }
+
+    protected boolean isVmRunning(VMInstanceVO vm) {
+        return vm != null && VirtualMachine.State.Running.equals(vm.getState());
+    }
+
+    /**
+     * A running Instance is snapshotted and merged by the host it runs on; otherwise, any host with access to the storage pool of the volume is used.
+     */
+    protected long getHostIdForOperation(VolumeInfo volumeInfo, VMInstanceVO vm) {
+        if (isVmRunning(vm) && vm.getHostId() != null) {
+            return vm.getHostId();
+        }
+
+        EndPoint endPoint = endPointSelector.select(volumeInfo);
+        if (endPoint == null) {
+            throw new CloudRuntimeException(String.format("Unable to find a host with access to the storage pool of volume [%s].", volumeInfo.getUuid()));
+        }
+        return endPoint.getId();
+    }
+
+    /**
+     * Thrown when a command was not sent at all, because its host is not connected: the host did nothing, so there is no unknown outcome to handle.
+     */
+    protected static class CommandNotSentException extends CloudRuntimeException {
+        protected CommandNotSentException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    /**
+     * @return the answer of the host, or null if the command was sent but no answer came back (its outcome is then unknown).
+     * @throws CommandNotSentException if the command was not sent, e.g. because the host is down or disconnected.
+     */
+    protected Answer sendToHost(long hostId, com.cloud.agent.api.Command command) {
+        try {
+            return agentManager.send(hostId, command);
+        } catch (AgentUnavailableException e) {
+            throw new CommandNotSentException(String.format("The command [%s] was not sent, as host [%s] is not available: %s", command.getClass().getSimpleName(),
+                    hostId, e.getMessage()), e);
+        } catch (OperationTimedoutException e) {
+            logger.warn("No answer from host [{}] to the command [{}].", hostId, command.getClass().getSimpleName(), e);
+            return null;
+        } catch (RuntimeException e) {
+            // E.g. a failure while processing the answer: the host may have executed the command, so its outcome is unknown.
+            logger.warn("Unexpected failure sending the command [{}] to host [{}]; its outcome is unknown.", command.getClass().getSimpleName(), hostId, e);
+            return null;
+        }
+    }
+
+    protected String getAnswerDetails(Answer answer) {
+        return answer == null ? "no answer from the host" : answer.getDetails();
+    }
+}

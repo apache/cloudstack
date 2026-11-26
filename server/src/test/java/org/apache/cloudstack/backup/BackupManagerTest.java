@@ -121,6 +121,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -177,6 +178,8 @@ public class BackupManagerTest {
 
     @Mock
     VolumeDao volumeDao;
+    @Mock
+    SnapshotManager snapshotManager;
 
     @Mock
     VMInstanceDao vmInstanceDao;
@@ -1450,6 +1453,86 @@ public class BackupManagerTest {
             verify(backupOfferingDao, times(1)).findById(offeringId);
             verify(backupManager, times(1)).getBackupProvider("testbackupprovider");
         }
+    }
+
+    @Test
+    public void testAssignVMToBackupOfferingRefusedWhenAVolumeHasKvmFileBasedNoCopySnapshots() {
+        Long vmId = 1L;
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        overrideBackupFrameworkConfigValue();
+        when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+        when(vm.getDataCenterId()).thenReturn(1L);
+        when(vm.getBackupOfferingId()).thenReturn(null);
+        VolumeVO volume = mock(VolumeVO.class);
+        when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
+        Mockito.doThrow(new InvalidParameterValueException("has KVM file-based no-copy snapshots")).when(snapshotManager)
+                .validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "assign its Instance to a backup offering");
+
+        org.junit.Assert.assertThrows(InvalidParameterValueException.class, () -> backupManager.assignVMToBackupOffering(vmId, 2L));
+        verify(backupOfferingDao, never()).findById(Mockito.anyLong());
+    }
+
+    @Test
+    public void testUndoAssignmentWhenANoCopySnapshotAppearedConcurrently() {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(1L);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        BackupOfferingVO offering = mock(BackupOfferingVO.class);
+        when(offering.getId()).thenReturn(2L);
+        VolumeVO volume = mock(VolumeVO.class);
+        when(volumeDao.findByInstance(1L)).thenReturn(List.of(volume));
+        Mockito.doThrow(new InvalidParameterValueException("has KVM file-based no-copy snapshots")).when(snapshotManager)
+                .validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "assign its Instance to a backup offering");
+
+        when(backupProvider.removeVMFromBackupOffering(vm)).thenReturn(true);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            InvalidParameterValueException e = org.junit.Assert.assertThrows(InvalidParameterValueException.class,
+                    () -> backupManager.undoAssignmentIfNoCopySnapshotsAppeared(vm, offering, backupProvider));
+            org.junit.Assert.assertEquals("has KVM file-based no-copy snapshots", e.getMessage());
+        }
+
+        verify(backupProvider).removeVMFromBackupOffering(vm);
+        verify(vm).setBackupOfferingId(null);
+        verify(vmInstanceDao).update(1L, vm);
+    }
+
+    @Test
+    public void testUndoAssignmentClearsTheDbEvenWhenTheProviderFails() {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(1L);
+        when(vm.getUuid()).thenReturn("vm-uuid");
+        BackupOfferingVO offering = mock(BackupOfferingVO.class);
+        when(offering.getId()).thenReturn(2L);
+        when(offering.getUuid()).thenReturn("offering-uuid");
+        VolumeVO volume = mock(VolumeVO.class);
+        when(volumeDao.findByInstance(1L)).thenReturn(List.of(volume));
+        Mockito.doThrow(new InvalidParameterValueException("has KVM file-based no-copy snapshots")).when(snapshotManager)
+                .validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "assign its Instance to a backup offering");
+        when(backupProvider.removeVMFromBackupOffering(vm)).thenThrow(new CloudRuntimeException("provider unreachable"));
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            InvalidParameterValueException e = org.junit.Assert.assertThrows(InvalidParameterValueException.class,
+                    () -> backupManager.undoAssignmentIfNoCopySnapshotsAppeared(vm, offering, backupProvider));
+            org.junit.Assert.assertTrue(e.getMessage().contains("offering-uuid"));
+        }
+
+        verify(vm).setBackupOfferingId(null);
+        verify(vm).setBackupExternalId(null);
+        verify(vmInstanceDao).update(1L, vm);
+    }
+
+    @Test
+    public void testAssignmentIsKeptWhenNoNoCopySnapshotAppeared() {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(1L);
+        when(volumeDao.findByInstance(1L)).thenReturn(List.of(mock(VolumeVO.class)));
+
+        backupManager.undoAssignmentIfNoCopySnapshotsAppeared(vm, mock(BackupOfferingVO.class), backupProvider);
+
+        verify(backupProvider, never()).removeVMFromBackupOffering(any());
     }
 
     @Test

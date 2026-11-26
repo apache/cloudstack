@@ -1947,6 +1947,13 @@ public class VolumeServiceImpl implements VolumeService {
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<>();
         VolumeApiResult res = new VolumeApiResult(srcVolume);
         try {
+            if (snapshotMgr.volumeHasKvmFileBasedNoCopySnapshots(srcVolume.getId())) {
+                String msg = noCopySnapshotsMoveError(srcVolume);
+                logger.debug(msg);
+                res.setResult(msg);
+                future.complete(res);
+                return future;
+            }
             if (!snapshotMgr.canOperateOnVolume(srcVolume)) {
                 logger.debug("There are snapshots creating on this volume, can not move this volume");
 
@@ -2098,6 +2105,13 @@ public class VolumeServiceImpl implements VolumeService {
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<>();
         VolumeApiResult res = new VolumeApiResult(srcVolume);
         try {
+            if (snapshotMgr.volumeHasKvmFileBasedNoCopySnapshots(srcVolume.getId())) {
+                String msg = noCopySnapshotsMoveError(srcVolume);
+                logger.debug(msg);
+                res.setResult(msg);
+                future.complete(res);
+                return future;
+            }
             if (!snapshotMgr.canOperateOnVolume(srcVolume)) {
                 logger.debug("There are snapshots creating for this volume, can not move this volume");
                 res.setResult("There are snapshots creating for this volume, can not move this volume");
@@ -2306,11 +2320,27 @@ public class VolumeServiceImpl implements VolumeService {
         }
     }
 
+    /**
+     * Moving a volume flattens it into a new file, which would orphan its KVM file-based no-copy snapshots (they are files of its backing chain). This covers
+     * the implicit migrations too, e.g. when an Instance is started or restarted by HA on another storage pool.
+     */
+    protected String noCopySnapshotsMoveError(VolumeInfo volume) {
+        return String.format("Volume [%s] has KVM file-based no-copy snapshots, which are part of its backing chain; delete them before moving the volume.",
+                volume.getUuid());
+    }
+
     @Override
     public AsyncCallFuture<VolumeApiResult> migrateVolume(VolumeInfo srcVolume, DataStore destStore) {
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<>();
         VolumeApiResult res = new VolumeApiResult(srcVolume);
         try {
+            if (snapshotMgr.volumeHasKvmFileBasedNoCopySnapshots(srcVolume.getId())) {
+                String msg = noCopySnapshotsMoveError(srcVolume);
+                logger.debug(msg);
+                res.setResult(msg);
+                future.complete(res);
+                return future;
+            }
             if (!snapshotMgr.canOperateOnVolume(srcVolume)) {
                 logger.debug("Snapshots are being created on this volume. This volume cannot be migrated now.");
                 res.setResult("Snapshots are being created on this volume. This volume cannot be migrated now.");
@@ -2382,6 +2412,16 @@ public class VolumeServiceImpl implements VolumeService {
             List<VolumeInfo> volumesMigrating = new ArrayList<>();
             for (Map.Entry<VolumeInfo, DataStore> entry : volumeMap.entrySet()) {
                 VolumeInfo volume = entry.getKey();
+                if (snapshotMgr.volumeHasKvmFileBasedNoCopySnapshots(volume.getId())) {
+                    String msg = noCopySnapshotsMoveError(volume);
+                    logger.debug(msg);
+                    res.setResult(msg);
+                    future.complete(res);
+                    for (VolumeInfo volumeMigrating : volumesMigrating) {
+                        volumeMigrating.processEvent(Event.OperationFailed);
+                    }
+                    return future;
+                }
                 if (!snapshotMgr.canOperateOnVolume(volume)) {
                     logger.debug("Snapshots are being created on a volume. Volumes cannot be migrated now.");
                     res.setResult("Snapshots are being created on a volume. Volumes cannot be migrated now.");

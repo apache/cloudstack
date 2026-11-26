@@ -90,6 +90,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
@@ -148,6 +149,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @Inject AccountManager _accountMgr;
     @Inject GuestOSDao _guestOSDao;
     @Inject SnapshotDao _snapshotDao;
+    @Inject SnapshotManager snapshotManager;
     @Inject VirtualMachineManager _itMgr;
     @Inject NetworkService _networkService;
     @Inject ConfigurationDao _configDao;
@@ -387,6 +389,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
 
         if (userVmVo.getHypervisorType() == HypervisorType.KVM) {
+            validateVolumesHaveNoKvmFileBasedNoCopySnapshots(userVmVo);
+
             //DefaultVMSnapshotStrategy - allows snapshot with memory when VM is in running state and all volumes have to be in QCOW format
             //ScaleIOVMSnapshotStrategy - allows group snapshots without memory; all VM's volumes should be on same storage pool; The state of VM could be Running/Stopped; RAW image format is only supported
             //StorageVMSnapshotStrategy - allows volume snapshots without memory; VM has to be in Running state; No limitation of the image format if the storage plugin supports volume snapshots; "kvm.vmstoragesnapshot.enabled" has to be enabled
@@ -597,10 +601,33 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
     }
 
+    /**
+     * KVM file-based no-copy volume snapshots are part of the backing chains of the volumes: an Instance snapshot would either move the volumes again or, when
+     * reverted, replace the top of the chains that the no-copy snapshots depend on.
+     */
+    protected void validateVolumesHaveNoKvmFileBasedNoCopySnapshots(UserVmVO userVm) {
+        for (VolumeVO volume : _volumeDao.findByInstance(userVm.getId())) {
+            snapshotManager.validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "take an Instance snapshot of its Instance");
+        }
+    }
+
     private VMSnapshot orchestrateCreateVMSnapshot(Long vmId, Long vmSnapshotId, Boolean quiescevm) {
         UserVmVO userVm = _userVMDao.findById(vmId);
         if (userVm == null) {
             throw new InvalidParameterValueException("Create Instance to Snapshot failed because Instance: " + vmId + " is not found");
+        }
+
+        if (userVm.getHypervisorType() == HypervisorType.KVM) {
+            // Checked again here, as a no-copy volume snapshot may have been taken since the Instance snapshot was allocated.
+            try {
+                validateVolumesHaveNoKvmFileBasedNoCopySnapshots(userVm);
+            } catch (RuntimeException e) {
+                VMSnapshotVO allocatedVmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
+                if (allocatedVmSnapshot != null && VMSnapshot.State.Allocated.equals(allocatedVmSnapshot.getState())) {
+                    _vmSnapshotDao.remove(vmSnapshotId);
+                }
+                throw e;
+            }
         }
 
         List<VolumeVO> volumeVos = _volumeDao.findByInstanceAndType(vmId, Type.ROOT);

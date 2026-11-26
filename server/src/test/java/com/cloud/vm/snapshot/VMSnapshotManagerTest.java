@@ -39,6 +39,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -65,6 +66,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -92,6 +94,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -104,6 +107,8 @@ public class VMSnapshotManagerTest {
     VMSnapshotDao _vmSnapshotDao;
     @Mock
     VolumeDao _volumeDao;
+    @Mock
+    SnapshotManager snapshotManager;
     @Mock
     AccountDao _accountDao;
     @Mock
@@ -205,6 +210,7 @@ public class VMSnapshotManagerTest {
         _vmSnapshotMgr._vmInstanceDetailsDao = _vmInstanceDetailsDao;
         _vmSnapshotMgr._vmSnapshotDetailsDao = _vmSnapshotDetailsDao;
         _vmSnapshotMgr._userVmManager = _userVmManager;
+        _vmSnapshotMgr.snapshotManager = snapshotManager;
 
         when(_userVMDao.findById(anyLong())).thenReturn(vmMock);
         when(_vmSnapshotDao.findByName(anyLong(), anyString())).thenReturn(null);
@@ -316,6 +322,32 @@ public class VMSnapshotManagerTest {
         when(_accountMgr.getAccount(accountId)).thenReturn(accountVOMock);
         when(_snapshotDao.listByInstanceId(TEST_VM_ID, Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp)).thenReturn(mockList);
         _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
+    }
+
+    // KVM Instance with a volume that has KVM file-based no-copy snapshots
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAllocVMSnapshotRefusedWhenAVolumeHasKvmFileBasedNoCopySnapshots() throws ResourceAllocationException {
+        when(vmMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(_hypervisorCapabilitiesDao.isVmSnapshotEnabled(Hypervisor.HypervisorType.KVM, "default")).thenReturn(true);
+        doThrow(new InvalidParameterValueException("has KVM file-based no-copy snapshots")).when(snapshotManager)
+                .validateVolumeHasNoKvmFileBasedNoCopySnapshots(volumeMock, "take an Instance snapshot of its Instance");
+        _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", false);
+    }
+
+    // a KVM file-based no-copy snapshot was taken after the Instance snapshot was allocated
+    @Test
+    public void testCreateVMSnapshotJobRemovesTheAllocatedSnapshotWhenAVolumeNowHasKvmFileBasedNoCopySnapshots() throws Exception {
+        when(vmMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        doThrow(new InvalidParameterValueException("has KVM file-based no-copy snapshots")).when(snapshotManager)
+                .validateVolumeHasNoKvmFileBasedNoCopySnapshots(volumeMock, "take an Instance snapshot of its Instance");
+        VMSnapshotVO allocated = mock(VMSnapshotVO.class);
+        when(allocated.getState()).thenReturn(VMSnapshot.State.Allocated);
+        when(_vmSnapshotDao.findById(5L)).thenReturn(allocated);
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> _vmSnapshotMgr.orchestrateCreateVMSnapshot(new VmWorkCreateVMSnapshot(1L, 1L, TEST_VM_ID, "handler", 5L, false)));
+
+        verify(_vmSnapshotDao).remove(5L);
     }
 
     // successful creation case

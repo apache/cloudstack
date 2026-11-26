@@ -920,6 +920,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException(String.format("Snapshot %s is not in %s state yet and can't be used for volume creation", snapshotCheck, Snapshot.State.BackedUp));
             }
 
+            _snapshotMgr.validateSnapshotIsNotKvmFileBasedNoCopy(snapshotCheck, "create a volume");
+
             SnapshotDataStoreVO snapshotStore = _snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(snapshotId, DataStoreRole.Primary);
             if (snapshotStore != null) {
                 StoragePoolVO storagePoolVO = _storagePoolDao.findById(snapshotStore.getDataStoreId());
@@ -2765,6 +2767,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return newVolumeOnPrimaryStorage;
     }
 
+    /**
+     * KVM file-based no-copy snapshots are part of the backing chain of their volume. Backups may add or replace files in that chain, and a volume being hot
+     * attached to a running Instance could be snapshotted on a host other than the Instance's while the attach is in progress.
+     */
+    protected void validateAttachOfVolumeWithKvmFileBasedNoCopySnapshots(UserVmVO vm, VolumeVO volume) {
+        if (vm == null || volume == null) {
+            return;
+        }
+        if (vm.getBackupOfferingId() != null) {
+            _snapshotMgr.validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "attach it to an Instance with a backup offering");
+        }
+        if (!State.Stopped.equals(vm.getState())) {
+            _snapshotMgr.validateVolumeHasNoKvmFileBasedNoCopySnapshots(volume, "attach it to an Instance that is not stopped (stop the Instance first)");
+        }
+    }
+
     private Volume orchestrateAttachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
         VolumeInfo volumeToAttach = volFactory.getVolume(volumeId);
 
@@ -2773,6 +2791,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         UserVmVO vm = _userVmDao.findById(vmId);
+        // Checked again here, as the Instance may have been started, or assigned a backup offering, since the attach was requested.
+        validateAttachOfVolumeWithKvmFileBasedNoCopySnapshots(vm, _volsDao.findById(volumeId));
         VolumeVO existingVolumeOfVm = getVmExistingVolumeForVolumeAttach(vm, volumeToAttach);
         VolumeInfo newVolumeOnPrimaryStorage = createVolumeOnPrimaryForAttachIfNeeded(volumeToAttach, vm, existingVolumeOfVm);
 
@@ -3040,6 +3060,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         checkForVMSnapshots(vmId, vm);
 
         validateIfVmHasBackups(vm, true);
+
+        validateAttachOfVolumeWithKvmFileBasedNoCopySnapshots(vm, _volsDao.findById(volumeToAttach.getId()));
 
         _accountMgr.checkAccess(caller, null, true, volumeToAttach, vm);
 
@@ -3781,6 +3803,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (vm != null && _vmSnapshotDao.findByVm(vm.getId()).size() > 0) {
             throw new InvalidParameterValueException("Volume cannot be migrated, please remove all Instance Snapshots for Instance to which this volume is attached");
         }
+
+        _snapshotMgr.validateVolumeHasNoKvmFileBasedNoCopySnapshots(vol, "migrate it");
 
         StoragePoolVO srcStoragePoolVO = _storagePoolDao.findById(vol.getPoolId());
 

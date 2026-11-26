@@ -122,6 +122,26 @@ public class AgentManagerImplTest {
     }
 
     @Test
+    public void testNotifyMonitorsOfConnectionStoresSingleVolumeDiskOnlySnapshotCapability() throws ConnectionException {
+        ReadyAnswer readyAnswer = Mockito.mock(ReadyAnswer.class);
+        host.setDetails(new HashMap<>());
+
+        Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(host);
+        Mockito.doNothing().when(hostDao).loadDetails(host);
+        Mockito.doNothing().when(storagePoolMonitor).processConnect(Mockito.eq(host), Mockito.eq(cmds[0]), Mockito.eq(false));
+        Mockito.when(readyAnswer.getResult()).thenReturn(true);
+        Mockito.when(readyAnswer.getDetailsMap()).thenReturn(Map.of(Host.HOST_KVM_DISK_ONLY_SNAPSHOT_SINGLE_VOLUME, Boolean.TRUE.toString()));
+        Mockito.doReturn(readyAnswer).when(mgr).easySend(Mockito.anyLong(), Mockito.any(ReadyCommand.class));
+        Mockito.doReturn(true).when(mgr).agentStatusTransitTo(Mockito.eq(host), Mockito.eq(Status.Event.Ready), Mockito.anyLong());
+
+        final AgentAttache agentAttache = mgr.notifyMonitorsOfConnection(attache, cmds, false);
+
+        Assert.assertTrue(agentAttache.isReady());
+        Assert.assertEquals(Boolean.TRUE.toString(), host.getDetails().get(Host.HOST_KVM_DISK_ONLY_SNAPSHOT_SINGLE_VOLUME));
+        Mockito.verify(hostDao).saveDetails(host);
+    }
+
+    @Test
     public void testGetTimeoutWithPositiveTimeout() {
         Commands commands = Mockito.mock(Commands.class);
         int timeout = 30;

@@ -231,6 +231,7 @@ import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
@@ -299,6 +300,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected HostDao _hostDao;
     @Inject
     protected SnapshotDao _snapshotDao;
+    @Inject
+    protected SnapshotDetailsDao snapshotDetailsDao;
     @Inject
     protected StoragePoolHostDao _storagePoolHostDao;
     @Inject
@@ -2296,7 +2299,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
     }
 
-    private void deleteSnapshot(SnapshotVO snapshot, SnapshotDataStoreVO snapshotDataStoreVO) {
+    protected void deleteSnapshot(SnapshotVO snapshot, SnapshotDataStoreVO snapshotDataStoreVO) {
         if (snapshot == null || snapshotDataStoreVO == null) {
             return;
         }
@@ -2317,9 +2320,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
     }
 
-    private void removeSnapshotsInErrorStatus() {
+    protected void removeSnapshotsInErrorStatus() {
         List<SnapshotVO> snapshotsInErrorStatus = _snapshotDao.listAllByStatusIncludingRemoved(Snapshot.State.Error);
         for (SnapshotVO snapshotVO : snapshotsInErrorStatus) {
+            if (snapshotDetailsDao.findDetail(snapshotVO.getId(), Snapshot.KVM_FILE_BASED_NO_COPY_SNAPSHOT_DETAIL) != null) {
+                // The file of a KVM file-based no-copy snapshot may be part of the backing chain of its volume: deleting it here could corrupt the volume.
+                logger.warn("Not cleaning up KVM file-based no-copy snapshot [{}] in Error state: check it and delete it manually if its file is not in use.", snapshotVO);
+                continue;
+            }
             try {
                 List<SnapshotDataStoreVO> storeRefSnapshotsInErrorStatus = _snapshotStoreDao.findBySnapshotId(snapshotVO.getId());
                 for (SnapshotDataStoreVO snapshotDataStoreVO : storeRefSnapshotsInErrorStatus) {
