@@ -511,6 +511,19 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         return snapshotStrategy;
     }
 
+    protected boolean deleteVMSnapshotUsingStrategy(VMSnapshot vmSnapshot) {
+        VMSnapshotStrategy strategy = storageStrategyFactory.getVmSnapshotStrategy(vmSnapshot);
+        if (strategy != null) {
+            return strategy.deleteVMSnapshot(vmSnapshot);
+        }
+        if (!VMSnapshot.State.Error.equals(vmSnapshot.getState())) {
+            throw new CloudRuntimeException(String.format("Can't find Instance Snapshot strategy for vmsnapshot: %s", vmSnapshot));
+        }
+        logger.warn("No Instance Snapshot strategy can handle {} in Error state; removing only its metadata.", vmSnapshot);
+        _vmSnapshotDetailsDao.removeDetails(vmSnapshot.getId());
+        return _vmSnapshotDao.remove(vmSnapshot.getId());
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SNAPSHOT_CREATE, eventDescription = "Creating Instance Snapshot", async = true)
     public VMSnapshot createVMSnapshot(Long vmId, Long vmSnapshotId, Boolean quiescevm) {
@@ -717,8 +730,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             return _vmSnapshotDao.remove(vmSnapshot.getId());
         } else {
             try {
-                VMSnapshotStrategy strategy = findVMSnapshotStrategy(vmSnapshot);
-                return strategy.deleteVMSnapshot(vmSnapshot);
+                return deleteVMSnapshotUsingStrategy(vmSnapshot);
             } catch (Exception e) {
                 logger.debug("Failed to delete Instance Snapshot: {}", vmSnapshot, e);
                 return false;
@@ -1112,8 +1124,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             VMSnapshotVO target = _vmSnapshotDao.findById(snapshot.getId());
             if (type != null && target.getType() != type)
                 continue;
-            VMSnapshotStrategy strategy = findVMSnapshotStrategy(target);
-            if (!strategy.deleteVMSnapshot(target)) {
+            if (!deleteVMSnapshotUsingStrategy(target)) {
                 result = false;
                 break;
             }

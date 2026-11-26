@@ -60,6 +60,8 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ResourceDetail;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -154,6 +156,10 @@ public class VMSnapshotManagerTest {
     private static final String VM_SNAPSHOT_DESCRIPTION = "Vm-Snapshot-Desc";
     private static final String VM_SNAPSHOT_DISPLAY_NAME = "Vm-Snapshot-Display-Name";
     @Mock
+    StorageStrategyFactory storageStrategyFactory;
+    @Mock
+    VMSnapshotStrategy vmSnapshotStrategy;
+    @Mock
     UserVmVO vmMock;
     @Mock
     VolumeVO volumeMock;
@@ -202,6 +208,7 @@ public class VMSnapshotManagerTest {
         _vmSnapshotMgr._vmInstanceDetailsDao = _vmInstanceDetailsDao;
         _vmSnapshotMgr._vmSnapshotDetailsDao = _vmSnapshotDetailsDao;
         _vmSnapshotMgr._userVmManager = _userVmManager;
+        _vmSnapshotMgr.storageStrategyFactory = storageStrategyFactory;
 
         when(_userVMDao.findById(anyLong())).thenReturn(vmMock);
         when(_vmSnapshotDao.findByName(anyLong(), anyString())).thenReturn(null);
@@ -428,6 +435,42 @@ public class VMSnapshotManagerTest {
         _vmSnapshotMgr.upgradeUserVmServiceOffering(userVm, SERVICE_OFFERING_ID, details);
 
         verify(_userVmManager).upgradeVirtualMachine(TEST_VM_ID, SERVICE_OFFERING_ID, details);
+    }
+
+    @Test
+    public void testDeleteVMSnapshotUsingStrategyDelegatesToTheStrategyThatHandlesTheSnapshot() {
+        when(storageStrategyFactory.getVmSnapshotStrategy(vmSnapshotVO)).thenReturn(vmSnapshotStrategy);
+        when(vmSnapshotStrategy.deleteVMSnapshot(vmSnapshotVO)).thenReturn(true);
+
+        assertTrue(_vmSnapshotMgr.deleteVMSnapshotUsingStrategy(vmSnapshotVO));
+
+        verify(vmSnapshotStrategy).deleteVMSnapshot(vmSnapshotVO);
+        verify(_vmSnapshotDao, never()).remove(anyLong());
+    }
+
+    @Test
+    public void testDeleteVMSnapshotUsingStrategyRemovesMetadataOfErrorSnapshotNoStrategyHandles() {
+        when(storageStrategyFactory.getVmSnapshotStrategy(vmSnapshotVO)).thenReturn(null);
+        when(vmSnapshotVO.getState()).thenReturn(VMSnapshot.State.Error);
+        when(_vmSnapshotDao.remove(VM_SNAPSHOT_ID)).thenReturn(true);
+
+        assertTrue(_vmSnapshotMgr.deleteVMSnapshotUsingStrategy(vmSnapshotVO));
+
+        verify(_vmSnapshotDetailsDao).removeDetails(VM_SNAPSHOT_ID);
+        verify(_vmSnapshotDao).remove(VM_SNAPSHOT_ID);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testDeleteVMSnapshotUsingStrategyFailsForReadySnapshotNoStrategyHandles() {
+        when(storageStrategyFactory.getVmSnapshotStrategy(vmSnapshotVO)).thenReturn(null);
+        when(vmSnapshotVO.getState()).thenReturn(VMSnapshot.State.Ready);
+
+        try {
+            _vmSnapshotMgr.deleteVMSnapshotUsingStrategy(vmSnapshotVO);
+        } finally {
+            verify(_vmSnapshotDetailsDao, never()).removeDetails(anyLong());
+            verify(_vmSnapshotDao, never()).remove(anyLong());
+        }
     }
 
     @Test
