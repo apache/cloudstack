@@ -138,6 +138,7 @@ Requires: bzip2
 Requires: gzip
 Requires: unzip
 Requires: xz
+Requires: guestfs-tools
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent
