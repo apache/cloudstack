@@ -67,6 +67,7 @@ from nose.plugins.attrib import attr
 from marvin.lib.decoratorGenerators import skipTestIf
 
 from kubernetes import client, config
+from kubernetes.client.rest import ApiException
 import time, io, yaml, random
 
 _multiprocess_shared_ = True
@@ -876,6 +877,86 @@ class TestKubernetesCluster(cloudstackTestCase):
         self.deleteKubernetesClusterAndVerify(cluster.id)
         return
 
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @skipTestIf("hypervisorNotSupported")
+    def test_14_enable_disable_autoscaling_kubernetes_cluster(self):
+        """Test to enable and then disable autoscaling on an existing Kubernetes cluster
+
+        # Validate the following:
+        # 1. scaleKubernetesCluster enables autoscaling with the given minsize and maxsize
+        # 2. cluster-autoscaler pod should be running
+        # 3. scaleKubernetesCluster disables autoscaling and removes the cluster-autoscaler deployment
+        """
+        if self.setup_failed == True:
+            self.fail("Setup incomplete")
+        global k8s_cluster
+        k8s_cluster = self.getValidKubernetesCluster(version=self.kubernetes_version_v2)
+
+        try:
+            k8s_cluster = self.autoscaleKubernetesCluster(k8s_cluster.id, 1, 3)
+            self.verifyKubernetesClusterAutoscale(k8s_cluster, 1, 3)
+            self.assertTrue(k8s_cluster.autoscalingenabled, "Autoscaling not enabled on the cluster")
+            self.assertTrue(self.waitForAutoscalerPodInRunningState(k8s_cluster.id), "Autoscaler pod failed to run")
+
+            k8s_cluster = self.autoscaleKubernetesCluster(k8s_cluster.id, enabled=False)
+            self.verifyKubernetesClusterScale(k8s_cluster, 1)
+            self.assertFalse(k8s_cluster.autoscalingenabled, "Autoscaling still enabled on the cluster")
+            self.assertIsNone(k8s_cluster.minsize, "minsize not cleared")
+            self.assertIsNone(k8s_cluster.maxsize, "maxsize not cleared")
+            deployments = client.AppsV1Api().list_namespaced_deployment(
+                "kube-system", field_selector="metadata.name=cluster-autoscaler").items
+            self.assertEqual(len(deployments), 0, "cluster-autoscaler deployment not removed")
+        except Exception as e:
+            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
+            self.fail("Failed to enable and disable autoscaling on Kubernetes cluster due to: %s" % e)
+        return
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @skipTestIf("hypervisorNotSupported")
+    def test_15_autoscale_kubernetes_cluster_up_and_down(self):
+        """Test that the cluster-autoscaler adds and removes worker nodes
+
+        # Validate the following:
+        # 1. pods that together need more CPU than one worker has make the cluster grow above minsize
+        # 2. all pods of the workload get scheduled
+        # 3. deleting the workload shrinks the cluster back to minsize
+        """
+        if self.setup_failed == True:
+            self.fail("Setup incomplete")
+        global k8s_cluster
+        k8s_cluster = self.getValidKubernetesCluster(version=self.kubernetes_version_v2)
+
+        workload = "autoscale-test-" + random_gen().lower()
+        replicas = 2
+        try:
+            # Just over half a worker's CPUs, so only one pod fits per worker
+            worker_offering = ServiceOffering.list(self.apiclient,
+                                                   id=k8s_cluster.workerofferingid or k8s_cluster.serviceofferingid)[0]
+            cpu_millis = int(worker_offering.cpunumber * 1000 * 0.55)
+            k8s_cluster = self.autoscaleKubernetesCluster(k8s_cluster.id, 1, 3)
+            self.verifyKubernetesClusterAutoscale(k8s_cluster, 1, 3)
+            self.assertTrue(self.waitForAutoscalerPodInRunningState(k8s_cluster.id), "Autoscaler pod failed to run")
+            self.shortenAutoscalerScaleDownDelay(k8s_cluster.id)
+
+            self.deployCpuRequestWorkload(workload, replicas, cpu_millis)
+            cluster = self.waitForKubernetesClusterSize(k8s_cluster.id, lambda size: size > 1, 30 * 60)
+            self.assertIsNotNone(cluster, "Kubernetes cluster did not scale up for pending pods")
+            self.assertTrue(self.waitForPodsScheduled(workload, replicas, 20 * 60),
+                            "Pods of %s not all scheduled after scale up" % workload)
+            self.debug("Kubernetes cluster with ID: %s scaled up to %d workers" %
+                       (k8s_cluster.id, cluster.size))
+
+            client.AppsV1Api().delete_namespaced_deployment(workload, "default")
+            cluster = self.waitForKubernetesClusterSize(k8s_cluster.id, lambda size: size == 1, 30 * 60)
+            self.assertIsNotNone(cluster, "Kubernetes cluster did not scale down after the workload was deleted")
+
+            k8s_cluster = self.autoscaleKubernetesCluster(k8s_cluster.id, enabled=False)
+            self.verifyKubernetesClusterScale(k8s_cluster, 1)
+        except Exception as e:
+            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
+            self.fail("Kubernetes cluster autoscaling failed due to: %s" % e)
+        return
+
     def addExternalNodesToKubernetesCluster(self, cluster_id, vm_list):
         cmd = addNodesToKubernetesCluster.addNodesToKubernetesClusterCmd()
         cmd.id = cluster_id
@@ -957,10 +1038,10 @@ class TestKubernetesCluster(cloudstackTestCase):
         response = self.apiclient.scaleKubernetesCluster(scaleKubernetesClusterCmd)
         return response
 
-    def autoscaleKubernetesCluster(self, cluster_id, minsize, maxsize):
+    def autoscaleKubernetesCluster(self, cluster_id, minsize=None, maxsize=None, enabled=True):
         scaleKubernetesClusterCmd = scaleKubernetesCluster.scaleKubernetesClusterCmd()
         scaleKubernetesClusterCmd.id = cluster_id
-        scaleKubernetesClusterCmd.autoscalingenabled = True
+        scaleKubernetesClusterCmd.autoscalingenabled = enabled
         scaleKubernetesClusterCmd.minsize = minsize
         scaleKubernetesClusterCmd.maxsize = maxsize
         response = self.apiclient.scaleKubernetesCluster(scaleKubernetesClusterCmd)
@@ -972,28 +1053,113 @@ class TestKubernetesCluster(cloudstackTestCase):
         response = self.apiclient.getKubernetesClusterConfig(getKubernetesClusterConfigCmd)
         return response
 
-    def waitForAutoscalerPodInRunningState(self, cluster_id, retries=5, interval=60):
+    def loadKubernetesClusterConfig(self, cluster_id):
         k8s_config = self.fetchKubernetesClusterConfig(cluster_id)
         cfg = io.StringIO(k8s_config.configdata)
         cfg = yaml.safe_load(cfg)
         # Adding this so we don't get certificate exceptions
         cfg['clusters'][0]['cluster']['insecure-skip-tls-verify']=True
         config.load_kube_config_from_dict(cfg)
+
+    def waitForAutoscalerPodInRunningState(self, cluster_id, retries=5, interval=60):
+        self.loadKubernetesClusterConfig(cluster_id)
         v1 = client.CoreV1Api()
 
         while retries > 0:
             time.sleep(interval)
             pods = v1.list_pod_for_all_namespaces(watch=False, label_selector="app=cluster-autoscaler").items
+            pods = [p for p in pods if p.metadata.deletion_timestamp is None and
+                    p.status.phase not in ['Failed', 'Succeeded']]
             if len(pods) == 0 :
                 self.debug("Autoscaler pod still not up")
+                retries = retries - 1
                 continue
-            pod = pods[0]
-            if pod.status.phase == 'Running' :
-                self.debug("Autoscaler pod %s up and running!" % pod.metadata.name)
+            pod = next((p for p in pods if p.status.phase != 'Running'), None)
+            if pod is None:
+                self.debug("Autoscaler pod %s up and running!" % pods[0].metadata.name)
                 return True
             self.debug("Autoscaler pod %s up but not running on retry %d. State is : %s" %(pod.metadata.name, retries, pod.status.phase))
             retries = retries - 1
         return False
+
+    def shortenAutoscalerScaleDownDelay(self, cluster_id, retries=10, interval=30):
+        # The CKS autoscaler manifest keeps the 10m scale-down defaults and has no way to override them
+        self.loadKubernetesClusterConfig(cluster_id)
+        apps = client.AppsV1Api()
+        for attempt in range(3):
+            deployment = apps.read_namespaced_deployment("cluster-autoscaler", "kube-system")
+            container = next((c for c in deployment.spec.template.spec.containers if c.name == "cluster-autoscaler"), None)
+            self.assertIsNotNone(container, "cluster-autoscaler container not found in its deployment")
+            flags = next((fl for fl in [container.args, container.command]
+                          if fl and any(f.startswith("--cloud-provider") for f in fl)), None)
+            self.assertIsNotNone(flags, "cluster-autoscaler flags not found in its command or args")
+            for flag in ["--scale-down-delay-after-add=1m", "--scale-down-unneeded-time=1m"]:
+                name = flag.split("=")[0] + "="
+                flags[:] = [f for f in flags if not f.startswith(name)] + [flag]
+            try:
+                apps.replace_namespaced_deployment("cluster-autoscaler", "kube-system", deployment)
+                break
+            except ApiException as e:
+                if e.status != 409 or attempt == 2:
+                    raise
+
+        while retries > 0:
+            time.sleep(interval)
+            deployment = apps.read_namespaced_deployment("cluster-autoscaler", "kube-system")
+            status = deployment.status
+            if (status.observed_generation or 0) >= deployment.metadata.generation and \
+                    status.replicas == deployment.spec.replicas and \
+                    status.updated_replicas == deployment.spec.replicas and \
+                    status.available_replicas == deployment.spec.replicas and \
+                    not status.unavailable_replicas:
+                return
+            retries = retries - 1
+        self.fail("cluster-autoscaler did not roll out with the shorter scale-down delay")
+
+    def deployCpuRequestWorkload(self, name, replicas, cpu_millis):
+        container = client.V1Container(
+            name="pause",
+            image="registry.k8s.io/pause:3.9",
+            resources=client.V1ResourceRequirements(requests={"cpu": "%dm" % cpu_millis}))
+        deployment = client.V1Deployment(
+            metadata=client.V1ObjectMeta(name=name),
+            spec=client.V1DeploymentSpec(
+                replicas=replicas,
+                selector=client.V1LabelSelector(match_labels={"app": name}),
+                template=client.V1PodTemplateSpec(
+                    metadata=client.V1ObjectMeta(labels={"app": name}),
+                    spec=client.V1PodSpec(containers=[container]))))
+        client.AppsV1Api().create_namespaced_deployment("default", deployment)
+
+    def waitForPodsScheduled(self, app, count, timeout, interval=30):
+        v1 = client.CoreV1Api()
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            pods = v1.list_namespaced_pod("default", label_selector="app=%s" % app).items
+            pods = [p for p in pods if p.metadata.deletion_timestamp is None and
+                    p.status.phase not in ['Failed', 'Succeeded']]
+            scheduled = [p for p in pods if p.spec.node_name]
+            self.debug("%d of %d pods of %s scheduled" % (len(scheduled), count, app))
+            if len(pods) == count and len(scheduled) == count:
+                return True
+            time.sleep(interval)
+        return False
+
+    def waitForKubernetesClusterSize(self, cluster_id, size_matches, timeout, interval=30):
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            cluster = self.listKubernetesCluster(cluster_id)
+            if cluster is None:
+                return None
+            vm_count = len(cluster.virtualmachines) if cluster.virtualmachines else 0
+            self.debug("Kubernetes cluster %s state %s, size %d, VMs %d" % (cluster_id, cluster.state, cluster.size, vm_count))
+            if cluster.state in ['Error', 'Destroyed']:
+                return None
+            if cluster.state == 'Running' and size_matches(cluster.size) and \
+                    vm_count == cluster.size + cluster.controlnodes + (cluster.etcdnodes or 0):
+                return cluster
+            time.sleep(interval)
+        return None
 
     def getValidKubernetesCluster(self, size=1, control_nodes=1, version={}, etcd_nodes=0,
                                   worker_offering=None, control_offering=None, etcd_offering=None):
