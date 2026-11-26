@@ -68,6 +68,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.agent.api.StartCommand;
+import com.cloud.dc.ClusterVO;
 import com.cloud.network.NetworkService;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -3641,7 +3642,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             additonalParams.put(VirtualMachineProfile.Param.ConsiderLastHost, cmd.getConsiderLastHost().toString());
         }
 
-        return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner(), false).first();
+        Long clusterId = cmd.getClusterId();
+        if (clusterId != null) {
+            VMInstanceDetailVO clusterDetail = vmInstanceDetailsDao.findDetail(cmd.getId(), VmDetailConstants.CLUSTER_ID);
+            clusterId = clusterDetail != null ? Long.parseLong(clusterDetail.getValue()) : null;
+        }
+
+        return startVirtualMachine(cmd.getId(), cmd.getPodId(), clusterId, cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner(), false).first();
     }
 
     @Override
@@ -6905,13 +6912,28 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
         Map<String, String> userVmOVFProperties = cmd.getVmProperties();
         final String instanceType = cmd.getInstanceType();
+
+        Map<String, String> vmDetails = cmd.getDetails();
+        if (cmd instanceof DeployVMCmdByAdmin && ((DeployVMCmdByAdmin) cmd).getClusterId() != null) {
+            Long clusterId = ((DeployVMCmdByAdmin) cmd).getClusterId();
+            ClusterVO cluster = _clusterDao.findById(clusterId);
+            if (cluster == null) {
+                throw new InvalidParameterValueException("Unable to find cluster by id=" + clusterId);
+            }
+            if (cluster.getHypervisorType() != hypervisor) {
+                throw new InvalidParameterValueException("Hypervisor type of cluster " + cluster.getName() + " is " + cluster.getHypervisorType() +
+                        " but hypervisor type of the VM is " + hypervisor);
+            }
+            vmDetails.put(VmDetailConstants.CLUSTER_ID, clusterId.toString());
+        }
+
         if (zone.getNetworkType() == NetworkType.Basic) {
             if (networkIds != null) {
                 throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
             } else {
                 vm = createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(cmd, zone, template, owner), owner, name, displayName, diskOfferingId,
                         size , dataDiskInfoList, group , hypervisor, cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, ipToNetworkMap, addrs, displayVm , keyboard , cmd.getAffinityGroupIdList(),
-                        cmd.getDetails(), cmd.getCustomId(), cmd.getDhcpOptionsMap(),
+                        vmDetails, cmd.getCustomId(), cmd.getDhcpOptionsMap(),
                         dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled, overrideDiskOfferingId, cmd.getRootDiskKmsKeyId(), volume, snapshot);
             }
         } else {
@@ -6919,7 +6941,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     cmd.getSecurityGroupIdList()))  {
                 vm = createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, getSecurityGroupIdList(cmd, zone, template, owner), owner, name,
                         displayName, diskOfferingId, size, dataDiskInfoList, group, hypervisor, cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, ipToNetworkMap, addrs, displayVm, keyboard,
-                        cmd.getAffinityGroupIdList(), cmd.getDetails(), cmd.getCustomId(), cmd.getDhcpOptionsMap(),
+                        cmd.getAffinityGroupIdList(), vmDetails, cmd.getCustomId(), cmd.getDhcpOptionsMap(),
                         dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled, overrideDiskOfferingId, cmd.getRootDiskKmsKeyId(), instanceType, volume, snapshot);
 
             } else {
@@ -6927,7 +6949,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("Can't create VM with security groups; security group feature is not enabled per zone");
                 }
                 vm = createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, name, displayName, diskOfferingId, size, dataDiskInfoList, group,
-                        hypervisor, cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, ipToNetworkMap, addrs, displayVm, keyboard, cmd.getAffinityGroupIdList(), cmd.getDetails(),
+                        hypervisor, cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, ipToNetworkMap, addrs, displayVm, keyboard, cmd.getAffinityGroupIdList(), vmDetails,
                         cmd.getCustomId(), cmd.getDhcpOptionsMap(), dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled, instanceType, overrideDiskOfferingId, cmd.getRootDiskKmsKeyId(), volume, snapshot);
                 if (cmd instanceof DeployVnfApplianceCmd) {
                     vnfTemplateManager.createIsolatedNetworkRulesForVnfAppliance(zone, template, owner, vm, (DeployVnfApplianceCmd) cmd);
