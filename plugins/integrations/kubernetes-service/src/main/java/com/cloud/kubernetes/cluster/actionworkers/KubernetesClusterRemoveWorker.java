@@ -26,7 +26,6 @@ import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
-import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -37,7 +36,6 @@ import com.cloud.vm.UserVmVO;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,9 +44,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class KubernetesClusterRemoveWorker extends KubernetesClusterActionWorker {
-
-    @Inject
-    private FirewallRulesDao firewallRulesDao;
 
     private long removeNodeTimeoutTime;
 
@@ -128,9 +123,13 @@ public class KubernetesClusterRemoveWorker extends KubernetesClusterActionWorker
         for (PortForwardingRuleVO pfRule : pfRules) {
             try {
                 result &= rulesService.revokePortForwardingRule(pfRule.getId(), true);
-                if (Objects.isNull(network.getVpcId())) {
-                    FirewallRuleVO ruleVO = firewallRulesDao.findByNetworkIdAndPorts(network.getId(), pfRule.getSourcePortStart(), pfRule.getSourcePortEnd());
-                    result &= firewallService.revokeIngressFirewallRule(ruleVO.getId(), true);
+                if (isPublicIpFirewallRequired(network)) {
+                    FirewallRuleVO ruleVO = findIngressFirewallRuleForPorts(network, pfRule.getSourceIpAddressId(), pfRule.getSourcePortStart(), pfRule.getSourcePortEnd());
+                    if (ruleVO != null) {
+                        result &= firewallService.revokeIngressFirewallRule(ruleVO.getId(), true);
+                    } else {
+                        logger.warn("Firewall rule for port {} of node {} not found, it may have been removed manually", pfRule.getSourcePortStart(), vm.getName());
+                    }
                 }
             } catch (Exception e) {
                 String err = String.format("Failed to cleanup network rules for node %s, due to: %s", vm.getName(), e.getMessage());

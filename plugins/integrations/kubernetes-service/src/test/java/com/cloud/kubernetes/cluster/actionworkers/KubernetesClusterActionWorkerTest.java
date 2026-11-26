@@ -44,8 +44,13 @@ import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.vpc.dao.VpcServiceMapDao;
+import com.cloud.utils.net.NetUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesClusterActionWorkerTest {
@@ -74,9 +79,17 @@ public class KubernetesClusterActionWorkerTest {
     @Mock
     AffinityGroupDao affinityGroupDao;
 
+    @Mock
+    VpcServiceMapDao vpcServiceMapDao;
+
+    @Mock
+    FirewallRulesDao firewallRulesDao;
+
     KubernetesClusterActionWorker actionWorker = null;
 
     final static Long DEFAULT_ID = 1L;
+    final static Long PUBLIC_IP_ID = 7L;
+    final static int NODE_SSH_PORT = 2224;
 
     @Before
     public void setUp() throws Exception {
@@ -86,10 +99,12 @@ public class KubernetesClusterActionWorkerTest {
         kubernetesClusterManager.kubernetesClusterVmMapDao = kubernetesClusterVmMapDao;
         kubernetesClusterManager.kubernetesClusterAffinityGroupMapDao = kubernetesClusterAffinityGroupMapDao;
         KubernetesCluster kubernetesCluster = Mockito.mock(KubernetesCluster.class);
-        Mockito.when(kubernetesCluster.getId()).thenReturn(DEFAULT_ID);
+        Mockito.lenient().when(kubernetesCluster.getId()).thenReturn(DEFAULT_ID);
         actionWorker = new KubernetesClusterActionWorker(kubernetesCluster, kubernetesClusterManager);
         actionWorker.ipAddressDao = ipAddressDao;
         actionWorker.affinityGroupDao = affinityGroupDao;
+        actionWorker.vpcServiceMapDao = vpcServiceMapDao;
+        actionWorker.firewallRulesDao = firewallRulesDao;
     }
 
     @Test
@@ -145,6 +160,95 @@ public class KubernetesClusterActionWorkerTest {
         Mockito.when(ipAddressDao.findByUuid(uuid)).thenReturn(address);
         IpAddress result = actionWorker.getVpcTierKubernetesPublicIp(mockNetworkForGetVpcTierKubernetesPublicIpTest());
         Assert.assertNotNull(result);
+    }
+
+    private Network mockIsolatedNetwork() {
+        Network network = Mockito.mock(Network.class);
+        Mockito.when(network.getVpcId()).thenReturn(null);
+        return network;
+    }
+
+    private Network mockVpcTier(boolean vpcFirewall) {
+        Network network = mockNetworkForGetVpcTierKubernetesPublicIpTest();
+        Mockito.when(vpcServiceMapDao.canProviderSupportServiceInVpc(DEFAULT_ID, Network.Service.Firewall, Network.Provider.VPCVirtualRouter))
+                .thenReturn(vpcFirewall);
+        return network;
+    }
+
+    @Test
+    public void testIsVpcFirewallEnabledIsolatedNetwork() {
+        Assert.assertFalse(actionWorker.isVpcFirewallEnabled(mockIsolatedNetwork()));
+        Mockito.verifyNoInteractions(vpcServiceMapDao);
+    }
+
+    @Test
+    public void testIsVpcFirewallEnabledNullNetwork() {
+        Assert.assertFalse(actionWorker.isVpcFirewallEnabled(null));
+        Mockito.verifyNoInteractions(vpcServiceMapDao);
+    }
+
+    @Test
+    public void testIsVpcFirewallEnabledVpcWithoutVirtualRouterFirewall() {
+        Assert.assertFalse(actionWorker.isVpcFirewallEnabled(mockVpcTier(false)));
+    }
+
+    @Test
+    public void testIsVpcFirewallEnabledVpcWithVirtualRouterFirewall() {
+        Assert.assertTrue(actionWorker.isVpcFirewallEnabled(mockVpcTier(true)));
+    }
+
+    @Test
+    public void testIsPublicIpFirewallRequiredIsolatedNetwork() {
+        Assert.assertTrue(actionWorker.isPublicIpFirewallRequired(mockIsolatedNetwork()));
+    }
+
+    @Test
+    public void testIsPublicIpFirewallRequiredVpcTierWithoutFirewall() {
+        Assert.assertFalse(actionWorker.isPublicIpFirewallRequired(mockVpcTier(false)));
+    }
+
+    @Test
+    public void testIsPublicIpFirewallRequiredVpcTierWithFirewall() {
+        Assert.assertTrue(actionWorker.isPublicIpFirewallRequired(mockVpcTier(true)));
+    }
+
+    @Test
+    public void testFindIngressFirewallRuleForPortsIsolatedNetworkLooksUpByNetwork() {
+        Network network = mockIsolatedNetwork();
+        Mockito.when(network.getId()).thenReturn(DEFAULT_ID);
+        FirewallRuleVO rule = Mockito.mock(FirewallRuleVO.class);
+        Mockito.when(firewallRulesDao.findByNetworkIdAndPorts(DEFAULT_ID, NODE_SSH_PORT, NODE_SSH_PORT)).thenReturn(rule);
+
+        Assert.assertEquals(rule, actionWorker.findIngressFirewallRuleForPorts(network, PUBLIC_IP_ID, NODE_SSH_PORT, NODE_SSH_PORT));
+        Mockito.verify(firewallRulesDao, Mockito.never()).listByIpPurposePortsProtocolAndNotRevoked(
+                Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testFindIngressFirewallRuleForPortsVpcTierLooksUpByPublicIp() {
+        FirewallRuleVO rule = Mockito.mock(FirewallRuleVO.class);
+        Mockito.when(firewallRulesDao.listByIpPurposePortsProtocolAndNotRevoked(PUBLIC_IP_ID, NODE_SSH_PORT, NODE_SSH_PORT,
+                NetUtils.TCP_PROTO, FirewallRule.Purpose.Firewall)).thenReturn(List.of(rule));
+
+        Assert.assertEquals(rule, actionWorker.findIngressFirewallRuleForPorts(mockNetworkForGetVpcTierKubernetesPublicIpTest(),
+                PUBLIC_IP_ID, NODE_SSH_PORT, NODE_SSH_PORT));
+        Mockito.verify(firewallRulesDao, Mockito.never()).findByNetworkIdAndPorts(Mockito.anyLong(), Mockito.anyInt(), Mockito.anyInt());
+    }
+
+    @Test
+    public void testFindIngressFirewallRuleForPortsVpcTierNoRule() {
+        Mockito.when(firewallRulesDao.listByIpPurposePortsProtocolAndNotRevoked(PUBLIC_IP_ID, NODE_SSH_PORT, NODE_SSH_PORT,
+                NetUtils.TCP_PROTO, FirewallRule.Purpose.Firewall)).thenReturn(new ArrayList<>());
+
+        Assert.assertNull(actionWorker.findIngressFirewallRuleForPorts(mockNetworkForGetVpcTierKubernetesPublicIpTest(),
+                PUBLIC_IP_ID, NODE_SSH_PORT, NODE_SSH_PORT));
+    }
+
+    @Test
+    public void testFindIngressFirewallRuleForPortsVpcTierWithoutPublicIp() {
+        Assert.assertNull(actionWorker.findIngressFirewallRuleForPorts(mockNetworkForGetVpcTierKubernetesPublicIpTest(),
+                null, NODE_SSH_PORT, NODE_SSH_PORT));
+        Mockito.verifyNoInteractions(firewallRulesDao);
     }
 
     @Test
