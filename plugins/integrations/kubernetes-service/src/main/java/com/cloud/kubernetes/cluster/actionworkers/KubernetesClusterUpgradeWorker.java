@@ -64,19 +64,45 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
     }
 
     private Pair<Boolean, String> runInstallScriptOnVM(final UserVm vm, final int index) throws Exception {
+        return runInstallScriptOnVM(vm, index, false);
+    }
+
+    private Pair<Boolean, String> runInstallScriptOnVM(final UserVm vm, final int index, final boolean importImagesOnly) throws Exception {
         int nodeSshPort = sshPort == 22 ? sshPort : sshPort + index;
         String nodeAddress = (index > 0 && sshPort == 22) ? vm.getPrivateIpAddress() : publicIpAddress;
         SshHelper.scpTo(nodeAddress, nodeSshPort, getControlNodeLoginUser(), sshKeyFile, null,
                 "~/", upgradeScriptFile.getAbsolutePath(), "0755");
-        String cmdStr = String.format("sudo ./%s %s %s %s %s %s",
+        String cmdStr = String.format("sudo ./%s %s %s %s %s %s %s",
                 upgradeScriptFile.getName(),
                 upgradeVersion.getSemanticVersion(),
                 index == 0 ? "true" : "false",
                 KubernetesVersionManagerImpl.compareSemanticVersions(upgradeVersion.getSemanticVersion(), "1.15.0") < 0 ? "true" : "false",
-                Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType()), Objects.isNull(kubernetesCluster.getCniConfigId()));
+                Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType()),
+                Objects.isNull(kubernetesCluster.getCniConfigId()),
+                importImagesOnly);
         return SshHelper.sshExecute(nodeAddress, nodeSshPort, getControlNodeLoginUser(), sshKeyFile, null,
                 cmdStr,
                 10000, 10000, 10 * 60 * 1000);
+    }
+
+    private void preStageImagesOnAllNodes() {
+        if (clusterVMs.size() <= 1) {
+            return;
+        }
+        for (int i = 1; i < clusterVMs.size(); ++i) {
+            UserVm vm = clusterVMs.get(i);
+            if (logger.isInfoEnabled()) {
+                logger.info("Pre-staging container images on VM {} for Kubernetes cluster {} upgrade", vm, kubernetesCluster);
+            }
+            try {
+                Pair<Boolean, String> result = runInstallScriptOnVM(vm, i, true);
+                if (!result.first()) {
+                    logger.warn("Failed to pre-stage images on VM : {}, output: {}", vm.getDisplayName(), result.second());
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to pre-stage images on VM : {} due to {}", vm.getDisplayName(), e.getMessage());
+            }
+        }
     }
 
     private void upgradeKubernetesClusterNodes() {
@@ -100,9 +126,9 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                         break;
                     }
                     if (retry > 0) {
-                        logger.error(String.format("%s, retries left: %s", errorMessage, retry));
+                        logger.error(String.format("%s, output: %s, retries left: %s", errorMessage, result.second(), retry));
                     } else {
-                        logTransitStateDetachIsoAndThrow(Level.ERROR, errorMessage, kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
+                        logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("%s, output: %s", errorMessage, result.second()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
                     }
                 } catch (Exception e) {
                     if (retry > 0) {
@@ -124,9 +150,9 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                         break;
                     }
                     if (retry > 0) {
-                        logger.error(String.format("%s, retries left: %s", errorMessage, retry));
+                        logger.error(String.format("%s, script output: %s, retries left: %s", errorMessage, result.second(), retry));
                     } else {
-                        logTransitStateDetachIsoAndThrow(Level.ERROR, errorMessage, kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
+                        logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("%s, script output: %s", errorMessage, result.second()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
                     }
                 } catch (Exception e) {
                     if (retry > 0) {
@@ -176,6 +202,7 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         retrieveScriptFiles();
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.UpgradeRequested);
         attachIsoKubernetesVMs(clusterVMs, upgradeVersion);
+        preStageImagesOnAllNodes();
         upgradeKubernetesClusterNodes();
         detachIsoKubernetesVMs(clusterVMs);
         KubernetesClusterVO kubernetesClusterVO = kubernetesClusterDao.findById(kubernetesCluster.getId());
