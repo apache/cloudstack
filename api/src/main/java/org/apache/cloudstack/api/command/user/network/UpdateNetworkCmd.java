@@ -110,6 +110,12 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
             type = CommandType.BOOLEAN, since = "4.23.0", authorized = {RoleType.Admin})
     private Boolean keepMacAddressOnPublicNic;
 
+    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "The beginning of the custom DHCP range within the CIDR for a source NAT isolated network. An empty value clears the range so the whole CIDR is used.", since = "4.23.0")
+    private String startIp;
+
+    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "The end of the custom DHCP range within the CIDR for a source NAT isolated network. Defaults to the start IP when not set.", since = "4.23.0")
+    private String endIp;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -143,6 +149,14 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
 
     public String getGuestVmCidr() {
         return guestVmCidr;
+    }
+
+    public String getStartIp() {
+        return startIp;
+    }
+
+    public String getEndIp() {
+        return endIp;
     }
 
     public Boolean getDisplayNetwork() {

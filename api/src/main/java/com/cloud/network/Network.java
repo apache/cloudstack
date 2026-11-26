@@ -96,6 +96,10 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     String updatingInSequence = "updatingInSequence";
     String hideIpAddressUsage = "hideIpAddressUsage";
+    // Network detail keys for an isolated network's optional custom DHCP range (guest IP allocation
+    // range within the CIDR). Stored as network details rather than dedicated columns.
+    String dhcpStartIp = "dhcpStartIp";
+    String dhcpEndIp = "dhcpEndIp";
 
     class Service {
         private static List<Service> supportedServices = new ArrayList<Service>();

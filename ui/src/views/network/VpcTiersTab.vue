@@ -262,6 +262,18 @@
               :placeholder="netmaskPlaceholder"
               v-model:value="form.netmask"></a-input>
           </a-form-item>
+          <a-form-item ref="startip" name="startip" :colon="false">
+            <template #label>
+              <tooltip-label :title="$t('label.startipv4')" :tooltip="$t('label.startipv4')"/>
+            </template>
+            <a-input v-model:value="form.startip"></a-input>
+          </a-form-item>
+          <a-form-item ref="endip" name="endip" :colon="false">
+            <template #label>
+              <tooltip-label :title="$t('label.endip')" :tooltip="$t('label.endip')"/>
+            </template>
+            <a-input v-model:value="form.endip"></a-input>
+          </a-form-item>
           <a-form-item ref="externalId" name="externalId" :colon="false">
             <template #label>
               <tooltip-label :title="$t('label.externalid')" :tooltip="$t('label.create.tier.externalid.description')"/>
@@ -770,6 +782,14 @@ export default {
 
         if (values.asnumber && this.isASNumberRequired()) {
           params.asnumber = values.asnumber
+        }
+
+        if (values.startip) {
+          params.startip = values.startip
+        }
+
+        if (values.endip) {
+          params.endip = values.endip
         }
 
         postAPI('createNetwork', params).then(() => {

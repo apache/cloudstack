@@ -228,6 +228,7 @@ public class NetworkProfile implements Network {
         this.cidr = cidr;
     }
 
+
     @Override
     public String getNetworkCidr() {
         return networkCidr;

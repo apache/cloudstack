@@ -55,6 +55,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkServiceMapVO;
 import com.cloud.network.dao.NetworkVO;
@@ -70,6 +72,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -92,6 +95,8 @@ public class NetworkModelImplTest {
     private VpcDao vpcDao;
     @Mock
     private NetworkDao _networksDao;
+    @Mock
+    private NetworkDetailsDao networkDetailsDao;
     @Inject
     private NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
     @Mock
@@ -506,5 +511,47 @@ public class NetworkModelImplTest {
         when(nicDao.listByVmId(5L)).thenReturn(new ArrayList<>());
 
         assertNull(networkModel.getNicAndIpInNetwork(5L, 207L));
+    }
+
+    private NetworkVO networkWithDhcpRange(String cidr, String gateway, String dhcpStart, String dhcpEnd) {
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getCidr()).thenReturn(cidr);
+        when(network.getGateway()).thenReturn(gateway);
+        when(network.getId()).thenReturn(1L);
+        when(networkDetailsDao.findDetail(1L, Network.dhcpStartIp))
+                .thenReturn(dhcpStart == null ? null : new NetworkDetailVO(1L, Network.dhcpStartIp, dhcpStart, true));
+        when(networkDetailsDao.findDetail(1L, Network.dhcpEndIp))
+                .thenReturn(dhcpEnd == null ? null : new NetworkDetailVO(1L, Network.dhcpEndIp, dhcpEnd, true));
+        Mockito.doReturn(new ArrayList<String>()).when(networkModel).getUsedIpsInNetwork(network);
+        return network;
+    }
+
+    @Test
+    public void getAvailableIpsRestrictsToTheDhcpRangeWhenSet() {
+        NetworkVO network = networkWithDhcpRange("10.1.1.0/24", "10.1.1.1", "10.1.1.10", "10.1.1.20");
+
+        Set<Long> ips = networkModel.getAvailableIps(network, null);
+
+        long start = NetUtils.ip2Long("10.1.1.10");
+        long end = NetUtils.ip2Long("10.1.1.20");
+        for (Long ip : ips) {
+            assertTrue(ip >= start && ip <= end);
+        }
+        assertEquals(11, ips.size());
+        assertTrue(ips.contains(NetUtils.ip2Long("10.1.1.10")));
+        assertTrue(ips.contains(NetUtils.ip2Long("10.1.1.20")));
+        assertFalse(ips.contains(NetUtils.ip2Long("10.1.1.9")));
+        assertFalse(ips.contains(NetUtils.ip2Long("10.1.1.21")));
+    }
+
+    @Test
+    public void getAvailableIpsUsesTheWholeCidrWhenNoDhcpRangeIsSet() {
+        NetworkVO network = networkWithDhcpRange("10.1.1.0/24", "10.1.1.1", null, null);
+
+        Set<Long> ips = networkModel.getAvailableIps(network, null);
+
+        assertTrue(ips.contains(NetUtils.ip2Long("10.1.1.10")));
+        assertTrue(ips.contains(NetUtils.ip2Long("10.1.1.250")));
+        assertFalse(ips.contains(NetUtils.ip2Long("10.1.1.1")));
     }
 }

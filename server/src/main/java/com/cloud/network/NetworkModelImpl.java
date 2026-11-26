@@ -81,6 +81,8 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkAccountVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -158,6 +160,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     public static final String UNABLE_TO_USE_NETWORK = "Unable to use network with id= %s, permission denied";
     @Inject
     EntityManager _entityMgr;
+    @Inject
+    NetworkDetailsDao networkDetailsDao;
     @Inject
     DataCenterDao _dcDao = null;
     @Inject
@@ -2355,6 +2359,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         String gateway = network.getGateway();
         if ((gateway != null) && (allPossibleIps.contains(NetUtils.ip2Long(gateway))))
             allPossibleIps.remove(NetUtils.ip2Long(gateway));
+
+        NetworkDetailVO dhcpStartDetail = networkDetailsDao.findDetail(network.getId(), Network.dhcpStartIp);
+        NetworkDetailVO dhcpEndDetail = networkDetailsDao.findDetail(network.getId(), Network.dhcpEndIp);
+        if (dhcpStartDetail != null && dhcpEndDetail != null
+                && StringUtils.isNoneBlank(dhcpStartDetail.getValue(), dhcpEndDetail.getValue())) {
+            long start = NetUtils.ip2Long(dhcpStartDetail.getValue());
+            long end = NetUtils.ip2Long(dhcpEndDetail.getValue());
+            allPossibleIps.removeIf(ip -> ip < start || ip > end);
+        }
 
         return allPossibleIps;
     }

@@ -2632,6 +2632,10 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
         // FIXME - either set netmask or cidr
         response.setCidr(cidr);
+        NetworkDetailVO dhcpStartDetail = networkDetailsDao.findDetail(network.getId(), Network.dhcpStartIp);
+        NetworkDetailVO dhcpEndDetail = networkDetailsDao.findDetail(network.getId(), Network.dhcpEndIp);
+        response.setDhcpStartIp(dhcpStartDetail != null ? dhcpStartDetail.getValue() : null);
+        response.setDhcpEndIp(dhcpEndDetail != null ? dhcpEndDetail.getValue() : null);
         if (network.getNetworkCidr() != null) {
             response.setNetworkCidr((network.getNetworkCidr()));
         }
