@@ -1107,6 +1107,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return publicNic;
     }
 
+    public String resolveMigrationNetworkIp(String label) {
+        if (StringUtils.isBlank(label)) {
+            return null;
+        }
+        NetworkInterface migrateNic = NetUtils.getNetworkInterface(label);
+        String[] migrateNicParams = migrateNic == null ? null : NetUtils.getNetworkParams(migrateNic);
+        if (migrateNicParams != null && StringUtils.isNotBlank(migrateNicParams[0])) {
+            return migrateNicParams[0];
+        }
+        LOGGER.warn("Migration network label [{}] could not be resolved to an IPv4 address on this host; live migration will use the management address.", label);
+        return null;
+    }
+
     protected String getDefaultTungstenScriptsDir() {
         return TUNGSTEN_PATH;
     }
@@ -3513,6 +3526,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         cmd.setMode(cpuMode);
         cmd.setModel(cpuModel);
+        if (MapUtils.isNotEmpty(details) && details.get(VmDetailConstants.GUEST_CPU_MODEL_FALLBACK) != null) {
+            cmd.setModelFallback(details.get(VmDetailConstants.GUEST_CPU_MODEL_FALLBACK));
+        }
         cmd.setFeatures(cpuFeatures);
         int vCpusInDef = vmTO.getVcpuMaxLimit() == null ? vcpus : vmTO.getVcpuMaxLimit();
         setCpuTopology(cmd, vCpusInDef, vmTO.getDetails());

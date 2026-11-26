@@ -67,6 +67,36 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<String> VmConfigDriveLabel = new ConfigKey<>("Hidden", String.class, "vm.configdrive.label", "config-2",
             "The default label name for the config drive", false);
 
+    ConfigKey<String> VmMigrationEncryptionPolicy = new ConfigKey<>("Advanced", String.class, "vm.migrate.encryption.policy", "Disabled",
+            "Policy for encrypting the KVM live-migration data stream. Disabled: plaintext. Required: use TLS " +
+                    "(the host must have a libvirt/QEMU migration TLS environment configured, otherwise the migration fails). " +
+                    "Overrides the per-host migrate.encryption.policy agent property when set to Required.",
+            true, ConfigKey.Scope.Zone);
+
+    // Config key name for the per-cluster CPU baseline, defined here so other managers can reference it
+    // without depending on the implementation.
+    String CLUSTER_CPU_BASELINE_MODEL_KEY = "cluster.cpu.baseline.model";
+
+    /**
+     * Returns the names of the hosts in the cluster that are NOT compatible with the given CPU model (empty when
+     * all are, or when the model is blank). Only reachable KVM hosts are checked; a host that cannot be reached or
+     * verified is logged and skipped rather than reported incompatible.
+     */
+    List<String> findHostsIncompatibleWithCpuModel(long clusterId, String cpuModel);
+
+    /**
+     * The configured per-cluster CPU baseline model (empty when none), used to pin instances and to validate hosts.
+     */
+    String getClusterCpuBaselineModel(long clusterId);
+
+    /**
+     * Computes a CPU baseline model for the cluster as the common denominator of its reachable KVM hosts, by
+     * collecting each host's CPU and running cpu-baseline. Returns the computed model name, or null when no
+     * reachable host returned a CPU definition or the cpu-baseline computation failed. Used to resolve a
+     * baseline of "auto" to a concrete, committed model.
+     */
+    String computeClusterCpuBaseline(long clusterId);
+
     ConfigKey<Boolean> VmConfigDriveOnPrimaryPool = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.primarypool.enabled", "false",
             "If config drive need to be created and hosted on primary storage pool. Currently only supported for KVM.", true, ConfigKey.Scope.Zone);
 

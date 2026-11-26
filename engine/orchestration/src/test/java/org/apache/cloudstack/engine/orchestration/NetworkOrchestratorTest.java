@@ -40,6 +40,9 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
+import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.IpAddressManager;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.extension.Extension;
@@ -1279,5 +1282,72 @@ public class NetworkOrchestratorTest extends TestCase {
         testOrchestrator.ensureRouterForLazilyImplementedAssociation(network, mock(DeployDestination.class), mock(ReservationContext.class));
 
         verify(testOrchestrator, never()).implementNetworkElementsAndResources(any(), any(), any(), any());
+    }
+
+    @Test
+    public void testPersistMigrationIpStoresResolvedIp() {
+        testOrchestrator._hostDetailsDao = mock(HostDetailsDao.class);
+        Host host = mock(Host.class);
+        when(host.getId()).thenReturn(42L);
+        when(testOrchestrator._hostDetailsDao.findDetail(42L, Host.HOST_MIGRATION_IP)).thenReturn(null);
+
+        testOrchestrator.persistMigrationIp(host, "10.9.9.9");
+
+        verify(testOrchestrator._hostDetailsDao, times(1)).persist(42L, Collections.singletonMap(Host.HOST_MIGRATION_IP, "10.9.9.9"));
+    }
+
+    @Test
+    public void testPersistMigrationIpSkipsWhenUnchanged() {
+        testOrchestrator._hostDetailsDao = mock(HostDetailsDao.class);
+        Host host = mock(Host.class);
+        when(host.getId()).thenReturn(42L);
+        DetailVO existing = mock(DetailVO.class);
+        when(existing.getValue()).thenReturn("10.9.9.9");
+        when(testOrchestrator._hostDetailsDao.findDetail(42L, Host.HOST_MIGRATION_IP)).thenReturn(existing);
+
+        testOrchestrator.persistMigrationIp(host, "10.9.9.9");
+
+        verify(testOrchestrator._hostDetailsDao, never()).persist(ArgumentMatchers.anyLong(), any());
+    }
+
+    @Test
+    public void testPersistMigrationIpClearsWhenBlank() {
+        testOrchestrator._hostDetailsDao = mock(HostDetailsDao.class);
+        Host host = mock(Host.class);
+        when(host.getId()).thenReturn(42L);
+        DetailVO existing = mock(DetailVO.class);
+        when(existing.getId()).thenReturn(7L);
+        when(testOrchestrator._hostDetailsDao.findDetail(42L, Host.HOST_MIGRATION_IP)).thenReturn(existing);
+
+        testOrchestrator.persistMigrationIp(host, null);
+
+        verify(testOrchestrator._hostDetailsDao, times(1)).remove(7L);
+    }
+
+    @Test
+    public void testPersistMigrationIpUpdatesWhenChanged() {
+        testOrchestrator._hostDetailsDao = mock(HostDetailsDao.class);
+        Host host = mock(Host.class);
+        when(host.getId()).thenReturn(42L);
+        DetailVO existing = mock(DetailVO.class);
+        when(existing.getValue()).thenReturn("10.1.1.1");
+        when(testOrchestrator._hostDetailsDao.findDetail(42L, Host.HOST_MIGRATION_IP)).thenReturn(existing);
+
+        testOrchestrator.persistMigrationIp(host, "10.2.2.2");
+
+        verify(testOrchestrator._hostDetailsDao, times(1)).persist(42L, Collections.singletonMap(Host.HOST_MIGRATION_IP, "10.2.2.2"));
+    }
+
+    @Test
+    public void testPersistMigrationIpSwallowsPersistErrors() {
+        testOrchestrator._hostDetailsDao = mock(HostDetailsDao.class);
+        Host host = mock(Host.class);
+        when(host.getId()).thenReturn(42L);
+        when(testOrchestrator._hostDetailsDao.findDetail(42L, Host.HOST_MIGRATION_IP)).thenReturn(null);
+        Mockito.doThrow(new RuntimeException("db down")).when(testOrchestrator._hostDetailsDao)
+                .persist(ArgumentMatchers.anyLong(), ArgumentMatchers.any());
+
+        // a failure recording the informational migration IP must not propagate out and fail the host connect
+        testOrchestrator.persistMigrationIp(host, "10.9.9.9");
     }
 }
