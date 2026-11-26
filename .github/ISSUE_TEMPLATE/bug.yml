@@ -21,6 +21,14 @@ labels: bug, needs-triageing
 body:
 - type: markdown
   attributes:
+    value: >
+      > **Using AI?** AI-assisted issues are appreciated, but if you use AI to write
+      this issue, please spend the extra tokens to also generate documentation,
+      tests (a reproducer for bugs) and suggested code (a patch or, preferably,
+      a pull request), and verify them before submitting. See
+      [AI-assisted contributions](https://github.com/apache/cloudstack/blob/main/CONTRIBUTING.md#ai-assisted-contributions).
+- type: markdown
+  attributes:
     value: "## Welcome, please describe your problem below;"
 - type: textarea
   attributes:
@@ -44,3 +52,9 @@ body:
 - type: textarea
   attributes:
     label: "What to do about it?"
+- type: textarea
+  attributes:
+    label: "AI assistance"
+    description: "If AI was used to write this issue, say so here and add (or link to) the generated documentation, tests and suggested code. Leave empty if no AI was used."
+  validations:
+    required: false
