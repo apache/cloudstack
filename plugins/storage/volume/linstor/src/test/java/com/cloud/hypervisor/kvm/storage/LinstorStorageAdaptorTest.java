@@ -51,6 +51,7 @@ import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.AutoPlaceRequest;
+import com.linbit.linstor.api.model.ControllerVersion;
 import com.linbit.linstor.api.model.DrbdResource;
 import com.linbit.linstor.api.model.LayerType;
 import com.linbit.linstor.api.model.Properties;
@@ -104,6 +105,12 @@ public class LinstorStorageAdaptorTest {
     private void mockDefinitionsCreated() throws ApiException {
         when(api.resourceDefinitionCreate(any())).thenReturn(success());
         when(api.volumeDefinitionCreate(anyString(), any())).thenReturn(success());
+    }
+
+    private void mockControllerVersion(String restApiVersion) throws ApiException {
+        ControllerVersion version = new ControllerVersion();
+        version.setRestApiVersion(restApiVersion);
+        when(api.controllerVersion()).thenReturn(version);
     }
 
     private static ResourceWithVolumes drbdResource() {
@@ -239,6 +246,7 @@ public class LinstorStorageAdaptorTest {
 
     @Test
     public void connectPhysicalDiskWaitsForTheLocalDevice() throws ApiException {
+        mockControllerVersion("1.29.0");
         when(api.resourceMakeAvailableOnNode(eq("cs-vol-1"), eq(localNode), any())).thenReturn(success());
         when(api.viewResources(Collections.singletonList(localNode), Collections.singletonList("cs-vol-1"),
                 Collections.emptyList(), null, null, null)).thenReturn(Collections.singletonList(drbdResource()));
@@ -269,11 +277,96 @@ public class LinstorStorageAdaptorTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void connectPhysicalDiskFailsWithoutLocalVolume() throws ApiException {
+        mockControllerVersion("1.29.0");
         when(api.resourceMakeAvailableOnNode(eq("cs-vol-1"), eq(localNode), any())).thenReturn(success());
         when(api.viewResources(Collections.singletonList(localNode), Collections.singletonList("cs-vol-1"),
                 Collections.emptyList(), null, null, null)).thenReturn(Collections.emptyList());
 
         adaptor.connectPhysicalDisk("vol-1", pool, null, false);
+    }
+
+    @Test
+    public void connectPhysicalDiskFailsWhenControllerVersionIsUnknown() throws ApiException {
+        when(api.controllerVersion()).thenThrow(new ApiException(503, "unavailable"));
+
+        Assert.assertThrows(CloudRuntimeException.class,
+                () -> adaptor.connectPhysicalDisk("vol-1", pool, null, false));
+
+        // neither the make-available nor the previous handling may be tried on a guess
+        verify(api, never()).resourceMakeAvailableOnNode(any(), any(), any());
+        verify(api, never()).resourceCreateOnNode(any(), any(), any());
+    }
+
+    @Test
+    public void disconnectPhysicalDiskDoesNothingWhenControllerVersionIsUnknown() throws ApiException {
+        // only disks of registered pools are disconnected
+        doNothing().when(adaptor).deleteLeftoverBackupScratch(any());
+        KVMStoragePool registeredPool = adaptor.createStoragePool("pool-version-unknown", "http://controller:3370",
+                3370, "cloudstack", null, Storage.StoragePoolType.Linstor, null, true);
+        when(api.viewResources(Collections.singletonList(localNode), null, null, null, null, null))
+                .thenReturn(Collections.singletonList(drbdResource()));
+        when(api.controllerVersion()).thenThrow(new ApiException(503, "unavailable"));
+
+        try {
+            Assert.assertFalse(adaptor.disconnectPhysicalDisk("vol-1", registeredPool));
+        } finally {
+            adaptor.deleteStoragePool("pool-version-unknown");
+        }
+
+        verify(api).controllerVersion();
+
+        verify(api, never()).resourceUnmakeAvailableOnNode(any(), any());
+        verify(api, never()).resourceDelete(any(), any(), any());
+        verify(api, never()).resourceDefinitionModify(any(), any());
+    }
+
+    private static ResourceWithVolumes inactiveResource() {
+        ResourceWithVolumes rsc = new ResourceWithVolumes();
+        rsc.setName("cs-vol-1");
+        rsc.setLayerObject(new ResourceLayer());
+        rsc.setFlags(Collections.singletonList(ApiConsts.FLAG_RSC_INACTIVE));
+        rsc.setVolumes(Collections.singletonList(volume(0, null)));
+        return rsc;
+    }
+
+    @Test
+    public void getPhysicalDiskUsesTheReportedDevicePath() throws ApiException {
+        when(api.viewResources(Collections.emptyList(), Collections.singletonList("cs-vol-1"),
+                Collections.emptyList(), null, null, null))
+                .thenReturn(Arrays.asList(inactiveResource(), drbdResource()));
+
+        Assert.assertEquals(DEVICE, adaptor.getPhysicalDisk("vol-1", pool).getPath());
+
+        verify(api, never()).resourceMakeAvailableOnNode(any(), any(), any());
+    }
+
+    @Test
+    public void getPhysicalDiskMakesAResourceAvailableThatIsInactiveEverywhere() throws ApiException {
+        // Linstor reports no device path for inactive resources, only once it was made available
+        when(api.viewResources(Collections.emptyList(), Collections.singletonList("cs-vol-1"),
+                Collections.emptyList(), null, null, null))
+                .thenReturn(Collections.singletonList(inactiveResource()))
+                .thenReturn(Collections.singletonList(drbdResource()));
+        when(api.resourceMakeAvailableOnNode(eq("cs-vol-1"), eq(localNode), any())).thenReturn(success());
+        when(api.viewResources(Collections.singletonList(localNode), Collections.singletonList("cs-vol-1"),
+                Collections.emptyList(), null, null, null)).thenReturn(Collections.singletonList(drbdResource()));
+
+        Assert.assertEquals(DEVICE, adaptor.getPhysicalDisk("vol-1", pool).getPath());
+
+        InOrder inOrder = Mockito.inOrder(api, adaptor);
+        inOrder.verify(api).resourceMakeAvailableOnNode(eq("cs-vol-1"), eq(localNode), any());
+        inOrder.verify(adaptor).waitForDevice(DEVICE);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getPhysicalDiskFailsWhenTheResourceCannotBeMadeAvailable() throws ApiException {
+        when(api.viewResources(Collections.emptyList(), Collections.singletonList("cs-vol-1"),
+                Collections.emptyList(), null, null, null))
+                .thenReturn(Collections.singletonList(inactiveResource()));
+        when(api.resourceMakeAvailableOnNode(eq("cs-vol-1"), eq(localNode), any()))
+                .thenReturn(error("no storage pool"));
+
+        adaptor.getPhysicalDisk("vol-1", pool);
     }
 
     @Test
