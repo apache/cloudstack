@@ -31,8 +31,8 @@
           }
         "
       >
-        <a-select-option :value="'Account'">{{ $t('label.account') }}</a-select-option>
-        <a-select-option :value="'Project'">{{ $t('label.project') }}</a-select-option>
+        <a-select-option :value="'Account'" :label="$t('label.account')">{{ $t('label.account') }}</a-select-option>
+        <a-select-option :value="'Project'" :label="$t('label.project')">{{ $t('label.project') }}</a-select-option>
       </a-select>
     </a-form-item>
     <a-form-item :label="$t('label.domain')" required>
@@ -80,7 +80,7 @@
             }
           "
         >
-          <a-select-option v-for="account in accounts" :key="account.name" :value="account.name">
+          <a-select-option v-for="account in accounts" :key="account.name" :value="account.name" :label="account.name">
             <span>
               <resource-icon
                 v-if="account && account.icon"
