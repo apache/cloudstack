@@ -462,19 +462,25 @@ backup_running_vm_pull() {
   # End the pull job. Aborting the active job is how a pull backup finishes (there is no
   # backup-end command): libvirt tears down the NBD server and releases the scratch devices,
   # which the agent then deletes. The data already pulled is a complete backup, so from here
-  # on a failure must no longer discard it.
-  trap - EXIT INT TERM HUP
+  # on a failure must no longer discard it. Hand the EXIT trap back to cleanup(), which keeps
+  # a completed backup and only unmounts.
+  trap cleanup EXIT
+  trap - INT TERM HUP
+  BACKUP_COMPLETE=1
   if ! abort_backup_job; then
     log -e "warning: failed to end (domjobabort) backup job for $VM"
+    # A pull job only serves reads and never writes into $dest, so a job that is still up
+    # must not make cleanup() fail the completed backup.
+    BACKUP_JOB_ACTIVE=0
   fi
   rm -rf "$work_dir"
   sync
 
   # Statistics -- the size on the last stdout line is parsed by the Java wrapper.
-  du -sb $dest | cut -f1
-
-  umount $mount_point
-  rmdir $mount_point
+  local backup_size
+  backup_size=$(du -sb "$dest" 2>>"$logFile" | cut -f1) || { log -ne "WARNING: du failed for $dest, reporting size as 0"; backup_size=0; }
+  unmount_completed_backup
+  echo "$backup_size"
 }
 
 backup_running_vm() {
