@@ -135,7 +135,7 @@
             :placeholder="apiParams.guestvmcidr.description"
             @change="(e) => { cidrChanged = e.target.value !== resource.cidr }" />
         </a-form-item>
-        <a-form-item name="startip" ref="startip" v-if="isUpdatingIsolatedNetwork && !resource.vpcid && 'startip' in apiParams">
+        <a-form-item name="startip" ref="startip" v-if="isUpdatingIsolatedNetwork && 'startip' in apiParams">
           <template #label>
             <tooltip-label :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
           </template>
@@ -143,7 +143,7 @@
             v-model:value="form.startip"
             :placeholder="apiParams.startip.description" />
         </a-form-item>
-        <a-form-item name="endip" ref="endip" v-if="isUpdatingIsolatedNetwork && !resource.vpcid && 'endip' in apiParams">
+        <a-form-item name="endip" ref="endip" v-if="isUpdatingIsolatedNetwork && 'endip' in apiParams">
           <template #label>
             <tooltip-label :title="$t('label.endip')" :tooltip="apiParams.endip.description"/>
           </template>
