@@ -225,12 +225,15 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
         if (hostId != null) {
             Host host = hostDao.findById(hostId);
-            if (host.getStatus() == Status.Up) {
-                return host;
+            if (host != null) {
+                if (host.getStatus() == Status.Up) {
+                    return host;
+                }
+                // Try to find any Up host in the same cluster
+                clusterId = host.getClusterId();
             }
-            // Try to find any Up host in the same cluster
-            clusterId = host.getClusterId();
-        } else {
+        }
+        if (clusterId == null) {
             // Try to find any Up host in the same cluster as the root volume
             clusterId = getClusterIdFromRootVolume(vm);
         }
@@ -851,7 +854,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 LOG.warn("Failed to remove the backup anchors of VM id={}: {}", vmId,
                         answer != null ? answer.getDetails() : "no answer received");
             }
-        } catch (AgentUnavailableException | OperationTimedoutException | CloudRuntimeException e) {
+        } catch (AgentUnavailableException | OperationTimedoutException | RuntimeException e) {
             LOG.warn("Unable to remove the backup anchors of VM id={}: {}", vmId, e.getMessage());
         }
     }
