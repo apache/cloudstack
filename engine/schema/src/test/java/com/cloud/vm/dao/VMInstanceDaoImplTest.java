@@ -210,6 +210,55 @@ public class VMInstanceDaoImplTest {
         assertTrue(result);
     }
 
+    /*
+     * Mirrors testUpdatePowerStateNoChangeMaxUpdatesInvalidStateVmStopped but with
+     * vm.getHostId() returning null (the default from setUp), which is what happens when the
+     * row was loaded through a partial-select projection that doesn't include the host_id column.
+     * The hostId argument passed to updatePowerState and vm.getPowerHostId() are both non-null.
+     * isPowerStateInSyncWithInstanceState must not NPE on the null vm.getHostId(), and must
+     * still detect the state is out-of-sync.
+     */
+    @Test
+    public void testUpdatePowerStateNoChangeMaxUpdatesInvalidStateVmStoppedNullHostId() {
+        when(vm.getPowerStateUpdateTime()).thenReturn(null);
+        when(vm.getPowerHostId()).thenReturn(1L);
+        when(vm.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOn);
+        when(vm.getState()).thenReturn(Stopped);
+        doReturn(vm).when(vmInstanceDao).findById(anyLong());
+        doReturn(true).when(vmInstanceDao).update(anyLong(), any());
+
+        boolean result = vmInstanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOn, new Date());
+
+        verify(vm, times(1)).setPowerState(any());
+        verify(vm, times(1)).setPowerHostId(anyLong());
+        verify(vm, times(1)).setPowerStateUpdateCount(1);
+        verify(vm, times(1)).setPowerStateUpdateTime(any(Date.class));
+
+        assertTrue(result);
+    }
+
+    /*
+     * Mirrors testUpdatePowerStateNoChangeMaxUpdatesInvalidStateVmRunning but with a null hostId.
+     */
+    @Test
+    public void testUpdatePowerStateNoChangeMaxUpdatesInvalidStateVmRunningNullHostId() {
+        when(vm.getPowerStateUpdateTime()).thenReturn(null);
+        when(vm.getPowerHostId()).thenReturn(1L);
+        when(vm.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOff);
+        when(vm.getState()).thenReturn(Running);
+        doReturn(vm).when(vmInstanceDao).findById(anyLong());
+        doReturn(true).when(vmInstanceDao).update(anyLong(), any());
+
+        boolean result = vmInstanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOff, new Date());
+
+        verify(vm, times(1)).setPowerState(any());
+        verify(vm, times(1)).setPowerHostId(anyLong());
+        verify(vm, times(1)).setPowerStateUpdateCount(1);
+        verify(vm, times(1)).setPowerStateUpdateTime(any(Date.class));
+
+        assertTrue(result);
+    }
+
     @Test
     public void testSearchRemovedByRemoveDate() {
         SearchBuilder<VMInstanceVO> sb = Mockito.mock(SearchBuilder.class);
