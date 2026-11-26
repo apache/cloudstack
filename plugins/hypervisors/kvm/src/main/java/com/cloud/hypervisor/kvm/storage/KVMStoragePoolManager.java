@@ -20,8 +20,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,7 +59,7 @@ public class KVMStoragePoolManager {
 
     private KVMHAMonitor _haMonitor;
     private final Map<String, StoragePoolInformation> _storagePools = new ConcurrentHashMap<String, StoragePoolInformation>();
-    private final Map<String, StorageAdaptor> _storageMapper = new HashMap<String, StorageAdaptor>();
+    private final Map<String, StorageAdaptor> _storageMapper = new LinkedHashMap<String, StorageAdaptor>();
 
     private StorageAdaptor getStorageAdaptor(StoragePoolType type) {
         // type can be null: LibVirtComputingResource:3238
@@ -94,7 +96,9 @@ public class KVMStoragePoolManager {
         // add any adaptors that wish to register themselves via call to adaptor.getStoragePoolType()
         Reflections reflections = new Reflections("com.cloud.hypervisor.kvm.storage");
         Set<Class<? extends StorageAdaptor>> storageAdaptorClasses = reflections.getSubTypesOf(StorageAdaptor.class);
-        for (Class<? extends StorageAdaptor> storageAdaptorClass : storageAdaptorClasses) {
+        List<Class<? extends StorageAdaptor>> orderedAdaptorClasses = new ArrayList<>(storageAdaptorClasses);
+        orderedAdaptorClasses.sort(Comparator.comparing(Class::getName));
+        for (Class<? extends StorageAdaptor> storageAdaptorClass : orderedAdaptorClasses) {
             logger.debug("Checking pool type for adaptor " + storageAdaptorClass.getName());
             if (Modifier.isAbstract(storageAdaptorClass.getModifiers()) || storageAdaptorClass.isInterface()) {
                 logger.debug("Skipping registration of abstract class / interface " + storageAdaptorClass.getName());

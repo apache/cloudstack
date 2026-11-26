@@ -1598,7 +1598,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         Boolean iscsiCleanUpEnabled = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ISCSI_SESSION_CLEANUP_ENABLED);
 
         if (BooleanUtils.isTrue(iscsiCleanUpEnabled)) {
-            IscsiStorageCleanupMonitor isciCleanupMonitor = new IscsiStorageCleanupMonitor();
+            IscsiStorageCleanupMonitor isciCleanupMonitor = new IscsiStorageCleanupMonitor(storagePoolManager);
             final Thread cleanupMonitor = new Thread(isciCleanupMonitor);
             cleanupMonitor.start();
         } else {
