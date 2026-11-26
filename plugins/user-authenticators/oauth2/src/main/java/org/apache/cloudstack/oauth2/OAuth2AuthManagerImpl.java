@@ -120,7 +120,16 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public List<UserOAuth2Authenticator> listUserOAuth2AuthenticationProviders() {
-        return userOAuth2AuthenticationProviders;
+        if (userOAuth2AuthenticationProviders == null) {
+            return userOAuth2AuthenticationProviders;
+        }
+        List<UserOAuth2Authenticator> allowed = new ArrayList<>();
+        for (UserOAuth2Authenticator provider : userOAuth2AuthenticationProviders) {
+            if (isProviderAllowed(provider.getName())) {
+                allowed.add(provider);
+            }
+        }
+        return allowed;
     }
 
     @Override
@@ -128,10 +137,24 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         if (StringUtils.isEmpty(providerName)) {
             throw new CloudRuntimeException("OAuth2 authentication provider name is empty");
         }
-        if (!userOAuth2AuthenticationProvidersMap.containsKey(providerName.toLowerCase())) {
+        if (!userOAuth2AuthenticationProvidersMap.containsKey(providerName.toLowerCase()) || !isProviderAllowed(providerName)) {
             throw new CloudRuntimeException(String.format("Failed to find OAuth2 authentication provider by the name: %s.", providerName));
         }
         return userOAuth2AuthenticationProvidersMap.get(providerName.toLowerCase());
+    }
+
+    // oauth2.plugins is an allow-list: a provider must be named in it to be usable at all.
+    protected boolean isProviderAllowed(String providerName) {
+        String allowedPlugins = OAuth2AuthManager.OAuth2Plugins.value();
+        if (StringUtils.isEmpty(allowedPlugins)) {
+            return true;
+        }
+        for (String allowed : allowedPlugins.trim().split("\\s*,\\s*")) {
+            if (allowed.equalsIgnoreCase(providerName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public List<UserOAuth2Authenticator> getUserOAuth2AuthenticationProviders() {
