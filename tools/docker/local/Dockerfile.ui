@@ -1,0 +1,40 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# UI image for tools/docker/local/docker-compose.yml. Build context: ui directory.
+
+FROM node:24-bookworm@sha256:9d266751ca3d7fdbe651c878ffd5ad0a42fed49a18c283509267c97f025b7496 AS ui-build
+
+WORKDIR /ui
+
+# The cache mounts persist between builds and are not part of the image
+COPY package.json package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm \
+    npm install
+
+COPY . ./
+
+# webpack 4 needs the legacy OpenSSL provider on current Node versions
+ENV NODE_OPTIONS=--openssl-legacy-provider
+
+RUN --mount=type=cache,target=/ui/node_modules/.cache \
+    npm run build
+
+
+FROM nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de AS ui
+
+COPY --from=ui-build /ui/dist/ /usr/share/nginx/html/
