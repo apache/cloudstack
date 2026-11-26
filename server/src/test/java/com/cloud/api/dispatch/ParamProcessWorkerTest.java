@@ -39,18 +39,22 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ParamProcessWorkerTest {
@@ -73,6 +77,11 @@ public class ParamProcessWorkerTest {
 
     @Mock
     BaseCmd baseCmdMock;
+
+    @Mock
+    private EntityManager entityManagerMock;
+
+    private static final String VM_UUID = "0e4b5c1a-3b0f-4d7e-9f6a-2c1d8e7f9a10";
 
     private Account[] owners = new Account[]{ownerAccountMock};
 
@@ -97,6 +106,12 @@ public class ParamProcessWorkerTest {
 
         @Parameter(name = "mountOptions", type = CommandType.STRING, validations = {ApiArgValidator.SafeCommandOptions})
         String mountOptions;
+
+        @Parameter(name = "legacyvmid", type = CommandType.UUID, entityType = UserVmResponse.class)
+        Long legacyVmId;
+
+        @Parameter(name = "vmid", type = CommandType.UUID, entityType = UserVmResponse.class, since = "4.0.0")
+        Long vmId;
 
         @Override
         public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
@@ -251,5 +266,52 @@ public class ParamProcessWorkerTest {
         paramProcessWorkerSpy.checkCallerAccessToEntities(callingAccountMock, owners, entities);
 
         Mockito.verify(accountManagerMock).validateAccountHasAccessToResource(callingAccountMock, SecurityChecker.AccessType.UseEntry, vmInstanceVo);
+    }
+
+    private Parameter getParameterAnnotation(String fieldName) throws NoSuchFieldException {
+        return TestCmd.class.getDeclaredField(fieldName).getAnnotation(Parameter.class);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void translateUuidToInternalIdTestRejectsInternalIdForPre3xApiWhenDisallowed() throws Exception {
+        Mockito.doReturn(true).when(paramProcessWorkerSpy).isInternalIdDisallowed();
+        paramProcessWorkerSpy.translateUuidToInternalId("5", getParameterAnnotation("legacyVmId"));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void translateUuidToInternalIdTestRejectsNonUuidForPost3xApiWhenDisallowed() throws Exception {
+        Mockito.doReturn(true).when(paramProcessWorkerSpy).isInternalIdDisallowed();
+        paramProcessWorkerSpy.translateUuidToInternalId("5", getParameterAnnotation("vmId"));
+    }
+
+    @Test
+    public void translateUuidToInternalIdTestAcceptsInternalIdForPre3xApiWhenAllowed() throws Exception {
+        Mockito.doReturn(false).when(paramProcessWorkerSpy).isInternalIdDisallowed();
+        Long id = paramProcessWorkerSpy.translateUuidToInternalId("5", getParameterAnnotation("legacyVmId"));
+        Assert.assertEquals(Long.valueOf(5L), id);
+    }
+
+    @Test
+    public void translateUuidToInternalIdTestIgnoresNonUuidForPost3xApiWhenAllowed() throws Exception {
+        Mockito.doReturn(false).when(paramProcessWorkerSpy).isInternalIdDisallowed();
+        Assert.assertNull(paramProcessWorkerSpy.translateUuidToInternalId("5", getParameterAnnotation("vmId")));
+    }
+
+    @Test
+    public void translateUuidToInternalIdTestAcceptsUuidWhenDisallowed() throws Exception {
+        Mockito.doReturn(true).when(paramProcessWorkerSpy).isInternalIdDisallowed();
+        VMInstanceVO vmMock = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vmMock.getId()).thenReturn(5L);
+        Mockito.when(entityManagerMock.findByUuidIncludingRemoved(VirtualMachine.class, VM_UUID)).thenReturn(vmMock);
+        Long id = paramProcessWorkerSpy.translateUuidToInternalId(VM_UUID, getParameterAnnotation("legacyVmId"));
+        Assert.assertEquals(Long.valueOf(5L), id);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void processParametersTestRejectsInternalIdWhenDisallowed() {
+        Mockito.doReturn(true).when(paramProcessWorkerSpy).isInternalIdDisallowed();
+        final HashMap<String, String> params = new HashMap<>();
+        params.put("legacyvmid", "5");
+        paramProcessWorkerSpy.processParameters(new TestCmd(), params);
     }
 }
