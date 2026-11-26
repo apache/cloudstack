@@ -39,14 +39,14 @@ from marvin.lib.base import (Account,
                              LoadBalancerRule,
                              Router,
                              NIC,
-                             Template,
                              Cluster,
                              SSHKeyPair)
 from marvin.lib.common import (get_domain,
                                get_free_vlan,
                                get_zone,
-                               get_template,
+                               get_suitable_test_template,
                                get_test_template,
+                               get_template,
                                list_hosts,
                                list_publicIP,
                                list_nat_rules,
@@ -803,6 +803,8 @@ class TestReleaseIP(cloudstackTestCase):
             self.zone.id,
             self.hypervisor
         )
+        if template == FAILED:
+            self.fail("get_test_template() failed to return template")
         self.services["virtual_machine"]["zoneid"] = self.zone.id
 
         # Create an account, network, VM, Port forwarding rule, LB rules
@@ -1006,6 +1008,8 @@ class TestDeleteAccount(cloudstackTestCase):
             self.zone.id,
             self.hypervisor
         )
+        if template == FAILED:
+            self.fail("get_test_template() failed to return template")
         self.services["virtual_machine"]["zoneid"] = self.zone.id
 
         # Create an account, network, VM and IP addresses
@@ -1419,6 +1423,8 @@ class TestL2Networks(cloudstackTestCase):
             cls.zone.id,
             cls.hypervisor
         )
+        if cls.template == FAILED:
+            assert False, "get_test_template() failed to return template"
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
@@ -1668,6 +1674,8 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
                 cls.zone.id,
                 cls.hypervisor
             )
+            if cls.template == FAILED:
+                assert False, "get_test_template() failed to return template"
             cls.service_offering = ServiceOffering.create(
                 cls.apiclient,
                 cls.services["service_offerings"]["tiny"]
@@ -1925,8 +1933,8 @@ class TestSharedNetwork(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
-        cls.template = get_template(cls.apiclient, cls.zone.id,
-                                    cls.services["ostype"])
+        cls.template = get_suitable_test_template(cls.apiclient, cls.zone.id,
+                                                  cls.services["ostype"])
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
@@ -2135,18 +2143,14 @@ class TestSharedNetworkWithConfigDrive(cloudstackTestCase):
 
         cls._cleanup = []
 
-        template = Template.register(
-            cls.apiclient,
-            cls.services["test_templates_cloud_init"][cls.hv.lower()],
-            zoneid=cls.zone.id,
-            hypervisor=cls.hv,
-        )
-        template.download(cls.apiclient)
-        cls._cleanup.append(template)
+        # the built-in template is a Debian 13 cloud image with cloud-init, the default user is debian
+        template = get_template(cls.apiclient, cls.zone.id, hypervisor=cls.hv)
+        if template == FAILED:
+            assert False, "get_template() failed to return the built-in template"
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = template.id
-        cls.services["virtual_machine"]["username"] = "ubuntu"
+        cls.services["virtual_machine"]["username"] = "debian"
         # Create Network Offering
         cls.services["shared_network_offering_configdrive"]["specifyVlan"] = "True"
         cls.services["shared_network_offering_configdrive"]["specifyIpRanges"] = "True"

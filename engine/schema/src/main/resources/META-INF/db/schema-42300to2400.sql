@@ -240,6 +240,39 @@ CREATE TABLE IF NOT EXISTS `cloud`.`instance_boot_group_details` (
     CONSTRAINT `fk_instance_boot_group_details__group_id` FOREIGN KEY (`boot_group_id`) REFERENCES `instance_boot_group` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Set the guest OS of the built-in Debian 13 templates to 'Debian GNU/Linux 12 (64-bit)', which is only added by later upgrade scripts and is not available in templates.sql
+UPDATE `cloud`.`vm_template` SET `guest_os_id` = (SELECT `id` FROM `cloud`.`guest_os` WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)' AND `removed` IS NULL LIMIT 1)
+    WHERE `id` = 4 AND `unique_name` = 'debian13-x86_64-kvm' AND `type` = 'BUILTIN'
+    AND EXISTS (SELECT 1 FROM `cloud`.`guest_os` WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)' AND `removed` IS NULL);
+UPDATE `cloud`.`vm_template` SET `guest_os_id` = (SELECT `id` FROM `cloud`.`guest_os` WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)' AND `removed` IS NULL LIMIT 1)
+    WHERE `id` = 5 AND `unique_name` = 'debian13-x86_64-xen' AND `type` = 'BUILTIN'
+    AND EXISTS (SELECT 1 FROM `cloud`.`guest_os` WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)' AND `removed` IS NULL);
+UPDATE `cloud`.`vm_template` SET `guest_os_id` = (SELECT `id` FROM `cloud`.`guest_os` WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)' AND `removed` IS NULL LIMIT 1)
+    WHERE `id` = 7 AND `unique_name` = 'debian13-x86_64-vmware' AND `type` = 'BUILTIN'
+    AND EXISTS (SELECT 1 FROM `cloud`.`guest_os` WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)' AND `removed` IS NULL);
+
+-- Use the NIC and disk controller of the built-in Debian 13 VMware template image (vmxnet3, pvscsi), as the guest kernel has no driver for the default e1000 NIC
+INSERT INTO `cloud`.`vm_template_details` (`template_id`, `name`, `value`)
+    SELECT `id`, 'nicAdapter', 'Vmxnet3' FROM `cloud`.`vm_template`
+    WHERE `id` = 7 AND `unique_name` = 'debian13-x86_64-vmware' AND `type` = 'BUILTIN'
+    AND NOT EXISTS (SELECT 1 FROM `cloud`.`vm_template_details` WHERE `template_id` = 7 AND `name` = 'nicAdapter');
+INSERT INTO `cloud`.`vm_template_details` (`template_id`, `name`, `value`)
+    SELECT `id`, 'rootDiskController', 'pvscsi' FROM `cloud`.`vm_template`
+    WHERE `id` = 7 AND `unique_name` = 'debian13-x86_64-vmware' AND `type` = 'BUILTIN'
+    AND NOT EXISTS (SELECT 1 FROM `cloud`.`vm_template_details` WHERE `template_id` = 7 AND `name` = 'rootDiskController');
+
+-- Debian 12 (64-bit) XenServer dynamic memory defaults: min 1 GiB, max 1.5 TiB
+INSERT INTO `cloud`.`guest_os_details` (`guest_os_id`, `name`, `value`, `display`)
+    SELECT `id`, 'xenserver.dynamicMin', '1073741824', 0 FROM `cloud`.`guest_os`
+    WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)'
+    AND NOT EXISTS (SELECT 1 FROM `cloud`.`guest_os_details` d JOIN `cloud`.`guest_os` g ON d.`guest_os_id` = g.`id`
+        WHERE g.`display_name` = 'Debian GNU/Linux 12 (64-bit)' AND d.`name` = 'xenserver.dynamicMin');
+INSERT INTO `cloud`.`guest_os_details` (`guest_os_id`, `name`, `value`, `display`)
+    SELECT `id`, 'xenserver.dynamicMax', '1649267441664', 0 FROM `cloud`.`guest_os`
+    WHERE `display_name` = 'Debian GNU/Linux 12 (64-bit)'
+    AND NOT EXISTS (SELECT 1 FROM `cloud`.`guest_os_details` d JOIN `cloud`.`guest_os` g ON d.`guest_os_id` = g.`id`
+        WHERE g.`display_name` = 'Debian GNU/Linux 12 (64-bit)' AND d.`name` = 'xenserver.dynamicMax');
+
 -- Multi-VLAN trunk nics: a nic may be associated with additional networks beyond its primary nics.network_id.
 CREATE TABLE IF NOT EXISTS `cloud`.`nic_network_map` (
                                                          `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,

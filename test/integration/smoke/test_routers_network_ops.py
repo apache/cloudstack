@@ -287,7 +287,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                          )
 
         expected = 1
-        ssh_command = "curl -v -m 1 -o index.html -sL www.google.com"
+        ssh_command = "wget -t 1 -T 5 www.google.com"
         check_string = "200 OK"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
@@ -307,7 +307,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                                  )
 
         expected = 0
-        ssh_command = "curl -v -m 1 -o index.html -sL www.google.com"
+        ssh_command = "wget -t 1 -T 1 www.google.com"
         check_string = "200 OK"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
@@ -451,7 +451,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                          )
 
         expected = 0
-        ssh_command = "curl -v -m 1 -o index.html -sL www.google.com"
+        ssh_command = "wget -t 1 -T 1 www.google.com"
         check_string = "200 OK"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
@@ -480,7 +480,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                                  )
 
         expected = 1
-        ssh_command = "curl -v -m 1 -o index.html -sL www.google.com"
+        ssh_command = "wget -t 1 -T 5 www.google.com"
         check_string = "200 OK"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
@@ -662,6 +662,8 @@ class TestIsolatedNetworks(cloudstackTestCase):
             cls.zone.id,
             cls.hypervisor
         )
+        if cls.template == FAILED:
+            assert False, "get_test_template() failed to return template"
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         # Create an account, network, VM and IP addresses
@@ -840,7 +842,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
                          )
 
         expected = 1
-        ssh_command = "curl -v -m 1 -o index.html -sL www.google.com"
+        ssh_command = "wget -t 1 -T 5 www.google.com"
         check_string = "200 OK"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
@@ -860,7 +862,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
                                  )
 
         expected = 0
-        ssh_command = "curl -v -m 1 -o index.html -sL www.google.com"
+        ssh_command = "wget -t 1 -T 1 www.google.com"
         check_string = "200 OK"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
@@ -995,7 +997,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
                          )
 
         expected = 0
-        ssh_command = "curl -v -m 1 -o index.html -sL www.google.com"
+        ssh_command = "wget -t 1 -T 1 www.google.com"
         check_string = "200 OK"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 
@@ -1015,7 +1017,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
                                  )
 
         expected = 1
-        ssh_command = "curl -v -m 1 -o index.html -sL www.google.com"
+        ssh_command = "wget -t 1 -T 5 www.google.com"
         check_string = "200 OK"
         result = check_router_command(virtual_machine, nat_rule.ipaddress, ssh_command, check_string, self)
 

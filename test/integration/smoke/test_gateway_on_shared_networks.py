@@ -29,7 +29,7 @@ from marvin.lib.base import (NetworkOffering,
                              )
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
+                               get_suitable_test_template,
                                find_storage_pool_type,
                                get_builtin_template_info)
 from marvin.codes import (
@@ -69,7 +69,7 @@ class TestGatewayOnSharedNetwork(cloudstackTestCase):
             cls.services["template"]["hypervisor"] = builtin_info[1]
             cls.services["template"]["format"] = builtin_info[2]
 
-            cls.template = get_template(
+            cls.template = get_suitable_test_template(
                 cls.apiclient,
                 cls.zone.id
             )

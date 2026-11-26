@@ -25,7 +25,7 @@ from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
+                               get_suitable_test_template,
                                list_hosts,
                                list_routers,
                                list_ssvms,
@@ -55,10 +55,10 @@ class TestHostControlState(cloudstackTestCase):
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
 
-        cls.template = get_template(
+        cls.template = get_suitable_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.hypervisor
+            hypervisor=cls.hypervisor
         )
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -145,6 +145,15 @@ class TestHostControlState(cloudstackTestCase):
                          state,
                          msg="host control state should be %s, but it is %s" % (state, vm.hostcontrolstate))
 
+    def wait_for_uservm_host_control_state(self, vm_id, state, timeout=30, interval=2):
+        """ The agent needs about 15 seconds to reconnect, poll instead of sleeping a fixed time """
+        def check_state():
+            vm = VirtualMachine.list(self.apiclient, id=vm_id)[0]
+            return vm.hostcontrolstate == state, vm.hostcontrolstate
+
+        done, _ = wait_until(interval, timeout // interval, check_state)
+        self.verify_uservm_host_control_state(vm_id, state)
+
     def verify_ssvm_host_control_state(self, vm_id, state):
         list_ssvm_response = list_ssvms(
             self.apiclient,
@@ -193,8 +202,7 @@ class TestHostControlState(cloudstackTestCase):
             self.verify_uservm_host_control_state(self.vm.id, "Offline")
 
             self.start_agent(host_ipaddress)
-            time.sleep(10)  # wait for the host to be Up
-            self.verify_uservm_host_control_state(self.vm.id, "Enabled")
+            self.wait_for_uservm_host_control_state(self.vm.id, "Enabled")  # wait for the host to be Up
 
         else:
             self.enable_host(host_id)
