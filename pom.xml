@@ -134,7 +134,7 @@
         <cs.aspectjrt.version>1.9.19</cs.aspectjrt.version>
         <cs.aws.sdk.version>1.12.795</cs.aws.sdk.version>
         <cs.axiom.version>1.2.8</cs.axiom.version>
-        <cs.axis2.version>1.6.4</cs.axis2.version>
+        <cs.axis2.version>1.8.0</cs.axis2.version>
         <cs.batik.version>1.14</cs.batik.version>
         <cs.bcprov.version>1.83</cs.bcprov.version>
         <cs.cglib.version>3.3.0</cs.cglib.version>
