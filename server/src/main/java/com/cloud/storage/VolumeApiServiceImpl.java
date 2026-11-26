@@ -531,7 +531,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     GetUploadParamsResponse response = new GetUploadParamsResponse();
 
                     String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
-                    String protocol = UseHttpsToUpload.value() ? "https" : "http";
+                    String protocol = UseHttpsToUpload.valueIn(zoneId) ? "https" : "http";
 
                     String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, ep.getPublicAddr(), vol.getUuid(),  protocol);
                     response.setPostURL(new URL(url));
@@ -1819,10 +1819,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      *
      * A volume can be destroyed if it is not in any of the following states.
      * <ul>
-     *  <li> {code}Volume.State#Destroy{code};
-     *  <li> {code}Volume.State#Expunging{code};
-     *  <li> {code}Volume.State#Expunged{code};
-     *  <li> {code}Volume.State#Allocated{code}.
+     *  <li> {@code Volume.State#Destroy};
+     *  <li> {@code Volume.State#Expunging};
+     *  <li> {@code Volume.State#Expunged};
+     *  <li> {@code Volume.State#Allocated}.
      * </ul>
      *
      * The volume is destroyed via {@link VolumeService#destroyVolume(long)} method.
