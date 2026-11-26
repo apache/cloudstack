@@ -183,6 +183,10 @@ function generateRouterMap (section) {
     map.meta.columns = section.columns
   }
 
+  if (section.optionalColumns) {
+    map.meta.optionalColumns = section.optionalColumns
+  }
+
   if (!vueProps.$config.advisoriesDisabled && section.advisories) {
     map.meta.advisories = section.advisories
   }

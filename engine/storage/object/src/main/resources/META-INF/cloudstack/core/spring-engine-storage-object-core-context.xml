@@ -32,5 +32,7 @@
     <bean id="objectStoreHelper"
           class="org.apache.cloudstack.storage.object.datastore.ObjectStoreHelper" />
     <bean id="bucketDao" class="com.cloud.storage.dao.BucketDaoImpl" />
+    <bean id="bucketCredentialDao" class="com.cloud.storage.dao.BucketCredentialDaoImpl" />
+    <bean id="bucketCredentialKeyDao" class="com.cloud.storage.dao.BucketCredentialKeyDaoImpl" />
 
 </beans>

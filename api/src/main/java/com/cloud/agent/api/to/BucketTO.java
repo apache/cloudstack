@@ -22,14 +22,19 @@ public final class BucketTO {
 
     private String name;
 
+    private String uuid;
+
     private String accessKey;
 
     private String secretKey;
 
     private long accountId;
 
+    private String providerCredentialId;
+
     public BucketTO(Bucket bucket) {
         this.name = bucket.getName();
+        this.uuid = bucket.getUuid();
         this.accessKey = bucket.getAccessKey();
         this.secretKey = bucket.getSecretKey();
         this.accountId = bucket.getAccountId();
@@ -43,6 +48,10 @@ public final class BucketTO {
         return this.name;
     }
 
+    public String getUuid() {
+        return this.uuid;
+    }
+
     public String getAccessKey() {
         return this.accessKey;
     }
@@ -53,5 +62,13 @@ public final class BucketTO {
 
     public long getAccountId() {
         return this.accountId;
+    }
+
+    public String getProviderCredentialId() {
+        return this.providerCredentialId;
+    }
+
+    public void setProviderCredentialId(String providerCredentialId) {
+        this.providerCredentialId = providerCredentialId;
     }
 }
