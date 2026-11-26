@@ -155,6 +155,32 @@ public interface KVMStoragePool {
 
     String createHeartBeatCommand(HAStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation);
 
+    /**
+     * The id which names the heartbeat of a host on this storage pool: by default the private IP address of the host.
+     *
+     * @param hostPrivateIp the private IP address of the host
+     * @param hostGuid      the GUID of the host as the management server knows it
+     */
+    default String getHeartBeatHostId(String hostPrivateIp, String hostGuid) {
+        return hostPrivateIp;
+    }
+
+    /**
+     * The script which checks the VM activity on this storage pool: by default the one given, which is the script of the
+     * pools with a shared mount point. Null if it can not be found.
+     */
+    default String getVmActivityCheckPath(String defaultVmActivityCheckPath) {
+        return defaultVmActivityCheckPath;
+    }
+
+    /**
+     * Returns why the heartbeat of this storage pool can not be used on this host, or null if it can. A host which can not
+     * write the heartbeat would be fenced, so such a pool is not monitored for HA.
+     */
+    default String getHeartBeatPrerequisiteError() {
+        return null;
+    }
+
     String getStorageNodeId();
 
     Boolean hasHeartBeat(HAStoragePool pool, HostTO host);

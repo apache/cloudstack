@@ -59,7 +59,7 @@ class TestUnmanageVM(cloudstackTestCase):
         if cls.template == FAILED:
             assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
 
-        cls.hypervisorNotSupported = cls.hypervisor.lower() != "vmware"
+        cls.hypervisorNotSupported = cls.hypervisor.lower() not in ("vmware", "kvm")
         if cls.hypervisorNotSupported:
             return
 

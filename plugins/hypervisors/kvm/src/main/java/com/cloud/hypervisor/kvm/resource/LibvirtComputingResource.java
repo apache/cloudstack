@@ -26,6 +26,7 @@ import static com.cloud.host.Host.HOST_QEMU_RBD_SUPPORT;
 import static com.cloud.host.Host.HOST_QEMU_IMG_VERSION;
 import static com.cloud.host.Host.HOST_QEMU_IO_VERSION;
 import static com.cloud.host.Host.HOST_QEMU_NBD_VERSION;
+import static com.cloud.host.Host.HOST_RBD_CLI;
 import static com.cloud.host.Host.HOST_RBD_VOLUME_ENCRYPTION;
 import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
 import static com.cloud.host.Host.HOST_VDDK_RBD_DIRECT_IMPORT_SUPPORT;
@@ -109,6 +110,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
+import org.apache.cloudstack.utils.rbd.RbdBackupGuestManager;
 import org.apache.cloudstack.utils.rbd.RbdEncryption;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
@@ -338,7 +340,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final String KVMCLOCK = "kvmclock";
     private static final String HYPERVCLOCK = "hypervclock";
     private static final String WINDOWS = "Windows";
-    private static final String X86_DEFAULT_VIDEO_MODEL = "vga";
+    private static final VideoDef.VideoModel X86_DEFAULT_VIDEO_MODEL = VideoDef.VideoModel.VGA;
     private static final int X86_DEFAULT_VIDEO_RAM_KIB = 32768;
     private static final String Q35 = "q35";
     private static final String PTY = "pty";
@@ -1441,6 +1443,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new CloudRuntimeException(e.getMessage());
         }
 
+        // A backup of an RBD volume which this agent was running when it went down may have left its guest frozen or paused.
+        new RbdBackupGuestManager().releaseAllGuests();
+
         // destroy default network, see https://libvirt.org/sources/java/javadoc/org/libvirt/Network.html
         try {
             Network network = conn.networkLookupByName("default");
@@ -1501,7 +1506,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final String[] info = NetUtils.getNetworkParams(privateNic);
 
-        kvmhaMonitor = new KVMHAMonitor(info[0]);
+        // the GUID of the host as the management server knows it, as in Agent.getResourceGuid()
+        final String hostGuid = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUID) + "-" + name;
+        kvmhaMonitor = new KVMHAMonitor(info[0], hostGuid);
         final Thread haMonitorThread = new Thread(kvmhaMonitor);
         haMonitorThread.start();
 
@@ -3363,26 +3370,35 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected VideoDef createVideoDef(VirtualMachineTO vmTO) {
         Map<String, String> details = vmTO.getDetails();
-        String videoHw = this.videoHw;
+        VideoDef.VideoModel videoModel = VideoDef.VideoModel.fromString(this.videoHw);
+        if (videoModel == null && StringUtils.isNotBlank(this.videoHw)) {
+            LOGGER.warn("Ignoring unsupported video model '{}' from {}", this.videoHw, AgentProperties.VM_VIDEO_HARDWARE.getName());
+        }
         int videoRam = this.videoRam;
         if (details != null) {
             if (details.containsKey(VmDetailConstants.VIDEO_HARDWARE)) {
-                videoHw = details.get(VmDetailConstants.VIDEO_HARDWARE);
+                String requested = details.get(VmDetailConstants.VIDEO_HARDWARE);
+                VideoDef.VideoModel requestedModel = VideoDef.VideoModel.fromString(requested);
+                if (requestedModel != null) {
+                    videoModel = requestedModel;
+                } else {
+                    LOGGER.warn("Ignoring unsupported {} '{}' of VM {}", VmDetailConstants.VIDEO_HARDWARE, requested, vmTO.getName());
+                }
             }
             if (details.containsKey(VmDetailConstants.VIDEO_RAM)) {
                 String value = details.get(VmDetailConstants.VIDEO_RAM);
                 videoRam = NumbersUtil.parseInt(value, videoRam);
             }
         }
-        if (StringUtils.isBlank(videoHw) && isGuestX86(vmTO)) {
+        if (videoModel == null && isGuestX86(vmTO)) {
             // With no <video> element libvirt defaults x86 guests to cirrus, which is deprecated
             // in QEMU and renders a blank console on recent Windows guests (e.g. Windows Server 2025 Core)
-            videoHw = X86_DEFAULT_VIDEO_MODEL;
+            videoModel = X86_DEFAULT_VIDEO_MODEL;
             if (videoRam == 0) {
                 videoRam = X86_DEFAULT_VIDEO_RAM_KIB;
             }
         }
-        return new VideoDef(videoHw, videoRam);
+        return new VideoDef(videoModel, videoRam);
     }
 
     protected RngDef createRngDef() {
@@ -3486,7 +3502,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final CpuModeDef cmd = new CpuModeDef();
         Map<String, String> details = vmTO.getDetails();
         String cpuMode = MapUtils.isNotEmpty(details) && details.get(VmDetailConstants.GUEST_CPU_MODE) != null ? details.get(VmDetailConstants.GUEST_CPU_MODE) : guestCpuMode;
-        String cpuModel = MapUtils.isNotEmpty(details) && details.get(VmDetailConstants.GUEST_CPU_MODEL) != null ? details.get(VmDetailConstants.GUEST_CPU_MODEL) : guestCpuModel;
+        String cpuModel = guestCpuModel;
+        if (MapUtils.isNotEmpty(details) && details.get(VmDetailConstants.GUEST_CPU_MODEL) != null) {
+            String requested = details.get(VmDetailConstants.GUEST_CPU_MODEL);
+            if (CpuModeDef.isValidModelName(requested)) {
+                cpuModel = requested;
+            } else {
+                LOGGER.warn("Ignoring invalid {} '{}' of VM {}", VmDetailConstants.GUEST_CPU_MODEL, requested, vmTO.getName());
+            }
+        }
         cmd.setMode(cpuMode);
         cmd.setModel(cpuModel);
         cmd.setFeatures(cpuFeatures);
@@ -4481,6 +4505,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setIqn(getIqn());
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
         cmd.getHostDetails().put(HOST_RBD_VOLUME_ENCRYPTION, String.valueOf(hostSupportsRbdVolumeEncryption()));
+        cmd.getHostDetails().put(HOST_RBD_CLI, String.valueOf(hostHasRbdCli()));
         cmd.setHostTags(getHostTags());
         boolean instanceConversionSupported = hostSupportsInstanceConversion();
         cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
@@ -6288,6 +6313,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return false;
         }
         return true;
+    }
+
+    /**
+     * Whether the {@code rbd} command line tool, shipped by ceph-common, is installed. Libvirt and
+     * qemu reach RBD images through librbd, so a host works as an RBD primary storage client without
+     * it; only tooling that runs {@code rbd} itself, such as incremental RBD backups, needs it.
+     */
+    public boolean hostHasRbdCli() {
+        return new File(Script.getExecutableAbsolutePath("rbd")).isAbsolute();
     }
 
     /**

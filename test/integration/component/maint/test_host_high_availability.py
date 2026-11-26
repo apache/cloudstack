@@ -159,7 +159,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         try:
             # Remove the host from HA
             Host.update(cls.api_client, id=cls.hosts[2].id, hosttags="")
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -179,7 +179,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created accounts, domains etc
+            # Clean up, terminate the created accounts, domains etc
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -220,7 +220,7 @@ class TestHostHighAvailability(cloudstackTestCase):
             "The service offering is not HA enabled"
         )
 
-        #create virtual machine with the service offering with Ha enabled
+        # create virtual machine with the service offering with Ha enabled
         virtual_machine = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
@@ -253,7 +253,7 @@ class TestHostHighAvailability(cloudstackTestCase):
     @attr(configuration="ha.tag")
     @attr(tags=["advanced", "advancedns", "sg", "basic", "eip", "simulator", "multihost"])
     def test_02_no_vm_creation_on_host_with_haenabled(self):
-        """ Verify you can not create new VMs on hosts with an ha.tag """
+        """ Verify you cannot create new VMs on hosts with an ha.tag """
 
         # Steps,
         #1. Fresh install CS (Bonita) that supports this feature
@@ -296,7 +296,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         self.debug("Deployed VM on host: %s" % vm.hostid)
 
-        #validate the virtual machine created is host Ha enabled
+        # validate the virtual machine created is host Ha enabled
         list_hosts_response = list_hosts(
             self.apiclient,
             id=vm.hostid
@@ -310,7 +310,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         self.assertNotEqual(
             len(list_hosts_response),
             0,
-            "listHosts retuned empty list in response."
+            "listHosts returned empty list in response."
         )
 
         self.assertEqual(
@@ -319,7 +319,7 @@ class TestHostHighAvailability(cloudstackTestCase):
             "VM created on HA enabled host."
         )
 
-        #create and verify virtual machine with Ha disabled service offering
+        # create and verify virtual machine with Ha disabled service offering
         virtual_machine_without_ha = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
@@ -350,7 +350,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         self.debug("Deployed VM on host: %s" % vm.hostid)
 
-        #verify that the virtual machine created on the host is Ha disabled
+        # verify that the virtual machine created on the host is Ha disabled
         list_hosts_response = list_hosts(
             self.apiclient,
             id=vm.hostid
@@ -378,7 +378,7 @@ class TestHostHighAvailability(cloudstackTestCase):
     @attr(configuration="ha.tag")
     @attr(tags=["advanced", "advancedns", "sg", "basic", "eip", "simulator", "multihost"])
     def test_03_cant_migrate_vm_to_host_with_ha_positive(self):
-        """ Verify you can not migrate VMs to hosts with an ha.tag (positive) """
+        """ Verify you cannot migrate VMs to hosts with an ha.tag (positive) """
 
         # Steps,
         # 1. Create a Compute service offering with the 'Offer HA' option selected.
@@ -495,7 +495,7 @@ class TestHostHighAvailability(cloudstackTestCase):
     @attr(configuration="ha.tag")
     @attr(tags=["advanced", "advancedns", "sg", "basic", "eip", "simulator", "multihost"])
     def test_04_cant_migrate_vm_to_host_with_ha_negative(self):
-        """ Verify you can not migrate VMs to hosts with an ha.tag (negative) """
+        """ Verify you cannot migrate VMs to hosts with an ha.tag (negative) """
 
         # Steps,
         #1. Create a Compute service offering with the 'Offer HA' option selected.
@@ -539,7 +539,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         self.debug("Deployed VM on host: %s" % vm.hostid)
 
-        #Find out Non-Suitable host for VM migration
+        # Find out Non-Suitable host for VM migration
         list_hosts_response = list_hosts(
             self.apiclient,
             type="Routing"
@@ -564,7 +564,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         self.assertTrue(notSuitableHost is not None, "notsuitablehost should not be None")
 
-        #Migrate VM to Non-Suitable host
+        # Migrate VM to Non-Suitable host
         self.debug("Migrating VM-ID: %s to Host: %s" % (vm.id, notSuitableHost.id))
 
         cmd = migrateVirtualMachine.migrateVirtualMachineCmd()
@@ -572,7 +572,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         cmd.virtualmachineid = vm.id
         self.apiclient.migrateVirtualMachine(cmd)
 
-        #Verify that the virtual machine got migrated to targeted Non-Suitable host
+        # Verify that the virtual machine got migrated to targeted Non-Suitable host
         list_vm_response = list_virtual_machines(
             self.apiclient,
             id=vm.id
@@ -598,7 +598,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         self.assertEqual(
             list_vm_response[0].hostid,
             notSuitableHost.id,
-            "The detination host id of migrated VM is not matching."
+            "The destination host id of migrated VM is not matching."
         )
 
     @attr(configuration="ha.tag")
@@ -650,7 +650,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         vm_with_ha_enabled = vms[0]
 
-        #Verify the virtual machine got created on non HA host
+        # Verify the virtual machine got created on non HA host
         list_hosts_response = list_hosts(
             self.apiclient,
             id=vm_with_ha_enabled.hostid
@@ -673,7 +673,7 @@ class TestHostHighAvailability(cloudstackTestCase):
             "The virtual machine is not ha enabled so check if VM is created on host which is also not ha enabled"
         )
 
-        #put the Host in maintenance mode
+        # put the Host in maintenance mode
         self.debug("Enabling maintenance mode for host %s" % vm_with_ha_enabled.hostid)
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = vm_with_ha_enabled.hostid
@@ -681,7 +681,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         timeout = self.services["timeout"]
 
-        #verify the VM live migration happened to another running host
+        # verify the VM live migration happened to another running host
         self.debug("Waiting for VM to come up")
         time.sleep(timeout)
 
@@ -781,7 +781,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         vm_with_ha_disabled = vms[0]
 
-        #Verify the virtual machine got created on non HA host
+        # Verify the virtual machine got created on non HA host
         list_hosts_response = list_hosts(
             self.apiclient,
             id=vm_with_ha_disabled.hostid
@@ -804,7 +804,7 @@ class TestHostHighAvailability(cloudstackTestCase):
             "The virtual machine is not ha enabled so check if VM is created on host which is also not ha enabled"
         )
 
-        #put the Host in maintenance mode
+        # put the Host in maintenance mode
         self.debug("Enabling maintenance mode for host %s" % vm_with_ha_disabled.hostid)
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = vm_with_ha_disabled.hostid
@@ -812,7 +812,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         timeout = self.services["timeout"]
 
-        #verify the VM live migration happened to another running host
+        # verify the VM live migration happened to another running host
         self.debug("Waiting for VM to come up")
         time.sleep(timeout)
 

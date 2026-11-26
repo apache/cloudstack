@@ -18,3 +18,11 @@
 --;
 -- Schema upgrade cleanup from 4.23.0.0 to 24.0.0
 --;
+
+-- Remove leftovers from awsapi
+CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.account', 'fk_account__default_zone_id');
+CALL `cloud`.`IDEMPOTENT_DROP_COLUMN`('cloud.account', 'default_zone_id');
+CALL `cloud`.`IDEMPOTENT_DROP_COLUMN`('cloud_usage.account', 'default_zone_id');
+
+DELETE FROM `cloud`.`configuration` WHERE name='enable.ec2.api';
+DELETE FROM `cloud`.`configuration` WHERE name='enable.s3.api';
