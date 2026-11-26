@@ -135,6 +135,22 @@
             :placeholder="apiParams.guestvmcidr.description"
             @change="(e) => { cidrChanged = e.target.value !== resource.cidr }" />
         </a-form-item>
+        <a-form-item name="startip" ref="startip" v-if="isUpdatingIsolatedNetwork && !resource.vpcid && 'startip' in apiParams">
+          <template #label>
+            <tooltip-label :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
+          </template>
+          <a-input
+            v-model:value="form.startip"
+            :placeholder="apiParams.startip.description" />
+        </a-form-item>
+        <a-form-item name="endip" ref="endip" v-if="isUpdatingIsolatedNetwork && !resource.vpcid && 'endip' in apiParams">
+          <template #label>
+            <tooltip-label :title="$t('label.endip')" :tooltip="apiParams.endip.description"/>
+          </template>
+          <a-input
+            v-model:value="form.endip"
+            :placeholder="apiParams.endip.description" />
+        </a-form-item>
         <a-form-item name="changecidr" ref="changecidr" v-if="cidrChanged">
           <template #label>
             <tooltip-label :title="$t('label.changecidr')" :tooltip="apiParams.changecidr.description"/>
@@ -278,6 +294,8 @@ export default {
       name: this.resource.name,
       displaytext: this.resource.displaytext,
       guestvmcidr: this.resource.cidr,
+      startip: this.resource.startip,
+      endip: this.resource.endip,
       dns1: this.resource.dns1,
       dns2: this.resource.dns2,
       ip6dns1: this.resource.ip6dns1,

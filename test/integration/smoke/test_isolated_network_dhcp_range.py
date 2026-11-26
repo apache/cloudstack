@@ -97,6 +97,53 @@ class TestIsolatedNetworkDhcpRange(cloudstackTestCase):
             10 <= octet <= 20 and vm.nic[0].ipaddress.startswith("10.99.99."),
             "VM IP %s is not within the custom DHCP range %s-%s" % (vm.nic[0].ipaddress, start_ip, end_ip))
 
+    @attr(tags=["advanced"], required_hardware="false")
+    def test_update_isolated_network_custom_dhcp_range(self):
+        """Updating the DHCP range moves future allocations into the new range, and clearing it restores the full CIDR"""
+        gateway = "10.98.98.1"
+        network_services = dict(self.services["network"])
+        network_services["gateway"] = gateway
+        network_services["netmask"] = "255.255.255.0"
+        network_services["startip"] = "10.98.98.10"
+        network_services["endip"] = "10.98.98.20"
+
+        network = Network.create(
+            self.apiclient,
+            network_services,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkofferingid=self.network_offering.id,
+            zoneid=self.zone.id,
+            gateway=gateway,
+            netmask="255.255.255.0")
+        self.cleanup.append(network)
+
+        network.update(self.apiclient, startip="10.98.98.30", endip="10.98.98.40")
+        listed = Network.list(self.apiclient, id=network.id)[0]
+        self.assertEqual(listed.startip, "10.98.98.30", "listNetworks should return the updated DHCP start IP")
+        self.assertEqual(listed.endip, "10.98.98.40", "listNetworks should return the updated DHCP end IP")
+
+        vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[network.id])
+        # delete the VM before the network, otherwise the network delete fails while the VM still exists
+        self.cleanup.insert(0, vm)
+
+        octet = int(vm.nic[0].ipaddress.split(".")[-1])
+        self.assertTrue(
+            30 <= octet <= 40 and vm.nic[0].ipaddress.startswith("10.98.98."),
+            "VM IP %s is not within the updated DHCP range 10.98.98.30-40" % vm.nic[0].ipaddress)
+
+        network.update(self.apiclient, startip="", endip="")
+        cleared = Network.list(self.apiclient, id=network.id)[0]
+        self.assertTrue(
+            not getattr(cleared, "startip", None) and not getattr(cleared, "endip", None),
+            "Clearing the DHCP range should remove it from listNetworks")
+
     def setUp(self):
         self.cleanup = []
 

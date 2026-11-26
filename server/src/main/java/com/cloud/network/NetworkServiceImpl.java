@@ -2686,7 +2686,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // allocated from; without it the whole CIDR is used, which is the default. Validate it up front so a bad
         // range is rejected before the network is persisted, rather than throwing after commit and leaving an
         // orphaned network.
-        boolean hasIsolatedDhcpRange = ntwkOff.getGuestType() == GuestType.Isolated && StringUtils.isNotBlank(startIP);
+        boolean hasIsolatedDhcpRange = StringUtils.isNotBlank(startIP) && isCustomDhcpRangeApplicable(ntwkOff);
         if (hasIsolatedDhcpRange) {
             validateIsolatedNetworkDhcpRange(startIP, endIP, cidr, gateway);
         }
@@ -2756,6 +2756,44 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         validateIsolatedNetworkDhcpRange(startIP, endIP, network.getCidr(), network.getGateway());
         _networkDetailsDao.persist(new NetworkDetailVO(networkId, Network.dhcpStartIp, startIP, true));
         _networkDetailsDao.persist(new NetworkDetailVO(networkId, Network.dhcpEndIp, endIP, true));
+    }
+
+    /**
+     * Update the custom DHCP range of an existing network. The feature applies only to a source NAT isolated
+     * network that is not a VPC tier, the same networks that accept it on creation. A blank start IP clears the
+     * range so the whole CIDR is used again. Guest IPs are handed out as static DHCP entries, so changing the
+     * range governs future allocation only and leaves existing leases untouched.
+     */
+    protected void updateIsolatedNetworkDhcpRange(NetworkVO network, String startIP, String endIP) {
+        NetworkOffering ntwkOff = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        if (ntwkOff == null || !isCustomDhcpRangeApplicable(ntwkOff)) {
+            throw new InvalidParameterValueException("A custom DHCP range can only be set on a source NAT isolated network");
+        }
+        boolean setRange = StringUtils.isNotBlank(startIP);
+        if (setRange) {
+            if (StringUtils.isBlank(endIP)) {
+                endIP = startIP;
+            }
+            // Validate before touching the stored range so a bad range leaves the existing one in place.
+            validateIsolatedNetworkDhcpRange(startIP, endIP, network.getCidr(), network.getGateway());
+        }
+        _networkDetailsDao.removeDetail(network.getId(), Network.dhcpStartIp);
+        _networkDetailsDao.removeDetail(network.getId(), Network.dhcpEndIp);
+        if (setRange) {
+            _networkDetailsDao.addDetail(network.getId(), Network.dhcpStartIp, startIP, true);
+            _networkDetailsDao.addDetail(network.getId(), Network.dhcpEndIp, endIP, true);
+        }
+    }
+
+    /**
+     * A custom DHCP range applies to an isolated network that allocates guest IPs from its CIDR, that is an
+     * isolated network with SourceNat. This covers a standalone source NAT isolated network and a source NAT VPC
+     * tier, both of which allocate from the CIDR. A routed (non SourceNat) isolated network and a shared network
+     * use their start/end IP for a separate IP range, so the custom DHCP range is left to that path there.
+     */
+    protected boolean isCustomDhcpRangeApplicable(NetworkOffering ntwkOff) {
+        return ntwkOff.getGuestType() == GuestType.Isolated
+                && areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat);
     }
 
     /**
@@ -4367,6 +4405,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             network.setCidr(guestVmCidr);
             _networksDao.update(networkId, network);
             logger.info("IP Reservation has been applied. The new CIDR for Guests Vms is " + guestVmCidr);
+        }
+
+        if (cmd.getStartIp() != null) {
+            if (guestVmCidr != null) {
+                throw new InvalidParameterValueException("Cannot update the DHCP range and the Guest VM CIDR in the same request. Specify only one.");
+            }
+            updateIsolatedNetworkDhcpRange(network, cmd.getStartIp(), cmd.getEndIp());
         }
 
         Pair<Integer, Integer> mtus = validateMtuOnUpdate(network, dc.getId(), publicMtu, privateMtu);

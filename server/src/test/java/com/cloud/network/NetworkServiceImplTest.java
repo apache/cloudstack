@@ -2616,4 +2616,114 @@ public class NetworkServiceImplTest {
     public void validateIsolatedNetworkDhcpRangeRejectsRangeOutsideCidr() {
         service.validateIsolatedNetworkDhcpRange("10.9.9.10", "10.9.9.20", "10.1.1.0/24", "10.1.1.1");
     }
+
+    private NetworkVO sourceNatIsolatedNetworkForUpdate() {
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        Mockito.when(network.getId()).thenReturn(5L);
+        Mockito.when(network.getNetworkOfferingId()).thenReturn(7L);
+        Mockito.when(network.getCidr()).thenReturn("10.1.1.0/24");
+        Mockito.when(network.getGateway()).thenReturn("10.1.1.1");
+        NetworkOfferingVO off = Mockito.mock(NetworkOfferingVO.class);
+        Mockito.when(off.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        Mockito.when(off.getId()).thenReturn(7L);
+        Mockito.when(networkOfferingDao.findById(7L)).thenReturn(off);
+        Mockito.when(networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(7L, Network.Service.SourceNat)).thenReturn(true);
+        return network;
+    }
+
+    @Test
+    public void updateIsolatedNetworkDhcpRangeStoresNewRange() {
+        NetworkVO network = sourceNatIsolatedNetworkForUpdate();
+
+        service.updateIsolatedNetworkDhcpRange(network, "10.1.1.30", "10.1.1.40");
+
+        Mockito.verify(_networkDetailsDao).removeDetail(5L, Network.dhcpStartIp);
+        Mockito.verify(_networkDetailsDao).removeDetail(5L, Network.dhcpEndIp);
+        Mockito.verify(_networkDetailsDao).addDetail(5L, Network.dhcpStartIp, "10.1.1.30", true);
+        Mockito.verify(_networkDetailsDao).addDetail(5L, Network.dhcpEndIp, "10.1.1.40", true);
+    }
+
+    @Test
+    public void updateIsolatedNetworkDhcpRangeDefaultsEndToStart() {
+        NetworkVO network = sourceNatIsolatedNetworkForUpdate();
+
+        service.updateIsolatedNetworkDhcpRange(network, "10.1.1.30", null);
+
+        Mockito.verify(_networkDetailsDao).addDetail(5L, Network.dhcpStartIp, "10.1.1.30", true);
+        Mockito.verify(_networkDetailsDao).addDetail(5L, Network.dhcpEndIp, "10.1.1.30", true);
+    }
+
+    @Test
+    public void updateIsolatedNetworkDhcpRangeClearsRangeOnBlankStart() {
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        Mockito.when(network.getId()).thenReturn(5L);
+        Mockito.when(network.getNetworkOfferingId()).thenReturn(7L);
+        NetworkOfferingVO off = Mockito.mock(NetworkOfferingVO.class);
+        Mockito.when(off.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        Mockito.when(off.getId()).thenReturn(7L);
+        Mockito.when(networkOfferingDao.findById(7L)).thenReturn(off);
+        Mockito.when(networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(7L, Network.Service.SourceNat)).thenReturn(true);
+
+        service.updateIsolatedNetworkDhcpRange(network, "", null);
+
+        Mockito.verify(_networkDetailsDao).removeDetail(5L, Network.dhcpStartIp);
+        Mockito.verify(_networkDetailsDao).removeDetail(5L, Network.dhcpEndIp);
+        Mockito.verify(_networkDetailsDao, Mockito.never()).addDetail(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void updateIsolatedNetworkDhcpRangeRejectsNonSourceNatNetwork() {
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        Mockito.when(network.getNetworkOfferingId()).thenReturn(7L);
+        NetworkOfferingVO off = Mockito.mock(NetworkOfferingVO.class);
+        Mockito.when(off.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        Mockito.when(off.getId()).thenReturn(7L);
+        Mockito.when(networkOfferingDao.findById(7L)).thenReturn(off);
+        Mockito.when(networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(7L, Network.Service.SourceNat)).thenReturn(false);
+
+        service.updateIsolatedNetworkDhcpRange(network, "10.1.1.30", "10.1.1.40");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void updateIsolatedNetworkDhcpRangeRejectsRangeOutsideCidr() {
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        Mockito.when(network.getNetworkOfferingId()).thenReturn(7L);
+        Mockito.when(network.getCidr()).thenReturn("10.1.1.0/24");
+        Mockito.when(network.getGateway()).thenReturn("10.1.1.1");
+        NetworkOfferingVO off = Mockito.mock(NetworkOfferingVO.class);
+        Mockito.when(off.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        Mockito.when(off.getId()).thenReturn(7L);
+        Mockito.when(networkOfferingDao.findById(7L)).thenReturn(off);
+        Mockito.when(networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(7L, Network.Service.SourceNat)).thenReturn(true);
+
+        service.updateIsolatedNetworkDhcpRange(network, "10.2.2.30", "10.2.2.40");
+    }
+
+    @Test
+    public void isCustomDhcpRangeApplicableTrueForSourceNatIsolated() {
+        NetworkOfferingVO off = Mockito.mock(NetworkOfferingVO.class);
+        Mockito.when(off.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        Mockito.when(off.getId()).thenReturn(7L);
+        Mockito.when(networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(7L, Network.Service.SourceNat)).thenReturn(true);
+
+        Assert.assertTrue(service.isCustomDhcpRangeApplicable(off));
+    }
+
+    @Test
+    public void isCustomDhcpRangeApplicableFalseForRoutedIsolated() {
+        NetworkOfferingVO off = Mockito.mock(NetworkOfferingVO.class);
+        Mockito.when(off.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        Mockito.when(off.getId()).thenReturn(7L);
+        Mockito.when(networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(7L, Network.Service.SourceNat)).thenReturn(false);
+
+        Assert.assertFalse(service.isCustomDhcpRangeApplicable(off));
+    }
+
+    @Test
+    public void isCustomDhcpRangeApplicableFalseForSharedNetwork() {
+        NetworkOfferingVO off = Mockito.mock(NetworkOfferingVO.class);
+        Mockito.when(off.getGuestType()).thenReturn(Network.GuestType.Shared);
+
+        Assert.assertFalse(service.isCustomDhcpRangeApplicable(off));
+    }
 }
