@@ -78,6 +78,7 @@ import {
   EnvironmentOutlined,
   ExceptionOutlined,
   ExclamationCircleOutlined,
+  ExperimentOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
   FieldTimeOutlined,
@@ -254,6 +255,7 @@ export default {
     app.component('EnvironmentOutlined', EnvironmentOutlined)
     app.component('ExceptionOutlined', ExceptionOutlined)
     app.component('ExclamationCircleOutlined', ExclamationCircleOutlined)
+    app.component('ExperimentOutlined', ExperimentOutlined)
     app.component('EyeInvisibleOutlined', EyeInvisibleOutlined)
     app.component('EyeOutlined', EyeOutlined)
     app.component('FieldTimeOutlined', FieldTimeOutlined)
