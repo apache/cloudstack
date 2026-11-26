@@ -16,9 +16,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# Fixed: Added qemu-guest-agent to REQUIRED_PACKAGES (GitHub Issue #13471)
+# Also removes duplicate cloud-init and gnupg entries
+
 OS=`awk -F= '/^NAME/{print $2}' /etc/os-release`
 REQUIRED_PACKAGES=(cloud-init cloud-guest-utils conntrack apt-transport-https ca-certificates curl gnupg gnupg-agent \
-                    software-properties-common gnupg lsb-release python3-json-pointer python3-jsonschema cloud-init containerd.io)
+                    software-properties-common lsb-release python3-json-pointer python3-jsonschema containerd.io \
+                    qemu-guest-agent)
 declare -a MISSING_PACKAGES
 if [[ $OS == *"Ubuntu"* || $OS == *"Debian"* ]]; then
   for package in ${REQUIRED_PACKAGES[@]}; do
