@@ -124,7 +124,7 @@
           </router-link>
         </template>
         <template v-if="column.key === 'vm'">
-          <div><desktop-outlined/>
+          <div><desktop-outlined/>&nbsp;
             <router-link
               :to="{ path: '/vm/' + record.virtualmachineid }">
               {{ record.virtualmachinename }}</router-link> ({{ record.vmguestip }})</div>

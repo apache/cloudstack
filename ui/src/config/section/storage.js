@@ -54,8 +54,10 @@ export default {
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.push('storage')
           fields.push('account')
+          fields.push('domain')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
           fields.push('account')
+          fields.push('domain')
         }
         if (store.getters.listAllProjects) {
           fields.push('project')
@@ -625,7 +627,18 @@ export default {
       title: 'label.buckets',
       icon: 'funnel-plot-outlined',
       permission: ['listBuckets'],
-      columns: ['name', 'state', 'objectstore', 'size', 'account'],
+      columns: () => {
+        var fields = ['name', 'state', 'objectstore', 'size', 'account']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          if (store.getters.listAllProjects) {
+            fields.push('project')
+          }
+          fields.push('domain')
+        } else if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
+        return fields
+      },
       details: ['id', 'name', 'state', 'objectstore', 'size', 'url', 'accesskey', 'usersecretkey', 'account', 'domain', 'created', 'quota', 'encryption', 'versioning', 'objectlocking', 'policy'],
       tabs: [
         {
@@ -695,8 +708,10 @@ export default {
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.push('storage')
           fields.push('account')
+          fields.push('domain')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
           fields.push('account')
+          fields.push('domain')
         }
         if (store.getters.listAllProjects) {
           fields.push('project')
