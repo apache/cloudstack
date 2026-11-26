@@ -126,6 +126,12 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     @Column(name = "backupStorageTotal")
     private Long backupStorageTotal;
 
+    @Column(name = "instanceSnapshotLimit")
+    private Long instanceSnapshotLimit;
+
+    @Column(name = "instanceSnapshotTotal")
+    private Long instanceSnapshotTotal;
+
     @Column(name = "templateLimit")
     private Long templateLimit;
 
@@ -310,6 +316,10 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
         return backupStorageTotal;
     }
 
+    public Long getInstanceSnapshotLimit() {
+        return instanceSnapshotLimit;
+    }
+
     public Long getTemplateTotal() {
         return templateTotal;
     }
@@ -384,6 +394,10 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     public Long getBackupStorageLimit() {
         return backupStorageLimit;
+    }
+
+    public Long getInstanceSnapshotTotal() {
+        return instanceSnapshotTotal;
     }
 
     public Long getTemplateLimit() {

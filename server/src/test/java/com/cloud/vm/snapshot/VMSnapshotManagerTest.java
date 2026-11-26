@@ -17,6 +17,7 @@
 package com.cloud.vm.snapshot;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.configuration.Resource;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -42,6 +43,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
@@ -70,6 +72,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
@@ -144,6 +147,8 @@ public class VMSnapshotManagerTest {
     UserVmManager _userVmManager;
     @Mock
     private AccountVO accountVOMock;
+    @Mock
+    ResourceLimitService resourceLimitService;
 
     private static final long TEST_VM_ID = 3L;
     private static final long SERVICE_OFFERING_ID = 1L;
@@ -198,6 +203,7 @@ public class VMSnapshotManagerTest {
         _vmSnapshotMgr._guestOSDao = _guestOSDao;
         _vmSnapshotMgr._hypervisorCapabilitiesDao = _hypervisorCapabilitiesDao;
         _vmSnapshotMgr._serviceOfferingDetailsDao = _serviceOfferingDetailsDao;
+        _vmSnapshotMgr.resourceLimitMgr = resourceLimitService;
 
         doNothing().when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
 
@@ -326,6 +332,7 @@ public class VMSnapshotManagerTest {
         when(userVm.getAccountId()).thenReturn(accountId);
         when(_accountMgr.getAccount(accountId)).thenReturn(accountVOMock);
         when(vmMock.getState()).thenReturn(State.Running);
+        doNothing().when(resourceLimitService).checkResourceLimit(Mockito.eq(admin), Mockito.eq(Resource.ResourceType.instance_snapshot));
         _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
     }
 
