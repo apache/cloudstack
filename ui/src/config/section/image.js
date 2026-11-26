@@ -117,6 +117,17 @@ export default {
         },
         {
           api: 'registerTemplate',
+          icon: 'appstore-add-outlined',
+          label: 'label.register.template.from.catalog',
+          docHelp: 'adminguide/templates.html',
+          listView: true,
+          popup: true,
+          show: (record, getters) => isZoneCreated() && getters.userInfo.roletype === 'Admin' &&
+            ['listZones', 'listClusters', 'listImageStores', 'listTemplates'].every(api => api in getters.apis),
+          component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/ZoneWizardRegisterTemplate.vue')))
+        },
+        {
+          api: 'registerTemplate',
           icon: 'cloud-upload-outlined',
           label: 'label.upload.template.from.local',
           docHelp: 'adminguide/templates.html#uploading-templates-and-isos-from-a-local-computer',
