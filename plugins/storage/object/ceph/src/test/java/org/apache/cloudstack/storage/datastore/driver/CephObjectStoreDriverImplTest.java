@@ -17,6 +17,17 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.CreateBucketRequest;
+import com.amazonaws.services.s3.model.SetBucketEncryptionRequest;
+import com.amazonaws.services.s3.model.SetBucketPolicyRequest;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.mockito.ArgumentCaptor;
+import org.twonote.rgwadmin4j.model.S3Credential;
+import org.twonote.rgwadmin4j.model.User;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import com.cloud.agent.api.to.BucketTO;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.dao.BucketDao;
@@ -38,11 +49,15 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.twonote.rgwadmin4j.RgwAdmin;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -97,16 +112,94 @@ public class CephObjectStoreDriverImplTest {
         Bucket bucketRet = cephObjectStoreDriverImpl.createBucket(bucket, false);
         assertEquals(bucketRet.getName(), bucket.getName());
         verify(rgwClient, times(1)).doesBucketExistV2(anyString());
-        verify(rgwClient, times(1)).createBucket(anyString());
+        verify(rgwClient, times(1)).createBucket(any(CreateBucketRequest.class));
     }
 
     @Test
     public void testDeleteBucket() throws Exception {
         String bucketName = "test-bucket";
         BucketTO bucket = new BucketTO(bucketName);
-        doReturn(rgwAdmin).when(cephObjectStoreDriverImpl).getRgwAdminClient(anyLong());
+        doReturn(rgwClient).when(cephObjectStoreDriverImpl).getS3Client(any(), any(), any());
         boolean success = cephObjectStoreDriverImpl.deleteBucket(bucket, 1L);
         assertTrue(success);
-        verify(rgwAdmin, times(1)).removeBucket(anyString());
+        verify(rgwClient, times(1)).deleteBucket(anyString());
+    }
+
+    private User mockRgwUser(boolean existing) {
+        User user = mock(User.class);
+        S3Credential credential = mock(S3Credential.class);
+        when(credential.getAccessKey()).thenReturn("access");
+        when(credential.getSecretKey()).thenReturn("secret");
+        when(user.getS3Credentials()).thenReturn(List.of(credential));
+        when(account.getUuid()).thenReturn("uuid");
+        when(account.getAccountName()).thenReturn("name");
+        when(accountDao.findById(1L)).thenReturn(account);
+        doReturn(rgwAdmin).when(cephObjectStoreDriverImpl).getRgwAdminClient(anyLong());
+        when(rgwAdmin.getUserInfo("uuid")).thenReturn(existing ? Optional.of(user) : Optional.empty());
+        return user;
+    }
+
+    @Test
+    public void testCreateUserStoresKeysPerStoreWithoutReplacingDetails() {
+        User user = mockRgwUser(false);
+        when(rgwAdmin.createUser(eq("uuid"), any())).thenReturn(user);
+        assertTrue(cephObjectStoreDriverImpl.createUser(1L, 2L));
+        verify(accountDetailsDao).update(1L, Map.of("ceph-rgw-accesskey-2", "access", "ceph-rgw-secretkey-2", "secret"));
+        verify(accountDetailsDao, never()).persist(anyLong(), any());
+    }
+
+    @Test
+    public void testCreateUserStoresKeysOfExistingUser() {
+        mockRgwUser(true);
+        assertTrue(cephObjectStoreDriverImpl.createUser(1L, 2L));
+        verify(rgwAdmin, never()).createUser(any(), any());
+        verify(accountDetailsDao).update(eq(1L), any());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCreateUserFailsWhenLookupFails() {
+        mockRgwUser(true);
+        when(rgwAdmin.getUserInfo("uuid")).thenThrow(new RuntimeException("connection refused"));
+        cephObjectStoreDriverImpl.createUser(1L, 2L);
+    }
+
+    @Test
+    public void testGetAccountKeyFallsBackToKeyWithoutStore() {
+        when(accountDetailsDao.findDetail(1L, "ceph-rgw-secretkey")).thenReturn(new AccountDetailVO(1L, "ceph-rgw-secretkey", "old"));
+        assertEquals("old", cephObjectStoreDriverImpl.getAccountKey(1L, 2L, "ceph-rgw-secretkey"));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testGetAccountKeyFailsWithoutKey() {
+        cephObjectStoreDriverImpl.getAccountKey(1L, 2L, "ceph-rgw-secretkey");
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCreateBucketFailsWhenBucketExists() {
+        doReturn(rgwClient).when(cephObjectStoreDriverImpl).getS3Client(anyLong(), anyLong());
+        when(rgwClient.doesBucketExistV2(anyString())).thenReturn(true);
+        cephObjectStoreDriverImpl.createBucket(bucket, false);
+    }
+
+    @Test
+    public void testPublicPolicyDoesNotAllowListing() {
+        doReturn(rgwClient).when(cephObjectStoreDriverImpl).getS3Client(any(), any(), any());
+        cephObjectStoreDriverImpl.setBucketPolicy(new BucketTO("test-bucket"), "public", 1L);
+        ArgumentCaptor<SetBucketPolicyRequest> request = ArgumentCaptor.forClass(SetBucketPolicyRequest.class);
+        verify(rgwClient).setBucketPolicy(request.capture());
+        assertTrue(request.getValue().getPolicyText().contains("s3:GetObject"));
+        assertFalse(request.getValue().getPolicyText().contains("s3:ListBucket"));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUnknownPolicyIsRefused() {
+        cephObjectStoreDriverImpl.setBucketPolicy(new BucketTO("test-bucket"), "everyone", 1L);
+    }
+
+    @Test
+    public void testSetBucketEncryption() {
+        doReturn(rgwClient).when(cephObjectStoreDriverImpl).getS3Client(any(), any(), any());
+        assertTrue(cephObjectStoreDriverImpl.setBucketEncryption(new BucketTO("test-bucket"), 1L));
+        verify(rgwClient).setBucketEncryption(any(SetBucketEncryptionRequest.class));
     }
 }

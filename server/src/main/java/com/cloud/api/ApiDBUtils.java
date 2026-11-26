@@ -1565,6 +1565,7 @@ public class ApiDBUtils {
 
     public static Map<String, String> getAccountDetails(long accountId) {
         Map<String, String> details = s_accountDetailsDao.findDetails(accountId);
+        details.keySet().removeIf(key -> key.toLowerCase().contains("secretkey"));
         return details.isEmpty() ? null : details;
     }
 
