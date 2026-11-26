@@ -24,6 +24,8 @@ import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.StartupCommandProcessor;
 import com.cloud.agent.api.StartupCommand;
@@ -38,7 +40,6 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 
 /**
@@ -62,7 +63,7 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
         if (_nodeId == -1) {
             // FIXME: We really should not do this like this. It should be done
             // at config time and is stored as a config variable.
-            _nodeId = MacAddress.getMacAddress().toLong();
+            _nodeId = ManagementServerNode.getManagementServerId();
         }
         return true;
     }
