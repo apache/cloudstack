@@ -839,7 +839,7 @@
   </div>
 </template>
 
-<script>
+<script lang="jsx">
 import { ref, reactive, toRaw, nextTick } from 'vue'
 import { getAPI, postAPI } from '@/api'
 import _ from 'lodash'
