@@ -43,8 +43,16 @@ public class Answer extends Command {
         return result;
     }
 
+    public void setResult(boolean result) {
+        this.result = result;
+    }
+
     public String getDetails() {
         return details;
+    }
+
+    public void setDetails(String details) {
+        this.details = details;
     }
 
     @Override

@@ -98,12 +98,14 @@ public class ClusterServiceServletImpl implements ClusterService {
         try {
             method.setEntity(new UrlEncodedFormEntity(postParameters, HttpUtils.UTF_8));
         } catch (UnsupportedEncodingException e) {
-            logger.error("Failed to encode request POST parameters", e);
+            String msg = "Failed to encode request POST parameters";
+            logger.error(msg, e);
             logPostParametersForFailedEncoding(postParameters);
-            throw new RemoteException("Failed to encode request POST parameters", e);
+            throw new RemoteException(msg, e);
         }
 
-        return executePostMethod(client, method);
+        return executePostMethod(client, method, String.format("deliver PDU (seq: %d, ack seq: %d, agent: %d)",
+                pdu.getSequenceId(), pdu.getAckSequenceId(), pdu.getAgentId()));
     }
 
     protected List<NameValuePair> getPingPostParameters(final String callingPeer) {
@@ -126,16 +128,17 @@ public class ClusterServiceServletImpl implements ClusterService {
         try {
             method.setEntity(new UrlEncodedFormEntity(postParameters, HttpUtils.UTF_8));
         } catch (UnsupportedEncodingException e) {
-            logger.error("Failed to encode ping request POST parameters", e);
+            String msg = "Failed to encode ping request POST parameters";
+            logger.error(msg, e);
             logPostParametersForFailedEncoding(postParameters);
-            throw new RemoteException("Failed to encode ping request POST parameters", e);
+            throw new RemoteException(msg, e);
         }
 
-        final String returnVal = executePostMethod(client, method);
+        final String returnVal = executePostMethod(client, method, "ping from " + callingPeer);
         return Boolean.TRUE.toString().equalsIgnoreCase(returnVal);
     }
 
-    private String executePostMethod(final CloseableHttpClient client, final HttpPost method) {
+    private String executePostMethod(final CloseableHttpClient client, final HttpPost method, final String requestDescription) {
         String result = null;
         try {
             final Profiler profiler = new Profiler();
@@ -145,16 +148,14 @@ public class ClusterServiceServletImpl implements ClusterService {
             if (response == HttpStatus.SC_OK) {
                 result = EntityUtils.toString(httpResponse.getEntity());
                 profiler.stop();
-                if (logger.isDebugEnabled()) {
-                    logger.debug("POST " + serviceUrl + " response :" + result + ", responding time: " + profiler.getDurationInMillis() + " ms");
-                }
+                logger.debug("POST {} {} succeeded, response length: {}, responding time: {} ms", serviceUrl, requestDescription,
+                        result != null ? result.length() : 0, profiler.getDurationInMillis());
             } else {
                 profiler.stop();
-                logger.error("Invalid response code : " + response + ", from : " + serviceUrl + ", method : " + method.getParams().getParameter("method") + " responding time: " +
-                        profiler.getDurationInMillis());
+                logger.error("Invalid response code: {} from POST {} {}, responding time: {} ms", response, serviceUrl, requestDescription, profiler.getDurationInMillis());
             }
         } catch (IOException e) {
-            logger.error("Exception from : " + serviceUrl + ", method : " + method.getParams().getParameter("method") + ", exception :", e);
+            logger.error("Exception from POST {} {}", serviceUrl, requestDescription, e);
         } finally {
             method.releaseConnection();
         }

@@ -69,6 +69,7 @@ public class CSExceptionErrorCode {
             ExceptionErrorCodeMap.put("com.cloud.exception.StorageUnavailableException", 4385);
             ExceptionErrorCodeMap.put("com.cloud.exception.UnsupportedServiceException", 4390);
             ExceptionErrorCodeMap.put("com.cloud.exception.VirtualMachineMigrationException", 4395);
+            ExceptionErrorCodeMap.put("com.cloud.exception.ConnectionException", 4435);
             ExceptionErrorCodeMap.put("com.cloud.async.AsyncCommandQueued", 4540);
             ExceptionErrorCodeMap.put("com.cloud.exception.RequestLimitException", 4545);
             ExceptionErrorCodeMap.put("com.cloud.exception.StorageConflictException", 4550);

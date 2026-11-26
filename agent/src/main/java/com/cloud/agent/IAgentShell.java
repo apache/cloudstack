@@ -54,6 +54,8 @@ public interface IAgentShell {
 
     BackoffAlgorithm getBackoffAlgorithm();
 
+    void setBackoffAlgorithm(BackoffAlgorithm backoffAlgorithm);
+
     int getPingRetries();
 
     String getVersion();

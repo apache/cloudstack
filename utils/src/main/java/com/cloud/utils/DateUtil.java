@@ -20,10 +20,13 @@
 package com.cloud.utils;
 
 import java.text.ParseException;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -345,4 +348,33 @@ public class DateUtil {
         return nowInLocalZone.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     }
 
+    /**
+     * Formats duration in milliseconds to string {@code X min, Y sec, Z ms}.
+     *
+     * @param durationMs duration in milliseconds
+     * @return formatted string
+     */
+    public static String formatMillis(long durationMs) {
+        Duration duration = Duration.ofMillis(durationMs);
+        long minutes = duration.toMinutes();
+        duration = duration.minusMinutes(minutes);
+        long seconds = duration.toSeconds();
+        duration = duration.minusSeconds(seconds);
+        long millis = duration.toMillis();
+
+        List<String> parts = new ArrayList<>();
+        if (minutes > 0) {
+            parts.add(minutes + " min");
+        }
+        if (seconds > 0) {
+            parts.add(seconds + " sec");
+        }
+        if (millis > 0) {
+            parts.add(millis + " ms");
+        }
+        if (parts.isEmpty()) {
+            parts.add("0 ms");
+        }
+        return String.join(", ", parts);
+    }
 }

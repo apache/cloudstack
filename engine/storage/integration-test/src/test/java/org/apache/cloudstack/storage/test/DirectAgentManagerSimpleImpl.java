@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.test;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -292,5 +293,10 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
 
     @Override
     public void notifyMonitorsOfNewlyAddedHost(long hostId) {
+    }
+
+    @Override
+    public List<String> getAvoidMsList() {
+        return List.of();
     }
 }
