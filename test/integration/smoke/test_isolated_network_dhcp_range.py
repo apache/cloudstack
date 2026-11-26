@@ -21,7 +21,9 @@ from marvin.lib.base import (Account,
                              Network,
                              NetworkOffering,
                              ServiceOffering,
-                             VirtualMachine)
+                             VirtualMachine,
+                             VPC,
+                             VpcOffering)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template)
@@ -143,6 +145,62 @@ class TestIsolatedNetworkDhcpRange(cloudstackTestCase):
         self.assertTrue(
             not getattr(cleared, "startip", None) and not getattr(cleared, "endip", None),
             "Clearing the DHCP range should remove it from listNetworks")
+
+    @attr(tags=["advanced"], required_hardware="false")
+    def test_vpc_tier_custom_dhcp_range(self):
+        """A VM on a source NAT VPC tier with a custom DHCP range gets an IP within it"""
+        vpc_offering = VpcOffering.create(self.apiclient, self.services["vpc_offering"])
+        vpc_offering.update(self.apiclient, state="Enabled")
+        self.cleanup.append(vpc_offering)
+
+        vpc_services = dict(self.services["vpc"])
+        vpc_services["cidr"] = "10.1.0.0/16"
+        vpc = VPC.create(
+            self.apiclient,
+            vpc_services,
+            vpcofferingid=vpc_offering.id,
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid)
+        self.cleanup.insert(0, vpc)
+
+        tier_offering = NetworkOffering.list(self.apiclient, name="DefaultIsolatedNetworkOfferingForVpcNetworks")[0]
+
+        tier_services = dict(self.services["network"])
+        tier_services["gateway"] = "10.1.1.1"
+        tier_services["netmask"] = "255.255.255.0"
+        tier_services["startip"] = "10.1.1.10"
+        tier_services["endip"] = "10.1.1.20"
+        tier = Network.create(
+            self.apiclient,
+            tier_services,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkofferingid=tier_offering.id,
+            zoneid=self.zone.id,
+            gateway="10.1.1.1",
+            netmask="255.255.255.0",
+            vpcid=vpc.id)
+        self.cleanup.insert(0, tier)
+
+        listed = Network.list(self.apiclient, id=tier.id)[0]
+        self.assertEqual(listed.startip, "10.1.1.10", "listNetworks should return the tier DHCP start IP")
+        self.assertEqual(listed.endip, "10.1.1.20", "listNetworks should return the tier DHCP end IP")
+
+        vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[tier.id])
+        # delete the VM before the tier, otherwise the network delete fails while the VM still exists
+        self.cleanup.insert(0, vm)
+
+        octet = int(vm.nic[0].ipaddress.split(".")[-1])
+        self.assertTrue(
+            10 <= octet <= 20 and vm.nic[0].ipaddress.startswith("10.1.1."),
+            "VM IP %s is not within the VPC tier custom DHCP range 10.1.1.10-20" % vm.nic[0].ipaddress)
 
     def setUp(self):
         self.cleanup = []
