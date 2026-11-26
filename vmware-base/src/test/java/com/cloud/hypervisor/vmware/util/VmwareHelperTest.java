@@ -22,10 +22,12 @@ import static org.junit.Assert.assertNull;
 
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
+import com.cloud.storage.Storage;
 import com.vmware.vim25.DatastoreInfo;
 import com.vmware.vim25.Description;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
+import com.vmware.vim25.VirtualDiskType;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.junit.Assert;
 import org.junit.Before;
@@ -96,6 +98,14 @@ public class VmwareHelperTest {
         Mockito.when(virtualMachineMO.getIDEDeviceControllerKey()).thenReturn(1);
         VirtualDisk virtualDisk = (VirtualDisk) VmwareHelper.prepareDiskDevice(virtualMachineMO, null, -1, new String[1], null, 0, 0, Long.valueOf(0));
         assertNull(virtualDisk.getStorageIOAllocation());
+    }
+
+    @Test
+    public void getVirtualDiskTypeMapsCloudStackProvisioningTypes() {
+        assertEquals(VirtualDiskType.THIN, VmwareHelper.getVirtualDiskType(Storage.ProvisioningType.THIN));
+        assertEquals(VirtualDiskType.PREALLOCATED, VmwareHelper.getVirtualDiskType(Storage.ProvisioningType.SPARSE));
+        assertEquals(VirtualDiskType.EAGER_ZEROED_THICK, VmwareHelper.getVirtualDiskType(Storage.ProvisioningType.FAT));
+        assertEquals(VirtualDiskType.THIN, VmwareHelper.getVirtualDiskType(null));
     }
 
     @Test
