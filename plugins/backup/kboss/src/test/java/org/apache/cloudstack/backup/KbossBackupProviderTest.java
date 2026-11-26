@@ -814,7 +814,7 @@ public class KbossBackupProviderTest {
         doNothing().when(kbossBackupProviderSpy).validateStorages(any(), any());
         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(any());
         doReturn(dataStoreMock).when(kbossBackupProviderSpy).getImageStoreForBackup(any(), any());
-        doReturn(takeKbossBackupAnswerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
+        doReturn(takeKbossBackupAnswerMock).when(kbossBackupProviderSpy).sendBackupCommand(any(HostVO.class), any());
         doReturn(true).when(takeKbossBackupAnswerMock).getResult();
         doNothing().when(kbossBackupProviderSpy).processBackupSuccess(anyBoolean(), any(), any(), any(), any(), any(), any(), any(), anyBoolean(), any(),
                 anyLong(), anyBoolean(), anyBoolean(), anyBoolean());
@@ -850,7 +850,7 @@ public class KbossBackupProviderTest {
         InternalBackupJoinVO parentMock = Mockito.mock(InternalBackupJoinVO.class);
         doReturn(parentMock).when(kbossBackupProviderSpy).getParentAndSetEndOfChain(any(), any(), any());
         doReturn(dataStoreMock).when(kbossBackupProviderSpy).getImageStoreForBackup(any(), any());
-        doReturn(takeKbossBackupAnswerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
+        doReturn(takeKbossBackupAnswerMock).when(kbossBackupProviderSpy).sendBackupCommand(any(HostVO.class), any());
         doReturn(true).when(takeKbossBackupAnswerMock).getResult();
         doNothing().when(kbossBackupProviderSpy).processBackupSuccess(anyBoolean(), any(), any(), any(), any(), any(), any(), any(), anyBoolean(), any(),
                 anyLong(), anyBoolean(), anyBoolean(), anyBoolean());
@@ -1083,7 +1083,7 @@ public class KbossBackupProviderTest {
         doReturn(List.of()).when(kbossBackupProviderSpy).getVolumesThatAreNotPartOfTheBackup(any(), any());
         doReturn(List.of()).when(kbossBackupProviderSpy).populateDeltasToRemoveAndToMergeAndUpdateVolumePaths(any(), any(), any(), any(), any());
         doReturn(VirtualMachine.State.Stopped).when(virtualMachineMock).getState();
-        doThrow(OperationTimedoutException.class).when(kbossBackupProviderSpy).sendBackupCommands(anyLong(), any());
+        doThrow(OperationTimedoutException.class).when(kbossBackupProviderSpy).sendBackupCommands(any(HostVO.class), any());
 
         boolean result = kbossBackupProviderSpy.orchestrateRestoreVMFromBackup(backupVoMock, virtualMachineMock, false, null, true);
 
@@ -1107,7 +1107,7 @@ public class KbossBackupProviderTest {
         doReturn(List.of()).when(kbossBackupProviderSpy).getVolumesThatAreNotPartOfTheBackup(any(), any());
         doReturn(List.of()).when(kbossBackupProviderSpy).populateDeltasToRemoveAndToMergeAndUpdateVolumePaths(any(), any(), any(), any(), any());
         doReturn(VirtualMachine.State.Stopped).when(virtualMachineMock).getState();
-        doReturn(null).when(kbossBackupProviderSpy).sendBackupCommands(anyLong(), any());
+        doReturn(null).when(kbossBackupProviderSpy).sendBackupCommands(any(HostVO.class), any());
 
         boolean result = kbossBackupProviderSpy.orchestrateRestoreVMFromBackup(backupVoMock, virtualMachineMock, false, null, true);
 
@@ -1132,7 +1132,7 @@ public class KbossBackupProviderTest {
         doReturn(List.of()).when(kbossBackupProviderSpy).getVolumesThatAreNotPartOfTheBackup(any(), any());
         doReturn(List.of()).when(kbossBackupProviderSpy).populateDeltasToRemoveAndToMergeAndUpdateVolumePaths(any(), any(), any(), any(), any());
         doReturn(VirtualMachine.State.Stopped).when(virtualMachineMock).getState();
-        doReturn(new Answer[]{Mockito.mock(Answer.class)}).when(kbossBackupProviderSpy).sendBackupCommands(anyLong(), any());
+        doReturn(new Answer[]{Mockito.mock(Answer.class)}).when(kbossBackupProviderSpy).sendBackupCommands(any(HostVO.class), any());
         doReturn(false).when(kbossBackupProviderSpy).processRestoreAnswers(any(), any(), anyBoolean());
 
         boolean result = kbossBackupProviderSpy.orchestrateRestoreVMFromBackup(backupVoMock, virtualMachineMock, false, null, true);
@@ -1158,7 +1158,7 @@ public class KbossBackupProviderTest {
         doReturn(List.of()).when(kbossBackupProviderSpy).getVolumesThatAreNotPartOfTheBackup(any(), any());
         doReturn(List.of()).when(kbossBackupProviderSpy).populateDeltasToRemoveAndToMergeAndUpdateVolumePaths(any(), any(), any(), any(), any());
         doReturn(VirtualMachine.State.Stopped).when(virtualMachineMock).getState();
-        doReturn(new Answer[]{Mockito.mock(Answer.class)}).when(kbossBackupProviderSpy).sendBackupCommands(anyLong(), any());
+        doReturn(new Answer[]{Mockito.mock(Answer.class)}).when(kbossBackupProviderSpy).sendBackupCommands(any(HostVO.class), any());
         doReturn(true).when(kbossBackupProviderSpy).processRestoreAnswers(any(), any(), anyBoolean());
         doNothing().when(kbossBackupProviderSpy).setEndOfChainAndRemoveCurrentForBackup(currentBackup);
         doReturn(List.of()).when(kbossBackupProviderSpy).getVolumesToConsolidate(any(), any(), any(), anyLong(), anyBoolean());
@@ -1183,7 +1183,7 @@ public class KbossBackupProviderTest {
         Pair<Boolean, String> result = kbossBackupProviderSpy.orchestrateRestoreBackedUpVolume(backupVoMock, virtualMachineMock, null, null, false);
 
         assertFalse(result.first());
-        verify(kbossBackupProviderSpy, Mockito.never()).sendBackupCommand(anyLong(), any());
+        verify(kbossBackupProviderSpy, Mockito.never()).sendBackupCommand(any(HostVO.class), any());
     }
 
     @Test (expected = CloudRuntimeException.class)
@@ -1199,7 +1199,7 @@ public class KbossBackupProviderTest {
 
         Pair<Boolean, String> result = kbossBackupProviderSpy.orchestrateRestoreBackedUpVolume(backupVoMock, virtualMachineMock, backupVolumeInfoMock, null, false);
 
-        verify(kbossBackupProviderSpy, Mockito.times(1)).sendBackupCommand(anyLong(), any());
+        verify(kbossBackupProviderSpy, Mockito.times(1)).sendBackupCommand(any(HostVO.class), any());
     }
 
     @Test
@@ -1220,7 +1220,7 @@ public class KbossBackupProviderTest {
 
         assertTrue(result.first());
 
-        verify(kbossBackupProviderSpy, Mockito.times(1)).sendBackupCommand(anyLong(), any());
+        verify(kbossBackupProviderSpy, Mockito.times(1)).sendBackupCommand(any(HostVO.class), any());
         verify(volumeApiServiceMock).attachVolumeToVM(anyLong(), anyLong(), any(), anyBoolean(), anyBoolean());
         verify(kbossBackupProviderSpy).finalizeQuickRestore(any(), anyList(), anyLong());
     }
@@ -1442,7 +1442,7 @@ public class KbossBackupProviderTest {
         doReturn(List.of()).when(vmSnapshotHelperMock).getVolumeTOList(vmId);
         doReturn(vmSnapshotVoMock).when(kbossBackupProviderSpy).getSucceedingVmSnapshot(internalBackupJoinVoMock);
         doNothing().when(kbossBackupProviderSpy).createDeleteCommandsAndMergeTrees(any(), any(), any(), any(), anyList());
-        doThrow(OperationTimedoutException.class).when(kbossBackupProviderSpy).sendBackupCommands(any(), any());
+        doThrow(OperationTimedoutException.class).when(kbossBackupProviderSpy).sendBackupCommands(anyLong(), any());
 
         kbossBackupProviderSpy.prepareVmForSnapshotRevert(vmSnapshotVoMock, virtualMachineMock);
 
@@ -1457,7 +1457,7 @@ public class KbossBackupProviderTest {
         doReturn(List.of()).when(vmSnapshotHelperMock).getVolumeTOList(vmId);
         doReturn(vmSnapshotVoMock).when(kbossBackupProviderSpy).getSucceedingVmSnapshot(internalBackupJoinVoMock);
         doNothing().when(kbossBackupProviderSpy).createDeleteCommandsAndMergeTrees(any(), any(), any(), any(), anyList());
-        doReturn(null).when(kbossBackupProviderSpy).sendBackupCommands(any(), any());
+        doReturn(null).when(kbossBackupProviderSpy).sendBackupCommands(anyLong(), any());
 
         kbossBackupProviderSpy.prepareVmForSnapshotRevert(vmSnapshotVoMock, virtualMachineMock);
 
@@ -1472,7 +1472,7 @@ public class KbossBackupProviderTest {
         doReturn(List.of()).when(vmSnapshotHelperMock).getVolumeTOList(vmId);
         doReturn(vmSnapshotVoMock).when(kbossBackupProviderSpy).getSucceedingVmSnapshot(internalBackupJoinVoMock);
         doNothing().when(kbossBackupProviderSpy).createDeleteCommandsAndMergeTrees(any(), any(), any(), any(), anyList());
-        doReturn(new Answer[]{}).when(kbossBackupProviderSpy).sendBackupCommands(any(), any());
+        doReturn(new Answer[]{}).when(kbossBackupProviderSpy).sendBackupCommands(anyLong(), any());
         doNothing().when(kbossBackupProviderSpy).updateReferencesAfterPrepareForSnapshotRevert(any(), any(), any(), any());
 
         kbossBackupProviderSpy.prepareVmForSnapshotRevert(vmSnapshotVoMock, virtualMachineMock);
@@ -1516,14 +1516,14 @@ public class KbossBackupProviderTest {
     public void validateWithHashTestAnswerResultFalse() {
         doReturn(List.of()).when(kbossBackupProviderSpy).getBackupDeltaTOList(backupId);
         doReturn(List.of(hostVOMock)).when(hostDaoMock).listAllHostsUpByZoneAndHypervisor(anyLong(), any());
-        doReturn(answerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
+        doReturn(answerMock).when(kbossBackupProviderSpy).sendBackupCommand(any(HostVO.class), any());
         doReturn(false).when(answerMock).getResult();
         doNothing().when(kbossBackupProviderSpy).setBackupUnableToValidateAndSendAlert(any(), any());
 
         boolean result = kbossBackupProviderSpy.validateWithHash(backupId, backupVoMock, null);
 
         assertFalse(result);
-        verify(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
+        verify(kbossBackupProviderSpy).sendBackupCommand(any(HostVO.class), any());
         verify(kbossBackupProviderSpy).setBackupUnableToValidateAndSendAlert(any(), any());
     }
 
@@ -1531,7 +1531,7 @@ public class KbossBackupProviderTest {
     public void validateWithHashTestDifferentHash() {
         doReturn(List.of()).when(kbossBackupProviderSpy).getBackupDeltaTOList(backupId);
         doReturn(List.of(hostVOMock)).when(hostDaoMock).listAllHostsUpByZoneAndHypervisor(anyLong(), any());
-        doReturn(answerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
+        doReturn(answerMock).when(kbossBackupProviderSpy).sendBackupCommand(any(HostVO.class), any());
         doReturn(true).when(answerMock).getResult();
         doReturn("wrongHash").when(answerMock).getDetails();
         doReturn("correctHash").when(backupDetailVoMock).getValue();
@@ -1540,7 +1540,7 @@ public class KbossBackupProviderTest {
         boolean result = kbossBackupProviderSpy.validateWithHash(backupId, backupVoMock, backupDetailVoMock);
 
         assertFalse(result);
-        verify(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
+        verify(kbossBackupProviderSpy).sendBackupCommand(any(HostVO.class), any());
         verify(kbossBackupProviderSpy).setBackupAsInvalidAndSendAlert(any(), any());
         verify(backupDaoMock, Mockito.never()).update(anyLong(), any());
     }
@@ -1549,7 +1549,7 @@ public class KbossBackupProviderTest {
     public void validateWithHashTestSameHash() {
         doReturn(List.of()).when(kbossBackupProviderSpy).getBackupDeltaTOList(backupId);
         doReturn(List.of(hostVOMock)).when(hostDaoMock).listAllHostsUpByZoneAndHypervisor(anyLong(), any());
-        doReturn(answerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
+        doReturn(answerMock).when(kbossBackupProviderSpy).sendBackupCommand(any(HostVO.class), any());
         doReturn(true).when(answerMock).getResult();
         doReturn("correctHash").when(answerMock).getDetails();
         doReturn("correctHash").when(backupDetailVoMock).getValue();
@@ -1557,7 +1557,7 @@ public class KbossBackupProviderTest {
         boolean result = kbossBackupProviderSpy.validateWithHash(backupId, backupVoMock, backupDetailVoMock);
 
         assertTrue(result);
-        verify(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
+        verify(kbossBackupProviderSpy).sendBackupCommand(any(HostVO.class), any());
         verify(kbossBackupProviderSpy, never()).setBackupAsInvalidAndSendAlert(any(), any());
         verify(kbossBackupProviderSpy, never()).setBackupUnableToValidateAndSendAlert(any(), any());
         verify(backupDaoMock).update(anyLong(), any());
