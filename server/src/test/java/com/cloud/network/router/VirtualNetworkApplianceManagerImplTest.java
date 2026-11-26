@@ -24,6 +24,7 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.bgp.BGPService;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -34,6 +35,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
+import com.cloud.network.Networks;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -46,6 +48,8 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.OpRouterMonitorServiceDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.RouterHealthCheckResultDao;
+import com.cloud.network.dao.RouterHealthCheckResultVO;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
@@ -67,11 +71,15 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.UserStatsLogDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -220,7 +228,11 @@ public class VirtualNetworkApplianceManagerImplTest {
     @Mock
     private VirtualRouterProviderDao _vrProviderDao;
 
-    //@Mock private AccountManager _accountMgr;
+    @Mock
+    private AccountManager _accountMgr;
+
+    @Mock
+    private RouterHealthCheckResultDao routerHealthCheckResultDao;
 
     @Mock private VirtualMachineManager _itMgr;
 
@@ -414,5 +426,98 @@ public class VirtualNetworkApplianceManagerImplTest {
         virtualNetworkApplianceManagerImpl.updateWithLbRuleSslCertificates(loadBalancingData, loadBalancer, sourceIp);
 
         Assert.assertEquals(",sslcert=1_2_3_4-443.pem",  loadBalancingData.toString());
+    }
+
+    private NicVO mockNic(long networkId, String ip) {
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(nic.getNetworkId()).thenReturn(networkId);
+        Mockito.when(nic.getIPv4Address()).thenReturn(ip);
+        return nic;
+    }
+
+    private NetworkVO mockNetwork(long id, String name, String uuid, Networks.TrafficType trafficType) {
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        Mockito.when(network.getName()).thenReturn(name);
+        Mockito.when(network.getUuid()).thenReturn(uuid);
+        Mockito.when(network.getTrafficType()).thenReturn(trafficType);
+        Mockito.when(_networkDao.findById(id)).thenReturn(network);
+        return network;
+    }
+
+    @Test
+    public void buildHealthCheckAlertNamesNetworkIpsAndCheckDetails() {
+        DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+        Mockito.when(router.getId()).thenReturn(10L);
+        Mockito.when(router.getName()).thenReturn("r-10-VM");
+        Mockito.when(router.getUuid()).thenReturn("router-uuid");
+        Mockito.when(router.getDataCenterId()).thenReturn(1L);
+        Mockito.when(router.getAccountId()).thenReturn(2L);
+        Mockito.when(router.getHostId()).thenReturn(3L);
+        Mockito.when(router.getPublicIpAddress()).thenReturn("203.0.113.10");
+        Mockito.when(router.getState()).thenReturn(VirtualMachine.State.Running);
+
+        NicVO guestNic = mockNic(100L, "10.1.1.1");
+        NicVO publicNic = mockNic(101L, "203.0.113.10");
+        Mockito.when(_nicDao.listByVmId(10L)).thenReturn(List.of(guestNic, publicNic));
+        mockNetwork(100L, "tenant-net", "net-uuid", Networks.TrafficType.Guest);
+        mockNetwork(101L, "public", "pub-uuid", Networks.TrafficType.Public);
+
+        RouterHealthCheckResultVO dnsCheck = Mockito.mock(RouterHealthCheckResultVO.class);
+        Mockito.when(dnsCheck.getCheckName()).thenReturn("dns_check.py");
+        Mockito.when(dnsCheck.getParsedCheckDetails()).thenReturn("Missing entries for VMs in /etc/hosts:\n10.1.1.5 vm-1");
+        Mockito.when(routerHealthCheckResultDao.getHealthCheckResults(10L)).thenReturn(List.of(dnsCheck));
+
+        DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+        Mockito.when(zone.getName()).thenReturn("zone-1");
+        Mockito.when(_dcDao.findById(1L)).thenReturn(zone);
+        AccountVO account = Mockito.mock(AccountVO.class);
+        Mockito.when(account.getAccountName()).thenReturn("tenant");
+        Mockito.when(_accountMgr.getAccount(2L)).thenReturn(account);
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getName()).thenReturn("kvm-01");
+        Mockito.when(_hostDao.findById(3L)).thenReturn(host);
+
+        Pair<String, String> alert = virtualNetworkApplianceManagerImpl.buildHealthCheckAlert(router, List.of("dns_check.py"), "fallback");
+
+        assertEquals("Health checks failed on router r-10-VM (network tenant-net, 203.0.113.10): dns_check.py", alert.first());
+        Assert.assertTrue(alert.second().contains("Account: tenant"));
+        Assert.assertTrue(alert.second().contains("Host: kvm-01"));
+        Assert.assertTrue(alert.second().contains("Guest network tenant-net (net-uuid): 10.1.1.1"));
+        Assert.assertTrue(alert.second().contains("dns_check.py: Missing entries for VMs in /etc/hosts: 10.1.1.5 vm-1"));
+    }
+
+    @Test
+    public void buildHealthCheckAlertKeepsBodyWithinAlertContentColumn() {
+        DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+        Mockito.when(router.getId()).thenReturn(10L);
+        Mockito.when(router.getName()).thenReturn("r-10-VM");
+        Mockito.when(_nicDao.listByVmId(10L)).thenReturn(List.of());
+        List<String> checks = new ArrayList<>();
+        List<RouterHealthCheckResultVO> results = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            RouterHealthCheckResultVO result = Mockito.mock(RouterHealthCheckResultVO.class);
+            Mockito.when(result.getCheckName()).thenReturn("check_" + i);
+            Mockito.when(result.getParsedCheckDetails()).thenReturn("x".repeat(2000));
+            checks.add("check_" + i);
+            results.add(result);
+        }
+        Mockito.when(routerHealthCheckResultDao.getHealthCheckResults(10L)).thenReturn(results);
+
+        Pair<String, String> alert = virtualNetworkApplianceManagerImpl.buildHealthCheckAlert(router, checks, "fallback");
+
+        Assert.assertTrue(alert.second().startsWith("10 failing health check(s) on router r-10-VM"));
+        Assert.assertTrue(alert.second().length() <= 5000);
+    }
+
+    @Test
+    public void buildHealthCheckAlertFallsBackWhenLookupFails() {
+        DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+        Mockito.when(router.getId()).thenReturn(10L);
+        Mockito.when(_nicDao.listByVmId(10L)).thenThrow(new RuntimeException("db down"));
+
+        Pair<String, String> alert = virtualNetworkApplianceManagerImpl.buildHealthCheckAlert(router, List.of("dns_check.py"), "fallback");
+
+        assertEquals("fallback", alert.first());
+        assertEquals("fallback", alert.second());
     }
 }
