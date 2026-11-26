@@ -33,8 +33,9 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 
-@APICommand(name = "enableStorageMaintenance", description = "Puts storage pool into maintenance state", responseObject = StoragePoolResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "enableStorageMaintenance",
+        description = "Puts storage pool into maintenance state. The storage pool must be Up or Disabled",
+        responseObject = StoragePoolResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
     private static final String s_name = "prepareprimarystorageformaintenanceresponse";
 
