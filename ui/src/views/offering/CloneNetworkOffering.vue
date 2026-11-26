@@ -1426,8 +1426,12 @@ export default {
           params['details[' + detailsIndex + '].value'] = values.maclearning
           detailsIndex++
         }
-        params.privatemultiqueuenumber = values.privatemultiqueuenumber
-        params.publicmultiqueuenumber = values.publicmultiqueuenumber
+        if (values.guestiptype !== 'l2') {
+          params.privatemultiqueuenumber = values.privatemultiqueuenumber
+          if (!values.forvpc) {
+            params.publicmultiqueuenumber = values.publicmultiqueuenumber
+          }
+        }
 
         this.loading = true
         postAPI('cloneNetworkOffering', params).then(json => {

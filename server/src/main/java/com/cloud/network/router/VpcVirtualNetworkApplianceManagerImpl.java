@@ -219,7 +219,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 return result;
             }
 
-            result = setupVpcGuestNetwork(network, router, false, _networkModel.getNicProfile(router, network.getId(), null, null));
+            result = setupVpcGuestNetwork(network, router, false, _networkModel.getNicProfile(router, network.getId(), null));
             if (!result) {
                 logger.warn("Failed to destroy guest network config " + network + " on router " + router);
                 return false;
@@ -383,6 +383,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     @Override
     public boolean finalizeCommandsOnStart(final Commands cmds, final VirtualMachineProfile profile) {
         final DomainRouterVO domainRouterVO = _routerDao.findById(profile.getId());
+        final boolean isVpc = domainRouterVO.getVpcId() != null;
+        if (!isVpc) {
+            return super.finalizeCommandsOnStart(cmds, profile);
+        }
 
         Map<String, String> details = new HashMap<>();
         VirtualMachineTO vmTO = null;
@@ -392,11 +396,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             if (vmTO.getDetails() != null) {
                 details = vmTO.getDetails();
             }
-        }
-
-        final boolean isVpc = domainRouterVO.getVpcId() != null;
-        if (!isVpc) {
-            return super.finalizeCommandsOnStart(cmds, profile);
         }
 
         VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());
@@ -531,7 +530,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     cmds.addCommand(plugNicCmd);
                     // set guest network
                     final VirtualMachine vm = _vmDao.findById(domainRouterVO.getId());
-                    final NicProfile nicProfile = _networkModel.getNicProfile(vm, guestNic.getNetworkId(), null, null);
+                    final NicProfile nicProfile = _networkModel.getNicProfile(vm, guestNic.getNetworkId(), null);
                     final SetupGuestNetworkCommand setupCmd = _commandSetupHelper.createSetupGuestNetworkCommand(domainRouterVO, true, nicProfile);
                     cmds.addCommand(setupCmd);
                 }
@@ -756,7 +755,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
 
         final Network privateNetwork = _networkModel.getNetwork(gateway.getNetworkId());
-        final NicProfile nicProfile = _networkModel.getNicProfile(router, privateNetwork.getId(), null, null);
+        final NicProfile nicProfile = _networkModel.getNicProfile(router, privateNetwork.getId(), null);
 
         logger.debug("Releasing private ip for gateway " + gateway + " from " + router);
         result = setupVpcPrivateNetwork(router, false, nicProfile);

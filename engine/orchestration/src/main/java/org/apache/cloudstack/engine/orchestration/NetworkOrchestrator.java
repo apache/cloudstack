@@ -43,6 +43,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.network.guru.DirectNetworkGuru;
 import com.cloud.network.guru.ExternalGuestNetworkGuru;
+import com.cloud.network.guru.VxlanGuestNetworkGuru;
 import com.cloud.network.vpc.VpcOfferingVO;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -655,7 +656,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatServiceEgressAllowed,
                             "Offering for Isolated networks with Source Nat service enabled and egress traffic allowed by default", TrafficType.Guest, null, false, Availability.Optional, null,
                             defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, false, false, null, true, null,
-                            true, false, false, false, false, null, null, null, true, null, null, false);
+                            true, false, false, false, false, null, null, null, true, null, null, false, null, null);
                     // keep consistent with the offering created on fresh installation (ConfigurationServerImpl)
                     offering.setMulticastRateMbps(null);
                     offering.setDedicatedLB(true);
@@ -2280,7 +2281,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         Integer multiqueueNumber = getGuestNetworkVrNicMultiqueueNumber(implementedNetwork.getTrafficType(), nics, nicProfile);
         if (multiqueueNumber == null) {
             logger.info("Multiqueue for NIC [{}] will not be defined because it was not possible to identify its corresponding network " +
-                    "offering or the corresponding multiqueue attribute has not been defined in the offering.");
+                    "offering or the corresponding multiqueue attribute has not been defined in the offering.", nicProfile.getUuid());
         } else {
             logger.info("Setting [{}] as the multiqueue for NIC [{}].", multiqueueNumber, nicProfile.getUuid());
             nicProfile.setMultiqueueNumber(multiqueueNumber);
@@ -2291,7 +2292,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     private Integer getGuestNetworkVrNicMultiqueueNumber(TrafficType trafficType, List<NicVO> nics, NicProfile nicProfile) {
         logger.debug("Fetching the network offering of the guest network associated with the VR with ID [{}].", nicProfile.getVirtualMachineId());
         NetworkOffering networkOfferingOfVrIsolatedNetwork = nics.stream()
-                .filter(nic -> ExternalGuestNetworkGuru.NETWORK_GURU_NAME.equals(nic.getReserver()) || DirectNetworkGuru.NETWORK_GURU_NAME.equals(nic.getReserver()))
+                .filter(nic -> StringUtils.equalsAnyIgnoreCase(nic.getReserver(), ExternalGuestNetworkGuru.NETWORK_GURU_NAME, DirectNetworkGuru.NETWORK_GURU_NAME, VxlanGuestNetworkGuru.NETWORK_GURU_NAME))
                 .map(nic -> {
                     NetworkVO network = _entityMgr.findById(NetworkVO.class, nic.getNetworkId());
                     return network == null ? null : _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, network.getNetworkOfferingId());
@@ -4889,20 +4890,21 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             final NicVO nicVO = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri);
             if (nicVO != null) {
                 if (ipAddress == null || nicVO.getIPv4Address().equals(ipAddress)) {
-                    nic = _networkModel.getNicProfile(vm, network.getId(), broadcastUri, null);
+                    nic = _networkModel.getNicProfile(vm, network.getId(), broadcastUri);
                 }
             }
         } else {
             final NicVO nicVO = _nicDao.findByNtwkIdAndInstanceId(network.getId(), vm.getId());
             if (nicVO != null) {
-                nic = _networkModel.getNicProfile(vm, network.getId(), null, null);
+                nic = _networkModel.getNicProfile(vm, network.getId(), null);
             }
         }
         return nic;
     }
 
     private Integer getVpcVrNicMultiqueueNumber(Network network, VirtualMachine vm) {
-        if (ExternalGuestNetworkGuru.NETWORK_GURU_NAME.equals(network.getGuruName())) {
+        boolean isPrivateGateway = _networkModel.isPrivateGateway(network.getId());
+        if (network.getTrafficType() == TrafficType.Guest && !isPrivateGateway) {
             NetworkOfferingVO networkOffering = _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, network.getNetworkOfferingId());
             if (networkOffering == null) {
                 logger.info("Unable to retrieve the multiqueue value for network [{}], as it was not possible to find its corresponding network offering.", network.getUuid());
@@ -4914,7 +4916,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 return null;
             }
 
-            logger.debug("Network [{}] is a VPC tier; therefore, the private multiqueue number defined in its corresponding offering will be used.", network.getUuid());
+            logger.debug("Network [{}] is a VPC tier; therefore, the private multiqueue number [{}] defined in its corresponding offering will be used.", network.getUuid(), networkOffering.getPrivateMultiqueueNumber());
             return networkOffering.getPrivateMultiqueueNumber();
         }
 
@@ -4936,7 +4938,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             return null;
         }
 
-        return vpcOffering.getPrivateGatewayMultiqueueNumber();
+        if (_networkModel.isPrivateGateway(network.getId())) {
+            logger.debug("Network [{}] corresponds to a private gateway; therefore, the private gateway multiqueue number [{}] defined in the network's VPC offering will be used.",
+                    network.getUuid(), vpcOffering.getPrivateGatewayMultiqueueNumber());
+            return vpcOffering.getPrivateGatewayMultiqueueNumber();
+        }
+
+        logger.debug("Network [{}] corresponds to a public network; therefore, the public multiqueue number [{}] defined in the network's VPC offering will be used.",
+                network.getUuid(), vpcOffering.getPublicMultiqueueNumber());
+        return vpcOffering.getPublicMultiqueueNumber();
     }
 
     @Override

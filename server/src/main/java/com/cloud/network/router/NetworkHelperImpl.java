@@ -260,7 +260,8 @@ public class NetworkHelperImpl implements NetworkHelper {
 
     @Override
     public NicTO getNicTO(final VirtualRouter router, final Long networkId, final String broadcastUri, Integer multiqueueNumber) {
-        final NicProfile nicProfile = _networkModel.getNicProfile(router, networkId, broadcastUri, multiqueueNumber);
+        final NicProfile nicProfile = _networkModel.getNicProfile(router, networkId, broadcastUri);
+        nicProfile.setMultiqueueNumber(multiqueueNumber);
 
         return _itMgr.toNicTO(nicProfile, router.getHypervisorType());
     }

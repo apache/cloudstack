@@ -1317,7 +1317,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             List<NicVO> nics = _nicsDao.listByVmId(vmProfile.getId());
             NicTO[] nicTOs = new NicTO[nics.size()];
             nics.forEach(nicVO -> {
-                NicTO nicTO = toNicTO(_networkModel.getNicProfile(vmProfile.getVirtualMachine(), nicVO, dataCenter, null),
+                NicTO nicTO = toNicTO(_networkModel.getNicProfile(vmProfile.getVirtualMachine(), nicVO, dataCenter),
                         HypervisorType.External);
                 nicTOs[nicTO.getDeviceId()] = nicTO;
             });

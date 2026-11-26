@@ -8706,8 +8706,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             applyIfNotProvided(cmd, requestParams, "serviceOfferingId", ApiConstants.SERVICE_OFFERING_ID, cmd.getServiceOfferingId(), sourceOffering.getServiceOfferingId());
             applyIfNotProvided(cmd, requestParams, "guestIptype", ApiConstants.GUEST_IP_TYPE, cmd.getGuestIpType(), sourceOffering.getGuestType().toString());
             applyIfNotProvided(cmd, requestParams, "maxConnections", ApiConstants.MAX_CONNECTIONS, cmd.getMaxconnections(), sourceOffering.getConcurrentConnections());
-            applyIfNotProvided(cmd, requestParams, "publicMultiqueueNumber", ApiConstants.PUBLIC_MULTIQUEUE_NUMBER, cmd.getPublicMultiqueueNumber(), sourceOffering.getPublicMultiqueueNumber());
-            applyIfNotProvided(cmd, requestParams, "privateMultiqueueNumber", ApiConstants.PRIVATE_MULTIQUEUE_NUMBER, cmd.getPrivateMultiqueueNumber(), sourceOffering.getPrivateMultiqueueNumber());
+
+            boolean isL2Offering = StringUtils.equalsIgnoreCase(GuestType.L2.name(), cmd.getGuestIpType());
+            if (!isL2Offering && BooleanUtils.isFalse(cmd.getForVpc())) {
+                applyIfNotProvided(cmd, requestParams, "publicMultiqueueNumber", ApiConstants.PUBLIC_MULTIQUEUE_NUMBER, cmd.getPublicMultiqueueNumber(), sourceOffering.getPublicMultiqueueNumber());
+            }
+            if (!isL2Offering) {
+                applyIfNotProvided(cmd, requestParams, "privateMultiqueueNumber", ApiConstants.PRIVATE_MULTIQUEUE_NUMBER, cmd.getPrivateMultiqueueNumber(), sourceOffering.getPrivateMultiqueueNumber());
+            }
 
             applyBooleanIfNotProvided(cmd, requestParams, "specifyVlan", ApiConstants.SPECIFY_VLAN, sourceOffering.isSpecifyVlan());
             applyBooleanIfNotProvided(cmd, requestParams, "conserveMode", ApiConstants.CONSERVE_MODE, sourceOffering.isConserveMode());

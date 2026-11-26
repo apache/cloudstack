@@ -1207,6 +1207,9 @@ export default {
           } else { // Isolated Network with Non-persistent network
             delete params.ispersistent
           }
+          if (values.forvpc) {
+            delete params.publicmultiqueuenumber
+          }
         } else if (values.guestiptype === 'l2') {
           if (values.specifyvlan === true) {
             params.specifyvlan = true
@@ -1218,6 +1221,8 @@ export default {
           }
           // Conserve mode is irrelevant on L2 network offerings as there are no resources to conserve, do not pass it, true by default on server side
           delete params.conservemode
+          delete params.publicmultiqueuenumber
+          delete params.privategatewaymultiqueuenumber
         }
 
         if (values.forvpc === true) {

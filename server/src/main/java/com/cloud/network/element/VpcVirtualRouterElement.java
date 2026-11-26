@@ -661,7 +661,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         boolean result = true;
         for (final DomainRouterVO domainRouterVO : routers) {
-            final NicProfile nicProfile = _networkModel.getNicProfile(domainRouterVO, privateNetwork.getId(), null, null);
+            final NicProfile nicProfile = _networkModel.getNicProfile(domainRouterVO, privateNetwork.getId(), null);
             if (nicProfile != null) {
                 result = result && networkTopology.applyNetworkACLs(network, rules, domainRouterVO, isPrivateGateway);
             } else {
