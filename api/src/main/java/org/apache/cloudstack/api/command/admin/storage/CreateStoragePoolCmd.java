@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
-import java.net.UnknownHostException;
 import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
@@ -31,8 +30,6 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-import com.cloud.exception.ResourceInUseException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 
@@ -175,15 +172,6 @@ public class CreateStoragePoolCmd extends BaseCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add storage pool");
             }
-        } catch (ResourceUnavailableException ex1) {
-            logger.warn("Exception: ", ex1);
-            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex1.getMessage());
-        } catch (ResourceInUseException ex2) {
-            logger.warn("Exception: ", ex2);
-            throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, ex2.getMessage());
-        } catch (UnknownHostException ex3) {
-            logger.warn("Exception: ", ex3);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex3.getMessage());
         } catch (Exception ex4) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex4.getMessage());
         }
