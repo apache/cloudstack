@@ -65,11 +65,20 @@ def validate_transfer_config(obj: dict) -> dict:
         raise ValueError("missing/invalid socket path for nbd backend")
     if export is not None and (not isinstance(export, str) or not export):
         raise ValueError("invalid export name")
+    # extents listed by the storage instead of a dirty bitmap and the allocation of the export
+    extents_file = obj.get("extents_file")
+    if extents_file is not None:
+        if not isinstance(extents_file, str) or not extents_file.strip():
+            raise ValueError("invalid extents_file")
+        if export_bitmap:
+            raise ValueError("export_bitmap and extents_file are mutually exclusive")
+        extents_file = extents_file.strip()
     return {
         "backend": "nbd",
         "socket": socket_path.strip(),
         "export": export,
         "export_bitmap": export_bitmap,
+        "extents_file": extents_file,
         "idle_timeout_seconds": idle_sec,
     }
 

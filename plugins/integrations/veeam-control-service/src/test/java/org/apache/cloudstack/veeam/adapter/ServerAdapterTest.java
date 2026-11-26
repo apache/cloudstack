@@ -52,6 +52,9 @@ import org.apache.cloudstack.veeam.api.dto.Disk;
 import org.apache.cloudstack.veeam.api.dto.OvfXmlUtil;
 import org.apache.cloudstack.veeam.api.dto.Tag;
 import org.apache.cloudstack.veeam.api.dto.Vm;
+import org.apache.cloudstack.veeam.api.dto.Cpu;
+import org.apache.cloudstack.veeam.api.dto.Ref;
+import org.apache.cloudstack.veeam.api.dto.Topology;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -75,6 +78,8 @@ import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.ClusterVO;
+import com.cloud.uservm.UserVm;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
@@ -1136,5 +1141,44 @@ public class ServerAdapterTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testListDisksByBackupUuid_AlwaysThrows() {
         serverAdapter.listDisksByBackupUuid("backup-uuid");
+    }
+
+    @Test
+    public void testCreateInstance_WorkerVm_SavesItsStaticIpForTheNic() {
+        ServerAdapter spyAdapter = spy(serverAdapter);
+        ClusterVO cluster = mock(ClusterVO.class);
+        when(cluster.getDataCenterId()).thenReturn(1L);
+        when(cluster.getId()).thenReturn(2L);
+        when(clusterDao.findByUuid("cluster-1")).thenReturn(cluster);
+        when(dataCenterDao.findById(1L)).thenReturn(mock(DataCenterVO.class));
+        Account owner = mock(Account.class);
+        doReturn(owner).when(spyAdapter).getOwnerForInstanceCreation(any());
+        doReturn(new Ternary<>(1L, null, null)).when(spyAdapter).getOwnerDetailsForInstanceCreation(owner);
+        doReturn(null).when(spyAdapter).getGuestOsForInstance(any());
+        UserVm userVm = mock(UserVm.class);
+        when(userVm.getId()).thenReturn(5L);
+        doReturn(new Pair<>(new Vm(), userVm)).when(spyAdapter).createInstance(any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), Mockito.anyInt(), Mockito.anyInt(), any(), any(), any(), any(), any(), any());
+        Vm request = new Vm();
+        request.setName("veeam-worker");
+        request.setCluster(Ref.of(null, "cluster-1"));
+        Topology topology = new Topology();
+        topology.setSockets("4");
+        Cpu cpu = new Cpu();
+        cpu.setTopology(topology);
+        request.setCpu(cpu);
+        request.setMemory(String.valueOf(4L * 1024 * 1024 * 1024));
+        Vm.Initialization initialization = new Vm.Initialization();
+        // how Veeam's worker deployment passes the worker's network configuration
+        initialization.setCustomScript("#cloud-config\r\nwrite_files:\r\n" +
+                "  - path: /opt/VeeamBackupAgent/network/network_config.yml\r\n    content: |+\r\n" +
+                "      interfaces:\r\n        - name: eth0\r\n          ipv4:\r\n            enabled: true\r\n" +
+                "            dhcp: false\r\n            address:\r\n              - ip: 192.168.125.99\r\n" +
+                "                prefix-length: 24\r\n");
+        request.setInitialization(initialization);
+
+        spyAdapter.createInstance(request);
+
+        verify(vmInstanceDetailsDao).addDetail(5L, "worker.vm.ip", "192.168.125.99", false);
     }
 }

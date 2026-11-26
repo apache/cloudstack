@@ -228,4 +228,18 @@ public interface KVMStoragePool {
         throw new CloudRuntimeException(String.format("Storage pool %s of type %s cannot provide backup scratch space",
                 getUuid(), getType()));
     }
+
+    /**
+     * Writes the extents of a volume's backup export, as the storage lists them, to {@code file}: a JSON array of
+     * extents like the ones of the ovirt-imageio extents API, objects with {@code start} and {@code length} in bytes
+     * and the flags {@code dirty} (changed since the last backup) and {@code zero} (reads as zeros). An extent
+     * without the dirty flag counts as changed, one without the zero flag as data. The image server reports them
+     * as the extents of the transfer.
+     *
+     * @param source the storage driver's parameters naming the volume and its backup
+     */
+    default void writeExtents(Map<String, String> source, String file) {
+        throw new CloudRuntimeException(String.format("Storage pool %s of type %s does not list the extents of its volumes",
+                getUuid(), getType()));
+    }
 }

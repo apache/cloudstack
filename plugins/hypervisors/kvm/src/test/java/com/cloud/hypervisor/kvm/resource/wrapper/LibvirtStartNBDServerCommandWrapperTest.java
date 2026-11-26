@@ -176,4 +176,33 @@ public class LibvirtStartNBDServerCommandWrapperTest {
             Assert.assertTrue(bitmapOptionAdded);
         }
     }
+
+    @Test
+    public void testExecuteExportsBlockDeviceAsRawUpToTheVolumeSize() {
+        Mockito.when(command.getVolumePath()).thenReturn("/dev/drbd1004");
+        Mockito.when(command.getDirection()).thenReturn("download");
+        Mockito.when(command.getBlockDeviceSizeBytes()).thenReturn(1073741824L);
+
+        try (MockedConstruction<Script> scriptConstruction = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            if (context.getCount() == 1) {
+                Mockito.when(mock.execute()).thenReturn("inactive");
+            } else {
+                Mockito.when(mock.execute()).thenReturn(null);
+            }
+        })) {
+            Answer answer = wrapper.execute(command, resource);
+
+            Assert.assertTrue(answer.getResult());
+            Script startScript = scriptConstruction.constructed().get(1);
+            String commandLine = Mockito.mockingDetails(startScript).getInvocations().stream()
+                    .filter(invocation -> invocation.getMethod().getName().equals("add"))
+                    .map(invocation -> String.valueOf(invocation.getArguments()[0]))
+                    .filter(arg -> arg.contains("qemu-nbd"))
+                    .findFirst().orElse("");
+            Assert.assertTrue(commandLine, commandLine.contains(
+                    "--image-opts driver=raw,size=1073741824,file.driver=host_device,file.filename=/dev/drbd1004"));
+            Assert.assertTrue(commandLine, commandLine.contains("--read-only"));
+            Assert.assertFalse(commandLine, commandLine.contains("qcow2"));
+        }
+    }
 }

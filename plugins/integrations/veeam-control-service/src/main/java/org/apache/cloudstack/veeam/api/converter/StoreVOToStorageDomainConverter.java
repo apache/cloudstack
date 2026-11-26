@@ -220,6 +220,8 @@ public class StoreVOToStorageDomainConverter {
                 String s = t.toString().toLowerCase();
                 if (s.contains("networkfilesystem") || s.contains("nfs") || s.contains("sharedmountpoint")) return "nfs";
                 if (s.contains("iscsi")) return "iscsi";
+                // block storage whose driver exports the volumes for backups
+                if (s.contains("linstor")) return "iscsi";
                 if (s.contains("filesystem")) return "localfs";
                 if (s.contains("rbd") || s.contains("ceph")) return "cinder"; // not perfect; pick stable
             }

@@ -198,6 +198,10 @@ public class ImageTransferVO implements ImageTransfer {
         return backend;
     }
 
+    public String getFile() {
+        return file;
+    }
+
     @Override
     public String getSignedTicketId() {
         return signedTicketId;

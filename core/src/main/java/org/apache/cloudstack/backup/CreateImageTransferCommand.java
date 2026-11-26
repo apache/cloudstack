@@ -17,7 +17,10 @@
 
 package org.apache.cloudstack.backup;
 
+import java.util.Map;
+
 import com.cloud.agent.api.Command;
+import com.cloud.storage.Storage;
 
 public class CreateImageTransferCommand extends Command {
     private String transferId;
@@ -28,6 +31,9 @@ public class CreateImageTransferCommand extends Command {
     private String file;
     private ImageTransfer.Backend backend;
     private int idleTimeoutSeconds;
+    private Storage.StoragePoolType extentsPoolType;
+    private String extentsPoolUuid;
+    private Map<String, String> extentsSource;
 
     public CreateImageTransferCommand() {
     }
@@ -90,5 +96,28 @@ public class CreateImageTransferCommand extends Command {
 
     public int getIdleTimeoutSeconds() {
         return idleTimeoutSeconds;
+    }
+
+    /**
+     * Has the pool's storage list the extents of the export, the ones that changed since the last backup and the
+     * ones that read as zeros, instead of a dirty bitmap (see the checkpoint id) and the allocation of the export.
+     * @param source driver specific parameters, see {@code KVMStoragePool.writeExtents}
+     */
+    public void setExtentsSource(Storage.StoragePoolType poolType, String poolUuid, Map<String, String> source) {
+        this.extentsPoolType = poolType;
+        this.extentsPoolUuid = poolUuid;
+        this.extentsSource = source;
+    }
+
+    public Storage.StoragePoolType getExtentsPoolType() {
+        return extentsPoolType;
+    }
+
+    public String getExtentsPoolUuid() {
+        return extentsPoolUuid;
+    }
+
+    public Map<String, String> getExtentsSource() {
+        return extentsSource;
     }
 }

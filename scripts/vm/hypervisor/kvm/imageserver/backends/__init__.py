@@ -33,4 +33,5 @@ def create_backend(cfg: Dict[str, Any]) -> ImageBackend:
         cfg["socket"],
         export=cfg.get("export"),
         export_bitmap=cfg.get("export_bitmap"),
+        extents_file=cfg.get("extents_file"),
     )
