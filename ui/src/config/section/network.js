@@ -53,7 +53,7 @@ export default {
         const fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'asnumber',
           'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename',
           'account', 'domainpath', 'associatednetwork', 'associatednetworkid', 'ip4routing', 'ip6firewall', 'ip6routing', 'ip6routes',
-          'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu', 'dnszone', 'dnssubdomain']
+          'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu', 'networkrate', 'dnszone', 'dnssubdomain']
         if (isAdmin()) {
           const vlanIndex = fields.findIndex(detail => detail === 'vlan')
           fields.splice(vlanIndex + 1, 0, 'broadcasturi')
@@ -294,7 +294,7 @@ export default {
         return fields
       },
       details: () => {
-        const fields = ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip4routing', 'ip4routes', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu']
+        const fields = ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip4routing', 'ip4routes', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'publicnetworkrate']
         if (isAdmin()) {
           fields.push({
             field: 'keepmacaddressonpublicnic',

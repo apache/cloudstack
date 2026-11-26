@@ -51,6 +51,7 @@ import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
+import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -61,6 +62,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
+import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.capacity.Capacity;
 import com.cloud.configuration.Resource;
 import com.cloud.domain.DomainVO;
@@ -95,6 +97,7 @@ import com.cloud.user.UserData;
 import com.cloud.user.UserDataVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDataDao;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.vm.Nic;
@@ -102,6 +105,7 @@ import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -154,6 +158,15 @@ public class ApiResponseHelperTest {
     @Mock
     private VMInstanceVO vmInstanceVOMock;
 
+    @Mock
+    EntityManager entityManager;
+
+    @Mock
+    NicExtraDhcpOptionDao nicExtraDhcpOptionDao;
+
+    @Mock
+    UserVmJoinDao userVmJoinDao;
+
     @Spy
     @InjectMocks
     ApiResponseHelper apiResponseHelper = new ApiResponseHelper();
@@ -171,6 +184,8 @@ public class ApiResponseHelperTest {
     static String userdataNew = "userdataNew";
 
     static long autoScaleUserId = 7L;
+
+    private static final long NETWORK_ID = 10L;
 
     @Before
     public void injectMocks() throws SecurityException, NoSuchFieldException,
@@ -803,6 +818,30 @@ public class ApiResponseHelperTest {
             Assert.assertEquals(expected.getVmId(), response.getVmId());
             Assert.assertEquals(expected.getVmName(), response.getVmName());
         }
+    }
+
+    private NicResponse nicResponse(Integer rate) {
+        final NicVO nic = new NicVO("test", 1L, NETWORK_ID, VirtualMachine.Type.User);
+        nic.setNetworkRate(rate);
+        final NetworkVO network = Mockito.mock(NetworkVO.class);
+        Mockito.when(network.getUuid()).thenReturn("network-uuid");
+        final VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getUuid()).thenReturn("vm-uuid");
+        Mockito.when(entityManager.findById(NetworkVO.class, NETWORK_ID)).thenReturn(network);
+        Mockito.when(entityManager.findById(VMInstanceVO.class, 1L)).thenReturn(vm);
+        return apiResponseHelper.createNicResponse(nic);
+    }
+
+    @Test
+    public void nicResponseReportsStoredRate() {
+        Assert.assertEquals(Integer.valueOf(120), nicResponse(120).getNetworkRate());
+    }
+
+    @Test
+    public void nicResponseReportsMissingZeroAndNegativeRateAsUnlimited() {
+        Assert.assertEquals(Integer.valueOf(-1), nicResponse(null).getNetworkRate());
+        Assert.assertEquals(Integer.valueOf(-1), nicResponse(0).getNetworkRate());
+        Assert.assertEquals(Integer.valueOf(-1), nicResponse(-1).getNetworkRate());
     }
 
     @Test

@@ -16,7 +16,11 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import java.io.InputStream;
 import java.sql.Connection;
+
+import com.cloud.upgrade.NetworkRateBackfill;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
@@ -31,9 +35,20 @@ public class Upgrade42300to2400 extends DbUpgradeAbstractImpl implements DbUpgra
     }
 
     @Override
+    public InputStream[] getPrepareScripts() {
+        final String scriptFile = "META-INF/db/schema-42300to2400.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
+        }
+        return new InputStream[]{script};
+    }
+
+    @Override
     public void performDataMigration(Connection conn) {
         addIndexes(conn);
         dropOldIndexes(conn);
+        new NetworkRateBackfill(conn).backfillNetworkRates();
     }
 
     private void addIndexes(Connection conn) {
