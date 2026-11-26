@@ -151,6 +151,7 @@ public class VeeamControlServiceImpl extends ManagerBase implements VeeamControl
                 InstanceRestoreAssignOwner,
                 InstanceEncryptVolumes,
                 AllowedClientCidrs,
+                JobWaitTimeout,
                 DeveloperLogs
         };
     }

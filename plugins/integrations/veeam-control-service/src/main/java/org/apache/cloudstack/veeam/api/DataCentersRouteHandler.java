@@ -122,8 +122,8 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
             throws IOException {
         try {
             ListQuery query = ListQuery.fromRequest(req);
-            List<StorageDomain> storageDomains = serverAdapter.listStorageDomainsByDcId(id, query.getOffset(),
-                    query.getMax());
+            List<StorageDomain> storageDomains = serverAdapter.listStorageDomainsByDcId(id, query.getSearchNameLikePattern(),
+                    query.getOffset(), query.getMax());
             NamedList<StorageDomain> response = NamedList.of("storage_domain", storageDomains);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {

@@ -34,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class ListQuery {
     private static final Pattern PAGE_CLAUSE_PATTERN = Pattern.compile("(?i)\\bpage\\s+(\\d+)\\b");
+    private static final Pattern NAME_CLAUSE_PATTERN = Pattern.compile("(?i)(?<![\\w.])name\\s*=\\s*(?:\"([^\"]*)\"|([^\\s\"]+))");
 
     boolean allContent;
     Long max;
@@ -78,6 +79,24 @@ public class ListQuery {
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
+    }
+
+    public String getSearchName() {
+        return MapUtils.isEmpty(search) ? null : search.get("name");
+    }
+
+    /**
+     * Returns the search name as an SQL LIKE pattern ('*' wildcard to '%'), or null when it matches everything.
+     */
+    public String getSearchNameLikePattern() {
+        String name = getSearchName();
+        if (StringUtils.isEmpty(name) || StringUtils.containsOnly(name, '*')) {
+            return null;
+        }
+        return name.replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_")
+                .replace('*', '%');
     }
 
     public Long getOffset() {
@@ -134,10 +153,11 @@ public class ListQuery {
         return query;
     }
 
-    // Parse search clause. For now, only extract the oVirt paging clause.
+    // Parse search clause. For now, only extract the oVirt paging and name clauses.
     // Examples:
     //   page 3 --> {page=3}
     //   sortby name page 2 --> {page=2}
+    //   name=data* page 2 --> {page=2, name=data*}
     @NotNull
     private static Map<String, String> getSearchMap(String searchClause) {
         Map<String, String> searchItems = new LinkedHashMap<>();
@@ -147,6 +167,10 @@ public class ListQuery {
         Matcher matcher = PAGE_CLAUSE_PATTERN.matcher(searchClause);
         if (matcher.find()) {
             searchItems.put("page", matcher.group(1));
+        }
+        matcher = NAME_CLAUSE_PATTERN.matcher(searchClause);
+        if (matcher.find()) {
+            searchItems.put("name", matcher.group(1) != null ? matcher.group(1) : matcher.group(2));
         }
         return searchItems;
     }

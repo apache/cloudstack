@@ -296,6 +296,17 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                 diskPathPassphraseMap.put(volumePath, null);
             }
         }
+        for (Volume vol : volumes) {
+            ImageTransferVO openTransfer = imageTransferDao.findByVolume(vol.getId());
+            if (openTransfer != null && isLeftOverFromEarlierBackup(openTransfer, ImageTransfer.Direction.download, backup.getId())) {
+                try {
+                    endLeftOverTransfer(openTransfer, vol.getUuid(), backup.getId());
+                } catch (CloudRuntimeException e) {
+                    removeFailedBackup(backup);
+                    throw e;
+                }
+            }
+        }
         Long hostId = backup.getHostId();
 
         VMInstanceDetailVO lastCheckpointId = vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.LAST_CHECKPOINT_ID);
@@ -690,7 +701,11 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
         ImageTransferVO existingTransfer = imageTransferDao.findByVolume(volume.getId());
         if (existingTransfer != null) {
-            throw new CloudRuntimeException("Image transfer already exists for volume: " + volume.getUuid());
+            if (!isLeftOverFromEarlierBackup(existingTransfer, direction, backupId)) {
+                throw new CloudRuntimeException(String.format("Image transfer %s (%s) is still open for volume %s; finalize or cancel it first",
+                        existingTransfer.getUuid(), existingTransfer.getDirection(), volume.getUuid()));
+            }
+            endLeftOverTransfer(existingTransfer, volume.getUuid(), backupId);
         }
 
         ImageTransfer.Backend backend = getImageTransferBackend(format, direction);
@@ -705,6 +720,35 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         return imageTransferDao.findById(imageTransfer.getId());
     }
 
+    // A download left open by an earlier backup of the volume: the backup was
+    // cancelled or failed and its transfer was never finalized. A newer backup of the
+    // VM (backup ids only increase) means the earlier session is no longer in use. A
+    // request without a backup, for an unknown one or from an older session must not
+    // end it.
+    private boolean isLeftOverFromEarlierBackup(ImageTransferVO existingTransfer, ImageTransfer.Direction direction, Long backupId) {
+        return ImageTransfer.Direction.download.equals(direction)
+                && ImageTransfer.Direction.download.equals(existingTransfer.getDirection())
+                && backupId != null
+                && existingTransfer.getBackupId() != null
+                && backupId > existingTransfer.getBackupId()
+                && backupDao.findById(backupId) != null;
+    }
+
+    // Finalizes a left-over transfer so that its export no longer holds the volume on
+    // the host. When that fails (the host is unreachable) the transfer stays open, so
+    // that the next backup or transfer request retries it.
+    private void endLeftOverTransfer(ImageTransferVO transfer, String volumeUuid, Long backupId) {
+        logger.warn("Ending image transfer {} of earlier backup {} for volume {}, which backup {} needs",
+                transfer.getUuid(), transfer.getBackupId(), volumeUuid, backupId);
+        try {
+            finalizeImageTransfer(transfer.getId());
+        } catch (RuntimeException e) {
+            Host host = hostDao.findById(transfer.getHostId());
+            throw new CloudRuntimeException(String.format("Image transfer %s of an earlier backup is still open for volume %s and could not be ended on host %s (%s); retry once the host is reachable",
+                    transfer.getUuid(), volumeUuid, host != null ? host.getName() : transfer.getHostId(), e.getMessage()), e);
+        }
+    }
+
     @Override
     public boolean cancelImageTransfer(long imageTransferId) {
         finalizeImageTransfer(imageTransferId);
@@ -716,7 +760,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         String transferId = imageTransfer.getUuid();
         FinalizeImageTransferCommand finalizeCmd = new FinalizeImageTransferCommand(transferId);
 
-        BackupVO backup = backupDao.findById(imageTransfer.getBackupId());
+        BackupVO backup = backupDao.findByIdIncludingRemoved(imageTransfer.getBackupId());
 
         Answer answer;
         try {

@@ -49,6 +49,7 @@ public class Host extends BaseDto {
     private NamedList<Link> actions;
     private String name;
     private String comment;
+    private NamedList<Statistic> statistics;
     private List<Link> link;
 
     // getters/setters (generate via IDE)
@@ -250,6 +251,14 @@ public class Host extends BaseDto {
 
     public void setComment(String comment) {
         this.comment = comment;
+    }
+
+    public NamedList<Statistic> getStatistics() {
+        return statistics;
+    }
+
+    public void setStatistics(NamedList<Statistic> statistics) {
+        this.statistics = statistics;
     }
 
     public List<Link> getLink() {

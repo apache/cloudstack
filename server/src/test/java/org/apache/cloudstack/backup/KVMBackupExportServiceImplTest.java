@@ -19,9 +19,12 @@ package org.apache.cloudstack.backup;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -29,6 +32,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +50,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -55,6 +60,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.ScopeType;
@@ -337,7 +344,7 @@ public class KVMBackupExportServiceImplTest {
                 ImageTransferVO.Phase.transferring, ImageTransfer.Direction.download, 1L, 1L, 1L);
         ReflectionTestUtils.setField(transfer, "id", 501L);
         when(imageTransferDao.findById(501L)).thenReturn(transfer);
-        when(backupDao.findById(11L)).thenReturn(backup);
+        when(backupDao.findByIdIncludingRemoved(11L)).thenReturn(backup);
         when(backup.getHostId()).thenReturn(31L);
         when(backup.getVmId()).thenReturn(41L);
         when(vmInstanceDao.findById(41L)).thenReturn(vm);
@@ -462,6 +469,260 @@ public class KVMBackupExportServiceImplTest {
             assertEquals(902L, created.getId());
             assertEquals(ImageTransfer.Direction.download, created.getDirection());
             verify(agentManager, times(2)).send(eq(802L), any(Command.class));
+        }
+    }
+
+    private void stubStoppedVmDownload(long volumeId, long backupId, Answer... hostAnswers) throws Exception {
+        when(callContext.getCallingUser()).thenReturn(user);
+        when(volumeDao.findById(volumeId)).thenReturn(volume);
+        when(volume.getId()).thenReturn(volumeId);
+        when(volume.getUuid()).thenReturn("vol-" + volumeId);
+        when(volume.getDataCenterId()).thenReturn(1L);
+        when(volume.getPoolId()).thenReturn(702L);
+        when(volume.getPath()).thenReturn("vol-" + volumeId + ".raw");
+
+        StoragePoolVO pool = new StoragePoolVO();
+        pool.setId(702L);
+        pool.setScope(ScopeType.ZONE);
+        pool.setDataCenterId(1L);
+        pool.setPoolType(Storage.StoragePoolType.NetworkFilesystem);
+        pool.setUuid("pool-702");
+        when(primaryDataStoreDao.findById(702L)).thenReturn(pool);
+
+        when(backupDao.findById(backupId)).thenReturn(backup);
+        when(backup.getVmId()).thenReturn(55L);
+        when(backup.getHostId()).thenReturn(802L);
+        when(backup.getUuid()).thenReturn("backup-" + backupId);
+        when(backup.getFromCheckpointId()).thenReturn("ckp-prev");
+        when(backup.getAccountId()).thenReturn(11L);
+        when(backup.getDomainId()).thenReturn(12L);
+        when(backup.getZoneId()).thenReturn(1L);
+        when(vmInstanceDao.findById(55L)).thenReturn(vm);
+        when(vm.getState()).thenReturn(State.Stopped);
+        when(vmInstanceDetailsDao.listDetailsKeyPairs(55L)).thenReturn(Map.of(VmDetailConstants.ACTIVE_CHECKPOINT_ID, "ckp-active"));
+        when(hostDao.findById(802L)).thenReturn(hostVO);
+        when(hostVO.getDataCenterId()).thenReturn(1L);
+        when(volumeDataFactory.getVolume(volumeId)).thenReturn(mock(VolumeInfo.class));
+        when(agentManager.send(eq(802L), any(Command.class))).thenReturn(hostAnswers[0],
+                Arrays.copyOfRange(hostAnswers, 1, hostAnswers.length));
+
+        final ImageTransferVO[] persisted = new ImageTransferVO[1];
+        when(imageTransferDao.persist(any(ImageTransferVO.class))).thenAnswer(i -> {
+            persisted[0] = i.getArgument(0);
+            ReflectionTestUtils.setField(persisted[0], "id", 903L);
+            return persisted[0];
+        });
+        when(imageTransferDao.findById(903L)).thenAnswer(i -> persisted[0]);
+    }
+
+    private ImageTransferVO openTransfer(long id, Long backupId, long volumeId, ImageTransfer.Direction direction) {
+        ImageTransferVO transfer = new ImageTransferVO("tx-" + id, backupId, volumeId, 802L, "backup-" + backupId,
+                ImageTransferVO.Phase.transferring, direction, 11L, 12L, 1L);
+        ReflectionTestUtils.setField(transfer, "id", id);
+        return transfer;
+    }
+
+    private BackupVO earlierBackupOfStoppedVm(long backupId) {
+        // The earlier backup can already be removed while its transfer is still open.
+        BackupVO earlierBackup = mock(BackupVO.class);
+        when(backupDao.findByIdIncludingRemoved(backupId)).thenReturn(earlierBackup);
+        when(earlierBackup.getHostId()).thenReturn(802L);
+        // Not reached when finalizing fails on the host.
+        lenient().when(earlierBackup.getVmId()).thenReturn(55L);
+        return earlierBackup;
+    }
+
+    @Test
+    public void createImageTransfer_downloadWithTransferLeftByEarlierBackup_endsItAndCreates() throws Exception {
+        ReflectionTestUtils.setField(BackupManager.BackupFrameworkEnabled, "_value", Boolean.FALSE);
+        try (MockedStatic<CallContext> mocked = mockStatic(CallContext.class)) {
+            mocked.when(CallContext::current).thenReturn(callContext);
+            stubStoppedVmDownload(603L, 613L,
+                    new Answer(null, true, null),   // finalize the left-over transfer
+                    new Answer(null, true, null),   // stop its qemu-nbd
+                    new StartNBDServerAnswer(null, true, null),
+                    new CreateImageTransferAnswer(null, true, null, "ticket-3", "https://transfer/nbd"));
+            ImageTransferVO leftOver = openTransfer(950L, 611L, 603L, ImageTransfer.Direction.download);
+            when(imageTransferDao.findByVolume(603L)).thenReturn(leftOver);
+            when(imageTransferDao.findById(950L)).thenReturn(leftOver);
+            earlierBackupOfStoppedVm(611L);
+
+            ImageTransfer created = service.createImageTransfer(603L, 613L, ImageTransfer.Direction.download, ImageTransfer.Format.raw);
+
+            assertNotNull(created);
+            assertEquals(903L, created.getId());
+            assertEquals(ImageTransferVO.Phase.finished, leftOver.getPhase());
+            verify(imageTransferDao).remove(950L);
+            verify(agentManager, times(4)).send(eq(802L), any(Command.class));
+        }
+    }
+
+    @Test
+    public void createImageTransfer_downloadWithTransferLeftByEarlierBackup_hostUnreachable_throwsAndKeepsIt() throws Exception {
+        ReflectionTestUtils.setField(BackupManager.BackupFrameworkEnabled, "_value", Boolean.FALSE);
+        try (MockedStatic<CallContext> mocked = mockStatic(CallContext.class)) {
+            mocked.when(CallContext::current).thenReturn(callContext);
+            when(callContext.getCallingUser()).thenReturn(user);
+            when(volumeDao.findById(606L)).thenReturn(volume);
+            when(volume.getId()).thenReturn(606L);
+            when(volume.getUuid()).thenReturn("vol-606");
+            when(volume.getDataCenterId()).thenReturn(1L);
+            ImageTransferVO leftOver = openTransfer(953L, 611L, 606L, ImageTransfer.Direction.download);
+            when(imageTransferDao.findByVolume(606L)).thenReturn(leftOver);
+            when(imageTransferDao.findById(953L)).thenReturn(leftOver);
+            earlierBackupOfStoppedVm(611L);
+            when(backupDao.findById(616L)).thenReturn(backup);
+            when(agentManager.send(eq(802L), any(Command.class))).thenThrow(new AgentUnavailableException("host down", 802L));
+
+            CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                    () -> service.createImageTransfer(606L, 616L, ImageTransfer.Direction.download, ImageTransfer.Format.raw));
+
+            assertTrue(ex.getMessage().contains("tx-953"));
+            assertEquals(ImageTransferVO.Phase.transferring, leftOver.getPhase());
+            verify(imageTransferDao, never()).remove(any(Long.class));
+            verify(imageTransferDao, never()).persist(any(ImageTransferVO.class));
+        }
+    }
+
+    private void assertOpenDownloadKept(long volumeId, Long requestBackupId) throws Exception {
+        ReflectionTestUtils.setField(BackupManager.BackupFrameworkEnabled, "_value", Boolean.FALSE);
+        try (MockedStatic<CallContext> mocked = mockStatic(CallContext.class)) {
+            mocked.when(CallContext::current).thenReturn(callContext);
+            when(callContext.getCallingUser()).thenReturn(user);
+            when(volumeDao.findById(volumeId)).thenReturn(volume);
+            when(volume.getId()).thenReturn(volumeId);
+            when(volume.getUuid()).thenReturn("vol-" + volumeId);
+            when(volume.getDataCenterId()).thenReturn(1L);
+            ImageTransferVO open = openTransfer(960L, 620L, volumeId, ImageTransfer.Direction.download);
+            when(imageTransferDao.findByVolume(volumeId)).thenReturn(open);
+
+            CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                    () -> service.createImageTransfer(volumeId, requestBackupId, ImageTransfer.Direction.download, ImageTransfer.Format.raw));
+
+            assertTrue(ex.getMessage().contains("tx-960"));
+            assertEquals(ImageTransferVO.Phase.transferring, open.getPhase());
+            verify(imageTransferDao, never()).remove(any(Long.class));
+            verify(agentManager, never()).send(any(Long.class), any(Command.class));
+        }
+    }
+
+    @Test
+    public void createImageTransfer_downloadWithoutBackup_keepsOpenDownload() throws Exception {
+        assertOpenDownloadKept(609L, null);
+    }
+
+    @Test
+    public void createImageTransfer_downloadForUnknownBackup_keepsOpenDownload() throws Exception {
+        when(backupDao.findById(621L)).thenReturn(null);
+        assertOpenDownloadKept(609L, 621L);
+    }
+
+    @Test
+    public void createImageTransfer_downloadFromOlderBackup_keepsNewerBackupsDownload() throws Exception {
+        // Backup 611 was abandoned and 620 replaced its transfer; a late request for 611 must not end 620's.
+        assertOpenDownloadKept(609L, 611L);
+    }
+
+    private StartBackupCmd stubStartBackupOfStoppedVm(long backupId, long volumeId) {
+        StartBackupCmd cmd = mock(StartBackupCmd.class);
+        when(cmd.getEntityId()).thenReturn(backupId);
+        when(cmd.getVmId()).thenReturn(55L);
+        BackupVO newBackup = mock(BackupVO.class);
+        when(backupDao.findById(backupId)).thenReturn(newBackup);
+        when(newBackup.getId()).thenReturn(backupId);
+        when(newBackup.getHostId()).thenReturn(802L);
+        when(vmInstanceDao.findById(55L)).thenReturn(vm);
+        when(vm.getState()).thenReturn(State.Stopped);
+
+        VolumeVO vol = mock(VolumeVO.class);
+        when(vol.getId()).thenReturn(volumeId);
+        when(vol.getUuid()).thenReturn("vol-" + volumeId);
+        when(vol.getPoolId()).thenReturn(702L);
+        when(vol.getPath()).thenReturn("vol-" + volumeId + ".qcow2");
+        when(volumeDao.findByInstance(55L)).thenReturn(List.of(vol));
+        StoragePoolVO pool = new StoragePoolVO();
+        pool.setId(702L);
+        pool.setPoolType(Storage.StoragePoolType.NetworkFilesystem);
+        pool.setUuid("pool-702");
+        when(primaryDataStoreDao.findById(702L)).thenReturn(pool);
+        when(volumeDataFactory.getVolume(volumeId)).thenReturn(mock(VolumeInfo.class));
+        return cmd;
+    }
+
+    @Test
+    public void startBackup_transferLeftByEarlierBackup_endsItBeforeStartingBackup() throws Exception {
+        StartBackupCmd cmd = stubStartBackupOfStoppedVm(617L, 607L);
+        ImageTransferVO leftOver = openTransfer(954L, 611L, 607L, ImageTransfer.Direction.download);
+        when(imageTransferDao.findByVolume(607L)).thenReturn(leftOver);
+        when(imageTransferDao.findById(954L)).thenReturn(leftOver);
+        earlierBackupOfStoppedVm(611L);
+        when(agentManager.send(eq(802L), any(Command.class))).thenReturn(
+                new Answer(null, true, null),
+                new Answer(null, true, null),
+                new StartBackupAnswer(null, false, "stopped here"));
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> service.startBackup(cmd));
+
+        assertTrue(ex.getMessage().contains("stopped here"));
+        InOrder inOrder = inOrder(imageTransferDao, agentManager);
+        inOrder.verify(imageTransferDao).remove(954L);
+        inOrder.verify(agentManager).send(eq(802L), any(StartBackupCommand.class));
+    }
+
+    @Test
+    public void startBackup_transferLeftByEarlierBackupCannotBeEnded_failsBackupAndKeepsTransfer() throws Exception {
+        StartBackupCmd cmd = stubStartBackupOfStoppedVm(618L, 608L);
+        ImageTransferVO leftOver = openTransfer(955L, 611L, 608L, ImageTransfer.Direction.download);
+        when(imageTransferDao.findByVolume(608L)).thenReturn(leftOver);
+        when(imageTransferDao.findById(955L)).thenReturn(leftOver);
+        earlierBackupOfStoppedVm(611L);
+        when(agentManager.send(eq(802L), any(Command.class))).thenThrow(new OperationTimedoutException(null, 802L, 1L, 60, false));
+
+        CloudRuntimeException ex = assertThrows(CloudRuntimeException.class, () -> service.startBackup(cmd));
+
+        assertTrue(ex.getMessage().contains("tx-955"));
+        verify(imageTransferDao, never()).remove(any(Long.class));
+        verify(backupDao).remove(618L);
+        verify(agentManager, never()).send(eq(802L), any(StartBackupCommand.class));
+    }
+
+    @Test
+    public void createImageTransfer_downloadWithOpenTransferOfSameBackup_throws() throws Exception {
+        ReflectionTestUtils.setField(BackupManager.BackupFrameworkEnabled, "_value", Boolean.FALSE);
+        try (MockedStatic<CallContext> mocked = mockStatic(CallContext.class)) {
+            mocked.when(CallContext::current).thenReturn(callContext);
+            when(callContext.getCallingUser()).thenReturn(user);
+            when(volumeDao.findById(604L)).thenReturn(volume);
+            when(volume.getId()).thenReturn(604L);
+            when(volume.getUuid()).thenReturn("vol-604");
+            when(volume.getDataCenterId()).thenReturn(1L);
+            when(imageTransferDao.findByVolume(604L)).thenReturn(openTransfer(951L, 614L, 604L, ImageTransfer.Direction.download));
+
+            CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+                    () -> service.createImageTransfer(604L, 614L, ImageTransfer.Direction.download, ImageTransfer.Format.raw));
+
+            assertTrue(ex.getMessage().contains("tx-951"));
+            verify(imageTransferDao, never()).remove(any(Long.class));
+            verify(agentManager, never()).send(any(Long.class), any(Command.class));
+        }
+    }
+
+    @Test
+    public void createImageTransfer_downloadWithOpenUpload_throws() throws Exception {
+        ReflectionTestUtils.setField(BackupManager.BackupFrameworkEnabled, "_value", Boolean.FALSE);
+        try (MockedStatic<CallContext> mocked = mockStatic(CallContext.class)) {
+            mocked.when(CallContext::current).thenReturn(callContext);
+            when(callContext.getCallingUser()).thenReturn(user);
+            when(volumeDao.findById(605L)).thenReturn(volume);
+            when(volume.getId()).thenReturn(605L);
+            when(volume.getUuid()).thenReturn("vol-605");
+            when(volume.getDataCenterId()).thenReturn(1L);
+            when(imageTransferDao.findByVolume(605L)).thenReturn(openTransfer(952L, null, 605L, ImageTransfer.Direction.upload));
+
+            assertThrows(CloudRuntimeException.class,
+                    () -> service.createImageTransfer(605L, 615L, ImageTransfer.Direction.download, ImageTransfer.Format.raw));
+
+            verify(imageTransferDao, never()).remove(any(Long.class));
         }
     }
 }

@@ -41,6 +41,7 @@
     <bean id="clustersRouteHandler" class="org.apache.cloudstack.veeam.api.ClustersRouteHandler"/>
     <bean id="hostsRouteHandler" class="org.apache.cloudstack.veeam.api.HostsRouteHandler"/>
     <bean id="networksRouteHandler" class="org.apache.cloudstack.veeam.api.NetworksRouteHandler"/>
+    <bean id="storageDomainsRouteHandler" class="org.apache.cloudstack.veeam.api.StorageDomainsRouteHandler"/>
     <bean id="vnicProfilesRouteHandler" class="org.apache.cloudstack.veeam.api.VnicProfilesRouteHandler"/>
     <bean id="vmsRouteHandler" class="org.apache.cloudstack.veeam.api.VmsRouteHandler"/>
     <bean id="disksRouteHandler" class="org.apache.cloudstack.veeam.api.DisksRouteHandler"/>
