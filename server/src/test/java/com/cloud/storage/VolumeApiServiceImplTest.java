@@ -624,6 +624,28 @@ public class VolumeApiServiceImplTest {
         volumeApiServiceImpl.detachVolumeFromVM(detachCmd);
     }
 
+    private void validateRootVolumeDetachAttachForVmInState(State state) {
+        UserVmVO vm = new UserVmVO(7L, "vm", "vm", 1, HypervisorType.KVM, 1L, false, false, 1L, 1L, 1, 1L, null, null, null, "vm");
+        vm.setState(state);
+        VolumeVO rootVolume = new VolumeVO("root", 1L, 1L, 1L, 1L, 7L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
+        ReflectionTestUtils.invokeMethod(volumeApiServiceImpl, "validateRootVolumeDetachAttach", rootVolume, vm);
+    }
+
+    @Test
+    public void validateRootVolumeDetachAttachAllowsStoppedVm() {
+        validateRootVolumeDetachAttachForVmInState(State.Stopped);
+    }
+
+    @Test
+    public void validateRootVolumeDetachAttachAllowsDestroyedVm() {
+        validateRootVolumeDetachAttachForVmInState(State.Destroyed);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateRootVolumeDetachAttachRejectsRunningVm() {
+        validateRootVolumeDetachAttachForVmInState(State.Running);
+    }
+
     /**
      * TESTS FOR ATTACH ROOT VOLUME, COUNT=7
      */
