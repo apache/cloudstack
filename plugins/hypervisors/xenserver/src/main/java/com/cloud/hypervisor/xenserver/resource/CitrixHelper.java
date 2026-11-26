@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
+import java.util.Map;
+
 import com.cloud.storage.Storage;
 import com.xensource.xenapi.Host;
 
@@ -26,9 +28,13 @@ import com.xensource.xenapi.Host;
 public class CitrixHelper {
 
     public static String getProductVersion(final Host.Record record) {
-        String prodVersion = record.softwareVersion.get("product_version");
+        return getProductVersion(record.softwareVersion);
+    }
+
+    public static String getProductVersion(final Map<String, String> softwareVersion) {
+        String prodVersion = softwareVersion.get("product_version");
         if (prodVersion == null) {
-            prodVersion = record.softwareVersion.get("platform_version").trim();
+            prodVersion = softwareVersion.get("platform_version").trim();
         } else {
             prodVersion = prodVersion.trim();
         }

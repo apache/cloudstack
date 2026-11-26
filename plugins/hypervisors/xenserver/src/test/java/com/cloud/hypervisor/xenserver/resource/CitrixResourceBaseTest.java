@@ -56,11 +56,14 @@ import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.template.TemplateManager;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Host.Record;
+import com.xensource.xenapi.Network;
 import com.xensource.xenapi.PBD;
+import com.xensource.xenapi.PIF;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types.XenAPIException;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -615,5 +618,110 @@ public class CitrixResourceBaseTest {
         Assert.assertFalse(listAnswer.getIsDirs().get(0));
         Assert.assertEquals(1024L, listAnswer.getSizes().get(0).longValue());
         Assert.assertEquals(123456789000L, listAnswer.getLastModified().get(0).longValue());
+    }
+
+    private void mockSoftwareVersion(String key, String version) throws XenAPIException, XmlRpcException {
+        Map<String, String> softwareVersion = new HashMap<>();
+        softwareVersion.put(key, version);
+        Mockito.when(hostMock.getSoftwareVersion(connectionMock)).thenReturn(softwareVersion);
+    }
+
+    private void mockProductVersion(String version) throws XenAPIException, XmlRpcException {
+        mockSoftwareVersion("product_version", version);
+    }
+
+    @Test
+    public void isManagementNetworkOnVlanSupportedTestBlankVersion() throws XenAPIException, XmlRpcException {
+        mockProductVersion("");
+        Assert.assertFalse(citrixResourceBase.isManagementNetworkOnVlanSupported(connectionMock, hostMock));
+        mockProductVersion(" ");
+        Assert.assertFalse(citrixResourceBase.isManagementNetworkOnVlanSupported(connectionMock, hostMock));
+    }
+
+    @Test
+    public void isManagementNetworkOnVlanSupportedTestBefore8() throws XenAPIException, XmlRpcException {
+        for (String version : new String[] {"6.5.0", "7.1.2", "7.6.0"}) {
+            mockProductVersion(version);
+            Assert.assertFalse(version, citrixResourceBase.isManagementNetworkOnVlanSupported(connectionMock, hostMock));
+        }
+    }
+
+    @Test
+    public void isManagementNetworkOnVlanSupportedTest8AndLater() throws XenAPIException, XmlRpcException {
+        for (String version : new String[] {"8.0", "8.0.0", "8.2.1", "8.3.0", "8.4.0"}) {
+            mockProductVersion(version);
+            Assert.assertTrue(version, citrixResourceBase.isManagementNetworkOnVlanSupported(connectionMock, hostMock));
+        }
+    }
+
+    @Test
+    public void isManagementNetworkOnVlanSupportedTestPlatformVersionFallback() throws XenAPIException, XmlRpcException {
+        mockSoftwareVersion("platform_version", "8.2.1");
+        Assert.assertTrue(citrixResourceBase.isManagementNetworkOnVlanSupported(connectionMock, hostMock));
+    }
+
+    @Test
+    public void isManagementNetworkOnVlanSupportedTestNoVersion() throws XenAPIException, XmlRpcException {
+        Mockito.when(hostMock.getSoftwareVersion(connectionMock)).thenReturn(new HashMap<>());
+        Assert.assertFalse(citrixResourceBase.isManagementNetworkOnVlanSupported(connectionMock, hostMock));
+    }
+
+    @Test
+    public void isManagementNetworkOnVlanSupportedTestXenApiFailure() throws XenAPIException, XmlRpcException {
+        Mockito.when(hostMock.getSoftwareVersion(connectionMock)).thenThrow(new XmlRpcException("unreachable"));
+        Assert.assertFalse(citrixResourceBase.isManagementNetworkOnVlanSupported(connectionMock, hostMock));
+    }
+
+    private PIF.Record pifRecordWithVlan(Long vlan) {
+        PIF.Record rec = new PIF.Record();
+        rec.uuid = "pifUuid";
+        rec.VLAN = vlan;
+        return rec;
+    }
+
+    @Test
+    public void isVlanAllowedForManagementPifTestUntagged() throws XenAPIException, XmlRpcException {
+        Assert.assertTrue(citrixResourceBase.isVlanAllowedForManagementPif(connectionMock, hostMock, pifRecordWithVlan(null)));
+        Assert.assertTrue(citrixResourceBase.isVlanAllowedForManagementPif(connectionMock, hostMock, pifRecordWithVlan(-1L)));
+        Mockito.verify(hostMock, Mockito.never()).getSoftwareVersion(connectionMock);
+    }
+
+    @Test
+    public void isVlanAllowedForManagementPifTestTagged() throws XenAPIException, XmlRpcException {
+        mockProductVersion("7.1.2");
+        Assert.assertFalse(citrixResourceBase.isVlanAllowedForManagementPif(connectionMock, hostMock, pifRecordWithVlan(100L)));
+        mockProductVersion("8.2.1");
+        Assert.assertTrue(citrixResourceBase.isVlanAllowedForManagementPif(connectionMock, hostMock, pifRecordWithVlan(100L)));
+    }
+
+    private PIF.Record mockManagementPifOnVlan(long vlan) throws XenAPIException, XmlRpcException {
+        PIF pif = Mockito.mock(PIF.class);
+        PIF.Record rec = pifRecordWithVlan(vlan);
+        rec.management = true;
+        rec.network = Mockito.mock(Network.class);
+        Mockito.when(pif.getRecord(connectionMock)).thenReturn(rec);
+        Mockito.when(hostMock.getPIFs(connectionMock)).thenReturn(Set.of(pif));
+        return rec;
+    }
+
+    @Test
+    public void getManagementNetworkTestVlanOnProductVersion8() throws XenAPIException, XmlRpcException {
+        mockProductVersion("8.2.1");
+        PIF.Record pifRecord = mockManagementPifOnVlan(100L);
+        Network.Record networkRecord = new Network.Record();
+        Mockito.when(pifRecord.network.getRecord(connectionMock)).thenReturn(networkRecord);
+
+        XsLocalNetwork network = citrixResourceBase.getManagementNetwork(connectionMock);
+
+        Assert.assertSame(networkRecord, network.getNetworkRecord(connectionMock));
+        Assert.assertSame(pifRecord, network.getPifRecord(connectionMock));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getManagementNetworkTestVlanBeforeProductVersion8() throws XenAPIException, XmlRpcException {
+        mockProductVersion("7.1.2");
+        mockManagementPifOnVlan(100L);
+
+        citrixResourceBase.getManagementNetwork(connectionMock);
     }
 }
