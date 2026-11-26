@@ -64,7 +64,10 @@ public class QuotaSummaryCmd extends BaseListCmd {
             "Accounts which the caller has access. If domain ID is informed, this parameter is considered as true.")
     private Boolean listAll;
 
-    @Parameter(name = ApiConstants.ACCOUNT_STATE_TO_SHOW, type = CommandType.STRING, description =  "Possible values are [ALL, ACTIVE, REMOVED]. ALL will list summaries for " +
+    @Parameter(name = ApiConstants.ACCOUNT_STATE_TO_SHOW,
+            type = CommandType.STRING,
+            allowedValues = {"ALL", "ACTIVE", "REMOVED"},
+            description =  "Possible values are [ALL, ACTIVE, REMOVED]. ALL will list summaries for " +
             "active and removed accounts; ACTIVE will list summaries only for active accounts; REMOVED will list summaries only for removed accounts. The default value is ACTIVE.",
             since = "4.23.0")
     private String accountStateToShow;
