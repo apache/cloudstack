@@ -260,7 +260,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
         Host host = hostDao.findById(hostId);
         if (host == null || host.getResourceState() == ResourceState.Degraded) {
             String state = host != null ? String.valueOf(host.getResourceState()) : null;
-            logger.debug("Host [id={}, uuid={}, state={}] was removed or placed in Degraded state by the Admin.", hostId, host != null ? host.getUuid() : "", state);
+            logger.debug("Host [{}] was removed or placed in Degraded state (state={}) by the Admin.", host != null ? host : "id=" + hostId, state);
             return false;
         }
 

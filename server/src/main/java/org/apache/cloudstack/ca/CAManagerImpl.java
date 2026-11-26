@@ -330,7 +330,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
 
             return true;
         } catch (Exception e) {
-            logger.error("Error during forced SSH provisioning for KVM host " + host.getUuid(), e);
+            logger.error("Error during forced SSH provisioning for KVM host " + host, e);
             return false;
         } finally {
             if (sshConnection != null) {
