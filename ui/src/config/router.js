@@ -28,6 +28,7 @@ import compute from '@/config/section/compute'
 import storage from '@/config/section/storage'
 import network from '@/config/section/network'
 import image from '@/config/section/image'
+import aiservices from '@/config/section/aiservices'
 import kms from '@/config/section/kms'
 import project from '@/config/section/project'
 import event from '@/config/section/event'
@@ -220,6 +221,7 @@ export function asyncRouterMap () {
       generateRouterMap(storage),
       generateRouterMap(network),
       generateRouterMap(image),
+      generateRouterMap(aiservices),
       generateRouterMap(kms),
       generateRouterMap(event),
       generateRouterMap(project),
