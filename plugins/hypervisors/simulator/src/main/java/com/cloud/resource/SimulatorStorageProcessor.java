@@ -34,8 +34,8 @@ import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DettachAnswer;
-import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.DetachAnswer;
+import org.apache.cloudstack.storage.command.DetachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.command.ResignatureAnswer;
@@ -202,7 +202,7 @@ public class SimulatorStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer dettachIso(DettachCommand cmd) {
+    public Answer detachIso(DetachCommand cmd) {
         DiskTO disk = cmd.getDisk();
         TemplateObjectTO isoTO = (TemplateObjectTO)disk.getData();
         DataStoreTO store = isoTO.getDataStore();
@@ -213,9 +213,9 @@ public class SimulatorStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer dettachVolume(DettachCommand cmd) {
+    public Answer detachVolume(DetachCommand cmd) {
         DiskTO disk = cmd.getDisk();
-        return new DettachAnswer(disk);
+        return new DetachAnswer(disk);
     }
 
     @Override

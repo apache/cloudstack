@@ -131,7 +131,7 @@ class TestVerifyEventsTable(cloudstackTestCase):
 
         # 1. Deploy a VM.
         # 2. Take VM snapshot.
-        # 3. Verify that events table records UUID of the volume in descrption
+        # 3. Verify that events table records UUID of the volume in description
             instead of volume ID
         """
         # Step 1

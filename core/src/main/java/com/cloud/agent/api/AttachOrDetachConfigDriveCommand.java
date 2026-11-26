@@ -21,14 +21,14 @@ package com.cloud.agent.api;
 
 import java.util.List;
 
-public class AttachOrDettachConfigDriveCommand extends Command {
+public class AttachOrDetachConfigDriveCommand extends Command {
 
     String vmName;
     List<String[]> vmData;
     String configDriveLabel;
     boolean isAttach = false;
 
-    public AttachOrDettachConfigDriveCommand(String vmName, List<String[]> vmData, String label, boolean attach) {
+    public AttachOrDetachConfigDriveCommand(String vmName, List<String[]> vmData, String label, boolean attach) {
         this.vmName = vmName;
         this.vmData = vmData;
         this.configDriveLabel = label;

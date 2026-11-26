@@ -23,7 +23,7 @@ import java.util.Map;
 
 import com.cloud.agent.api.to.DiskTO;
 
-public class DettachCommand extends StorageSubSystemCommand {
+public class DetachCommand extends StorageSubSystemCommand {
     private DiskTO disk;
     private String vmName;
     private boolean _managed;
@@ -34,13 +34,13 @@ public class DettachCommand extends StorageSubSystemCommand {
     private boolean forced;
     private long waitDetachDevice;
 
-    public DettachCommand(final DiskTO disk, final String vmName) {
+    public DetachCommand(final DiskTO disk, final String vmName) {
         super();
         this.disk = disk;
         this.vmName = vmName;
     }
 
-    public DettachCommand(final DiskTO disk, final String vmName, Map<String, String> params) {
+    public DetachCommand(final DiskTO disk, final String vmName, Map<String, String> params) {
         super();
         this.disk = disk;
         this.vmName = vmName;

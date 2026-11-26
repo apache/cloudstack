@@ -204,7 +204,7 @@ class TestPathVolume(cloudstackTestCase):
                     cls.apiclient,
                     cls.testdata["service_offerings"])
                 cls._cleanup.append(cls.service_offering_2)
-                # craete a compute offering with local storage
+                # create a compute offering with local storage
                 cls.testdata["disk_offering"]["storagetype"] = 'local'
                 cls.disk_offering_local = DiskOffering.create(
                     cls.apiclient,

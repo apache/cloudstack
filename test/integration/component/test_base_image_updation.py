@@ -507,7 +507,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
         return
 
     @attr(tags=["advanced", "basic"], required_hardware="false")
-    def test_04_reoccuring_snapshot_rules(self):
+    def test_04_reoccurring_snapshot_rules(self):
         """
         1) Create a VM using the Service offering IsVolatile enabled
         2) Apply a recurring snapshot rule on the  Volume.

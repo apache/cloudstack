@@ -1314,7 +1314,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         vmr.otherConfig.put("vm_uuid", vmSpec.getUuid());
         vmr.VCPUsMax = (long)vmSpec.getCpus(); // FIX ME: In case of dynamic
         // scaling this VCPU max should
-        // be the minumum of
+        // be the minimum of
         // recommended value for that template and capacity remaining on host
 
         long recommendedMemoryMin = 0L;
@@ -5530,7 +5530,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         SR sr = getSRByNameLabelandHost(conn, srName);
 
         if (sr != null) {
-            logger.debug("Config drive SR already exist, returing it");
+            logger.debug("Config drive SR already exist, returning it");
             return sr;
         }
 

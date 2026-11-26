@@ -177,7 +177,7 @@ try:
 
         # add member to ip list ?
         poolMembers.append(ip)
-        print "mambers for pool: %s" % poolMembers
+        print "members for pool: %s" % poolMembers
         print xserver.set_pool_member_ip_list(poolMembers)
 
     print server.discover_server_pool()

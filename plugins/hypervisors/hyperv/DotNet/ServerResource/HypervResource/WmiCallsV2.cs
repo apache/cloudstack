@@ -406,7 +406,7 @@ namespace HypervResource
                         }
                         int tmp;
                         if (vlan.Equals("untagged", StringComparison.CurrentCultureIgnoreCase) ) {
-                            // recevied vlan is untagged, don't parse for the vlan in the isolation uri
+                            // received vlan is untagged, don't parse for the vlan in the isolation uri
                             vlan = null;
                         }
                         else if (!int.TryParse(vlan, out tmp))
@@ -529,7 +529,7 @@ namespace HypervResource
         {
             // Get the virtual switch
             VirtualEthernetSwitch vSwitch = GetExternalVirtSwitch(vSwitchName);
-            //check the recevied vSwitch is the same as vSwitchName.
+            //check the received vSwitch is the same as vSwitchName.
             if (!vSwitchName.Equals("")  && !vSwitch.ElementName.Equals(vSwitchName))
             {
                var errMsg = string.Format("Internal error, coudl not find Virtual Switch with the name : " +vSwitchName);
@@ -949,7 +949,7 @@ namespace HypervResource
 
             if (vlanid.Equals("untagged", StringComparison.CurrentCultureIgnoreCase))
             {
-                // recevied vlan is untagged, don't parse for the vlan in the isolation uri
+                // received vlan is untagged, don't parse for the vlan in the isolation uri
                 vlanid = null;
             }
 
@@ -1113,7 +1113,7 @@ namespace HypervResource
 
             if (vlanid.Equals("untagged", StringComparison.CurrentCultureIgnoreCase))
             {
-                // recevied vlan is untagged, don't parse for the vlan in the isolation uri
+                // received vlan is untagged, don't parse for the vlan in the isolation uri
                 vlanid = null;
             }
 

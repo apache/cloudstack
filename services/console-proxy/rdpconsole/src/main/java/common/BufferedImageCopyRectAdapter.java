@@ -99,7 +99,7 @@ public class BufferedImageCopyRectAdapter extends BaseElement {
                 // 3
                 13, 14, 15, 16};
 
-        // Initalize image
+        // Initialize image
         int[] data = ((DataBufferInt)canvas.getOfflineImage().getRaster().getDataBuffer()).getData();
         System.arraycopy(pixelsBeforeCopy, 0, data, 0, pixelsBeforeCopy.length);
 

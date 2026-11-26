@@ -42,7 +42,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = "listOpenDaylightControllers", responseObject = OpenDaylightControllerResponse.class, description = "Lists OpenDyalight controllers",
+@APICommand(name = "listOpenDaylightControllers", responseObject = OpenDaylightControllerResponse.class, description = "Lists OpenDaylight controllers",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListOpenDaylightControllersCmd extends BaseCmd {
     @Inject

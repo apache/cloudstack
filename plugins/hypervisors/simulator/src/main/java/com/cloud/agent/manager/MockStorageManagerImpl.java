@@ -1098,7 +1098,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
                 MessageDigest md = MessageDigest.getInstance("md5");
                 md5 = String.format("%032x", new BigInteger(1, md.digest(cmd.getTemplatePath().getBytes())));
             } catch (NoSuchAlgorithmException e) {
-                logger.debug("failed to gernerate md5:" + e.toString());
+                logger.debug("failed to generate md5:" + e.toString());
             }
             txn.commit();
             return new Answer(cmd, true, md5);

@@ -275,14 +275,14 @@ class S3Client(object):
 
     def multiUpload(self, bucket, key, src_fileName, chunkSize=5 * 1024 * 1024):
         uploadId={}
-        def readInitalMultipart(response):
+        def readInitialMultipart(response):
            data = response.read()
            xmlResult = parseString(data) 
            result = xmlResult.getElementsByTagName("InitiateMultipartUploadResult")[0]
            upload = result.getElementsByTagName("UploadId")[0]
            uploadId["0"] = upload.childNodes[0].data
        
-        self.do_operation('POST', bucket, key + "?uploads", fn_read=readInitalMultipart) 
+        self.do_operation('POST', bucket, key + "?uploads", fn_read=readInitialMultipart)
 
         fileSize = os.path.getsize(src_fileName) 
         parts = fileSize / chunkSize + ((fileSize % chunkSize) and 1)

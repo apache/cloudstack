@@ -1249,7 +1249,7 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
         try:
             Router.stop(self.apiclient, id=primary_router.id)
         except Exception as e:
-            self.fail("Failed to stop primary router becaues of %s" % e)
+            self.fail("Failed to stop primary router because of %s" % e)
 
         self.debug("Associating public IP for network: %s" % network.name)
         public_ip = PublicIPAddress.create(

@@ -408,7 +408,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
                 networkids=[self.defaultNetworkId])
             self.cleanup.append(virtual_machine)
         except Exception as e:
-            self.fail("Failed to deply virtual machine: %s" % e)
+            self.fail("Failed to deploy virtual machine: %s" % e)
 
         # Adding network to vm for the first time
         self.addNetworkToVm(network, virtual_machine)
@@ -442,7 +442,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
                 networkids=[self.defaultNetworkId])
             self.cleanup.append(virtual_machine)
         except Exception as e:
-            self.fail("Failed to deply virtual machine: %s" % e)
+            self.fail("Failed to deploy virtual machine: %s" % e)
 
         network = self.isolated_network
         self.addNetworkToVm(network, virtual_machine)
@@ -528,7 +528,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
                 networkids=[self.defaultNetworkId])
             self.cleanup.append(virtual_machine)
         except Exception as e:
-            self.fail("Failed to deply virtual machine: %s" % e)
+            self.fail("Failed to deploy virtual machine: %s" % e)
 
         ipaddress = self.shared_nw_endip
         self.debug("Adding network to vm with ip address %s: " % ipaddress)

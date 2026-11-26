@@ -103,7 +103,7 @@ import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.DetachCommand;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -3601,7 +3601,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
 
-            DettachCommand cmd = new DettachCommand(disk, vm.getInstanceName());
+            DetachCommand cmd = new DetachCommand(disk, vm.getInstanceName());
 
             cmd.setManaged(volumePool.isManaged());
 

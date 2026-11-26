@@ -51,7 +51,7 @@ namespace HypervResource
         }
 
         /// <summary>
-        /// serialize dictonary to map json type
+        /// serialize dictionary to map json type
         /// </summary>
         /// <param name="objValue">Object's data, can be an anonymous object, e.g. </param>
         /// <returns></returns>

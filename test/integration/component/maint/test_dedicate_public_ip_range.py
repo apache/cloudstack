@@ -1316,7 +1316,7 @@ class TestReleaseIPs(cloudstackTestCase):
             account.domainid,
             networkofferingid=self.isolated_network_offering.id)
 
-        # Acuiring IP for source nat purpose
+        # Acquiring IP for source nat purpose
         PublicIPAddress.create(
             self.apiclient,
             accountid=account.name,

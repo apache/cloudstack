@@ -75,8 +75,8 @@ import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DettachAnswer;
-import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.DetachAnswer;
+import org.apache.cloudstack.storage.command.DetachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.command.ResignatureAnswer;
@@ -1425,7 +1425,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer dettachIso(final DettachCommand cmd) {
+    public Answer detachIso(final DetachCommand cmd) {
         final DiskTO disk = cmd.getDisk();
         final TemplateObjectTO isoTO = (TemplateObjectTO)disk.getData();
         final DataStoreTO store = isoTO.getDataStore();
@@ -1879,7 +1879,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer dettachVolume(final DettachCommand cmd) {
+    public Answer detachVolume(final DetachCommand cmd) {
         final DiskTO disk = cmd.getDisk();
         final VolumeObjectTO vol = (VolumeObjectTO)disk.getData();
         final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)vol.getDataStore();
@@ -1903,10 +1903,10 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             resource.removeCheckpointsOnVm(vmName, vol.getUuid(), vol.getCheckpointPaths());
 
-            return new DettachAnswer(disk);
+            return new DetachAnswer(disk);
         } catch (final LibvirtException | InternalErrorException | CloudRuntimeException e) {
             logger.debug(String.format("Failed to detach volume [id: %d, uuid: %s, name: %s, path: %s], due to ", vol.getId(), vol.getUuid(), vol.getName(), vol.getPath()), e);
-            return new DettachAnswer(e.toString());
+            return new DetachAnswer(e.toString());
         } finally {
             vol.clearPassphrase();
         }
