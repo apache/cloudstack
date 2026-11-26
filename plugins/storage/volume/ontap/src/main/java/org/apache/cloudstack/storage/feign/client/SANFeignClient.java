@@ -50,8 +50,8 @@ public interface SANFeignClient {
     @Headers({"Authorization: {authHeader}"})
     Lun getLunByUUID(@Param("authHeader") String authHeader, @Param("uuid") String uuid);
 
-    @RequestLine("PATCH /{uuid}")
-    @Headers({"Authorization: {authHeader}"})
+    @RequestLine("PATCH /api/storage/luns/{uuid}")
+    @Headers({"Authorization: {authHeader}", "Content-Type: application/json"})
     void updateLun(@Param("authHeader") String authHeader, @Param("uuid") String uuid, Lun lun);
 
     @RequestLine("DELETE /api/storage/luns/{uuid}")
