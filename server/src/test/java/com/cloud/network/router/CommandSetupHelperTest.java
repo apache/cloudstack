@@ -18,6 +18,7 @@ package com.cloud.network.router;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.routing.SetBgpPeersCommand;
+import com.cloud.bgp.BGPService;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.ConfigurationManager;
@@ -408,6 +409,75 @@ public class CommandSetupHelperTest {
         Command cmd = cmds.toCommands()[0];
         Assert.assertTrue(cmd instanceof SetBgpPeersCommand);
         Assert.assertEquals(4, ((SetBgpPeersCommand) cmd).getBpgPeers().length);
+    }
+
+    private SetBgpPeersCommand createVpcBgpPeersCommand() {
+        BgpPeerVO bgpPeer = Mockito.mock(BgpPeerVO.class);
+        Commands cmds = new Commands(Command.OnError.Stop);
+        VirtualRouter router = Mockito.mock(VirtualRouter.class);
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+
+        long zoneId = 10L;
+        long vpcId = 11L;
+        when(router.getDataCenterId()).thenReturn(zoneId);
+        when(router.getVpcId()).thenReturn(vpcId);
+        when(router.getAccountId()).thenReturn(2L);
+        ASNumberVO asNumberVO = Mockito.mock(ASNumberVO.class);
+        when(asNumberDao.findByZoneAndVpcId(zoneId, vpcId)).thenReturn(asNumberVO);
+
+        long networkOfferingId = 12L;
+        NetworkOfferingVO offering = Mockito.mock(NetworkOfferingVO.class);
+        when(networkOfferingDao.findByIdIncludingRemoved(networkOfferingId)).thenReturn(offering);
+        when(offering.getRoutingMode()).thenReturn(NetworkOffering.RoutingMode.Dynamic);
+        NetworkVO network1 = Mockito.mock(NetworkVO.class);
+        when(network1.getNetworkOfferingId()).thenReturn(networkOfferingId);
+        when(networkDao.listByVpc(vpcId)).thenReturn(Collections.singletonList(network1));
+
+        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+        when(dcDao.findById(zoneId)).thenReturn(dc);
+        when(dc.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+
+        commandSetupHelper.createBgpPeersCommands(Collections.singletonList(bgpPeer), router, cmds, network);
+
+        Assert.assertEquals(1, cmds.size());
+        return (SetBgpPeersCommand) cmds.toCommands()[0];
+    }
+
+    private ConfigDepotImpl initConfigDepot() {
+        ConfigDepotImpl configDepotMock = Mockito.mock(ConfigDepotImpl.class);
+        ConfigKey.init(configDepotMock);
+        return configDepotMock;
+    }
+
+    @Test
+    public void testCreateBgpPeersCommandsCarriesDefaultMinHoldtime() {
+        initConfigDepot();
+        Assert.assertEquals(Integer.valueOf(3), createVpcBgpPeersCommand().getMinHoldtime());
+    }
+
+    @Test
+    public void testCreateBgpPeersCommandsCarriesRaisedMinHoldtime() {
+        ConfigDepotImpl configDepotMock = initConfigDepot();
+        when(configDepotMock.getConfigStringValue(Mockito.eq(BGPService.MinHoldtime.key()), Mockito.any(), Mockito.any())).thenReturn("9");
+        Assert.assertEquals(Integer.valueOf(9), createVpcBgpPeersCommand().getMinHoldtime());
+    }
+
+    @Test
+    public void testCreateBgpPeersCommandsUsesAccountMinHoldtime() {
+        ConfigDepotImpl configDepotMock = initConfigDepot();
+        Mockito.lenient().when(configDepotMock.getConfigStringValue(Mockito.eq(BGPService.MinHoldtime.key()), Mockito.eq(ConfigKey.Scope.Global), Mockito.isNull()))
+                .thenReturn("5");
+        when(configDepotMock.getConfigStringValue(Mockito.eq(BGPService.MinHoldtime.key()), Mockito.eq(ConfigKey.Scope.Account), Mockito.eq(2L)))
+                .thenReturn("9");
+        Assert.assertEquals(Integer.valueOf(9), createVpcBgpPeersCommand().getMinHoldtime());
+    }
+
+    @Test
+    public void testCreateBgpPeersCommandsFallsBackToGlobalMinHoldtime() {
+        ConfigDepotImpl configDepotMock = initConfigDepot();
+        when(configDepotMock.getConfigStringValue(Mockito.eq(BGPService.MinHoldtime.key()), Mockito.eq(ConfigKey.Scope.Global), Mockito.isNull()))
+                .thenReturn("5");
+        Assert.assertEquals(Integer.valueOf(5), createVpcBgpPeersCommand().getMinHoldtime());
     }
 
     @Test

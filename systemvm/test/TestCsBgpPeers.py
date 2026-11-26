@@ -23,6 +23,7 @@ except ImportError:
     from unittest import mock
 from cs.CsBgpPeers import CsBgpPeers
 from cs.CsFile import CsFile
+import cs_bgppeers
 import merge
 
 
@@ -163,6 +164,41 @@ class TestCsBgpPeers(unittest.TestCase):
         config = self._frr_conf()
         self.assertIn(" neighbor 100.64.0.1 password S3cr3t!", config)
         self.assertIn(" neighbor 100.64.0.1 ebgp-multihop 2", config)
+
+    def _minimum_holdtime_lines(self, value):
+        self.csbgppeers.peers = {}
+        self.csbgppeers.frr_conf = CsFile("frr.conf.test")
+        self.csbgppeers.frr_conf.repopulate()
+        self.csbgppeers.min_holdtime = value
+        self.csbgppeers._process_dbag_item(self._peer(ip4_address='100.64.0.1',
+                                                      guest_ip4_cidr='192.0.2.0/24'))
+        self.csbgppeers._process_peers()
+        return [x for x in self._frr_conf() if "minimum-holdtime" in x]
+
+    def test_merge_keeps_min_holdtime(self):
+        dbag = cs_bgppeers.merge({"id": "bgppeers"}, {"peers": [self._peer(ip4_address='100.64.0.1')], "min_holdtime": 3})
+        self.assertEqual(dbag.get("min_holdtime"), 3)
+        self.assertEqual(dbag["1-100"]["ip4_address"], "100.64.0.1")
+
+    def test_process_peers_minimum_holdtime(self):
+        self.assertEqual(self._minimum_holdtime_lines(3), [" bgp minimum-holdtime 3"])
+        config = self._frr_conf()
+        self.assertLess(config.index(" bgp minimum-holdtime 3"), config.index(" neighbor 100.64.0.1 remote-as 64496"))
+        self.assertEqual(self._minimum_holdtime_lines(9), [" bgp minimum-holdtime 9"])
+        self.assertEqual(self._minimum_holdtime_lines("3"), [" bgp minimum-holdtime 3"])
+
+    def test_process_peers_no_minimum_holdtime(self):
+        # 0, null and empty turn the minimum off. BGP never negotiates hold time 1 or 2, and FRR rejects the others.
+        for value in (0, None, "", -1, 1, 2, 65536):
+            self.assertEqual(self._minimum_holdtime_lines(value), [], value)
+            self.assertIn(" neighbor 100.64.0.1 remote-as 64496", self._frr_conf(), value)
+
+    def test_process_peers_minimum_holdtime_not_a_number(self):
+        for value in ("abc", "None", "null", "3s", [3]):
+            with self.assertLogs(level="ERROR") as logs:
+                self.assertEqual(self._minimum_holdtime_lines(value), [], value)
+            self.assertIn(" neighbor 100.64.0.1 remote-as 64496", self._frr_conf(), value)
+            self.assertTrue([m for m in logs.output if "Ignoring minimum hold time" in m], logs.output)
 
     def test_route_map_set(self):
         self.csbgppeers._route_map_set()
