@@ -238,6 +238,8 @@ public class EventTypes {
     public static final String EVENT_NIC_PRIMARY_NETWORK_CHANGE = "NIC.PRIMARY.NETWORK.CHANGE";
     // internal-only signal consumed by the usage job - never user-facing, not an audit event
     public static final String EVENT_NIC_NETWORK_ID_BACKFILL = "NIC.NETWORK.ID.BACKFILL";
+    public static final String EVENT_NIC_PACKET_CAPTURE_ENABLE = "NIC.PACKETCAPTURE.ENABLE";
+    public static final String EVENT_NIC_PACKET_CAPTURE_DISABLE = "NIC.PACKETCAPTURE.DISABLE";
 
     // Load Balancers
     public static final String EVENT_ASSIGN_TO_LOAD_BALANCER_RULE = "LB.ASSIGN.TO.RULE";
@@ -1008,6 +1010,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_NIC_NETWORK_ASSOCIATE, Nic.class);
         entityEventDetails.put(EVENT_NIC_NETWORK_DISASSOCIATE, Nic.class);
         entityEventDetails.put(EVENT_NIC_PRIMARY_NETWORK_CHANGE, Nic.class);
+        entityEventDetails.put(EVENT_NIC_PACKET_CAPTURE_ENABLE, Nic.class);
+        entityEventDetails.put(EVENT_NIC_PACKET_CAPTURE_DISABLE, Nic.class);
 
         // Load Balancers
         entityEventDetails.put(EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, FirewallRule.class);
