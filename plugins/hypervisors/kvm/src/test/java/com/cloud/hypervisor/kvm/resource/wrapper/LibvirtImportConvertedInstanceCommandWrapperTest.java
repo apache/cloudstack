@@ -36,7 +36,9 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
@@ -45,6 +47,9 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -69,6 +74,9 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
     private NfsTO secondaryDataStore;
     @Mock
     private KVMStoragePoolManager storagePoolManager;
+
+    @Rule
+    public TemporaryFolder conversionPoolFolder = new TemporaryFolder();
 
     private static final String secondaryPoolUrl = "nfs://192.168.1.1/secondary";
     private static final String vmName = "VmToImport";
@@ -351,5 +359,73 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
         ImportConvertedInstanceCommand cmd = getImportConvertedInstanceCommand(remoteInstanceTO);
         Answer answer = importInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
         Assert.assertFalse(answer.getResult());
+    }
+
+    private ImportConvertedInstanceCommand getForcedFileBasedImportCommand(String convertUuid) {
+        String poolUuid = UUID.randomUUID().toString();
+        Mockito.when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(primaryDataStore.getUuid()).thenReturn(poolUuid);
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.NetworkFilesystem, poolUuid)).thenReturn(destinationPool);
+        Mockito.when(destinationPool.getLocalPath()).thenReturn(conversionPoolFolder.getRoot().getAbsolutePath());
+
+        RemoteInstanceTO remoteInstanceTO = getRemoteInstanceTO(Hypervisor.HypervisorType.VMware);
+        ImportConvertedInstanceCommand cmd = Mockito.mock(ImportConvertedInstanceCommand.class);
+        Mockito.when(cmd.getSourceInstance()).thenReturn(remoteInstanceTO);
+        Mockito.when(cmd.getConversionTemporaryLocation()).thenReturn(primaryDataStore);
+        Mockito.when(cmd.getTemporaryConvertUuid()).thenReturn(convertUuid);
+        Mockito.when(cmd.isForceConvertToPool()).thenReturn(true);
+        return cmd;
+    }
+
+    @Test
+    public void testExecuteForceConvertToFilePoolRemovesOnlyConvertedDomainXml() throws IOException {
+        String convertUuid = UUID.randomUUID().toString();
+        File convertedXml = conversionPoolFolder.newFile(convertUuid + ".xml");
+        File convertedDisk = conversionPoolFolder.newFile(convertUuid + "-sda");
+        File unrelatedXml = conversionPoolFolder.newFile(UUID.randomUUID() + ".xml");
+        ImportConvertedInstanceCommand cmd = getForcedFileBasedImportCommand(convertUuid);
+
+        LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
+        KVMPhysicalDisk disk = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.doReturn(parser).when(importInstanceCommandWrapper).parseMigratedVMXmlDomain(Mockito.anyString());
+        Mockito.doReturn(List.of(disk)).when(importInstanceCommandWrapper).getTemporaryDisksFromParsedXml(Mockito.eq(destinationPool),
+                Mockito.eq(parser), Mockito.anyString(), Mockito.anyString(), Mockito.eq(convertUuid));
+        Mockito.doReturn(Mockito.mock(UnmanagedInstanceTO.class)).when(importInstanceCommandWrapper)
+                .getConvertedUnmanagedInstance(convertUuid, List.of(disk), parser);
+
+        Answer answer = importInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
+
+        Assert.assertTrue(answer.getResult());
+        Assert.assertFalse(convertedXml.exists());
+        Assert.assertTrue(convertedDisk.exists());
+        Assert.assertTrue(unrelatedXml.exists());
+        Mockito.verify(importInstanceCommandWrapper, Mockito.never()).moveTemporaryDisksToDestination(Mockito.anyList(),
+                Mockito.anyList(), Mockito.anyList(), Mockito.any());
+    }
+
+    @Test
+    public void testExecuteForceConvertToFilePoolKeepsConvertedDomainXmlWhenNoDiskIsFound() throws IOException {
+        String convertUuid = UUID.randomUUID().toString();
+        File convertedXml = conversionPoolFolder.newFile(convertUuid + ".xml");
+        ImportConvertedInstanceCommand cmd = getForcedFileBasedImportCommand(convertUuid);
+
+        LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
+        Mockito.doReturn(parser).when(importInstanceCommandWrapper).parseMigratedVMXmlDomain(Mockito.anyString());
+        Mockito.doReturn(new ArrayList<KVMPhysicalDisk>()).when(importInstanceCommandWrapper).getTemporaryDisksFromParsedXml(Mockito.eq(destinationPool),
+                Mockito.eq(parser), Mockito.anyString(), Mockito.anyString(), Mockito.eq(convertUuid));
+
+        Answer answer = importInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
+
+        Assert.assertFalse(answer.getResult());
+        Assert.assertTrue(convertedXml.exists());
+    }
+
+    @Test
+    public void testCleanupConvertedDomainXmlIgnoresMissingFile() {
+        String convertedBasePath = new File(conversionPoolFolder.getRoot(), UUID.randomUUID().toString()).getAbsolutePath();
+
+        importInstanceCommandWrapper.cleanupConvertedDomainXml(convertedBasePath);
+
+        Assert.assertFalse(new File(convertedBasePath + ".xml").exists());
     }
 }
