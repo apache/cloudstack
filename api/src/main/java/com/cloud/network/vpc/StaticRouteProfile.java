@@ -30,6 +30,7 @@ public class StaticRouteProfile implements StaticRoute {
     String vlanTag;
     String gateway;
     String netmask;
+    String description;
     String ipAddress;
 
     public StaticRouteProfile(StaticRoute staticRoute, VpcGateway gateway) {
@@ -44,6 +45,7 @@ public class StaticRouteProfile implements StaticRoute {
         vlanTag = gateway.getBroadcastUri();
         this.gateway = gateway.getGateway();
         netmask = gateway.getNetmask();
+        description = gateway.getDescription();
         ipAddress = gateway.getIp4Address();
     }
 
@@ -118,6 +120,10 @@ public class StaticRouteProfile implements StaticRoute {
 
     public String getNetmask() {
         return netmask;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     @Override
