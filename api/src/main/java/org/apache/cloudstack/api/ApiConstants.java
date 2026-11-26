@@ -155,6 +155,8 @@ public class ApiConstants {
     public static final String CN = "cn";
     public static final String COMMAND = "command";
     public static final String CMD_EVENT_TYPE = "cmdeventtype";
+    public static final String API_SERVER_ARGS = "apiserverargs";
+    public static final String AUDIT_POLICY = "auditpolicy";
     public static final String CNI_CONFIG = "cniconfig";
     public static final String CNI_CONFIG_ID = "cniconfigurationid";
     public static final String CNI_CONFIG_DETAILS = "cniconfigdetails";
@@ -450,6 +452,7 @@ public class ApiConstants {
     public static final String NEW_START_IP = "newstartip";
     public static final String NEW_END_IP = "newendip";
     public static final String KUBERNETES_NODE_VERSION = "kubernetesnodeversion";
+    public static final String KUBELET_CONFIG = "kubeletconfig";
     public static final String NUMA_NODE = "numanode";
     public static final String NUM_RETRIES = "numretries";
     public static final String OFFER_HA = "offerha";

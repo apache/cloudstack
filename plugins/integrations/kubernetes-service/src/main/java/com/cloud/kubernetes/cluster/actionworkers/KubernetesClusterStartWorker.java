@@ -64,6 +64,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
+import com.cloud.kubernetes.cluster.utils.KubeadmConfigBuilder;
 import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.kubernetes.version.KubernetesVersionManagerImpl;
@@ -176,16 +177,14 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String caCert = "{{ k8s_control_node.ca.crt }}";
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
         final String clusterToken = "{{ k8s_control_node.cluster.token }}";
+        final String clusterTokenTtl = "{{ k8s_control_node.cluster.token.ttl }}";
         final String clusterInitArgsKey = "{{ k8s_control_node.cluster.initargs }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         final String installWaitTime = "{{ k8s.install.wait.time }}";
         final String installReattemptsCount = "{{ k8s.install.reattempts.count }}";
-        final String externalEtcdNodes = "{{ etcd.unstacked_etcd }}";
-        final String etcdEndpointList = "{{ etcd.etcd_endpoint_list }}";
-        final String k8sServerIp = "{{ k8s_control.server_ip }}";
-        final String k8sApiPort = "{{ k8s.api_server_port }}";
-        final String certSans = "{{ k8s_control.server_ips }}";
-        final String k8sCertificate = "{{ k8s_control.certificate_key }}";
+        final String initWithConfigKey = "{{ k8s_control.init_with_config }}";
+        final String kubeadmConfigKey = "{{ k8s_control.kubeadm_config }}";
+        final String auditPolicyFileKey = "{{ k8s.audit.policy.file }}";
         final String externalCniPlugin = "{{ k8s.external.cni.plugin }}";
         final String setupCsiDriver = "{{ k8s.setup.csi.driver }}";
 
@@ -204,7 +203,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String tlsCaCert = CertUtils.x509CertificatesToPem(certificate.getCaCertificates());
         final Long waitTime = KubernetesClusterService.KubernetesControlNodeInstallAttemptWait.value();
         final Long reattempts = KubernetesClusterService.KubernetesControlNodeInstallReattempts.value();
-        String endpointList = getEtcdEndpointList(etcdIps);
+        final Map<String, String> apiServerArgs = KubeadmConfigBuilder.apiServerArgsFromJson(getClusterDetail(ApiConstants.API_SERVER_ARGS));
+        final String kubeletConfig = getClusterDetail(ApiConstants.KUBELET_CONFIG);
+        final String auditPolicy = getClusterDetail(ApiConstants.AUDIT_POLICY);
+        final boolean initWithConfig = externalEtcd || !apiServerArgs.isEmpty() || kubeletConfig != null || auditPolicy != null;
 
         k8sControlNodeConfig = k8sControlNodeConfig.replace(apiServerCert, tlsClientCert.replace("\n", "\n      "));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(apiServerKey, tlsPrivateKey.replace("\n", "\n      "));
@@ -220,8 +222,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         k8sControlNodeConfig = k8sControlNodeConfig.replace(installWaitTime, String.valueOf(waitTime));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(installReattemptsCount, String.valueOf(reattempts));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(sshPubKey, pubKey);
+        final String tokenTtl = "0";
         k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterToken, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(externalEtcdNodes, String.valueOf(externalEtcd));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterTokenTtl, tokenTtl);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(initWithConfigKey, String.valueOf(initWithConfig));
         String initArgs = "";
         if (haSupported) {
             initArgs = String.format("--control-plane-endpoint %s:%d --upload-certs --certificate-key %s ",
@@ -229,15 +233,19 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                     CLUSTER_API_PORT,
                     KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
         }
-        initArgs += String.format("--apiserver-cert-extra-sans=%s", serverIp);
+        initArgs += String.format("--apiserver-cert-extra-sans=%s", String.join(",", addresses));
         initArgs += String.format(" --kubernetes-version=%s", getKubernetesClusterVersion().getSemanticVersion());
         k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterInitArgsKey, initArgs);
         k8sControlNodeConfig = k8sControlNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(etcdEndpointList, endpointList);
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sServerIp, serverIp);
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sApiPort, String.valueOf(CLUSTER_API_PORT));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(certSans, String.format("- %s", serverIp));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sCertificate, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
+        String kubeadmConfig = "";
+        if (initWithConfig) {
+            kubeadmConfig = KubeadmConfigBuilder.build(getKubernetesClusterVersion().getSemanticVersion(), controlNodeIp, serverIp, CLUSTER_API_PORT,
+                    getEtcdEndpointList(etcdIps), KubernetesClusterUtil.generateClusterToken(kubernetesCluster), tokenTtl,
+                    KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster), haSupported,
+                    apiServerArgs, auditPolicy != null, kubeletConfig);
+        }
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(kubeadmConfigKey, kubeadmConfig.replace("\n", "\n      "));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(auditPolicyFileKey, KubeadmConfigBuilder.auditPolicyWriteFile(auditPolicy));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(externalCniPlugin, String.valueOf(externalCni));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(setupCsiDriver, String.valueOf(setupCsi));
 
@@ -337,6 +345,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         final String installWaitTime = "{{ k8s.install.wait.time }}";
         final String installReattemptsCount = "{{ k8s.install.reattempts.count }}";
+        final String auditPolicyFileKey = "{{ k8s.audit.policy.file }}";
 
         final Long waitTime = KubernetesClusterService.KubernetesControlNodeInstallAttemptWait.value();
         final Long reattempts = KubernetesClusterService.KubernetesControlNodeInstallReattempts.value();
@@ -356,6 +365,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterHACertificateKey, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(auditPolicyFileKey, KubeadmConfigBuilder.auditPolicyWriteFile(getClusterDetail(ApiConstants.AUDIT_POLICY)));
         k8sControlNodeConfig = updateKubeConfigWithRegistryDetails(k8sControlNodeConfig);
 
         return k8sControlNodeConfig;
@@ -373,22 +383,18 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return clusterInfo.toString();
     }
 
-    /**
-     *
-     * @param ipAddresses list of etcd node guest IPs
-     * @return a formatted list of etcd endpoints adhering to YAML syntax
-     */
-    private String getEtcdEndpointList(List<Network.IpAddresses> ipAddresses) {
-        StringBuilder endpoints = new StringBuilder();
-        for (int i = 0; i < ipAddresses.size(); i++) {
-            endpoints.append(String.format("- http://%s:%s", ipAddresses.get(i).getIp4Address(), KubernetesClusterActionWorker.ETCD_NODE_CLIENT_REQUEST_PORT));
-            if (i < ipAddresses.size()-1) {
-                endpoints.append("\n          ");
-            }
+    private List<String> getEtcdEndpointList(List<Network.IpAddresses> ipAddresses) {
+        List<String> endpoints = new ArrayList<>();
+        for (Network.IpAddresses ipAddress : ipAddresses) {
+            endpoints.add(String.format("http://%s:%s", ipAddress.getIp4Address(), KubernetesClusterActionWorker.ETCD_NODE_CLIENT_REQUEST_PORT));
         }
-        return endpoints.toString();
+        return endpoints;
     }
 
+    private String getClusterDetail(String name) {
+        KubernetesClusterDetailsVO detail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), name);
+        return detail == null || StringUtils.isEmpty(detail.getValue()) ? null : detail.getValue();
+    }
 
     private List<String> getEtcdNodeHostnames() {
         List<String> hostnames = new ArrayList<>();

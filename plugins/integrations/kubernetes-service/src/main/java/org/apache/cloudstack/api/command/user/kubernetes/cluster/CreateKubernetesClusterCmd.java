@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
 import java.security.InvalidParameterException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -31,6 +32,7 @@ import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
+import com.cloud.kubernetes.cluster.utils.KubeadmConfigBuilder;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.NetworkOffering;
@@ -59,6 +61,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
@@ -224,6 +227,27 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, description="the AS Number of the network")
     private Long asNumber;
 
+    @Parameter(name = ApiConstants.API_SERVER_ARGS, type = CommandType.MAP,
+            description = "kube-apiserver arguments, without the leading dashes. Flags that point to a file on the node, other than the audit policy, are not supported. " +
+                    "Example: apiserverargs[0].key=oidc-issuer-url&apiserverargs[0].value=https://idp.example.com&" +
+                    "apiserverargs[1].key=oidc-client-id&apiserverargs[1].value=kubernetes",
+            since = "24.0.0")
+    private Map apiServerArgs;
+
+    @Parameter(name = ApiConstants.KUBELET_CONFIG, type = CommandType.STRING, length = KubeadmConfigBuilder.MAX_KUBELET_CONFIG_LENGTH,
+            description = "KubeletConfiguration fields as a JSON object, applied to every node of the cluster. " +
+                    "Example: {\"systemReserved\":{\"cpu\":\"500m\",\"memory\":\"1Gi\"},\"kubeReserved\":{\"cpu\":\"250m\",\"memory\":\"512Mi\"}}. " +
+                    "Note that evictionHard replaces all default thresholds, so list every signal you need",
+            since = "24.0.0")
+    private String kubeletConfig;
+
+    @Parameter(name = ApiConstants.AUDIT_POLICY, type = CommandType.STRING, length = KubeadmConfigBuilder.MAX_AUDIT_POLICY_LENGTH,
+            description = "kube-apiserver audit policy (YAML or JSON). Enables audit logging to /var/log/kubernetes/audit on the control nodes; " +
+                    "retention can be changed with the audit-log-max* apiserverargs. " +
+                    "The policy is part of the control node userdata, a large one may need a higher vm.userdata.max.length",
+            since = "24.0.0")
+    private String auditPolicy;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -387,6 +411,29 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     public Long getCniConfigId() {
         return cniConfigId;
+    }
+
+    public Map<String, String> getApiServerArgs() {
+        Map<String, String> args = new HashMap<>();
+        if (MapUtils.isNotEmpty(apiServerArgs)) {
+            for (Object arg : apiServerArgs.values()) {
+                Map<String, String> entry = (Map<String, String>) arg;
+                String name = entry.get(ApiConstants.KEY);
+                if (args.containsKey(name)) {
+                    throw new InvalidParameterValueException(String.format("kube-apiserver argument %s is given more than once", name));
+                }
+                args.put(name, entry.get(ApiConstants.VALUE));
+            }
+        }
+        return args;
+    }
+
+    public String getKubeletConfig() {
+        return kubeletConfig;
+    }
+
+    public String getAuditPolicy() {
+        return auditPolicy;
     }
 
     public boolean getEnableCsi() {
