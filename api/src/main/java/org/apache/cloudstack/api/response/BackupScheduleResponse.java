@@ -60,13 +60,37 @@ public class BackupScheduleResponse extends BaseResponse {
     @Param(description = ApiConstants.PARAMETER_DESCRIPTION_ISOLATED_BACKUPS)
     private boolean isolated;
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
     @SerializedName(ApiConstants.QUIESCE_VM)
     @Param(description = "quiesce the instance before checkpointing the disks for backup")
     private Boolean quiesceVM;
+
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account that the backup schedule is associated with")
+    private String account;
+
+    @SerializedName(ApiConstants.ACCOUNT_ID)
+    @Param(description = "the ID of the account that the backup schedule is associated with")
+    private String accountId;
+
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the backup schedule")
+    private String projectName;
+
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project ID of the backup schedule")
+    private String projectId;
+
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain that the backup schedule is associated with")
+    private String domain;
+
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID that the backup schedule is associated with")
+    private String domainid;
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getVmName() {
         return vmName;
@@ -118,5 +142,61 @@ public class BackupScheduleResponse extends BaseResponse {
 
     public void setIsolated(boolean isolated) {
         this.isolated = isolated;
+    }
+
+    public boolean isIsolated() {
+        return isolated;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getAccount() {
+        return account;
+    }
+
+    public void setAccount(String account) {
+        this.account = account;
+    }
+
+    public String getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public String getDomainid() {
+        return domainid;
+    }
+
+    public void setDomainid(String domainid) {
+        this.domainid = domainid;
     }
 }
