@@ -509,6 +509,8 @@ public class QemuImg {
         }
 
         script.add("convert");
+        // report the progress, so that it can be followed in the Agent log (see QemuImgProgressLogger)
+        script.add("-p");
 
         if (destImageOpts != null) {
             // a destination described by image options always exists already; qemu-img requires -n with --target-image-opts
@@ -587,7 +589,7 @@ public class QemuImg {
             script.add(destFile.getFileName());
         }
 
-        final String result = script.execute();
+        final String result = script.execute(new QemuImgProgressLogger(String.format("qemu-img convert from [%s] to [%s]", srcFile.getFileName(), destFile.getFileName())));
         if (result != null) {
             throw new QemuImgException(result);
         }
