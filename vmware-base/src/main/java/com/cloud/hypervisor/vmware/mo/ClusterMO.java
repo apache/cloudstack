@@ -403,7 +403,7 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
 
     @Override
     public boolean createBlankVm(String vmName, String vmInternalCSName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB,
-                                 int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent, Pair<String, String> controllerInfo, Boolean systemVm) throws Exception {
+                                 int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent, Pair<DiskControllerType, DiskControllerType> controllerInfo, Boolean systemVm) throws Exception {
 
         if (logger.isTraceEnabled())
             logger.trace("vCenter API trace - createBlankVm(). target MOR: " + _mor.getValue() + ", vmName: " + vmName + ", cpuCount: " + cpuCount + ", cpuSpeedMhz: " +
@@ -755,5 +755,13 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
     public List<GuestOsDescriptor> getGuestOsDescriptors() throws Exception {
         VirtualMachineConfigOption vmConfigOption = _context.getService().queryConfigOption(getEnvironmentBrowser(), null, null);
         return vmConfigOption.getGuestOSDescriptor();
+    }
+
+    public int getDefaultHardwareVersion() throws Exception {
+        VirtualMachineConfigOption vmConfigOption = _context.getService().queryConfigOption(getEnvironmentBrowser(), null, null);
+        if (vmConfigOption.getHardwareOptions() == null) {
+            return -1;
+        }
+        return vmConfigOption.getHardwareOptions().getHwVersion();
     }
 }
