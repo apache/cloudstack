@@ -90,6 +90,22 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
             throw new PermissionDeniedException("Dynamic api checker is not enabled, aborting role operation");
         }
 
+        ProjectAccount projectAccount = checkProjectMembership(project);
+        if (projectAccount != null && ProjectAccount.Role.Admin != projectAccount.getAccountRole()) {
+            throw new PermissionDeniedException("User unauthorized to perform operation in the project");
+        }
+    }
+
+    private void checkReadAccess(Long projectId) {
+        Project project = validateProjectId(projectId);
+        checkProjectMembership(project);
+    }
+
+    /**
+     * Returns the caller's membership in the project, or null for a root admin or a domain admin
+     * whose domain hierarchy covers the project. Throws when the caller may not see the project.
+     */
+    private ProjectAccount checkProjectMembership(Project project) {
         User user = getCurrentUser();
         Account callerAcc = accountDao.findById(user.getAccountId());
 
@@ -98,26 +114,24 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
         }
 
         if (accountService.isRootAdmin(callerAcc.getId())) {
-            return;
+            return null;
         }
 
         if (accountService.isDomainAdmin(callerAcc.getAccountId())) {
             // A domain admin may only manage a project that belongs to their own domain hierarchy,
             // not an arbitrary project elsewhere in the system.
             accountService.checkAccess(callerAcc, domainDao.findById(project.getDomainId()));
-            return;
+            return null;
         }
 
-        ProjectAccount projectAccount = projAccDao.findByProjectIdUserId(projectId, callerAcc.getAccountId(), user.getId());
+        ProjectAccount projectAccount = projAccDao.findByProjectIdUserId(project.getId(), callerAcc.getAccountId(), user.getId());
         if (projectAccount == null) {
-            projectAccount = projAccDao.findByProjectIdAccountId(projectId, callerAcc.getAccountId());
+            projectAccount = projAccDao.findByProjectIdAccountId(project.getId(), callerAcc.getAccountId());
             if (projectAccount == null) {
                 throw new PermissionDeniedException("User/Account not part of project");
             }
         }
-        if (ProjectAccount.Role.Admin != projectAccount.getAccountRole()) {
-            throw new PermissionDeniedException("User unauthorized to perform operation in the project");
-        }
+        return projectAccount;
     }
 
     @Override
@@ -164,7 +178,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
             return null;
         }
 
-        checkAccess(projectId);
+        checkReadAccess(projectId);
 
         ProjectRoleVO role = projRoleDao.findById(roleId);
         if (role == null) {
@@ -184,7 +198,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
             logger.warn("Invalid project ID provided");
             return null;
         }
-        checkAccess(projectId);
+        checkReadAccess(projectId);
         return ListUtils.toListOfInterface(projRoleDao.findAllRoles(projectId, keyword));
     }
 
@@ -241,7 +255,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
 
     @Override
     public List<ProjectRolePermission> findAllProjectRolePermissions(Long projectId, Long projectRoleId) {
-        checkAccess(projectId);
+        checkReadAccess(projectId);
         List<? extends ProjectRolePermission> permissions = projRolePermissionsDao.findAllByRoleIdSorted(projectRoleId, projectId);
         if (permissions != null) {
             return new ArrayList<>(permissions);
@@ -252,7 +266,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     @Override
     public List<ProjectRole> findProjectRolesByName(Long projectId, String roleName) {
         List<? extends ProjectRole> roles = null;
-        checkAccess(projectId);
+        checkReadAccess(projectId);
         if (StringUtils.isNotBlank(roleName)) {
             roles = projRoleDao.findByName(roleName, projectId);
         }

@@ -60,6 +60,7 @@ public class ProjectRoleManagerImplTest {
     private static final long CALLER_ACCOUNT_ID = 100L;
     private static final long CALLER_ROLE_ID = 5L;
     private static final long CALLER_USER_ID = 55L;
+    private static final long PROJECT_ROLE_ID = 1L;
 
     @Spy
     @InjectMocks
@@ -91,6 +92,8 @@ public class ProjectRoleManagerImplTest {
     @Mock
     private ProjectAccountVO projectAccountMock;
     @Mock
+    private ProjectRole projectRoleMock;
+    @Mock
     private ProjectRolePermission projectRolePermissionMock;
     @Mock
     private CreateProjectRolePermissionCmd createProjectRolePermissionCmdMock;
@@ -100,6 +103,7 @@ public class ProjectRoleManagerImplTest {
         Mockito.doReturn(true).when(projectRoleManagerImpl).isEnabled();
 
         Mockito.doReturn(projectMock).when(projectDaoMock).findById(PROJECT_ID);
+        Mockito.doReturn(PROJECT_ID).when(projectMock).getId();
         Mockito.doReturn(7L).when(projectMock).getDomainId();
         Mockito.doReturn(projectDomainMock).when(domainDaoMock).findById(7L);
 
@@ -156,10 +160,21 @@ public class ProjectRoleManagerImplTest {
     }
 
     @Test
-    public void projectAdminMemberIsAllowed() {
+    public void testProjectAdminMemberCanUpdateRolePermission() {
         Mockito.doReturn(projectAccountMock).when(projAccDaoMock)
                 .findByProjectIdUserId(PROJECT_ID, CALLER_ACCOUNT_ID, CALLER_USER_ID);
         Mockito.doReturn(ProjectAccount.Role.Admin).when(projectAccountMock).getAccountRole();
+        Mockito.doReturn(true).when(projRolePermissionsDaoMock).update(projectRoleMock, projectRolePermissionMock, RolePermissionEntity.Permission.DENY);
+
+        boolean result = projectRoleManagerImpl.updateProjectRolePermission(PROJECT_ID, projectRoleMock, projectRolePermissionMock, RolePermissionEntity.Permission.DENY);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testProjectMemberWithoutAdminRoleCanListRoles() {
+        Mockito.doReturn(projectAccountMock).when(projAccDaoMock)
+                .findByProjectIdUserId(PROJECT_ID, CALLER_ACCOUNT_ID, CALLER_USER_ID);
 
         List<ProjectRole> roles = listRoles();
 
@@ -167,12 +182,37 @@ public class ProjectRoleManagerImplTest {
     }
 
     @Test(expected = PermissionDeniedException.class)
-    public void projectMemberWithoutAdminRoleIsDenied() {
+    public void testProjectMemberWithoutAdminRoleIsDeniedRoleUpdate() {
         Mockito.doReturn(projectAccountMock).when(projAccDaoMock)
                 .findByProjectIdUserId(PROJECT_ID, CALLER_ACCOUNT_ID, CALLER_USER_ID);
         Mockito.doReturn(ProjectAccount.Role.Regular).when(projectAccountMock).getAccountRole();
 
-        listRoles();
+        projectRoleManagerImpl.updateProjectRolePermission(PROJECT_ID, projectRoleMock, projectRolePermissionMock, RolePermissionEntity.Permission.DENY);
+    }
+
+    @Test
+    public void testProjectMemberResolvesOwnProjectRole() {
+        Mockito.doReturn(projectAccountMock).when(projAccDaoMock)
+                .findByProjectIdUserId(PROJECT_ID, CALLER_ACCOUNT_ID, CALLER_USER_ID);
+        ProjectRoleVO memberRole = new ProjectRoleVO("member", "custom role", PROJECT_ID);
+        Mockito.doReturn(memberRole).when(projRoleDaoMock).findById(PROJECT_ROLE_ID);
+
+        ProjectRole role = projectRoleManagerImpl.findProjectRole(PROJECT_ROLE_ID, PROJECT_ID);
+
+        Assert.assertSame(memberRole, role);
+    }
+
+    @Test
+    public void testAccountLevelProjectMemberCanListRolePermissions() {
+        Mockito.doReturn(null).when(projAccDaoMock)
+                .findByProjectIdUserId(PROJECT_ID, CALLER_ACCOUNT_ID, CALLER_USER_ID);
+        Mockito.doReturn(projectAccountMock).when(projAccDaoMock).findByProjectIdAccountId(PROJECT_ID, CALLER_ACCOUNT_ID);
+        Mockito.doReturn(Collections.singletonList(new ProjectRolePermissionVO(PROJECT_ID, PROJECT_ROLE_ID, "rule", RolePermissionEntity.Permission.ALLOW, "desc")))
+                .when(projRolePermissionsDaoMock).findAllByRoleIdSorted(PROJECT_ROLE_ID, PROJECT_ID);
+
+        List<ProjectRolePermission> permissions = projectRoleManagerImpl.findAllProjectRolePermissions(PROJECT_ID, PROJECT_ROLE_ID);
+
+        Assert.assertEquals(1, permissions.size());
     }
 
     @Test(expected = PermissionDeniedException.class)
@@ -185,10 +225,21 @@ public class ProjectRoleManagerImplTest {
     }
 
     @Test(expected = PermissionDeniedException.class)
-    public void dynamicApiCheckerDisabledDeniesEveryone() {
+    public void testDynamicApiCheckerDisabledDeniesRoleUpdate() {
         Mockito.doReturn(false).when(projectRoleManagerImpl).isEnabled();
 
-        listRoles();
+        projectRoleManagerImpl.updateProjectRolePermission(PROJECT_ID, projectRoleMock, projectRolePermissionMock, RolePermissionEntity.Permission.DENY);
+    }
+
+    @Test
+    public void testRoleLookupDoesNotDependOnDynamicApiChecker() {
+        Mockito.doReturn(projectAccountMock).when(projAccDaoMock)
+                .findByProjectIdUserId(PROJECT_ID, CALLER_ACCOUNT_ID, CALLER_USER_ID);
+
+        List<ProjectRole> roles = listRoles();
+
+        Assert.assertEquals(1, roles.size());
+        Mockito.verify(projectRoleManagerImpl, Mockito.never()).isEnabled();
     }
 
     @Test
