@@ -1075,6 +1075,23 @@ public class TemplateManagerImplTest extends TestCase {
         Assert.assertTrue(templateManager.templateIsDeleteable(42L));
     }
 
+    @Test
+    public void isVmHonouringDiskControllerFollowsTheVmOfTheVolume() {
+        Assert.assertFalse(templateManager.isVmHonouringDiskController(null));
+
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getInstanceId()).thenReturn(5L);
+        Assert.assertFalse(templateManager.isVmHonouringDiskController(volume));
+
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(_userVmDao.findById(5L)).thenReturn(vm);
+        Mockito.when(vm.getDetails()).thenReturn(java.util.Map.of(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER, "true"));
+        Assert.assertTrue(templateManager.isVmHonouringDiskController(volume));
+
+        Mockito.when(vm.getDetails()).thenReturn(java.util.Map.of(VmDetailConstants.ROOT_DISK_CONTROLLER, "virtio"));
+        Assert.assertFalse(templateManager.isVmHonouringDiskController(volume));
+    }
+
 
     @Configuration
     @ComponentScan(basePackageClasses = {TemplateManagerImpl.class},

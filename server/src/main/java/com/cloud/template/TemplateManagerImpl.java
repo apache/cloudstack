@@ -2197,6 +2197,22 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
+    /**
+     * Whether the VM that owns a volume has the {@link VmDetailConstants#KVM_HONOUR_DISK_CONTROLLER} detail set to true,
+     * that is, its disks boot from the buses its disk controller details name.
+     */
+    protected boolean isVmHonouringDiskController(Volume volume) {
+        if (volume == null || volume.getInstanceId() == null) {
+            return false;
+        }
+        UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
+        if (userVm == null) {
+            return false;
+        }
+        _userVmDao.loadDetails(userVm);
+        return userVm.getDetails() != null && Boolean.parseBoolean(userVm.getDetails().get(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER));
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "Creating Template", create = true)
     public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd, Account templateOwner) throws ResourceAllocationException {
@@ -2407,6 +2423,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                             details.putAll(vmDetails);
                         }
                     }
+                }
+                // The disk of the template comes from the VM: honour its disk controller details only when the VM does
+                if (!isVmHonouringDiskController(volume)) {
+                    details.remove(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER);
                 }
                 if (cmd.getDetails() != null) {
                     details.remove(VmDetailConstants.ENCRYPTED_PASSWORD); // new password will be generated during vm deployment from password enabled template

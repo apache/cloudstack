@@ -57,6 +57,14 @@ public interface VmDetailConstants {
 
     // KVM specific, disk controllers
     String KVM_SKIP_FORCE_DISK_CONTROLLER = "skip.force.disk.controller";
+    /**
+     * "true" when the disks of a KVM VM boot from the buses its rootDiskController and dataDiskController details name.
+     * The KVM agent uses those details on every storage pool type only for VMs with it. The management server sets it
+     * (hidden) on the KVM VMs it creates or imports with an explicit disk controller, from the version that introduced
+     * it, and on the KVM templates it registers. Older VMs keep the disk buses they boot from, because Windows only
+     * keeps the storage driver it booted from ready for boot.
+     */
+    String KVM_HONOUR_DISK_CONTROLLER = "honour.disk.controller";
 
     // KVM specific, configuring special features
     String KVM_HINT_DEDICATED = "kvm.hint.dedicated";

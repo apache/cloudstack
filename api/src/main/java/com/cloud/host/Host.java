@@ -54,6 +54,10 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
         }
     }
 
+    /**
+     * Reported by KVM agents that honour the {@link com.cloud.vm.VmDetailConstants#KVM_HONOUR_DISK_CONTROLLER} VM detail.
+     */
+    String HOST_HONOUR_DISK_CONTROLLER = "host.honour.disk.controller";
     String HOST_UEFI_ENABLE = "host.uefi.enable";
     String HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM = "host.kvm.diskonlyvmsnapshot.nvram";
     String HOST_VOLUME_ENCRYPTION = "host.volume.encryption";

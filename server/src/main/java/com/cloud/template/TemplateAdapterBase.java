@@ -263,6 +263,23 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         return true;
     }
 
+    /**
+     * VMs deployed from KVM templates registered or uploaded from this version on get their disk controller details
+     * honoured: such a template gets the {@link VmDetailConstants#KVM_HONOUR_DISK_CONTROLLER} detail, unless it is given.
+     *
+     * @return a copy of the details with that detail for a KVM template (the given map may be read-only), else the
+     * given details
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    protected static Map addHonourDiskControllerDetail(boolean isIso, HypervisorType hypervisorType, Map details) {
+        if (isIso || !HypervisorType.KVM.equals(hypervisorType)) {
+            return details;
+        }
+        Map templateDetails = details != null ? new HashMap<String, String>(details) : new HashMap<String, String>();
+        templateDetails.putIfAbsent(VmDetailConstants.KVM_HONOUR_DISK_CONTROLLER, Boolean.TRUE.toString());
+        return templateDetails;
+    }
+
     @Override
     public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, CPU.CPUArch arch, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
                                    Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneId, HypervisorType hypervisorType, String accountName,
@@ -396,6 +413,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 }
             }
         }
+
+        details = addHonourDiskControllerDetail(isIso, hypervisorType, details);
 
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
         CallContext.current().setEventDetails("ID: " + id + " name: " + name);
