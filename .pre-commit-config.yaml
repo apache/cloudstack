@@ -219,6 +219,10 @@ repos:
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 12e63946db2c5cfcc9030fac21c3883ba88c6ed8 # frozen: 0.38.0
     hooks:
+      - id: check-citation-file-format
+        name: run check-citation-file-format
+        description: validate citation file format
+        files: ^CITATION\.cff$
       - id: check-dependabot
         name: validate dependabot config
         description: ensures the dependabot config file is valid
