@@ -177,7 +177,7 @@ public class AdaptiveDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycl
         try {
             PrimaryDataStoreParameters parameters = new PrimaryDataStoreParameters();
             parameters.setHost(uri.getHost());
-            parameters.setPort(uri.getPort());
+            parameters.setPort(portOrDefault(uri));
             parameters.setPath(uri.getPath() + "?" + uri.getQuery());
             parameters.setType(StoragePoolType.FiberChannel);
             parameters.setZoneId(zoneId);
@@ -401,5 +401,10 @@ public class AdaptiveDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycl
     public void disableStoragePool(DataStore store) {
         logger.info("Disabling storage pool {}", store);
         _dataStoreHelper.disable(store);
+    }
+
+    // A URL without a port gives -1, which the storage_pool table cannot hold
+    static int portOrDefault(URL uri) {
+        return uri.getPort() > 0 ? uri.getPort() : uri.getDefaultPort();
     }
 }
