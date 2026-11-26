@@ -23,11 +23,14 @@ import com.cloud.agent.resource.virtualnetwork.ScriptConfigItem;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 
 import org.apache.cloudstack.network.BgpPeerTO;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class SetBgpPeersConfigItemTest {
@@ -52,5 +55,23 @@ public class SetBgpPeersConfigItemTest {
         Assert.assertEquals(VRScripts.CONFIG_PERSIST_LOCATION, ((FileConfigItem) configItems.get(0)).getFilePath());
         Assert.assertTrue((((FileConfigItem) configItems.get(0)).getFileName().startsWith(VRScripts.BGP_PEERS_CONFIG)));
         Assert.assertEquals(VRScripts.UPDATE_CONFIG, ((ScriptConfigItem) configItems.get(1)).getScript());
+    }
+
+    private JsonObject bgpPeersFile(int minHoldtime) {
+        List<BgpPeerTO> bgpPeerTOs = new ArrayList<>();
+        bgpPeerTOs.add(new BgpPeerTO(1L, "198.51.100.1", null, 65100L, null, 10L, 64600L, "192.0.2.0/24", null, new HashMap<>()));
+        SetBgpPeersCommand command = new SetBgpPeersCommand(bgpPeerTOs);
+        command.setMinHoldtime(minHoldtime);
+
+        List<ConfigItem> configItems = new SetBgpPeersConfigItem().generateConfig(command);
+        return JsonParser.parseString(((FileConfigItem) configItems.get(0)).getFileContents()).getAsJsonObject();
+    }
+
+    @Test
+    public void testSetBgpPeersConfigItemCarriesMinHoldtime() {
+        JsonObject file = bgpPeersFile(3);
+        Assert.assertEquals(3, file.get("min_holdtime").getAsInt());
+        Assert.assertEquals(1, file.getAsJsonArray("peers").size());
+        Assert.assertEquals(9, bgpPeersFile(9).get("min_holdtime").getAsInt());
     }
 }

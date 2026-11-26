@@ -23,4 +23,7 @@ def merge(dbag, peers):
         if 'peer_id' in peer:
             key = "{}-{}".format(peer['peer_id'], peer['network_id'])
             dbag[key] = peer
+    # The minimum hold time applies to every peer, so it sits beside them.
+    if peers.get('min_holdtime') is not None:
+        dbag['min_holdtime'] = peers['min_holdtime']
     return dbag
