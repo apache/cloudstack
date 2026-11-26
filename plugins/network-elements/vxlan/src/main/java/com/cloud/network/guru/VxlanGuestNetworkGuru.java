@@ -46,7 +46,6 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
-    public static final String NETWORK_GURU_NAME = "VxlanGuestNetworkGuru";
 
     public VxlanGuestNetworkGuru() {
         super();

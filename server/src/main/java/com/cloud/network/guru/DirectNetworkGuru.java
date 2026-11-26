@@ -108,8 +108,6 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     private static final TrafficType[] TrafficTypes = {TrafficType.Guest};
     protected IsolationMethod[] _isolationMethods;
 
-    public static final String NETWORK_GURU_NAME = "DirectNetworkGuru";
-
     @Override
     public boolean isMyTrafficType(TrafficType type) {
         for (TrafficType t : TrafficTypes) {

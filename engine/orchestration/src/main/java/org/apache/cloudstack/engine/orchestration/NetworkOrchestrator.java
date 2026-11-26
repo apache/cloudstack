@@ -41,9 +41,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.guru.DirectNetworkGuru;
-import com.cloud.network.guru.ExternalGuestNetworkGuru;
-import com.cloud.network.guru.VxlanGuestNetworkGuru;
 import com.cloud.network.vpc.VpcOfferingVO;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -2278,7 +2275,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             return;
         }
 
-        Integer multiqueueNumber = getGuestNetworkVrNicMultiqueueNumber(implementedNetwork.getTrafficType(), nics, nicProfile);
+        Network guestNetwork = networks.first();
+        NetworkOffering networkOffering = _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, guestNetwork.getNetworkOfferingId());
+        Integer multiqueueNumber = implementedNetwork.getTrafficType() == TrafficType.Public ? networkOffering.getPublicMultiqueueNumber() : networkOffering.getPrivateMultiqueueNumber();
         if (multiqueueNumber == null) {
             logger.info("Multiqueue for NIC [{}] will not be defined because it was not possible to identify its corresponding network " +
                     "offering or the corresponding multiqueue attribute has not been defined in the offering.", nicProfile.getUuid());
@@ -2286,28 +2285,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             logger.info("Setting [{}] as the multiqueue for NIC [{}].", multiqueueNumber, nicProfile.getUuid());
             nicProfile.setMultiqueueNumber(multiqueueNumber);
         }
-    }
-
-
-    private Integer getGuestNetworkVrNicMultiqueueNumber(TrafficType trafficType, List<NicVO> nics, NicProfile nicProfile) {
-        logger.debug("Fetching the network offering of the guest network associated with the VR with ID [{}].", nicProfile.getVirtualMachineId());
-        NetworkOffering networkOfferingOfVrIsolatedNetwork = nics.stream()
-                .filter(nic -> StringUtils.equalsAnyIgnoreCase(nic.getReserver(), ExternalGuestNetworkGuru.NETWORK_GURU_NAME, DirectNetworkGuru.NETWORK_GURU_NAME, VxlanGuestNetworkGuru.NETWORK_GURU_NAME))
-                .map(nic -> {
-                    NetworkVO network = _entityMgr.findById(NetworkVO.class, nic.getNetworkId());
-                    return network == null ? null : _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, network.getNetworkOfferingId());
-                }).filter(Objects::nonNull).findFirst().orElse(null);
-
-        if (networkOfferingOfVrIsolatedNetwork == null) {
-            logger.info("Unable to identify the multiqueue value for NIC [{}], as it was not possible to find its corresponding network offering.", nicProfile.getUuid());
-            return null;
-        }
-
-        if (trafficType == TrafficType.Public) {
-            return networkOfferingOfVrIsolatedNetwork.getPublicMultiqueueNumber();
-        }
-
-        return networkOfferingOfVrIsolatedNetwork.getPrivateMultiqueueNumber();
     }
 
     @Override
