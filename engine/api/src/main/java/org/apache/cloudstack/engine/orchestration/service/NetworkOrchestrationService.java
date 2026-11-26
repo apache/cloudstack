@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.engine.orchestration.service;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,12 +54,14 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.Pair;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
+import com.googlecode.ipv6.IPv6Network;
 
 /**
  * NetworkManager manages the network for the different end users.
@@ -140,6 +143,54 @@ public interface NetworkOrchestrationService {
 
     ConfigKey<Integer> VmNetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, "vm.network.throttling.rate", "200",
             "Default data transfer rate in megabits per second allowed in User vm's default network.", true, ConfigKey.Scope.Zone);
+
+    ConfigKey<String> NetworkUsageExemptCidrs = new ConfigKey<>(String.class, "network.usage.exempt.cidrs", "Usage", "",
+            "Comma-separated IPv4 or IPv6 addresses or CIDRs. Traffic between guest networks and these addresses doesn't count " +
+            "towards virtual router network usage. Virtual routers only count IPv4 traffic, so they ignore IPv6 entries. " +
+            "Routers pick up a change the next time they start or restart.",
+            true, ConfigKey.Scope.Zone, null, null, null, null, null, ConfigKey.Kind.CSV, null);
+
+    /**
+     * Tidies one entry of {@link #NetworkUsageExemptCidrs} into a CIDR, or returns null if it isn't a valid address or CIDR.
+     * For example, 192.0.2.5 becomes 192.0.2.5/32, 198.51.100.70/24 becomes 198.51.100.0/24 and 2001:db8::5 becomes
+     * 2001:db8::5/128. Callers refuse a /0 result, as it would exempt all traffic.
+     */
+    static String normaliseUsageExemptCidr(String entry) {
+        if (NetUtils.isValidIp4(entry)) {
+            entry = entry + "/32";
+        } else if (NetUtils.isValidIp6(entry)) {
+            entry = entry + "/128";
+        }
+        if (NetUtils.isValidIp4Cidr(entry)) {
+            return NetUtils.getCidrSubNet(entry) + "/" + NetUtils.getCidr(entry).second();
+        }
+        if (entry.contains(":") && NetUtils.isValidIp6Cidr(entry)) {
+            return IPv6Network.fromString(entry).toString();
+        }
+        return null;
+    }
+
+    /**
+     * Turns a {@link #NetworkUsageExemptCidrs} value into a tidy list with no repeats, using {@link #normaliseUsageExemptCidr}.
+     * Entries that aren't valid, and /0, are left out. Saving the setting already refuses them.
+     */
+    static List<String> parseUsageExemptCidrs(String value) {
+        final List<String> cidrs = new ArrayList<>();
+        if (value == null) {
+            return cidrs;
+        }
+        for (String entry : value.split(",")) {
+            entry = entry.trim();
+            if (entry.isEmpty()) {
+                continue;
+            }
+            final String cidr = normaliseUsageExemptCidr(entry);
+            if (cidr != null && !cidr.endsWith("/0") && !cidrs.contains(cidr)) {
+                cidrs.add(cidr);
+            }
+        }
+        return cidrs;
+    }
 
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;

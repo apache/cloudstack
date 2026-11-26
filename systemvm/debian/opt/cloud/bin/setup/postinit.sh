@@ -33,6 +33,8 @@ nftables="/etc/iptables/rules.nftables"
 if [ -e $nftables ]
 then
   nft -f $nftables
+  # The saved ruleset includes the IPv6 usage counts. Start them from zero, the same as the iptables ones.
+  nft reset counters table ip6 cloudstack_usage > /dev/null 2>&1
 fi
 
 ipv4="/etc/iptables/rules.v4"
