@@ -82,7 +82,7 @@ public class AddSwiftCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        Map<String, String> dm = new HashMap<String, String>();
+        Map<String, String> dm = new HashMap<>();
         dm.put(ApiConstants.ACCOUNT, getAccount());
         dm.put(ApiConstants.USERNAME, getUsername());
         dm.put(ApiConstants.KEY, getKey());

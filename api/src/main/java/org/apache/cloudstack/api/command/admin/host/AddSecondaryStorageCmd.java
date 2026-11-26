@@ -30,7 +30,6 @@ import com.cloud.storage.ImageStore;
 import com.cloud.user.Account;
 import org.apache.commons.collections.MapUtils;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,7 +48,7 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     protected Long zoneId;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].copytemplatesfromothersecondarystorages=true")
-    protected Map details;
+    protected Map<String, ? extends Map<String, String>> details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -66,12 +65,8 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     public Map<String, String> getDetails() {
         Map<String, String> detailsMap = new HashMap<>();
         if (MapUtils.isNotEmpty(details)) {
-            Collection<?> props = details.values();
-            for (Object prop : props) {
-                HashMap<String, String> detail = (HashMap<String, String>) prop;
-                for (Map.Entry<String, String> entry: detail.entrySet()) {
-                    detailsMap.put(entry.getKey(),entry.getValue());
-                }
+            for (Map<String, String> detail : details.values()) {
+                detailsMap.putAll(detail);
             }
         }
         return detailsMap;
