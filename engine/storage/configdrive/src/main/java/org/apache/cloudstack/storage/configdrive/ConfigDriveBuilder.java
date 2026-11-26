@@ -31,9 +31,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.cloud.network.Network;
 import com.cloud.vm.NicProfile;
@@ -505,33 +507,49 @@ public class ConfigDriveBuilder {
         return array;
     }
 
-    private static void buildOpenStackMetaData(JsonObject metaData, String dataType, String fileName, String content) {
+    protected static void buildOpenStackMetaData(JsonObject metaData, String dataType, String fileName, String content) {
         if (!NetworkModel.METATDATA_DIR.equals(dataType)) {
             return;
         }
         if (StringUtils.isEmpty(content)) {
             return;
         }
-        //keys are a special case in OpenStack format
         if (NetworkModel.PUBLIC_KEYS_FILE.equals(fileName)) {
-            String[] keyArray = content.replace("\\n", "").split(" ");
-            String keyName = "key";
-            if (keyArray.length > 3 && StringUtils.isNotEmpty(keyArray[2])) {
-                keyName = keyArray[2];
-            }
-
-            JsonObject keyLegacy = new JsonObject();
-            keyLegacy.addProperty("type", "ssh");
-            keyLegacy.addProperty("data", content.replace("\\n", ""));
-            keyLegacy.addProperty("name", keyName);
-            metaData.add("keys", arrayOf(keyLegacy));
-
-            JsonObject key = new JsonObject();
-            key.addProperty(keyName, content);
-            metaData.add("public_keys", key);
+            buildOpenStackPublicKeys(metaData, content);
         } else if (NetworkModel.openStackFileMapping.get(fileName) != null) {
             metaData.addProperty(NetworkModel.openStackFileMapping.get(fileName), content);
         }
+    }
+
+    /**
+     * Keys are a special case in the OpenStack format. The public-keys file holds one key per line,
+     * while OpenStack wants one entry per key, both in the legacy "keys" list and in the "public_keys"
+     * map; cloud-init treats every map value as a single key. A key is named after its comment when
+     * it has one that no earlier key used, otherwise "key" for a lone key and key0, key1, ... when
+     * there are several, skipping names already used by earlier keys.
+     */
+    private static void buildOpenStackPublicKeys(JsonObject metaData, String content) {
+        List<String> publicKeys = Arrays.stream(content.split("\\R")).map(String::trim).filter(StringUtils::isNotEmpty).collect(Collectors.toList());
+        JsonArray keys = new JsonArray();
+        JsonObject keyMap = new JsonObject();
+        for (int i = 0; i < publicKeys.size(); i++) {
+            String publicKey = publicKeys.get(i);
+            String[] parts = publicKey.split("\\s+", 3);
+            String name = parts.length == 3 && !keyMap.has(parts[2]) ? parts[2] : (publicKeys.size() == 1 ? "key" : "key" + i);
+            int nextKeyIndex = i;
+            while (keyMap.has(name)) {
+                name = "key" + ++nextKeyIndex;
+            }
+
+            JsonObject key = new JsonObject();
+            key.addProperty("type", "ssh");
+            key.addProperty("data", publicKey);
+            key.addProperty("name", name);
+            keys.add(key);
+            keyMap.addProperty(name, publicKey);
+        }
+        metaData.add("keys", keys);
+        metaData.add("public_keys", keyMap);
     }
 
 }
