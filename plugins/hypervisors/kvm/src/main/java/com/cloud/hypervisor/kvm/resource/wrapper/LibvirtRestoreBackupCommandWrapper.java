@@ -561,6 +561,19 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 }
             }
 
+            // import-diff resizes the image to the size recorded in each diff, which is the size the
+            // volume had when that backup was taken. The volume may have been grown since, and the
+            // database keeps the size it has now, so bring the image back to the size it was
+            // recreated with.
+            Long restoredSize = rbdImageSize(connection, image);
+            if (!imageSize.equals(restoredSize)) {
+                logger.debug("Resizing RBD image {} from {} to {} bytes after applying the backup diff(s)", image, restoredSize, imageSize);
+                if (Script.executeCommandForExitValue(rbdCommand(connection, "resize", image, "--size", imageSize + "B", "--allow-shrink")) != 0) {
+                    logger.error("Failed to resize RBD image {} to {} bytes after applying the backup diff(s)", image, imageSize);
+                    return false;
+                }
+            }
+
             // The snapshots import-diff recreated only existed to chain the diffs together; the
             // restored volume should look like any other, so drop them.
             if (Script.executeCommandForExitValue(rbdCommand(connection, "snap", "purge", image)) != 0) {
