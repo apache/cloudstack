@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.storage.feign.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -48,6 +49,11 @@ public class Cluster {
     @JsonProperty("disaggregated")
     private Boolean disaggregated = null;
 
+    @JsonIgnore
+    private String model;
+
+    @JsonIgnore
+    private String platformType;
 
     public String getHealth() {
         return health;
@@ -102,6 +108,22 @@ public class Cluster {
     }
     public void setDisaggregated(Boolean disaggregated) {
         this.disaggregated = disaggregated;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    public String getPlatformType() {
+        return platformType;
+    }
+
+    public void setPlatformType(String platformType) {
+        this.platformType = platformType;
     }
 
     @Override
