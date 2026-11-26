@@ -34,6 +34,7 @@ import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.agent.routing.ManageServiceCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -466,7 +467,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                         }
                     }
                     String broadcastURI = publicNic.getBroadcastUri() != null ? publicNic.getBroadcastUri().toString() : null;
-                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, publicNic.getNetworkId(), broadcastURI, vpcOffering.getPublicMultiqueueNumber()),
+                    Integer publicMultiqueueNumber = NetworkOrchestrationService.getRouterNicMultiqueueNumber(vpcOffering.getPublicMultiqueueNumber());
+                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, publicNic.getNetworkId(), broadcastURI, publicMultiqueueNumber),
                             domainRouterVO.getInstanceName(), domainRouterVO.getType(), vmTO != null ? vmTO.getCpus() : null, details);
                     cmds.addCommand(plugNicCmd);
                     if (routedIpv4Manager.isRoutedVpc(vpc)) {
@@ -493,7 +495,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     final Nic guestNic = updateNicWithDeviceId(nicNtwk.first().getId(), deviceId);
                     deviceId ++;
                     // plug guest nic
-                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null, vpcOffering.getPrivateGatewayMultiqueueNumber()),
+                    Integer privateGatewayMultiqueueNumber = NetworkOrchestrationService.getRouterNicMultiqueueNumber(vpcOffering.getPrivateGatewayMultiqueueNumber());
+                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null, privateGatewayMultiqueueNumber),
                             domainRouterVO.getInstanceName(), domainRouterVO.getType(), vmTO != null ? vmTO.getCpus() : null, details);
                     cmds.addCommand(plugNicCmd);
                     // set private network
@@ -525,7 +528,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     deviceId ++;
                     // plug guest nic
                     NetworkOffering tierOffering = _entityMgr.findByIdIncludingRemoved(NetworkOffering.class, nicNtwk.second().getNetworkOfferingId());
-                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null, tierOffering.getPrivateMultiqueueNumber()),
+                    Integer tierMultiqueueNumber = NetworkOrchestrationService.getRouterNicMultiqueueNumber(tierOffering.getPrivateMultiqueueNumber());
+                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null, tierMultiqueueNumber),
                             domainRouterVO.getInstanceName(), domainRouterVO.getType(), vmTO != null ? vmTO.getCpus() : null, details);
                     cmds.addCommand(plugNicCmd);
                     // set guest network

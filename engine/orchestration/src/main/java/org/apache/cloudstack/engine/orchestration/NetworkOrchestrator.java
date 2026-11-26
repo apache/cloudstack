@@ -2277,10 +2277,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         Network guestNetwork = networks.first();
         NetworkOffering networkOffering = _entityMgr.findByIdIncludingRemoved(NetworkOfferingVO.class, guestNetwork.getNetworkOfferingId());
-        Integer multiqueueNumber = implementedNetwork.getTrafficType() == TrafficType.Public ? networkOffering.getPublicMultiqueueNumber() : networkOffering.getPrivateMultiqueueNumber();
+        Integer offeringMultiqueueNumber = implementedNetwork.getTrafficType() == TrafficType.Public ? networkOffering.getPublicMultiqueueNumber() : networkOffering.getPrivateMultiqueueNumber();
+        Integer multiqueueNumber = NetworkOrchestrationService.getRouterNicMultiqueueNumber(offeringMultiqueueNumber);
         if (multiqueueNumber == null) {
-            logger.info("Multiqueue for NIC [{}] will not be defined because it was not possible to identify its corresponding network " +
-                    "offering or the corresponding multiqueue attribute has not been defined in the offering.", nicProfile.getUuid());
+            logger.info("Multiqueue for NIC [{}] will not be defined because neither the network offering nor the [{}] configuration define it.",
+                    nicProfile.getUuid(), RouterNicMultiqueueNumber.key());
         } else {
             logger.info("Setting [{}] as the multiqueue for NIC [{}].", multiqueueNumber, nicProfile.getUuid());
             nicProfile.setMultiqueueNumber(multiqueueNumber);
@@ -4893,8 +4894,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 return null;
             }
 
-            logger.debug("Network [{}] is a VPC tier; therefore, the private multiqueue number [{}] defined in its corresponding offering will be used.", network.getUuid(), networkOffering.getPrivateMultiqueueNumber());
-            return networkOffering.getPrivateMultiqueueNumber();
+            logger.debug("Network [{}] is a VPC tier; therefore, the private multiqueue number [{}] defined in its corresponding offering will be used. " +
+                    "If it is not defined in the offering, the value of the [{}] setting will be used.", network.getUuid(), networkOffering.getPrivateMultiqueueNumber(), RouterNicMultiqueueNumber.key());
+            return NetworkOrchestrationService.getRouterNicMultiqueueNumber(networkOffering.getPrivateMultiqueueNumber());
         }
 
         DomainRouterVO router = routerDao.findById(vm.getId());
@@ -4916,14 +4918,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         if (_networkModel.isPrivateGateway(network.getId())) {
-            logger.debug("Network [{}] corresponds to a private gateway; therefore, the private gateway multiqueue number [{}] defined in the network's VPC offering will be used.",
-                    network.getUuid(), vpcOffering.getPrivateGatewayMultiqueueNumber());
-            return vpcOffering.getPrivateGatewayMultiqueueNumber();
+            logger.debug("Network [{}] corresponds to a private gateway; therefore, the private gateway multiqueue number [{}] defined in the network's VPC offering will be used. " +
+                    "If it is not defined in the offering, the value of the [{}] setting will be used.", network.getUuid(), vpcOffering.getPrivateGatewayMultiqueueNumber(), RouterNicMultiqueueNumber.key());
+            return NetworkOrchestrationService.getRouterNicMultiqueueNumber(vpcOffering.getPrivateGatewayMultiqueueNumber());
         }
 
-        logger.debug("Network [{}] corresponds to a public network; therefore, the public multiqueue number [{}] defined in the network's VPC offering will be used.",
-                network.getUuid(), vpcOffering.getPublicMultiqueueNumber());
-        return vpcOffering.getPublicMultiqueueNumber();
+        logger.debug("Network [{}] corresponds to a public network; therefore, the public multiqueue number [{}] defined in the network's VPC offering will be used. " +
+                "If it is not defined in the offering, the value of the [{}] setting will be used.", network.getUuid(), vpcOffering.getPublicMultiqueueNumber(), RouterNicMultiqueueNumber.key());
+        return NetworkOrchestrationService.getRouterNicMultiqueueNumber(vpcOffering.getPublicMultiqueueNumber());
     }
 
     @Override
@@ -5376,6 +5378,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 GuestDomainSuffix, NetworkThrottlingRate, VmNetworkThrottlingRate, MinVRVersion, DhcpLeaseTimeout,
                 PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RollingRestartEnabled,
                 TUNGSTEN_ENABLED, NSX_ENABLED, NETRIS_ENABLED, NETWORK_LB_HAPROXY_MAX_CONN,
-                NETWORK_LB_HAPROXY_IDLE_TIMEOUT, MultiNetworkNicEnabled};
+                NETWORK_LB_HAPROXY_IDLE_TIMEOUT, MultiNetworkNicEnabled, RouterNicMultiqueueNumber};
     }
 }

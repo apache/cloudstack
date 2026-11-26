@@ -1607,6 +1607,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException(errMsg);
                 }
             }
+        } else if (name.equals(NetworkOrchestrationService.RouterNicMultiqueueNumber.key())) {
+            validateRouterNicMultiqueueNumberConfigValue(value);
+        }
+    }
+
+    protected void validateRouterNicMultiqueueNumberConfigValue(String value) {
+        int multiqueueNumber;
+        try {
+            multiqueueNumber = Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return;
+        }
+
+        String name = NetworkOrchestrationService.RouterNicMultiqueueNumber.key();
+        if (multiqueueNumber <= 0 && multiqueueNumber != -1) {
+            throw new InvalidParameterValueException(String.format("The only non-positive value accepted by the configuration [%s] is [-1].", name));
+        }
+        if (multiqueueNumber > 256) {
+            throw new InvalidParameterValueException(String.format("[%s] configuration cannot be greater than 256.", name));
         }
     }
 
