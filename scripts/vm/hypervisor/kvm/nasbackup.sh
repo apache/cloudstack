@@ -410,9 +410,10 @@ backup_rbd_vm() {
   # disk needs no pause: one snapshot is already a single point in time.
   if [[ $freeze_ok -eq 0 && "$vm_state" == "running" && ${#disks[@]} -gt 1 ]]; then
     echo "suspended" >> "$guest_state"
-    if timeout "$RBD_GUEST_TIMEOUT" virsh -c qemu:///system suspend "$VM" > /dev/null 2>&1; then
-      resume=1
-    else
+    # A suspend which timed out can still complete in libvirt after the client was killed, as a
+    # freeze can in the guest, so a resume is attempted whenever a suspend was.
+    resume=1
+    if ! timeout "$RBD_GUEST_TIMEOUT" virsh -c qemu:///system suspend "$VM" > /dev/null 2>&1; then
       log -ne "WARNING: unable to pause VM $VM, the disk snapshots will not be taken at the same instant"
     fi
   fi
@@ -433,9 +434,12 @@ backup_rbd_vm() {
   done
   rbd_cleanup_keyfile
 
-  # Resume before thawing: the guest agent does not answer while the VM is paused.
+  # Resume before thawing: the guest agent does not answer while the VM is paused. The resume
+  # fails on a VM which is not paused, as when the suspend never took effect: only a VM which is
+  # still paused afterwards is an error.
   if [[ $resume -eq 1 ]]; then
-    if ! timeout "$RBD_GUEST_TIMEOUT" virsh -c qemu:///system resume "$VM" > /dev/null 2>&1; then
+    if ! timeout "$RBD_GUEST_TIMEOUT" virsh -c qemu:///system resume "$VM" > /dev/null 2>&1 \
+        && [[ "$(timeout 20 virsh -c qemu:///system domstate "$VM" 2>/dev/null || true)" == "paused" ]]; then
       echo "Failed to resume vm $VM after taking the disk snapshots"
       rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
       cleanup
