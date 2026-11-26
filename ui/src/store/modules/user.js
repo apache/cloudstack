@@ -64,7 +64,10 @@ function setLoginCookies (result) {
 }
 
 function processLoginResponse (commit, response) {
-  const result = response.loginresponse || {}
+  const result = response?.loginresponse || {}
+  if (!result.sessionkey) {
+    throw new Error('Login response not valid.')
+  }
   setLoginCookies(result)
   vueProps.$localStorage.set(ACCESS_TOKEN, result.sessionkey, 24 * 60 * 60 * 1000)
   commit('SET_TOKEN', result.sessionkey)
