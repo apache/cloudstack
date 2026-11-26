@@ -109,7 +109,7 @@
             }"
             v-focus="true"
             :placeholder="apiParams.isolationmethods.description">
-            <a-select-option v-for="i in isolationMethods" :key="i" :value="i" :label="i">{{ i }}</a-select-option>
+            <a-select-option v-for="i in isolationMethods" :key="i" :value="i" :label="i" :title="isolationMethodDescription(i)">{{ i }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item name="vlan" ref="vlan">
@@ -200,10 +200,18 @@ export default {
   },
   computed: {
     isolationMethods () {
-      return ['VLAN', 'VXLAN', 'GRE', 'STT', 'BCF_SEGMENT', 'SSP', 'ODL', 'L3VPN', 'VCS', 'NSX', 'NETRIS']
+      return ['VLAN', 'VXLAN', 'ROUTED', 'GRE', 'STT', 'BCF_SEGMENT', 'SSP', 'ODL', 'L3VPN', 'VCS', 'NSX', 'NETRIS']
     }
   },
   methods: {
+    isolationMethodDescription (method) {
+      const keys = {
+        VLAN: 'message.isolationmethod.vlan.description',
+        VXLAN: 'message.isolationmethod.vxlan.description',
+        ROUTED: 'message.isolationmethod.routed.description'
+      }
+      return method in keys ? this.$t(keys[method]) : method
+    },
     fetchData () {
       this.fetchLoading = true
       getAPI('listPhysicalNetworks', { zoneid: this.resource.id }).then(json => {
