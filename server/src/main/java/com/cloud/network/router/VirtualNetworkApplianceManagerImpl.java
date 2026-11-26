@@ -1176,9 +1176,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
 
         String alertMessage = String.format("Health checks failed: %d failing checks on router %s / %s", failingChecks.size(), router.getName(), router.getUuid());
+        Pair<String, String> alert = buildHealthCheckAlert(router, failingChecks, alertMessage);
         _alertMgr.sendAlert(AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(),
-                alertMessage, alertMessage);
-        logger.warn(alertMessage + ". Checking failed health checks to see if router needs recreate");
+                alert.first(), alert.second());
+        logger.warn(alert.first() + ". Checking failed health checks to see if router needs recreate");
 
         String checkFailsToRecreateVr = RouterHealthChecksFailuresToRecreateVr.valueIn(router.getDataCenterId());
         StringBuilder failingChecksEvent = new StringBuilder();
@@ -1210,6 +1211,97 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             logger.warn("Health Check Alert: Found failing checks in " +
                     RouterHealthChecksFailuresToRecreateVrCK + ", attempting recreating router.");
             recreateRouter(router);
+        }
+    }
+
+    private static final int HEALTH_CHECK_ALERT_SUBJECT_MAX_LENGTH = 999;
+    private static final int HEALTH_CHECK_ALERT_DETAILS_MAX_LENGTH = 1000;
+    // Size of alert.content: a longer body would fail the insert and the alert would be lost.
+    private static final int HEALTH_CHECK_ALERT_BODY_MAX_LENGTH = 5000;
+
+    /**
+     * Builds the subject and body of a failing health checks alert. Besides the router it names the
+     * networks (or VPC) the router serves, its IP addresses, account, zone and host, and the details
+     * reported by each failing check, so the affected tenant and the cause can be seen from the alert
+     * alone. Falls back to the plain message if any of the lookups fails.
+     */
+    protected Pair<String, String> buildHealthCheckAlert(DomainRouterVO router, List<String> failingChecks, String fallback) {
+        try {
+            List<String> networkNames = new ArrayList<>();
+            StringBuilder nics = new StringBuilder();
+            for (NicVO nic : _nicDao.listByVmId(router.getId())) {
+                NetworkVO network = _networkDao.findById(nic.getNetworkId());
+                if (network == null) {
+                    continue;
+                }
+                String ip = StringUtils.firstNonBlank(nic.getIPv4Address(), nic.getIPv6Address(), "no IP");
+                String networkName = StringUtils.isNotBlank(network.getName()) ? network.getName() + " " : "";
+                nics.append(String.format("  %s network %s(%s): %s%n", network.getTrafficType(), networkName, network.getUuid(), ip));
+                if (network.getTrafficType() == TrafficType.Guest && StringUtils.isNotBlank(network.getName())) {
+                    networkNames.add(network.getName());
+                }
+            }
+            String vpcName = null;
+            if (router.getVpcId() != null) {
+                Vpc vpc = _vpcDao.findById(router.getVpcId());
+                if (vpc != null) {
+                    vpcName = vpc.getName();
+                }
+            }
+
+            Map<String, RouterHealthCheckResultVO> results = new HashMap<>();
+            for (RouterHealthCheckResultVO result : routerHealthCheckResultDao.getHealthCheckResults(router.getId())) {
+                results.put(result.getCheckName(), result);
+            }
+
+            String target = vpcName != null ? "VPC " + vpcName : (networkNames.isEmpty() ? null : "network " + String.join(", ", networkNames));
+            StringBuilder subject = new StringBuilder("Health checks failed on router ").append(router.getName());
+            if (target != null || StringUtils.isNotBlank(router.getPublicIpAddress())) {
+                subject.append(" (");
+                if (target != null) {
+                    subject.append(target);
+                }
+                if (StringUtils.isNotBlank(router.getPublicIpAddress())) {
+                    subject.append(target != null ? ", " : "").append(router.getPublicIpAddress());
+                }
+                subject.append(")");
+            }
+            subject.append(": ").append(String.join(", ", failingChecks));
+
+            DataCenterVO zone = _dcDao.findById(router.getDataCenterId());
+            Account account = _accountMgr.getAccount(router.getAccountId());
+            HostVO host = router.getHostId() != null ? _hostDao.findById(router.getHostId()) : null;
+
+            StringBuilder body = new StringBuilder();
+            body.append(String.format("%d failing health check(s) on router %s (%s)%n%n", failingChecks.size(), router.getName(), router.getUuid()));
+            body.append(String.format("Zone: %s%n", zone != null ? zone.getName() : router.getDataCenterId()));
+            body.append(String.format("Account: %s%n", account != null ? account.getAccountName() : router.getAccountId()));
+            body.append(String.format("Host: %s%n", host != null ? host.getName() : "none"));
+            body.append(String.format("State: %s%n", router.getState()));
+            if (router.getIsRedundantRouter()) {
+                body.append(String.format("Redundant state: %s%n", router.getRedundantState()));
+            }
+            if (vpcName != null) {
+                body.append(String.format("VPC: %s%n", vpcName));
+            }
+            if (StringUtils.isNotBlank(router.getPublicIpAddress())) {
+                body.append(String.format("Public IP: %s%n", router.getPublicIpAddress()));
+            }
+            if (nics.length() > 0) {
+                body.append("Networks:").append(System.lineSeparator()).append(nics);
+            }
+            body.append(System.lineSeparator()).append("Failing checks:").append(System.lineSeparator());
+            for (String check : failingChecks) {
+                RouterHealthCheckResultVO result = results.get(check);
+                String details = result != null ? StringUtils.normalizeSpace(result.getParsedCheckDetails()) : null;
+                body.append(String.format("  %s: %s%n", check,
+                        StringUtils.isBlank(details) ? "no details reported" : StringUtils.abbreviate(details, HEALTH_CHECK_ALERT_DETAILS_MAX_LENGTH)));
+            }
+            return new Pair<>(StringUtils.abbreviate(subject.toString(), HEALTH_CHECK_ALERT_SUBJECT_MAX_LENGTH),
+                    StringUtils.abbreviate(body.toString(), HEALTH_CHECK_ALERT_BODY_MAX_LENGTH));
+        } catch (Exception e) {
+            logger.debug("Unable to add details to the health check alert for router {}", router, e);
+            return new Pair<>(fallback, fallback);
         }
     }
 
