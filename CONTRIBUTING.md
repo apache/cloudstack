@@ -70,12 +70,12 @@ Updating the PendingReleaseNotes file is preferably a part of the original Pull 
 
 ## AI-assisted contributions
 
-Contributions made with the help of AI tools are welcome and appreciated. Generating an issue or a pull request with AI is cheap for the submitter, though; reviewing, reproducing and fixing it is not cheap for the volunteers who maintain ACS.
+Contributions made with the help of AI tools are welcome and appreciated. Generating an issue or a pull request with AI is cheap for the submitter. However, reviewing, reproducing, fixing and testing it is not cheap for the volunteers who maintain ACS.
 
-If you use AI to submit an issue of any kind (bug report, improvement, feature idea, documentation report, security finding) or a pull request, you are expected to spend the extra tokens and include the work that makes it actionable:
+If you use AI to submit an issue of any kind (bug report, improvement, feature idea, documentation report, security finding) or a pull request, we kindly ask you to spend extra tokens and include the work that makes it actionable, including:
 
 - **Documentation**: a clear description of the problem or change, the affected versions and components, and, for new or changed behaviour, the documentation or PendingReleaseNotes text that goes with it.
-- **Tests**: a reproducer for bugs (steps, a unit test or a Marvin test) and unit and/or integration tests for proposed changes.
+- **Tests**: a reproducer for bugs (steps, a unit test or a Marvin/integration test) and unit and/or integration tests for proposed changes.
 - **Suggested code**: a proposed fix or implementation, preferably as a pull request against the right branch (see [Bug fixes](#bug-fixes) and [Developing new features](#developing-new-features)), or at least as a patch or code snippet in the issue.
 
 Review and verify AI output before you submit it. You are responsible for the accuracy of what you submit, and for making sure it compiles, passes the tests and actually addresses the issue. Please mention in the issue or pull request that AI tools were used.
