@@ -41,7 +41,7 @@ public interface UploadParams {
     boolean isBootable();
     String getTemplateTag();
     long getTemplateOwnerId();
-    Map getDetails();
+    Map<String, String> getDetails();
     boolean isSshKeyEnabled();
     String getImageStoreUuid();
     boolean isDynamicallyScalable();

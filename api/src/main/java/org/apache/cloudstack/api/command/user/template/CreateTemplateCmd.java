@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -123,7 +122,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     private String templateTag;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Template details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].hypervisortoolsversion=xenserver61")
-    protected Map details;
+    protected Map<Integer, Map<String, String>> details;
 
     @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE,
                type = CommandType.BOOLEAN,
@@ -214,14 +213,11 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
         return StringUtils.isBlank(templateTag) ? null : templateTag;
     }
 
-    public Map getDetails() {
+    public Map<String, String> getDetails() {
         if (details == null || details.isEmpty()) {
             return null;
         }
-
-        Collection paramsCollection = details.values();
-        Map params = (Map)(paramsCollection.toArray())[0];
-        return params;
+        return details.values().iterator().next();
     }
 
     public boolean isDynamicallyScalable() {

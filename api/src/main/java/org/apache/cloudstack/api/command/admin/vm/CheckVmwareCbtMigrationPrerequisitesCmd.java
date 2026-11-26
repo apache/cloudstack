@@ -113,7 +113,7 @@ public class CheckVmwareCbtMigrationPrerequisitesCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
             description = "optional service offering custom parameters and migration details")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     public Long getZoneId() {
         return zoneId;

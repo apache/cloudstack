@@ -41,7 +41,7 @@ public abstract class UploadParamsBase implements UploadParams {
     private boolean bootable;
     private String templateTag;
     private long templateOwnerId;
-    private Map details;
+    private Map<String, String> details;
     private boolean sshkeyEnabled;
     private boolean isDynamicallyScalable;
     private boolean isRoutingType;
@@ -56,7 +56,7 @@ public abstract class UploadParamsBase implements UploadParams {
                      boolean isExtractable, String format, Long guestOSId,
                      Long zoneId, Hypervisor.HypervisorType hypervisorType, String checksum,
                      String templateTag, long templateOwnerId,
-                     Map details, boolean sshkeyEnabled,
+                     Map<String, String> details, boolean sshkeyEnabled,
                      boolean isDynamicallyScalable, boolean isRoutingType, boolean deployAsIs,
                      boolean forCks, String templateType) {
         this.userId = userId;
@@ -195,7 +195,7 @@ public abstract class UploadParamsBase implements UploadParams {
     }
 
     @Override
-    public Map getDetails() {
+    public Map<String, String> getDetails() {
         return details;
     }
 

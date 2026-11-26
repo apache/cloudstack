@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -44,5 +47,23 @@ public class CreateTemplateCmdTest {
         String accountName = "user1";
         ReflectionTestUtils.setField(cmd, "accountName", accountName);
         Assert.assertEquals(accountName, cmd.getAccountName());
+    }
+
+    @Test
+    public void testGetDetailsEmpty() {
+        final CreateTemplateCmd cmd = new CreateTemplateCmd();
+        Assert.assertNull(cmd.getDetails());
+        ReflectionTestUtils.setField(cmd, "details", new HashMap<>());
+        Assert.assertNull(cmd.getDetails());
+    }
+
+    @Test
+    public void testGetDetailsReturnsFirstEntry() {
+        final CreateTemplateCmd cmd = new CreateTemplateCmd();
+        Map<String, String> entry = Map.of("hypervisortoolsversion", "xenserver61");
+        Map<Integer, Map<String, String>> details = new HashMap<>();
+        details.put(0, entry);
+        ReflectionTestUtils.setField(cmd, "details", details);
+        Assert.assertEquals(entry, cmd.getDetails());
     }
 }

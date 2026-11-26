@@ -108,7 +108,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
 
     @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "used to specify the parameters values for the variables in userdata.",
             since = "4.18.1")
-    private Map userDataDetails;
+    private Map<Integer, Map<String, String>> userDataDetails;
 
     @Parameter(name = ApiConstants.AUTOSCALE_USER_ID,
                type = CommandType.UUID,

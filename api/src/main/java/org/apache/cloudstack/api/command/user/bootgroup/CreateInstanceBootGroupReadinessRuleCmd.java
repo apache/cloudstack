@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.user.bootgroup;
 
-import java.util.Collection;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -75,7 +74,7 @@ public class CreateInstanceBootGroupReadinessRuleCmd extends BaseCmd implements 
     private Boolean enabled;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Rule-type-specific configuration, e.g. port/protocol, script, threshold_type/threshold_value")
-    private Map details;
+    private Map<Integer, Map<String, String>> details;
 
     public Long getBootGroupId() {
         return bootGroupId;
@@ -105,8 +104,7 @@ public class CreateInstanceBootGroupReadinessRuleCmd extends BaseCmd implements 
         if (this.details == null || this.details.isEmpty()) {
             return null;
         }
-        Collection<String> paramsCollection = this.details.values();
-        return (Map<String, String>) (paramsCollection.toArray())[0];
+        return this.details.values().iterator().next();
     }
 
     @Override

@@ -159,7 +159,7 @@ public class DeployVMCmd extends BaseDeployVMCmd {
         this.affinityGroupIdList = ids;
     }
 
-    public void setDetails(Map details) {
+    public void setDetails(Map<Integer, Map<String, String>> details) {
         this.details = details;
     }
 
