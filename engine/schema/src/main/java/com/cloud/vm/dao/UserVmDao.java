@@ -31,6 +31,8 @@ import com.cloud.vm.VirtualMachine.State;
 public interface UserVmDao extends GenericDao<UserVmVO, Long> {
     List<UserVmVO> listByAccountId(long id);
 
+    List<Long> listIdsByAccountOrDomainsAndState(Long accountId, List<Long> domainIds, State state);
+
     List<UserVmVO> listByAccountAndPod(long accountId, long podId);
 
     List<UserVmVO> listByAccountAndDataCenter(long accountId, long dcId);

@@ -86,6 +86,20 @@ public class VmStatsDaoImpl extends GenericDaoBase<VmStatsVO, Long> implements V
     }
 
     @Override
+    public VmStatsVO findLatestByVmId(long vmId) {
+        List<VmStatsVO> stats = listLatestByVmId(vmId, 1L);
+        return stats.isEmpty() ? null : stats.get(0);
+    }
+
+    @Override
+    public List<VmStatsVO> listLatestByVmId(long vmId, long limit) {
+        SearchCriteria<VmStatsVO> sc = vmIdSearch.create();
+        sc.setParameters("vmId", vmId);
+        Filter orderByFilter = new Filter(VmStatsVO.class, "timestamp", false, 0L, limit);
+        return search(sc, orderByFilter, null, false);
+    }
+
+    @Override
     public List<VmStatsVO> findByVmIdAndTimestampGreaterThanEqual(long vmId, Date time) {
         SearchCriteria<VmStatsVO> sc = vmIdTimestampGreaterThanEqualSearch.create();
         sc.setParameters("vmId", vmId);

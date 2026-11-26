@@ -115,6 +115,32 @@ public class VolumeDaoImplTest {
     }
 
     @Test
+    public void listUserVolumeIdsByAccountOrDomainsAndStateSkipsSystemVmVolumes() throws SQLException {
+        final String expectedSql = "SELECT vol.id FROM `cloud`.`volumes` vol "
+                + "LEFT JOIN `cloud`.`vm_instance` vm ON vm.id = vol.instance_id "
+                + "WHERE vol.removed IS NULL AND (vol.instance_id IS NULL OR vm.type = 'User')"
+                + " AND vol.domain_id IN (?,?) AND vol.state = ?";
+        when(TransactionLegacy.currentTxn()).thenReturn(transactionMock);
+        when(transactionMock.prepareAutoCloseStatement(expectedSql)).thenReturn(preparedStatementMock);
+        ResultSet rs = Mockito.mock(ResultSet.class);
+        when(rs.next()).thenReturn(true, false);
+        when(rs.getLong(1)).thenReturn(7L);
+        when(preparedStatementMock.executeQuery()).thenReturn(rs);
+
+        List<Long> ids = volumeDao.listUserVolumeIdsByAccountOrDomainsAndState(null, List.of(1L, 2L), Volume.State.Ready);
+
+        Assert.assertEquals(List.of(7L), ids);
+        verify(preparedStatementMock).setLong(1, 1L);
+        verify(preparedStatementMock).setLong(2, 2L);
+        verify(preparedStatementMock).setString(3, "Ready");
+    }
+
+    @Test
+    public void listUserVolumeIdsByAccountOrDomainsAndStateWithNoDomains() {
+        Assert.assertTrue(volumeDao.listUserVolumeIdsByAccountOrDomainsAndState(null, List.of(), Volume.State.Ready).isEmpty());
+    }
+
+    @Test
     public void findByInstanceAndNotState_queriesWithInstanceIdAndExcludedStates() {
         SearchBuilder<VolumeVO> sb = Mockito.mock(SearchBuilder.class);
         SearchCriteria<VolumeVO> sc = Mockito.mock(SearchCriteria.class);

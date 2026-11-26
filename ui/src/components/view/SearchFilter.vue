@@ -57,6 +57,7 @@
 <script>
 
 import { getAPI } from '@/api'
+import { resourceAlertLabel } from '@/views/resourcealert/resourceAlertOptions'
 
 export default {
   name: 'SearchFilter',
@@ -219,6 +220,9 @@ export default {
     }
   },
   methods: {
+    isResourceAlertsView () {
+      return this.$route.path.startsWith('/resourcealerts')
+    },
     getTrimmedText (text, length) {
       if (!text) {
         return ''
@@ -226,6 +230,9 @@ export default {
       return (text.length <= length) ? text : (text.substring(0, length - 3) + '...')
     },
     retrieveFieldLabel (fieldName) {
+      if (fieldName === 'resourceid' && this.isResourceAlertsView()) {
+        fieldName = 'resource'
+      }
       if (fieldName === 'groupid') {
         fieldName = 'group'
       }
@@ -254,6 +261,9 @@ export default {
     },
     getStaticFieldValue (key, value) {
       let formattedValue = ''
+      if (this.isResourceAlertsView() && ['resourcetype', 'metric', 'severity'].includes(key)) {
+        return resourceAlertLabel(key, value)
+      }
       if (key.includes('type')) {
         if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
           formattedValue = this.getGuestNetworkType(value)
@@ -300,7 +310,20 @@ export default {
     async getDynamicFieldValue (key, value) {
       let formattedValue = ''
 
-      if (typeof this.apiMap[key] === 'function') {
+      if (key === 'resourceid' && this.isResourceAlertsView()) {
+        // The rule's resource can be of any type, so look for it in each one
+        const sources = [
+          ['listVirtualMachines', 'listvirtualmachinesresponse', 'virtualmachine', 'displayname'],
+          ['listVolumes', 'listvolumesresponse', 'volume', 'name'],
+          ['listHosts', 'listhostsresponse', 'host', 'name'],
+          ['listStoragePools', 'liststoragepoolsresponse', 'storagepool', 'name']
+        ]
+        for (const [apiName, responseKey1, responseKey2, field] of sources) {
+          if (!(apiName in this.$store.getters.apis)) continue
+          formattedValue = await this.getResourceNameById(apiName, responseKey1, responseKey2, value, field)
+          if (formattedValue) break
+        }
+      } else if (typeof this.apiMap[key] === 'function') {
         formattedValue = await this.apiMap[key](value)
       } else if (this.apiMap[key]) {
         const apiName = this.apiMap[key].apiName

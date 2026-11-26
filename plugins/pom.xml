@@ -101,6 +101,7 @@
 
         <module>metrics</module>
 
+
         <module>network-elements/bigswitch</module>
         <module>network-elements/dns-notifier</module>
         <module>network-elements/elastic-loadbalancer</module>
