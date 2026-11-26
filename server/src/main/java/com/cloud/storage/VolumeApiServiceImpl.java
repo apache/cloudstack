@@ -3490,6 +3490,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     StoragePoolVO destinationStoragePoolVo = _storagePoolDao.findById(storagePoolId);
 
                     if (isSourceOrDestNotOnStorPool(srcStoragePoolVO, destinationStoragePoolVo)) {
+                        checkKvmLiveMigrationFromManagedPool(vol, srcStoragePoolVO, storagePoolId);
                         throw new InvalidParameterValueException("KVM does not support volume live migration due to the limited possibility to refresh VM XML domain. " +
                                 "Therefore, to live migrate a volume between storage pools, one must migrate the VM to a different host as well to force the VM XML domain update. " +
                                 "Use 'migrateVirtualMachineWithVolumes' instead.");
@@ -3676,6 +3677,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     "Volume migration is not allowed when the VM is in the %s state. Supported states are: %s.",
                     vm.getState(), suitableVmStatesForMigration
             ));
+        }
+    }
+
+    // migrateVirtualMachineWithVolumes refuses this too, so dont point the user there
+    protected void checkKvmLiveMigrationFromManagedPool(VolumeVO vol, StoragePoolVO srcPool, Long destPoolId) {
+        if (srcPool.isManaged() && destPoolId != null && srcPool.getId() != destPoolId) {
+            throw new InvalidParameterValueException(String.format("Volume %s is on managed storage pool %s. " +
+                    "Moving a volume off managed storage while its VM is running is not supported on KVM. " +
+                    "Detach the volume or stop the VM, then migrate it.", vol.getName(), srcPool.getName()));
         }
     }
 
