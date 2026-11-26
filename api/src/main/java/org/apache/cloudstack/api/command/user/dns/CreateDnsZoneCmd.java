@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DnsServerResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.dns.DnsZone;
 import org.apache.commons.lang3.StringUtils;
@@ -71,6 +72,16 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
                     "If false, creates the zone in the DNS provider and registers it in CloudStack. Default is false")
     private Boolean existing = false;
 
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING,
+            description = "(Root admin only) The optional account that will own the DNS zone. Must be used with domainid",
+            authorized = {RoleType.Admin})
+    private String accountName;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "(Root admin only) The optional domain of the account that will own the DNS zone",
+            authorized = {RoleType.Admin})
+    private Long domainId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -96,6 +107,14 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
 
     public String getDescription() {
         return description;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     /////////////////////////////////////////////////////
