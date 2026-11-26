@@ -34,7 +34,8 @@ public interface BGPService extends Configurable {
             "3",
             "The lowest BGP hold time, in seconds, that a virtual router accepts. "
                     + "It applies to every BGP peer on the router. "
-                    + "A session that negotiates a lower hold time, including 0, is refused.",
+                    + "A session that negotiates a lower hold time, including 0, is refused. "
+                    + "The value is 0, which turns the minimum off, or 3 to 65535.",
             true,
             ConfigKey.Scope.Account);
 

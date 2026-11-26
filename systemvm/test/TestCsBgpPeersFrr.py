@@ -103,8 +103,8 @@ class TestCsBgpPeersMinimumHoldtime(OperatorFrrTestCase):
         self.assertEqual([x for x in block if "minimum-holdtime" in x], [])
 
     def test_operator_only_vr_skips_minimum_holdtime_outside_frr_range(self):
-        # FRR rejects these values, so the router renders no line for them.
-        for value in (-1, 65536):
+        # BGP never negotiates hold time 1 or 2, and FRR rejects the others, so the router renders no line for them.
+        for value in (-1, 1, 2, 65536):
             block = self.router_block(self.run_operator(value))
             self.assertEqual([x for x in block if "minimum-holdtime" in x], [], value)
 

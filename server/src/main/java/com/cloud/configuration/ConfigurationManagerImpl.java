@@ -1532,8 +1532,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     return String.format("[%s] value should be between 0 and 255. 0 value will disable this feature.", name);
                 }
             }
-            if (BGPService.MinHoldtime.key().equalsIgnoreCase(name) && (val < 0 || val > 65535)) {
-                return String.format("[%s] value should be between 0 and 65535. 0 turns off the minimum.", name);
+            // BGP negotiates a hold time of 0 or 3 and up, so a minimum of 1 or 2 would act as 3.
+            if (BGPService.MinHoldtime.key().equalsIgnoreCase(name) && (val < 0 || val == 1 || val == 2 || val > 65535)) {
+                return String.format("[%s] value should be 0, or between 3 and 65535. 0 turns off the minimum.", name);
             }
             if (UnmanagedVMsManager.ThreadsOnMSToImportVMwareVMFiles.key().equalsIgnoreCase(name) ||
                     UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles.key().equalsIgnoreCase(name)) {

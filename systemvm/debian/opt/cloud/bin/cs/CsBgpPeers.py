@@ -106,8 +106,8 @@ class CsBgpPeers(CsDataBag):
         return
 
     def _minimum_holdtime(self):
-        # FRR accepts 1-65535 here. 0 turns off the minimum and renders no line.
-        # A value FRR would reject renders no line, so the rest of the file still applies.
+        # 0 turns off the minimum and renders no line. BGP negotiates a hold time of 0 or 3 and up,
+        # so only 3-65535 is rendered. Any other value renders no line, and the rest of the file still applies.
         if not self.min_holdtime:
             return None
         try:
@@ -117,8 +117,8 @@ class CsBgpPeers(CsDataBag):
             return None
         if value == 0:
             return None
-        if not 1 <= value <= 65535:
-            logging.error("Ignoring minimum hold time %s, which is outside 1-65535" % self.min_holdtime)
+        if not 3 <= value <= 65535:
+            logging.error("Ignoring minimum hold time %s, which is outside 3-65535" % self.min_holdtime)
             return None
         return value
 

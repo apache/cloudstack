@@ -871,7 +871,7 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void validateValueRangeTestRejectsBgpMinHoldtimeOutsideRange() {
-        for (String value : new String[] {"-1", "65536"}) {
+        for (String value : new String[] {"-1", "1", "2", "65536"}) {
             Assert.assertNotNull(configurationManagerImplSpy.validateValueRange(BGPService.MinHoldtime.key(), value, Integer.class, null));
         }
     }
