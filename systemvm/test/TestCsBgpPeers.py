@@ -163,6 +163,39 @@ class TestCsBgpPeers(unittest.TestCase):
         self.assertIn(" neighbor 100.64.0.1 password S3cr3t!", config)
         self.assertIn(" neighbor 100.64.0.1 ebgp-multihop 2", config)
 
+    def test_mask_passwords(self):
+        lines = [" neighbor 100.64.0.1 remote-as 64496",
+                 " neighbor 100.64.0.1 password S3cr3t!",
+                 " neighbor 2001:db8::1 password two words",
+                 " neighbor upstream password password"]
+        masked = self.csbgppeers._mask_passwords(lines)
+        self.assertEqual(masked, [" neighbor 100.64.0.1 remote-as 64496",
+                                  " neighbor 100.64.0.1 password ****",
+                                  " neighbor 2001:db8::1 password ****",
+                                  " neighbor upstream password ****"])
+
+    def test_mask_passwords_with_line_break(self):
+        masked = self.csbgppeers._mask_passwords([" neighbor 100.64.0.1 password abc\nfoo"])
+        self.assertEqual(masked, [" neighbor 100.64.0.1 password ****"])
+
+    @mock.patch('cs.CsBgpPeers.MASKED_COPY', "frr.conf.masked.test")
+    @mock.patch('cs.CsBgpPeers.CsHelper.get_hostname')
+    def test_write_masked_copy(self, mock_hostname):
+        mock_hostname.return_value = "r-1001-VM"
+        self.addCleanup(lambda: os.path.exists("frr.conf.masked.test") and os.remove("frr.conf.masked.test"))
+        self.csbgppeers._process_dbag_item(self._peer(ip4_address='100.64.0.1',
+                                                      guest_ip4_cidr='192.0.2.0/24',
+                                                      peer_password='S3cr3t!'))
+        self.csbgppeers._pre_set()
+        self.csbgppeers._process_peers()
+        self.csbgppeers._write_masked_copy()
+
+        with open("frr.conf.masked.test") as f:
+            masked = [line.rstrip('\n') for line in f]
+        self.assertNotIn("S3cr3t!", "\n".join(masked))
+        self.assertIn(" neighbor 100.64.0.1 password ****", masked)
+        self.assertEqual(len(masked), len(self.csbgppeers.frr_conf.new_config))
+
     def test_route_map_set(self):
         self.csbgppeers._route_map_set()
 

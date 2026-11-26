@@ -271,3 +271,7 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.disk_offering', 'error_policy', 'VAR
 
 -- Rename persisted FlashArray provider name (plugin getName() changed from 'Flash Array' to 'FlashArray')
 UPDATE `cloud`.`storage_pool` SET `storage_provider_name` = 'FlashArray' WHERE `storage_provider_name` = 'Flash Array';
+
+-- Collect the FRR log and the frr.conf copy with masked passwords in router diagnostics
+UPDATE `cloud`.`configuration` SET `value`=CONCAT(`value`, ',/var/log/frr/frr.log,/var/cache/cloud/frr.conf.masked')
+WHERE `name`='diagnostics.data.router.defaults' AND `value` IS NOT NULL;
