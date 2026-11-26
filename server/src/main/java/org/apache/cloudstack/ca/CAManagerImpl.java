@@ -325,6 +325,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
             provisionCertificateViaSsh(sshConnection, hostIp, host.getName(), caProvider);
 
             String sudoPrefix = "root".equals(username) ? "" : "sudo ";
+            reloadVncTlsCertificateOnRunningVmsViaSsh(sshConnection, sudoPrefix, hostIp);
             SSHCmdHelper.sshExecuteCmd(sshConnection, sudoPrefix + "systemctl restart libvirtd");
             SSHCmdHelper.sshExecuteCmd(sshConnection, sudoPrefix + "systemctl restart cloudstack-agent");
 
@@ -336,6 +337,31 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
             if (sshConnection != null) {
                 sshConnection.close();
             }
+        }
+    }
+
+    /**
+     * Live-reloads the VNC TLS certificate on running VMs that have VNC TLS enabled via SSH, since a
+     * libvirtd/cloudstack-agent restart alone does not affect VMs already running. Per-VM failures are tolerated and logged.
+     */
+    private void reloadVncTlsCertificateOnRunningVmsViaSsh(final Connection sshConnection, final String sudoPrefix, final String hostIp) {
+        final String cmd = sudoPrefix + "virsh -c qemu:///system list --name --state-running | while read -r vm; do " +
+                "[ -z \"$vm\" ] && continue; " +
+                "vnc_info=$(" + sudoPrefix + "virsh -c qemu:///system qemu-monitor-command \"$vm\" '{\"execute\":\"query-vnc\"}' 2>/dev/null | grep -o '\"auth\":\"[^\"]*' | cut -d'\"' -f4); " +
+                "if [[ \"$vnc_info\" == vencrypt+x509* ]]; then " +
+                "echo \"Reloading VNC TLS certificate for VM $vm (auth=$vnc_info)\"; " +
+                sudoPrefix + "virsh -c qemu:///system qemu-monitor-command \"$vm\" " +
+                "'{\"execute\":\"display-reload\",\"arguments\":{\"type\":\"vnc\",\"tls-certs\":true}}' >/dev/null 2>&1 " +
+                "&& echo \"Successfully reloaded VNC TLS certificate for VM $vm\" " +
+                "|| echo \"Failed to reload VNC TLS certificate for VM $vm\" >&2; " +
+                "else " +
+                "echo \"Skipping VNC TLS reload for VM $vm: VNC TLS is disabled (auth=$vnc_info)\"; " +
+                "fi; done";
+        final SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdWithResult(sshConnection, cmd);
+        if (!result.isSuccess()) {
+            logger.warn("Failed to reload VNC TLS certificate on running VMs via SSH on host: {}, error: {}", hostIp, result.getStdErr());
+        } else if (!result.getStdOut().isEmpty()) {
+            logger.info("VNC TLS certificate reload on running VMs via SSH on host {}: {}", hostIp, result.getStdOut());
         }
     }
 
