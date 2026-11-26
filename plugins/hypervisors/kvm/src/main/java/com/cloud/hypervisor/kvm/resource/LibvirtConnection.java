@@ -34,7 +34,6 @@ public class LibvirtConnection {
     protected static Logger LOGGER = LogManager.getLogger(LibvirtConnection.class);
     static private Map<String, Connect> s_connections = new HashMap<String, Connect>();
 
-    static private Connect s_connection;
     static private String s_hypervisorURI;
     static private Thread libvirtEventThread;
 
