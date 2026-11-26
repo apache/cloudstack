@@ -30,6 +30,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -50,8 +51,12 @@ import java.util.ArrayList;
 import org.joda.time.DateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class KVMHostActivityChecker extends AdapterBase implements ActivityCheckerInterface<Host>, HealthCheckerInterface<Host> {
+
+    private final Set<Long> hostsWaitingForClvmLease = ConcurrentHashMap.newKeySet();
 
     @Inject
     private ClusterDao clusterDao;
@@ -67,6 +72,8 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     private StorageManager storageManager;
     @Inject
     private ResourceManager resourceManager;
+    @Inject
+    private ClvmPoolManager clvmPoolManager;
 
     @Override
     public boolean isActive(Host r, DateTime suspectTime) throws HACheckerException {
@@ -110,22 +117,75 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
 
         Status hostStatusFromNeighbour = checkHostStatusWithNeighbourHosts(host);
         logger.debug("{} status reported from itself: {} and neighbor: {}", host.toString(), hostStatusFromItself, hostStatusFromNeighbour);
-        Status hostStatus = hostStatusFromItself;
-        if (hostStatusFromNeighbour == Status.Up && (hostStatusFromItself == Status.Disconnected || hostStatusFromItself == Status.Down)) {
-            hostStatus = Status.Disconnected;
-        }
-        if (hostStatusFromNeighbour == Status.Down && (hostStatusFromItself == Status.Disconnected || hostStatusFromItself == Status.Down)) {
-            hostStatus = Status.Down;
+        Status hostStatus = combineHostStatus(hostStatusFromItself, hostStatusFromNeighbour);
+        if (hostStatus == Status.Disconnected && hostStatusFromNeighbour == Status.Up && hasClvmVolumes(host)) {
+            hostStatus = waitOnceForClvmLeaseExpiry(host, hostStatusFromItself);
         }
 
         logger.debug("HA: HOST is ineligible legacy state {} for host {}", hostStatus, host);
         return hostStatus;
     }
 
+    private boolean hasClvmVolumes(Host host) {
+        return clvmPoolManager.hasClvmPool(host) && !clvmPoolManager.getClvmVolumesByPool(host).isEmpty();
+    }
+
+    private Status combineHostStatus(Status hostStatusFromItself, Status hostStatusFromNeighbour) {
+        boolean unreachableByItself = hostStatusFromItself == Status.Disconnected || hostStatusFromItself == Status.Down;
+        if (hostStatusFromNeighbour == Status.Up && unreachableByItself) {
+            return Status.Disconnected;
+        }
+        if (hostStatusFromNeighbour == Status.Down && unreachableByItself) {
+            return Status.Down;
+        }
+        return hostStatusFromItself;
+    }
+
+    /** Only one investigation per host waits; the host is investigated again every ping interval while it is still Up. */
+    private Status waitOnceForClvmLeaseExpiry(Host host, Status hostStatusFromItself) {
+        if (!hostsWaitingForClvmLease.add(host.getId())) {
+            return Status.Disconnected;
+        }
+        try {
+            return waitForClvmLeaseExpiry(host, hostStatusFromItself);
+        } finally {
+            hostsWaitingForClvmLease.remove(host.getId());
+        }
+    }
+
+    /** A host that is not Up is not investigated again once Alert, so wait here for its sanlock lease to expire. */
+    private Status waitForClvmLeaseExpiry(Host host, Status hostStatusFromItself) {
+        long intervalSeconds = ClvmPoolManager.ClvmLockRecoveryRetryInterval.value();
+        long checks = intervalSeconds > 0 ? ClvmPoolManager.ClvmLockRecoveryRetryTimeout.value() / intervalSeconds : 0;
+        for (long i = 0; i < checks; i++) {
+            if (!sleep(intervalSeconds * 1000)) {
+                break;
+            }
+            Status hostStatusFromNeighbour = checkHostStatusWithNeighbourHosts(host);
+            logger.debug("{} status reported by neighbor after waiting for its CLVM lease to expire: {}", host.toString(), hostStatusFromNeighbour);
+            if (hostStatusFromNeighbour != Status.Up) {
+                return combineHostStatus(hostStatusFromItself, hostStatusFromNeighbour);
+            }
+        }
+        return Status.Disconnected;
+    }
+
+    protected boolean sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+            return true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
     private Status checkHostStatusWithSameHost(Host host) {
         Status hostStatus;
         boolean reportFailureIfOneStorageIsDown = HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.value();
         final CheckOnHostCommand cmd = new CheckOnHostCommand(host, reportFailureIfOneStorageIsDown);
+        clvmPoolManager.addSanlockHostId(cmd.getHost(), host);
+        clvmPoolManager.addClvmVolumes(cmd.getHost(), host);
         try {
             logger.debug("Checking {} status...", host.toString());
             Answer answer = agentMgr.easySend(host.getId(), cmd);
@@ -153,6 +213,8 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         Status hostStatusFromNeighbour = Status.Unknown;
         boolean reportFailureIfOneStorageIsDown = HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.value();
         final CheckOnHostCommand cmd = new CheckOnHostCommand(host, reportFailureIfOneStorageIsDown);
+        clvmPoolManager.addSanlockHostId(cmd.getHost(), host);
+        clvmPoolManager.addClvmVolumes(cmd.getHost(), host);
         List<HostVO> neighbors = resourceManager.listHostsInClusterByStatus(host.getClusterId(), Status.Up);
         for (HostVO neighbor : neighbors) {
             if (neighbor.getId() == host.getId()
@@ -204,6 +266,9 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     protected boolean verifyActivityOfStorageOnHost(HashMap<StoragePool, List<Volume>> poolVolMap, StoragePool pool, Host host, DateTime suspectTime, boolean activityStatus) throws HACheckerException, IllegalStateException {
         List<Volume> volume_list = poolVolMap.get(pool);
         final CheckVMActivityOnStoragePoolCommand cmd = new CheckVMActivityOnStoragePoolCommand(host, pool, volume_list, suspectTime);
+        if (ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            clvmPoolManager.addSanlockHostId(cmd.getHost(), host);
+        }
 
         logger.debug("Checking VM activity for {} on storage pool [{}].", host.toString(), pool);
         try {

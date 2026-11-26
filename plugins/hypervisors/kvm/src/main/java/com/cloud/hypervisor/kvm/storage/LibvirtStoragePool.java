@@ -37,8 +37,10 @@ import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
+import com.cloud.hypervisor.kvm.storage.clvm.ClvmSanlockHaChecker;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.utils.RbdUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
@@ -384,6 +386,18 @@ public class LibvirtStoragePool implements KVMStoragePool {
         return scriptPath;
     }
 
+    private Boolean hasClvmHostLease(HostTO host) {
+        return ClvmSanlockHaChecker.isHostLeaseAlive(ClvmStorageAdaptor.getVgName(getLocalPath()), host.getSanlockHostId());
+    }
+
+    private Boolean hasClvmVolumeLeases(HAStoragePool pool, HostTO host) {
+        Map<String, List<String>> volumesByPool = host.getClvmVolumesByPool();
+        if (volumesByPool == null) {
+            return hasClvmHostLease(host);
+        }
+        return ClvmSanlockHaChecker.areHostVolumeLeasesAlive(ClvmStorageAdaptor.getVgName(getLocalPath()), host.getSanlockHostId(), volumesByPool.get(pool.getPoolUUID()));
+    }
+
     /**
      * Returns the environment of a heartbeat/VM-activity check script: for a RBD storage pool with cephx, the
      * Ceph key, which is not an argument of the script as it would be visible in the process list.
@@ -460,6 +474,9 @@ public class LibvirtStoragePool implements KVMStoragePool {
     }
 
     public String createHeartBeatCommand(HAStoragePool primaryStoragePool, String heartBeatHostId, boolean hostValidation) {
+        if (ClvmPoolManager.isClvmPoolType(type)) {
+            return null;
+        }
         Script cmd = new Script(primaryStoragePool.getPool().getHearthBeatPath(), HeartBeatUpdateTimeoutInMs, logger);
         addPoolConnectionArgs(cmd, primaryStoragePool);
 
@@ -534,6 +551,9 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public Boolean hasHeartBeat(HAStoragePool pool, HostTO host) {
+        if (ClvmPoolManager.isClvmPoolType(type)) {
+            return hasClvmVolumeLeases(pool, host);
+        }
         String heartBeatHostId = getHeartBeatHostId(host);
         Script cmd = new Script(getHearthBeatPath(), HeartBeatCheckerTimeoutInMs, logger);
         addPoolConnectionArgs(cmd, pool);
@@ -561,6 +581,9 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public Boolean hasVmActivity(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration) {
+        if (ClvmPoolManager.isClvmPoolType(type)) {
+            return hasClvmHostLease(host);
+        }
         String heartBeatHostId = getHeartBeatHostId(host);
         Script cmd = new Script(vmActivityCheckPath, activityScriptTimeout.getStandardSeconds(), logger);
         addPoolConnectionArgs(cmd, pool);

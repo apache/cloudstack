@@ -17,11 +17,13 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 
 import com.cloud.agent.api.to.HostTO;
+import com.cloud.storage.clvm.ClvmPoolManager;
 
 public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
     private List<HAStoragePool> storagePools;
@@ -57,21 +59,42 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
             return true;
         }
 
-        boolean heartBeatCheckResult = false;
-        for (HAStoragePool pool : storagePools) {
-            if (pool.getPool().hasHeartBeat(pool, host)) {
-                heartBeatCheckResult = true;
-            } else if (reportIfHeartBeatFailedForOneStoragePool) {
-                heartBeatCheckResult = false;
-                break;
-            }
-        }
+        boolean heartBeatCheckResult = doesAnyPoolHasHeartBeat();
 
         if (!heartBeatCheckResult) {
             logger.warn("All checks with KVMHAChecker for {} considered it as dead, which may trigger HA actions, such as fencing it and restarting its VMs on other hosts.", hostAndPools);
         }
 
         return heartBeatCheckResult;
+    }
+
+    /*
+     * With reportIfHeartBeatFailedForOneStoragePool the host is dead as soon as one pool has no heart beat,
+     * otherwise it is dead only when none of the pools has one.
+     */
+    private boolean doesAnyPoolHasHeartBeat() {
+        boolean anyPoolHasHeartBeat = false;
+        for (HAStoragePool pool : storagePools) {
+            if (isClvmPoolUnusedByHost(pool)) {
+                continue;
+            }
+            boolean poolHasHeartBeat = pool.getPool().hasHeartBeat(pool, host);
+            if (reportIfHeartBeatFailedForOneStoragePool && !poolHasHeartBeat) {
+                return false;
+            }
+            anyPoolHasHeartBeat = anyPoolHasHeartBeat || poolHasHeartBeat;
+        }
+        return anyPoolHasHeartBeat;
+    }
+
+    /** A CLVM pool without volumes of the host's VMs says nothing about the host. Without volume info from the sender, every pool votes. */
+    private boolean isClvmPoolUnusedByHost(HAStoragePool pool) {
+        Map<String, List<String>> clvmVolumesByPool = host.getClvmVolumesByPool();
+        if (clvmVolumesByPool == null || !ClvmPoolManager.isClvmPoolType(pool.getPool().getType())) {
+            return false;
+        }
+        List<String> volumePaths = clvmVolumesByPool.get(pool.getPoolUUID());
+        return volumePaths == null || volumePaths.isEmpty();
     }
 
     @Override

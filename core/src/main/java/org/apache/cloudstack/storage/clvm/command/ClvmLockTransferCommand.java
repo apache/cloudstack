@@ -46,7 +46,10 @@ public class ClvmLockTransferCommand extends Command {
         ACTIVATE_SHARED("-asy", "activate in shared mode"),
 
         /** Query the current lock state (lvs -o lv_attr,lv_host) */
-        QUERY_LOCK_STATE("query", "query lock state");
+        QUERY_LOCK_STATE("query", "query lock state"),
+
+        /** Read the sanlock lease of the volume, which names the lock holder from any host in the lockspace */
+        QUERY_LEASE_OWNER("query", "query lease owner");
 
         private final String lvchangeFlag;
         private final String description;

@@ -126,7 +126,7 @@ public class KVMStoragePoolManagerTest {
     public void testPoolWithoutHaSupportIsNotUnregisteredFromTheMonitor() {
         when(adaptor.deleteStoragePool(POOL_UUID, details)).thenReturn(true);
 
-        assertTrue(manager.deleteStoragePool(StoragePoolType.CLVM, POOL_UUID, details));
+        assertTrue(manager.deleteStoragePool(StoragePoolType.Iscsi, POOL_UUID, details));
 
         verify(monitor, never()).unregisterStoragePool(any());
         verify(adaptor, never()).deleteStoragePool(POOL_UUID);
@@ -196,7 +196,7 @@ public class KVMStoragePoolManagerTest {
         storagePools.put(POOL_UUID, new Object());
         when(adaptor.deleteStoragePool(POOL_UUID, details)).thenReturn(false);
 
-        assertFalse(manager.deleteStoragePool(StoragePoolType.CLVM, POOL_UUID, details));
+        assertFalse(manager.deleteStoragePool(StoragePoolType.Iscsi, POOL_UUID, details));
 
         assertFalse(storagePools.containsKey(POOL_UUID));
     }

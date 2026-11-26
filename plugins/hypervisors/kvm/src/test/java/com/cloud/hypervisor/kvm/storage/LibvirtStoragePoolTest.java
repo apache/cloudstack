@@ -118,14 +118,15 @@ public class LibvirtStoragePoolTest extends TestCase {
         StorageAdaptor adapter = Mockito.mock(LibvirtStorageAdaptor.class);
         StoragePool storage = Mockito.mock(StoragePool.class);
 
-        // NetworkFilesystem, SharedMountPoint and RBD all support the KVM Host-HA
+        // NetworkFilesystem, SharedMountPoint, RBD, CLVM and CLVM_NG all support the KVM Host-HA
         // heartbeat/VM-activity check mechanism.
         assertTrue(new LibvirtStoragePool(uuid, name, StoragePoolType.NetworkFilesystem, adapter, storage).isPoolSupportHA());
         assertTrue(new LibvirtStoragePool(uuid, name, StoragePoolType.SharedMountPoint, adapter, storage).isPoolSupportHA());
         assertTrue(new LibvirtStoragePool(uuid, name, StoragePoolType.RBD, adapter, storage).isPoolSupportHA());
+        assertTrue(new LibvirtStoragePool(uuid, name, StoragePoolType.CLVM, adapter, storage).isPoolSupportHA());
+        assertTrue(new LibvirtStoragePool(uuid, name, StoragePoolType.CLVM_NG, adapter, storage).isPoolSupportHA());
 
         // Other pool types have no HA support.
-        assertFalse(new LibvirtStoragePool(uuid, name, StoragePoolType.CLVM, adapter, storage).isPoolSupportHA());
         assertFalse(new LibvirtStoragePool(uuid, name, StoragePoolType.Filesystem, adapter, storage).isPoolSupportHA());
     }
 

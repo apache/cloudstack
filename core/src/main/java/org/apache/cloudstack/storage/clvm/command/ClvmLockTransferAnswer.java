@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.storage.clvm.command;
 
+import java.util.List;
+
 import com.cloud.agent.api.Answer;
 
 /**
@@ -25,7 +27,17 @@ import com.cloud.agent.api.Answer;
  */
 public class ClvmLockTransferAnswer extends Answer {
 
+    /** Mode in which the sanlock lease of a volume is held. */
+    public enum LeaseMode {
+        FREE, EXCLUSIVE, SHARED
+    }
+
     private String currentLockHostname;
+    private LeaseMode leaseMode;
+    private Long leaseOwnerId;
+    private boolean leaseOwnerAlive;
+    private boolean leaseOwnerRenewing;
+    private List<Long> sharedOwnerIds;
     private boolean isActive;
     private boolean isOpen;
     private String lvAttributes;
@@ -78,6 +90,46 @@ public class ClvmLockTransferAnswer extends Answer {
 
     public void setOpen(boolean open) {
         isOpen = open;
+    }
+
+    public static ClvmLockTransferAnswer leaseOwner(ClvmLockTransferCommand cmd, LeaseMode mode, Long ownerId,
+                                                    boolean ownerAlive, List<Long> sharedOwnerIds) {
+        return leaseOwner(cmd, mode, ownerId, ownerAlive, ownerAlive, sharedOwnerIds);
+    }
+
+    public static ClvmLockTransferAnswer leaseOwner(ClvmLockTransferCommand cmd, LeaseMode mode, Long ownerId,
+                                                    boolean ownerAlive, boolean ownerRenewing, List<Long> sharedOwnerIds) {
+        ClvmLockTransferAnswer answer = new ClvmLockTransferAnswer(cmd, true,
+                String.format("Lease %s, owner=%s, alive=%s, shared=%s", mode, ownerId, ownerAlive, sharedOwnerIds));
+        answer.leaseMode = mode;
+        answer.leaseOwnerId = ownerId;
+        answer.leaseOwnerAlive = ownerAlive;
+        answer.leaseOwnerRenewing = ownerRenewing;
+        answer.sharedOwnerIds = sharedOwnerIds;
+        return answer;
+    }
+
+    public LeaseMode getLeaseMode() {
+        return leaseMode;
+    }
+
+    /** sanlock host id of the exclusive holder, see {@link com.cloud.host.Host#HOST_SANLOCK_ID} */
+    public Long getLeaseOwnerId() {
+        return leaseOwnerId;
+    }
+
+    /** false when the exclusive holder stopped renewing its lockspace lease or was restarted since */
+    public boolean isLeaseOwnerAlive() {
+        return leaseOwnerAlive;
+    }
+
+    /** true while the exclusive holder still renews its lockspace lease, so its lease will not expire */
+    public boolean isLeaseOwnerRenewing() {
+        return leaseOwnerRenewing;
+    }
+
+    public List<Long> getSharedOwnerIds() {
+        return sharedOwnerIds;
     }
 
     public String getLvAttributes() {

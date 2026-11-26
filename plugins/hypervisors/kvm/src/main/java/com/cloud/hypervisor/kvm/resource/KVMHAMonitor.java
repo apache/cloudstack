@@ -18,7 +18,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
-import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang3.StringUtils;
 import org.libvirt.Connect;
@@ -34,6 +34,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class KVMHAMonitor extends KVMHABase implements Runnable {
+
+    private static final List<StoragePoolType> MOUNT_BASED_POOL_TYPES = List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint);
+    private static final List<StoragePoolType> LIBVIRT_CHECKED_POOL_TYPES = List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint, StoragePoolType.RBD);
 
     private final Map<String, HAStoragePool> haStoragePools = new ConcurrentHashMap<>();
     private final boolean rebootHostAndAlertManagementOnHeartbeatTimeout;
@@ -67,7 +70,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         synchronized (haStoragePools) {
             HAStoragePool pool = haStoragePools.get(uuid);
             if (pool != null) {
-                if (StringUtils.isNotEmpty(pool.getMountDestPath())) {
+                if (isMountBased(pool) && StringUtils.isNotEmpty(pool.getMountDestPath())) {
                     Script umount = new Script("umount", logger);
                     umount.add(pool.getMountDestPath());
                     umount.execute();
@@ -89,12 +92,20 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         }
     }
 
+    private boolean isMountBased(HAStoragePool pool) {
+        return MOUNT_BASED_POOL_TYPES.contains(pool.getPool().getType());
+    }
+
+    private boolean isCheckedForLibvirtPool(HAStoragePool pool) {
+        return LIBVIRT_CHECKED_POOL_TYPES.contains(pool.getPool().getType());
+    }
+
     protected void runHeartBeat() {
         synchronized (haStoragePools) {
             Set<String> removedPools = new HashSet<>();
             for (String uuid : haStoragePools.keySet()) {
                 HAStoragePool primaryStoragePool = haStoragePools.get(uuid);
-                if (HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(primaryStoragePool.getPool().getType())) {
+                if (isCheckedForLibvirtPool(primaryStoragePool)) {
                     checkForNotExistingLibvirtStoragePools(removedPools, uuid);
                     if (removedPools.contains(uuid)) {
                         continue;
