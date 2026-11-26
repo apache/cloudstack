@@ -31,6 +31,7 @@ public class AffinityProcessorBase extends AdapterBase implements AffinityGroupP
 
     public static final String AFFINITY_TYPE_HOST = "host affinity";
     public static final String AFFINITY_TYPE_HOST_ANTI = "host anti-affinity";
+    public static final String AFFINITY_TYPE_NON_STRICT_HOST_ANTI = "non-strict host anti-affinity";
 
     protected String _type;
 

@@ -143,6 +143,14 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "Start port for Port forwarding rules for etcd nodes",
             true,
             KubernetesServiceEnabled.key());
+    static final ConfigKey<Boolean> KubernetesClusterDefaultAntiAffinityEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
+            "cloud.kubernetes.cluster.default.anti.affinity.enabled",
+            "true",
+            "When creating a Kubernetes cluster, place the worker nodes, and the control and etcd nodes when there is more than one of them, " +
+                    "in a non-strict host anti-affinity group per node type so they prefer different hosts. Node types given affinity groups by the user are left alone",
+            true,
+            ConfigKey.Scope.Account,
+            KubernetesServiceEnabled.key());
 
     KubernetesCluster findById(final Long id);
 

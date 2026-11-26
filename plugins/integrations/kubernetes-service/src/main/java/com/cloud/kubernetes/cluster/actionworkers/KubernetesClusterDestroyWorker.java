@@ -376,6 +376,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
             updateKubernetesClusterEntryForGC();
             return false;
         }
+        manager.deleteDefaultAntiAffinityGroups(kubernetesCluster);
         if (logger.isInfoEnabled()) {
             logger.info("Kubernetes cluster: {} is successfully deleted", kubernetesCluster);
         }

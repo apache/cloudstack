@@ -46,11 +46,15 @@ import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.AffinityProcessorBase;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
@@ -117,6 +121,12 @@ public class KubernetesClusterManagerImplTest {
 
     @Mock
     private HostDao hostDao;
+
+    @Mock
+    private AffinityGroupService affinityGroupService;
+
+    @Mock
+    private AffinityGroupVMMapDao affinityGroupVMMapDao;
 
     @Spy
     @InjectMocks
@@ -914,4 +924,157 @@ public class KubernetesClusterManagerImplTest {
         Mockito.verify(kubernetesClusterAffinityGroupMapDao).listAffinityGroupIdsByClusterIdAndNodeType(1L, WORKER.name());
     }
 
+
+    private KubernetesClusterVO mockClusterForDefaultAntiAffinity() {
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.when(cluster.getUuid()).thenReturn("abc");
+        return cluster;
+    }
+
+    private Account mockOwnerForDefaultAntiAffinity() {
+        Account owner = Mockito.mock(Account.class);
+        Mockito.when(owner.getId()).thenReturn(5L);
+        return owner;
+    }
+
+    private void mockPersistedAffinityGroups() {
+        Mockito.when(affinityGroupService.isAffinityGroupProcessorAvailable(AffinityProcessorBase.AFFINITY_TYPE_NON_STRICT_HOST_ANTI)).thenReturn(true);
+        Mockito.when(affinityGroupDao.persist(Mockito.any(AffinityGroupVO.class))).thenAnswer(invocation -> {
+            AffinityGroupVO group = Mockito.spy((AffinityGroupVO) invocation.getArgument(0));
+            Mockito.doReturn(group.getName().endsWith("-control") ? 10L : 20L).when(group).getId();
+            return group;
+        });
+    }
+
+    @Test
+    public void addDefaultAntiAffinityGroupsCreatesNonStrictGroupPerNodeType() {
+        KubernetesClusterVO cluster = mockClusterForDefaultAntiAffinity();
+        Account owner = mockOwnerForDefaultAntiAffinity();
+        mockPersistedAffinityGroups();
+
+        Map<String, List<Long>> result = kubernetesClusterManager.addDefaultAntiAffinityGroups(cluster, owner,
+                Map.of(CONTROL.name(), 3L, WORKER.name(), 2L, ETCD.name(), 0L), new HashMap<>());
+
+        Assert.assertEquals(List.of(10L), result.get(CONTROL.name()));
+        Assert.assertEquals(List.of(20L), result.get(WORKER.name()));
+        Assert.assertFalse(result.containsKey(ETCD.name()));
+        Mockito.verify(affinityGroupDao).persist(Mockito.argThat((AffinityGroupVO g) ->
+                "cks-abc-control".equals(g.getName()) && AffinityProcessorBase.AFFINITY_TYPE_NON_STRICT_HOST_ANTI.equals(g.getType()) && g.getAccountId() == 5L));
+        Mockito.verify(affinityGroupDao).persist(Mockito.argThat((AffinityGroupVO g) -> "cks-abc-worker".equals(g.getName())));
+    }
+
+    @Test
+    public void addDefaultAntiAffinityGroupsKeepsUserGroups() {
+        KubernetesClusterVO cluster = mockClusterForDefaultAntiAffinity();
+        Account owner = mockOwnerForDefaultAntiAffinity();
+        mockPersistedAffinityGroups();
+        Map<String, List<Long>> userMap = new HashMap<>();
+        userMap.put(WORKER.name(), List.of(99L));
+
+        Map<String, List<Long>> result = kubernetesClusterManager.addDefaultAntiAffinityGroups(cluster, owner,
+                Map.of(CONTROL.name(), 3L, WORKER.name(), 2L, ETCD.name(), 0L), userMap);
+
+        Assert.assertEquals(List.of(99L), result.get(WORKER.name()));
+        Assert.assertEquals(List.of(10L), result.get(CONTROL.name()));
+        Mockito.verify(affinityGroupDao, Mockito.times(1)).persist(Mockito.any(AffinityGroupVO.class));
+    }
+
+    @Test
+    public void addDefaultAntiAffinityGroupsSkipsSingleControlAndEtcdNode() {
+        KubernetesClusterVO cluster = mockClusterForDefaultAntiAffinity();
+        Account owner = mockOwnerForDefaultAntiAffinity();
+        mockPersistedAffinityGroups();
+
+        Map<String, List<Long>> result = kubernetesClusterManager.addDefaultAntiAffinityGroups(cluster, owner,
+                Map.of(CONTROL.name(), 1L, WORKER.name(), 1L, ETCD.name(), 1L), null);
+
+        Assert.assertEquals(Map.of(WORKER.name(), List.of(20L)), result);
+    }
+
+    @Test
+    public void addDefaultAntiAffinityGroupsSkippedWhenProcessorUnavailable() {
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        Account owner = Mockito.mock(Account.class);
+        Mockito.when(affinityGroupService.isAffinityGroupProcessorAvailable(AffinityProcessorBase.AFFINITY_TYPE_NON_STRICT_HOST_ANTI)).thenReturn(false);
+
+        Map<String, List<Long>> result = kubernetesClusterManager.addDefaultAntiAffinityGroups(cluster, owner,
+                Map.of(CONTROL.name(), 1L, WORKER.name(), 1L, ETCD.name(), 0L), null);
+
+        Assert.assertTrue(result.isEmpty());
+        Mockito.verify(affinityGroupDao, Mockito.never()).persist(Mockito.any(AffinityGroupVO.class));
+    }
+
+    @Test
+    public void addDefaultAntiAffinityGroupsSkippedWhenDisabled() throws Exception {
+        overrideDefaultConfigValue(KubernetesClusterService.KubernetesClusterDefaultAntiAffinityEnabled, "_defaultValue", "false");
+        overrideDefaultConfigValue(KubernetesClusterService.KubernetesClusterDefaultAntiAffinityEnabled, "_value", null);
+        try {
+            Map<String, List<Long>> result = kubernetesClusterManager.addDefaultAntiAffinityGroups(
+                    Mockito.mock(KubernetesClusterVO.class), Mockito.mock(Account.class),
+                    Map.of(CONTROL.name(), 1L, WORKER.name(), 1L, ETCD.name(), 0L), null);
+            Assert.assertTrue(result.isEmpty());
+            Mockito.verifyNoInteractions(affinityGroupService);
+        } finally {
+            overrideDefaultConfigValue(KubernetesClusterService.KubernetesClusterDefaultAntiAffinityEnabled, "_defaultValue", "true");
+            overrideDefaultConfigValue(KubernetesClusterService.KubernetesClusterDefaultAntiAffinityEnabled, "_value", null);
+        }
+    }
+
+    @Test
+    public void deleteDefaultAntiAffinityGroupsDeletesOnlyCksGroups() {
+        KubernetesClusterVO cluster = mockClusterForDefaultAntiAffinity();
+        Mockito.when(cluster.getAccountId()).thenReturn(5L);
+        AffinityGroupVO control = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(control.getId()).thenReturn(10L);
+        Mockito.when(control.getType()).thenReturn(AffinityProcessorBase.AFFINITY_TYPE_NON_STRICT_HOST_ANTI);
+        AffinityGroupVO worker = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(worker.getType()).thenReturn("host affinity");
+        Mockito.when(affinityGroupDao.findByAccountAndNames(5L, "cks-abc-worker", "cks-abc-control", "cks-abc-etcd"))
+                .thenReturn(List.of(control, worker));
+        Mockito.when(affinityGroupVMMapDao.listVmIdsByAffinityGroup(10L)).thenReturn(List.of(7L, 8L));
+        VMInstanceVO destroyedVm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(destroyedVm.getState()).thenReturn(VirtualMachine.State.Destroyed);
+        Mockito.when(vmInstanceDao.findById(8L)).thenReturn(destroyedVm);
+
+        kubernetesClusterManager.deleteDefaultAntiAffinityGroups(cluster);
+
+        Mockito.verify(affinityGroupService).deleteAffinityGroup(10L, null, null, null, null);
+        Mockito.verifyNoMoreInteractions(affinityGroupService);
+    }
+
+    @Test
+    public void deleteDefaultAntiAffinityGroupsKeepsGroupWithLiveVms() {
+        KubernetesClusterVO cluster = mockClusterForDefaultAntiAffinity();
+        Mockito.when(cluster.getAccountId()).thenReturn(5L);
+        AffinityGroupVO control = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(control.getId()).thenReturn(10L);
+        Mockito.when(control.getType()).thenReturn(AffinityProcessorBase.AFFINITY_TYPE_NON_STRICT_HOST_ANTI);
+        Mockito.when(affinityGroupDao.findByAccountAndNames(5L, "cks-abc-worker", "cks-abc-control", "cks-abc-etcd"))
+                .thenReturn(List.of(control));
+        Mockito.when(affinityGroupVMMapDao.listVmIdsByAffinityGroup(10L)).thenReturn(List.of(7L));
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+        Mockito.when(vmInstanceDao.findById(7L)).thenReturn(vm);
+
+        kubernetesClusterManager.deleteDefaultAntiAffinityGroups(cluster);
+
+        Mockito.verifyNoInteractions(affinityGroupService);
+    }
+
+    @Test
+    public void deleteDefaultAntiAffinityGroupsKeepsGroupUsedByAnotherCluster() {
+        KubernetesClusterVO cluster = mockClusterForDefaultAntiAffinity();
+        Mockito.when(cluster.getAccountId()).thenReturn(5L);
+        AffinityGroupVO worker = Mockito.mock(AffinityGroupVO.class);
+        Mockito.when(worker.getId()).thenReturn(20L);
+        Mockito.when(worker.getType()).thenReturn(AffinityProcessorBase.AFFINITY_TYPE_NON_STRICT_HOST_ANTI);
+        Mockito.when(affinityGroupDao.findByAccountAndNames(5L, "cks-abc-worker", "cks-abc-control", "cks-abc-etcd"))
+                .thenReturn(List.of(worker));
+        Mockito.when(kubernetesClusterAffinityGroupMapDao.listByAffinityGroupId(20L))
+                .thenReturn(List.of(new KubernetesClusterAffinityGroupMapVO(2L, WORKER.name(), 20L)));
+
+        kubernetesClusterManager.deleteDefaultAntiAffinityGroups(cluster);
+
+        Mockito.verifyNoInteractions(affinityGroupService);
+    }
 }

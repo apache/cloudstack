@@ -57,6 +57,7 @@ import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.AffinityProcessorBase;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -311,6 +312,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected StateMachine2<KubernetesCluster.State, KubernetesCluster.Event, KubernetesCluster> _stateMachine = KubernetesCluster.State.getStateMachine();
 
     protected final static List<String> CLUSTER_NODES_TYPES_LIST = Arrays.asList(WORKER.name(), CONTROL.name(), ETCD.name());
+    private static final Set<VirtualMachine.State> GONE_VM_STATES = EnumSet.of(VirtualMachine.State.Destroyed,
+            VirtualMachine.State.Expunging, VirtualMachine.State.Error);
 
     ScheduledExecutorService _gcExecutor;
     ScheduledExecutorService _stateScanner;
@@ -339,6 +342,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected AffinityGroupDao affinityGroupDao;
     @Inject
     protected AffinityGroupVMMapDao affinityGroupVMMapDao;
+    @Inject
+    protected AffinityGroupService affinityGroupService;
     @Inject
     protected ServiceOfferingDao serviceOfferingDao;
     @Inject
@@ -1299,6 +1304,68 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
+    protected String getDefaultAntiAffinityGroupName(KubernetesCluster kubernetesCluster, String nodeType) {
+        return String.format("cks-%s-%s", kubernetesCluster.getUuid(), nodeType.toLowerCase());
+    }
+
+    protected Map<String, List<Long>> addDefaultAntiAffinityGroups(KubernetesClusterVO kubernetesCluster, Account owner,
+            Map<String, Long> nodeTypeCount, Map<String, List<Long>> affinityGroupNodeTypeMap) {
+        Map<String, List<Long>> result = MapUtils.isEmpty(affinityGroupNodeTypeMap) ? new HashMap<>() : new HashMap<>(affinityGroupNodeTypeMap);
+        if (!KubernetesClusterDefaultAntiAffinityEnabled.valueIn(owner.getId())) {
+            return result;
+        }
+        if (!affinityGroupService.isAffinityGroupProcessorAvailable(AffinityProcessorBase.AFFINITY_TYPE_NON_STRICT_HOST_ANTI)) {
+            logger.warn("Not adding default anti-affinity groups for Kubernetes cluster {}: affinity group type '{}' is not available",
+                    kubernetesCluster, AffinityProcessorBase.AFFINITY_TYPE_NON_STRICT_HOST_ANTI);
+            return result;
+        }
+        for (String nodeType : CLUSTER_NODES_TYPES_LIST) {
+            // Only worker nodes can be scaled later, so a single control or etcd node has nothing to spread from.
+            long minNodes = WORKER.name().equals(nodeType) ? 1 : 2;
+            if (nodeTypeCount.getOrDefault(nodeType, 0L) < minNodes || CollectionUtils.isNotEmpty(result.get(nodeType))) {
+                continue;
+            }
+            AffinityGroupVO group = affinityGroupDao.persist(new AffinityGroupVO(getDefaultAntiAffinityGroupName(kubernetesCluster, nodeType),
+                    AffinityProcessorBase.AFFINITY_TYPE_NON_STRICT_HOST_ANTI,
+                    String.format("Spreads %s nodes of Kubernetes cluster %s across hosts", nodeType.toLowerCase(), kubernetesCluster.getName()),
+                    owner.getDomainId(), owner.getId(), ControlledEntity.ACLType.Account));
+            result.put(nodeType, List.of(group.getId()));
+        }
+        return result;
+    }
+
+    private boolean isVmLive(long vmId) {
+        VMInstanceVO vm = vmInstanceDao.findById(vmId);
+        return vm != null && !GONE_VM_STATES.contains(vm.getState());
+    }
+
+    public void deleteDefaultAntiAffinityGroups(KubernetesCluster kubernetesCluster) {
+        String[] names = CLUSTER_NODES_TYPES_LIST.stream()
+                .map(nodeType -> getDefaultAntiAffinityGroupName(kubernetesCluster, nodeType)).toArray(String[]::new);
+        List<AffinityGroupVO> groups;
+        try {
+            groups = affinityGroupDao.findByAccountAndNames(kubernetesCluster.getAccountId(), names);
+        } catch (Exception e) {
+            logger.warn("Failed to look up the default affinity groups of Kubernetes cluster {}", kubernetesCluster, e);
+            return;
+        }
+        for (AffinityGroupVO group : groups) {
+            try {
+                if (!AffinityProcessorBase.AFFINITY_TYPE_NON_STRICT_HOST_ANTI.equals(group.getType())) {
+                    continue;
+                }
+                if (CollectionUtils.isNotEmpty(kubernetesClusterAffinityGroupMapDao.listByAffinityGroupId(group.getId())) ||
+                        affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId()).stream().anyMatch(this::isVmLive)) {
+                    logger.info("Keeping affinity group {} of Kubernetes cluster {}: it is still in use", group, kubernetesCluster);
+                    continue;
+                }
+                affinityGroupService.deleteAffinityGroup(group.getId(), null, null, null, null);
+            } catch (Exception e) {
+                logger.warn("Failed to delete affinity group {} of Kubernetes cluster {}", group, kubernetesCluster, e);
+            }
+        }
+    }
+
     private void addKubernetesClusterDetails(final KubernetesCluster kubernetesCluster, final Network network, final CreateKubernetesClusterCmd cmd) {
         final String externalLoadBalancerIpAddress = cmd.getExternalLoadBalancerIpAddress();
         final String dockerRegistryUserName = cmd.getDockerRegistryUserName();
@@ -1784,7 +1851,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
                 newCluster.setCsiEnabled(cmd.getEnableCsi());
                 kubernetesClusterDao.persist(newCluster);
-                persistAffinityGroupMappings(newCluster.getId(), affinityGroupNodeTypeMap);
+                persistAffinityGroupMappings(newCluster.getId(),
+                        addDefaultAntiAffinityGroups(newCluster, owner, nodeTypeCount, affinityGroupNodeTypeMap));
                 addKubernetesClusterDetails(newCluster, defaultNetwork, cmd);
                 return newCluster;
             }
@@ -3089,7 +3157,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             KubernetesControlNodeInstallReattempts,
             KubernetesWorkerNodeInstallAttemptWait,
             KubernetesWorkerNodeInstallReattempts,
-            KubernetesEtcdNodeStartPort
+            KubernetesEtcdNodeStartPort,
+            KubernetesClusterDefaultAntiAffinityEnabled
         };
     }
 }
