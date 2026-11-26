@@ -296,10 +296,6 @@ public interface StorageManager extends StorageService {
 
     boolean canPoolProvideStorageStats(StoragePool pool);
 
-    boolean poolProvidesCustomStorageStats(StoragePool pool);
-
-    Map<String, String> getCustomStorageStats(StoragePool pool);
-
     /**
      * Checks if a host has running VMs that are using its local storage pool.
      * @return true if local storage is active on the host
@@ -311,8 +307,6 @@ public interface StorageManager extends StorageService {
      * @param recurring - true if this cleanup is part of a recurring garbage collection thread
      */
     void cleanupStorage(boolean recurring);
-
-    String getPrimaryStorageNameLabel(VolumeVO volume);
 
     void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated);
 
@@ -326,8 +320,6 @@ public interface StorageManager extends StorageService {
 
     CapacityVO getStoragePoolUsedStats(Long zoneId, Long podId, Long clusterId, List<Long> poolIds);
 
-    List<StoragePoolVO> ListByDataCenterHypervisor(long datacenterId, HypervisorType type);
-
     List<VMInstanceVO> listByStoragePool(long storagePoolId);
 
     StoragePoolVO findLocalStorageOnHost(long hostId);
@@ -340,11 +332,9 @@ public interface StorageManager extends StorageService {
 
     boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool);
 
-    boolean canDisconnectHostFromStoragePool(Host host, StoragePool pool);
-
     Host getHost(long hostId);
 
-    Host updateSecondaryStorage(long secStorageId, String newUrl);
+    void updateSecondaryStorage(long secStorageId, String newUrl);
 
     void removeStoragePoolFromCluster(long hostId, String iScsiName, StoragePool storagePool);
 
