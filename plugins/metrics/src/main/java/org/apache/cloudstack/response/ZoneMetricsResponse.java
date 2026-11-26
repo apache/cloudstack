@@ -20,6 +20,7 @@ package org.apache.cloudstack.response;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.utils.NumberFormatUtils;
 
 public class ZoneMetricsResponse extends ZoneResponse implements HostMetricsSummary {
     @SerializedName("state")
@@ -107,51 +108,51 @@ public class ZoneMetricsResponse extends ZoneResponse implements HostMetricsSumm
 
     public void setCpuTotal(final Long cpuTotal) {
         if (cpuTotal != null) {
-            this.cpuTotal = String.format("%.2f Ghz", cpuTotal / 1000.0);
+            this.cpuTotal = NumberFormatUtils.format("%.2f Ghz", cpuTotal / 1000.0);
         }
     }
 
     public void setCpuUsed(final Double cpuUsedPercentage, final Long totalHosts) {
         if (cpuUsedPercentage != null && totalHosts != null && totalHosts != 0) {
-            this.cpuUsed = String.format("%.2f%%", 1.0 * cpuUsedPercentage / totalHosts);
+            this.cpuUsed = NumberFormatUtils.format("%.2f%%", 1.0 * cpuUsedPercentage / totalHosts);
         }
     }
 
     public void setCpuAllocated(final Long cpuAllocated, final Long cpuTotal) {
         if (cpuAllocated != null && cpuTotal != null && cpuTotal != 0) {
-            this.cpuAllocated = String.format("%.2f%%", cpuAllocated * 100.0 / cpuTotal);
+            this.cpuAllocated = NumberFormatUtils.format("%.2f%%", cpuAllocated * 100.0 / cpuTotal);
         }
     }
 
     public void setCpuMaxDeviation(final Double maxCpuUsagePercentage, final Double totalCpuUsedPercentage, final Long totalHosts) {
         if (maxCpuUsagePercentage != null && totalCpuUsedPercentage != null && totalHosts != null && totalHosts != 0) {
             final Double averageCpuUsagePercentage = totalCpuUsedPercentage / totalHosts;
-            this.cpuMaxDeviation = String.format("%.2f%%", (maxCpuUsagePercentage - averageCpuUsagePercentage) / averageCpuUsagePercentage);
+            this.cpuMaxDeviation = NumberFormatUtils.format("%.2f%%", (maxCpuUsagePercentage - averageCpuUsagePercentage) / averageCpuUsagePercentage);
         }
     }
 
     public void setMemTotal(final Long memTotal) {
         if (memTotal != null) {
-            this.memTotal = String.format("%.2f GB", memTotal / (1024.0 * 1024.0 * 1024.0));
+            this.memTotal = NumberFormatUtils.format("%.2f GB", memTotal / (1024.0 * 1024.0 * 1024.0));
         }
     }
 
     public void setMemUsed( final Long memUsed, final Long memTotal) {
         if (memUsed != null && memTotal != null) {
-            this.memUsed = String.format("%.2f%%", memUsed * 100.0 / memTotal);
+            this.memUsed = NumberFormatUtils.format("%.2f%%", memUsed * 100.0 / memTotal);
         }
     }
 
     public void setMemAllocated(final Long memAllocated, final Long memTotal) {
         if (memAllocated != null && memTotal != null && memTotal != 0) {
-            this.memAllocated = String.format("%.2f%%", memAllocated * 100.0 / memTotal);
+            this.memAllocated = NumberFormatUtils.format("%.2f%%", memAllocated * 100.0 / memTotal);
         }
     }
 
     public void setMemMaxDeviation(final Long maxMemoryUsage, final Long totalMemory, final Long totalHosts) {
         if (maxMemoryUsage != null && totalMemory != null && totalHosts != null && totalHosts != 0) {
             final Long averageMemoryUsage = totalMemory / totalHosts;
-            this.memMaxDeviation = String.format("%.2f%%", (maxMemoryUsage - averageMemoryUsage) * 100.0 / averageMemoryUsage);
+            this.memMaxDeviation = NumberFormatUtils.format("%.2f%%", (maxMemoryUsage - averageMemoryUsage) * 100.0 / averageMemoryUsage);
         }
     }
 

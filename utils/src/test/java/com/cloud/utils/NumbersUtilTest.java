@@ -38,6 +38,17 @@ public class NumbersUtilTest {
     }
 
     @Test
+    public void toReadableSizeWithLocaleUsesGivenLocale() {
+        Locale originalLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.GERMANY);
+            assertEquals("1.00 GB", NumbersUtil.toReadableSize(1024L * 1024 * 1024, Locale.ROOT));
+        } finally {
+            Locale.setDefault(originalLocale);
+        }
+    }
+
+    @Test
     public void bytesToLong() {
         assertEquals(0, NumbersUtil.bytesToLong(new byte[] {0, 0, 0, 0, 0, 0, 0, 0}));
         assertEquals(1, NumbersUtil.bytesToLong(new byte[] {0, 0, 0, 0, 0, 0, 0, 1}));

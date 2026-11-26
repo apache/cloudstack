@@ -41,6 +41,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.ha.HAResource;
 import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
+import org.apache.cloudstack.utils.NumberFormatUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -209,7 +210,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             }
         }
 
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        DecimalFormat decimalFormat = NumberFormatUtils.decimalFormat("#.##");
         if (host.getType() == Host.Type.Routing) {
             if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity) || details.contains(HostDetails.core)) {
                 String hostTags = host.getTag();
@@ -448,7 +449,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         if (resource == 0 || resourceWithOverProvision == 0) {
             return "0.00%";
         }
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        DecimalFormat decimalFormat = NumberFormatUtils.decimalFormat("#.##");
         return decimalFormat.format(((float)resource / resourceWithOverProvision * 100.0f)) + "%";
     }
 

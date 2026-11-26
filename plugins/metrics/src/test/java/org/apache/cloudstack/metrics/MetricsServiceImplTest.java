@@ -23,11 +23,13 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ListVMsUsageHistoryCmd;
 import org.apache.cloudstack.api.ListVolumesUsageHistoryCmd;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.StatsResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.response.VmMetricsStatsResponse;
 import org.apache.commons.lang3.time.DateUtils;
@@ -369,6 +371,26 @@ public class MetricsServiceImplTest {
     }
 
     @Test
+    public void createStatsResponseUsesDotAsDecimalSeparatorRegardlessOfDefaultLocale() {
+        Locale originalLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.GERMANY);
+            final String fakeVmStatsData = "{\"vmId\":1,\"cpuUtilization\":15.615905273486222,\"networkReadKBs\":1024.0,"
+                    + "\"networkWriteKBs\":2048.0,\"diskReadIOs\":0.1,\"diskWriteIOs\":0.2,\"diskReadKBs\":1.1,"
+                    + "\"diskWriteKBs\":2.1,\"memoryKBs\":262144.0,\"intfreememoryKBs\":262144.0,\"targetmemoryKBs\":262144.0,"
+                    + "\"numCPUs\":1,\"entityType\":\"vm\"}";
+            Mockito.doReturn(new Date()).when(vmStatsVOMock).getTimestamp();
+            Mockito.doReturn(fakeVmStatsData).when(vmStatsVOMock).getVmStatsData();
+
+            List<StatsResponse> statsResponseList = spy.createStatsResponse(Arrays.asList(vmStatsVOMock));
+
+            Assert.assertEquals("15.62%", statsResponseList.get(0).getCpuUsed());
+        } finally {
+            Locale.setDefault(originalLocale);
+        }
+    }
+
+    @Test
     public void searchForVolumesInternalWithValidParameters() {
         Mockito.doReturn(null).when(listVolumesUsageHistoryCmdMock).getId();
         Mockito.doReturn(Arrays.asList(1L, 2L)).when(listVolumesUsageHistoryCmdMock).getIds();
@@ -419,5 +441,4 @@ public class MetricsServiceImplTest {
             Assert.assertEquals(0, result.second().intValue());
         }
     }
-
 }
