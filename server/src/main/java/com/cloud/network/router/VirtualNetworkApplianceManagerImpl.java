@@ -1173,6 +1173,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         ArrayList<String> failedChecks = new ArrayList<>();
         for (String failedCheckName : failingChecks) {
             RouterHealthCheckResultVO routerHealthCheckResultVO = routerHealthCheckResultDao.getRouterHealthCheckResult(router.getId(), failedCheckName, null);
+
+            if (routerHealthCheckResultVO == null) {
+                logger.debug("Unable to find health check result for check {} of router {}. Skipping its additional details on the message.", failedCheckName, router.getName());
+                continue;
+            }
+
             String failedCheckDetails = routerHealthCheckResultVO.getParsedCheckDetails();
             failedCheckDetails = failedCheckDetails.replace("\n", " ");
             String failedCheck = failedCheckName + ": " + failedCheckDetails;
