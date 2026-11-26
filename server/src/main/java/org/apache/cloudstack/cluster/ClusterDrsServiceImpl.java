@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.cluster;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -32,9 +33,13 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.resource.ResourceState;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.server.ManagementServer;
@@ -54,6 +59,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
+import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
@@ -89,8 +96,12 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
@@ -118,10 +129,35 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     HostDao hostDao;
 
     @Inject
+    HostDetailsDao hostDetailsDao;
+
+    @Inject
+    OutOfBandManagementService outOfBandManagementService;
+
+    @Inject
     EventDao eventDao;
+
+    // Host detail marking a host that DRS power management powered off, so only those are powered back on
+    // (never a host that is down for another reason).
+    protected static final String DRS_POWER_STATE_DETAIL = "drs.power.state";
+    protected static final String DRS_POWER_STATE_OFF = "off";
+    // Marks a host DRS is actively draining so it can be powered off once empty; distinct from OFF so a draining
+    // host is never treated as a wake candidate and is picked up across polls to continue or abandon the drain.
+    protected static final String DRS_POWER_STATE_DRAINING = "draining";
+
+    // Recent cluster utilization samples (ratio on the DRS metric) per cluster, newest last, used by predictive DRS.
+    // Written only from the single-threaded poll under the clusterDRS.poll lock.
+    protected final Map<Long, LinkedList<Double>> clusterUtilizationHistory = new ConcurrentHashMap<>();
+
+    // VM count on each host at the last drain batch, so a drain that stops making progress (migrations rejected for
+    // affinity/tags/storage) is abandoned instead of re-submitted forever. Written only under the poll lock.
+    protected final Map<Long, Integer> drainingVmCountByHost = new ConcurrentHashMap<>();
 
     @Inject
     HostJoinDao hostJoinDao;
+
+    @Inject
+    AgentManager agentManager;
 
     @Inject
     VMInstanceDao vmInstanceDao;
@@ -199,6 +235,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                     processPlans();
                     generateDrsPlanForAllClusters();
                     processPlans();
+                    managePowerForAllClusters();
                 } finally {
                     lock.unlock();
                 }
@@ -851,11 +888,542 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         return ClusterDrsService.class.getSimpleName();
     }
 
+    protected void managePowerForAllClusters() {
+        for (ClusterVO cluster : clusterDao.listAll()) {
+            try {
+                managePowerForCluster(cluster);
+            } catch (Exception e) {
+                logger.warn("DRS power management skipped cluster [{}] due to [{}].", cluster.getId(), e.getMessage(), e);
+            }
+        }
+    }
+
+    protected void managePowerForCluster(ClusterVO cluster) {
+        if (cluster.getAllocationState() == Disabled
+                || Boolean.FALSE.equals(ClusterDrsEnabled.valueIn(cluster.getId()))
+                || Boolean.FALSE.equals(ClusterDrsPowerManagementEnabled.valueIn(cluster.getId()))) {
+            return;
+        }
+        // Do not power-manage a cluster with a DRS migration plan still in flight: a host that is the source or
+        // destination of a pending or running migration must not be disabled or powered off underneath it.
+        if (hasInFlightDrsPlan(cluster.getId())) {
+            logger.debug("DRS power management: skipping cluster [{}] while a DRS migration plan is in flight.", cluster.getId());
+            return;
+        }
+
+        final float lowThreshold = ClusterDrsPowerManagementLowThreshold.valueIn(cluster.getId());
+        final float highThreshold = ClusterDrsPowerManagementHighThreshold.valueIn(cluster.getId());
+        final boolean useCpu = "cpu".equals(getClusterDrsMetric(cluster.getId()));
+
+        List<HostVO> routingHosts = hostDao.findByClusterId(cluster.getId(), Host.Type.Routing);
+        List<HostVO> upHosts = new ArrayList<>();
+        List<HostVO> poweredOffByDrs = new ArrayList<>();
+        List<HostVO> drainingHosts = new ArrayList<>();
+        for (HostVO host : routingHosts) {
+            if (isDrainingByDrs(host)) {
+                if (host.getStatus() == Status.Up) {
+                    // still reachable: continue (or finish) the drain below.
+                    drainingHosts.add(host);
+                } else {
+                    // went down or away mid-drain: DRS did not power it off, so stop tracking it and release the
+                    // marker rather than leaking it and blocking a later drain.
+                    abandonDrain(host, "host is no longer up");
+                }
+                continue;
+            }
+            if (host.getStatus() == Status.Up) {
+                if (isPoweredOffByDrs(host)) {
+                    // Our host is back in service: either a wake completed, or a power-off we issued never took
+                    // effect (command accepted but the host stayed up). Re-enable it if we had disabled it, drop
+                    // the marker, and return it to the capacity pool. Keying only on Up avoids leaving such a host
+                    // stranded Disabled and marked, in neither list, forever.
+                    if (host.getResourceState() == ResourceState.Disabled) {
+                        hostDao.updateResourceState(ResourceState.Disabled, ResourceState.Event.Enable, ResourceState.Enabled, host);
+                    }
+                    clearStalePowerMarker(host);
+                    upHosts.add(host);
+                } else if (host.getResourceState() == ResourceState.Enabled) {
+                    upHosts.add(host);
+                }
+                // Up but Disabled by someone other than DRS: leave it alone, it is not ours to schedule onto.
+            } else if (isPoweredOffByDrs(host)) {
+                // Down and marked by DRS: a wake candidate. The marker is kept across the wake (power-on is
+                // idempotent) and cleared only once the host is actually Up again, above.
+                poweredOffByDrs.add(host);
+            }
+        }
+        if (upHosts.isEmpty() && poweredOffByDrs.isEmpty() && drainingHosts.isEmpty()) {
+            return;
+        }
+
+        // Capacity reflects every host still carrying load: the schedulable up hosts plus any host being drained
+        // (its VMs still run until it empties), so utilization is not understated while a drain is in progress.
+        List<HostVO> loadHosts = new ArrayList<>(upHosts);
+        loadHosts.addAll(drainingHosts);
+        Map<Long, Ternary<Long, Long, Long>> capacityMap = getHostCapacityMap(loadHosts, useCpu);
+        double clusterUsed = 0d;
+        double clusterTotal = 0d;
+        for (Ternary<Long, Long, Long> capacity : capacityMap.values()) {
+            // count used + reserved as the committed load, so a host holding HA/allocation reservations is not
+            // powered off just because its live usage is low.
+            clusterUsed += capacity.first() + capacity.second();
+            clusterTotal += capacity.third();
+        }
+
+        // predictive DRS: fold the recent trend in. Use the more conservative of the instantaneous and forecast
+        // utilization, so a rising trend wakes a host sooner and holds off power-off, while a transient dip never
+        // triggers an aggressive power-off.
+        double effectiveUsed = clusterUsed;
+        double instantaneousRatio = clusterTotal > 0d ? clusterUsed / clusterTotal : 0d;
+        if (Boolean.TRUE.equals(ClusterDrsPredictiveEnabled.valueIn(cluster.getId()))) {
+            int window = ClusterDrsPredictiveWindow.valueIn(cluster.getId());
+            double forecastRatio = forecastUtilization(recordAndGetUtilizationHistory(cluster.getId(), instantaneousRatio, window));
+            effectiveUsed = Math.max(instantaneousRatio, forecastRatio) * clusterTotal;
+        }
+
+        // prefer restoring capacity over saving power: if the cluster is hot and we have a host we powered
+        // off earlier that we can still reach over out-of-band management, bring it back before any power-off.
+        if (clusterNeedsWakeup(effectiveUsed, clusterTotal, highThreshold, poweredOffByDrs.size())) {
+            for (HostVO poweredOff : poweredOffByDrs) {
+                if (isPowerManageable(poweredOff)) {
+                    powerOnHost(poweredOff, cluster);
+                    return;
+                }
+            }
+        }
+
+        // power off at most one empty, out-of-band-manageable host per poll, and only if the rest can carry the load.
+        for (HostVO host : upHosts) {
+            Ternary<Long, Long, Long> capacity = capacityMap.get(host.getId());
+            if (capacity == null) {
+                continue;
+            }
+            if (hostHasNoRunningVms(host) && isPowerManageable(host) && !isPoweredOffByDrs(host)
+                    && clusterCanReleaseHost(effectiveUsed, clusterTotal, capacity.third(), upHosts.size(), lowThreshold, highThreshold)) {
+                powerOffHost(host, cluster);
+                return;
+            }
+        }
+
+        // Continue a drain already in progress even if evacuation was since turned off, so a host is never stranded
+        // mid-drain; only START a new drain when the operator has opted in and no host is empty to power off.
+        if (!drainingHosts.isEmpty()) {
+            drainHostBatch(cluster, drainingHosts.get(0), upHosts, capacityMap, effectiveUsed, clusterTotal, lowThreshold, highThreshold, useCpu);
+        } else if (Boolean.TRUE.equals(ClusterDrsPowerManagementEvacuate.valueIn(cluster.getId()))) {
+            HostVO candidate = selectDrainCandidate(upHosts, capacityMap, effectiveUsed, clusterTotal, lowThreshold, highThreshold);
+            if (candidate != null) {
+                drainHostBatch(cluster, candidate, upHosts, capacityMap, effectiveUsed, clusterTotal, lowThreshold, highThreshold, useCpu);
+            }
+        }
+    }
+
+    protected boolean isDrainingByDrs(HostVO host) {
+        DetailVO detail = hostDetailsDao.findDetail(host.getId(), DRS_POWER_STATE_DETAIL);
+        return detail != null && DRS_POWER_STATE_DRAINING.equals(detail.getValue());
+    }
+
+    protected boolean hasMigratingVm(long hostId) {
+        List<VMInstanceVO> vms = vmInstanceDao.listByHostId(hostId);
+        if (vms == null) {
+            return false;
+        }
+        for (VMInstanceVO vm : vms) {
+            if (vm.getState() == VirtualMachine.State.Migrating) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected void setPowerMarker(long hostId, String value) {
+        DetailVO existing = hostDetailsDao.findDetail(hostId, DRS_POWER_STATE_DETAIL);
+        if (existing != null) {
+            hostDetailsDao.remove(existing.getId());
+        }
+        hostDetailsDao.persist(new DetailVO(hostId, DRS_POWER_STATE_DETAIL, value));
+    }
+
+    protected void abandonDrain(HostVO host, String reason) {
+        logger.info("DRS power management: abandoning drain of host [{}]: {}", host.getId(), reason);
+        // the host was disabled when the drain started so the scheduler would leave it alone while it emptied;
+        // put it back in service now that the drain is being given up.
+        if (host.getResourceState() == ResourceState.Disabled) {
+            hostDao.updateResourceState(ResourceState.Disabled, ResourceState.Event.Enable, ResourceState.Enabled, host);
+        }
+        clearStalePowerMarker(host);
+        drainingVmCountByHost.remove(host.getId());
+    }
+
+    /**
+     * The least-loaded host the cluster can give up: powerable, holding only running user VMs, and such that the
+     * remaining hosts can still carry the load. Null if no host qualifies.
+     */
+    protected HostVO selectDrainCandidate(List<HostVO> upHosts, Map<Long, Ternary<Long, Long, Long>> capacityMap,
+            double effectiveUsed, double clusterTotal, float lowThreshold, float highThreshold) {
+        HostVO candidate = null;
+        double candidateUsed = Double.MAX_VALUE;
+        for (HostVO host : upHosts) {
+            Ternary<Long, Long, Long> cap = capacityMap.get(host.getId());
+            if (cap == null || hostHasNoRunningVms(host) || !isPowerManageable(host) || !hostEvacuatable(host)
+                    || !clusterCanReleaseHost(effectiveUsed, clusterTotal, cap.third(), upHosts.size(), lowThreshold, highThreshold)) {
+                continue;
+            }
+            if (cap.first() < candidateUsed) {
+                candidate = host;
+                candidateUsed = cap.first();
+            }
+        }
+        return candidate;
+    }
+
+    /**
+     * Submits one batch of migrations off {@code candidate}. Waits while a previous batch is still in flight; if the
+     * host is quiescent and still holds as many VMs as at the previous batch the drain made no progress and is
+     * abandoned; otherwise the host is marked draining and up to ClusterDrsMaxMigrations of its remaining VMs are
+     * placed by capacity and migrated away. The host empties over successive polls and is powered off once empty.
+     */
+    protected void drainHostBatch(ClusterVO cluster, HostVO candidate, List<HostVO> upHosts,
+            Map<Long, Ternary<Long, Long, Long>> capacityMap, double effectiveUsed, double clusterTotal,
+            float lowThreshold, float highThreshold, boolean useCpu) {
+        List<VMInstanceVO> vms = vmInstanceDao.listByHostId(candidate.getId());
+        if (vms == null || vms.isEmpty()) {
+            // Fully drained. It was disabled when the drain started, so the empty-host power-off loop (which only
+            // scans enabled up hosts) does not see it; power it off here, applying the same guards that loop does.
+            // If it can no longer be powered off (out-of-band management gone, or the cluster is no longer
+            // under-utilized because load rose during the drain), put it back in service instead of flapping it.
+            Ternary<Long, Long, Long> cap = capacityMap.get(candidate.getId());
+            if (isPowerManageable(candidate) && cap != null
+                    && clusterCanReleaseHost(effectiveUsed, clusterTotal, cap.third(), upHosts.size() + 1, lowThreshold, highThreshold)) {
+                powerOffHost(candidate, cluster);
+            } else {
+                abandonDrain(candidate, "host is drained but can no longer be powered off; returning it to service");
+            }
+            return;
+        }
+        if (hasMigratingVm(candidate.getId())) {
+            // a batch is still in flight; wait for it before judging progress or submitting more.
+            return;
+        }
+        int current = vms.size();
+        Integer previous = drainingVmCountByHost.get(candidate.getId());
+        if (previous != null && current >= previous) {
+            abandonDrain(candidate, "no progress since the last batch; remaining VMs cannot be migrated off");
+            return;
+        }
+
+        Map<Long, Double> vmNeeds = new HashMap<>();
+        for (VMInstanceVO vm : vms) {
+            vmNeeds.put(vm.getId(), vmResourceNeed(vm, useCpu));
+        }
+        Map<Long, Double> hostFree = new HashMap<>();
+        for (HostVO host : upHosts) {
+            if (host.getId() == candidate.getId()) {
+                continue;
+            }
+            Ternary<Long, Long, Long> cap = capacityMap.get(host.getId());
+            if (cap != null) {
+                // Placeable room = (high threshold of total) - (used + reserved), floored at zero, so draining
+                // never pushes a destination past the high threshold it is meant to respect.
+                double placeable = (double) highThreshold * cap.third() - (cap.first() + cap.second());
+                hostFree.put(host.getId(), Math.max(0d, placeable));
+            }
+        }
+
+        Map<Long, Long> plan = planHostEvacuation(vmNeeds, hostFree);
+        if (plan.isEmpty()) {
+            if (previous != null) {
+                abandonDrain(candidate, "remaining VMs no longer fit on the other hosts");
+            } else {
+                logger.debug("DRS power management: host [{}] in cluster [{}] cannot be evacuated; not all VMs fit on the remaining hosts.",
+                        candidate.getId(), cluster.getId());
+            }
+            return;
+        }
+
+        // Resolve the concrete VM/destination pairs to migrate this poll (bounded by the DRS migration budget)
+        // before starting any event, so the start event is only opened when there is real work to do.
+        int maxMigrations = ClusterDrsMaxMigrations.valueIn(cluster.getId());
+        Map<VirtualMachine, HostVO> batch = new LinkedHashMap<>();
+        for (Map.Entry<Long, Long> entry : plan.entrySet()) {
+            if (batch.size() >= maxMigrations) {
+                break;
+            }
+            VirtualMachine vm = vmInstanceDao.findById(entry.getKey());
+            HostVO destination = hostDao.findById(entry.getValue());
+            if (vm != null && destination != null) {
+                batch.put(vm, destination);
+            }
+        }
+        if (batch.isEmpty()) {
+            return;
+        }
+        // Starting a new drain: record the durable draining marker BEFORE disabling the host, so a crash or an
+        // exception in the window between the two never leaves the host disabled with no marker (which would strand
+        // it out of the scheduling pool with no self-heal). Then disable it so the allocator stops placing new VMs
+        // on it (it is the least-loaded host, which the allocator would otherwise prefer, and that would fight the
+        // drain). If the host cannot be disabled, undo the marker and do not start. A drain already in progress
+        // (previous != null) already has its marker and is already disabled.
+        if (previous == null) {
+            setPowerMarker(candidate.getId(), DRS_POWER_STATE_DRAINING);
+            if (candidate.getResourceState() == ResourceState.Enabled
+                    && !hostDao.updateResourceState(ResourceState.Enabled, ResourceState.Event.Disable, ResourceState.Disabled, candidate)) {
+                logger.warn("DRS power management: could not disable host [{}] to begin draining it; skipping.", candidate.getId());
+                clearStalePowerMarker(candidate);
+                return;
+            }
+        }
+        logger.info("DRS power management: cluster [{}] is under-utilized; draining host [{}] ({} VMs left, {} this poll) to power it off.",
+                cluster.getId(), candidate.getId(), plan.size(), batch.size());
+        // One start event for the batch. Each migration job carries it as its start event id and completes it, as in
+        // executeDrsPlan, so the event is never left open; opening it only when the batch is non-empty avoids an orphan.
+        long eventId = ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                EventTypes.EVENT_VM_MIGRATE,
+                String.format("DRS power management draining host %d in cluster %s", candidate.getId(), cluster.getUuid()),
+                candidate.getId(), ApiCommandResourceType.Host.toString(), true, 0);
+        for (Map.Entry<VirtualMachine, HostVO> migration : batch.entrySet()) {
+            createMigrateVMAsyncJob(migration.getKey(), migration.getValue(), eventId);
+        }
+        drainingVmCountByHost.put(candidate.getId(), current);
+    }
+
+    protected double vmResourceNeed(VMInstanceVO vm, boolean useCpu) {
+        ServiceOffering offering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
+        if (offering == null) {
+            return 0d;
+        }
+        if (useCpu) {
+            return (double) offering.getCpu() * offering.getSpeed();
+        }
+        return (double) offering.getRamSize() * 1024L * 1024L;
+    }
+
+    /**
+     * First-fit-decreasing placement of the given VMs (id to resource need) onto hosts (id to free capacity),
+     * returning a VM-to-host assignment or an empty map if any VM does not fit on capacity alone. This is a
+     * capacity feasibility pre-check only: it does NOT account for affinity/anti-affinity, host tags, storage
+     * access or dedication. Each migration is still validated authoritatively by the migration job, which may
+     * reject a placement this map proposed; in that case the host is drained over later polls rather than at once.
+     * Pure function, unit-tested.
+     */
+    protected Map<Long, Long> planHostEvacuation(Map<Long, Double> vmNeeds, Map<Long, Double> hostFreeCapacity) {
+        Map<Long, Long> assignment = new HashMap<>();
+        // TreeMap so host iteration is by id and placement is deterministic run-to-run; secondary sort by vm id
+        // breaks ties among equal-sized VMs for the same reason.
+        Map<Long, Double> remaining = new TreeMap<>(hostFreeCapacity);
+        List<Map.Entry<Long, Double>> vms = new ArrayList<>(vmNeeds.entrySet());
+        vms.sort((a, b) -> b.getValue().equals(a.getValue()) ? Long.compare(a.getKey(), b.getKey()) : Double.compare(b.getValue(), a.getValue()));
+        for (Map.Entry<Long, Double> vm : vms) {
+            Long target = null;
+            for (Map.Entry<Long, Double> host : remaining.entrySet()) {
+                if (host.getValue() >= vm.getValue()) {
+                    target = host.getKey();
+                    break;
+                }
+            }
+            if (target == null) {
+                return Collections.emptyMap();
+            }
+            assignment.put(vm.getKey(), target);
+            remaining.put(target, remaining.get(target) - vm.getValue());
+        }
+        return assignment;
+    }
+
+    /**
+     * Appends the latest cluster utilization ratio to the cluster's rolling history (trimmed to {@code window}
+     * samples) and returns a snapshot of it, newest last.
+     */
+    protected List<Double> recordAndGetUtilizationHistory(long clusterId, double ratio, int window) {
+        int cap = Math.max(1, window);
+        LinkedList<Double> history = clusterUtilizationHistory.computeIfAbsent(clusterId, k -> new LinkedList<>());
+        synchronized (history) {
+            history.addLast(ratio);
+            while (history.size() > cap) {
+                history.removeFirst();
+            }
+            return new ArrayList<>(history);
+        }
+    }
+
+    /**
+     * Projects one poll interval ahead from the recent utilization samples using the least-squares trend, clamped
+     * to [0, 1]. With fewer than two samples it returns the latest sample (no trend to project).
+     */
+    protected double forecastUtilization(List<Double> history) {
+        if (history == null || history.isEmpty()) {
+            return 0d;
+        }
+        int n = history.size();
+        if (n == 1) {
+            return history.get(0);
+        }
+        double sumX = 0d;
+        double sumY = 0d;
+        double sumXY = 0d;
+        double sumXX = 0d;
+        for (int i = 0; i < n; i++) {
+            double y = history.get(i);
+            sumX += i;
+            sumY += y;
+            sumXY += i * y;
+            sumXX += (double) i * i;
+        }
+        double denominator = n * sumXX - sumX * sumX;
+        double slope = denominator == 0d ? 0d : (n * sumXY - sumX * sumY) / denominator;
+        double forecast = history.get(n - 1) + slope;
+        return Math.max(0d, Math.min(1d, forecast));
+    }
+
+    protected Map<Long, Ternary<Long, Long, Long>> getHostCapacityMap(List<HostVO> hosts, boolean useCpu) {
+        List<HostJoinVO> joins = hostJoinDao.searchByIds(hosts.stream().map(HostVO::getId).toArray(Long[]::new));
+        Map<Long, Ternary<Long, Long, Long>> map = new HashMap<>();
+        for (HostJoinVO join : joins) {
+            if (useCpu) {
+                Integer cpus = join.getCpus();
+                Long speed = join.getSpeed();
+                long cpuTotal = (cpus == null || speed == null) ? 0L : (long) cpus * speed;
+                map.put(join.getId(), new Ternary<>(join.getCpuUsedCapacity(), join.getCpuReservedCapacity(), cpuTotal));
+            } else {
+                map.put(join.getId(), new Ternary<>(join.getMemUsedCapacity(), join.getMemReservedCapacity(), join.getTotalMemory()));
+            }
+        }
+        return map;
+    }
+
+    /**
+     * True when the cluster can give up the candidate host: the cluster is below the low utilization threshold,
+     * there is more than one host up, and the remaining hosts can carry the current load without crossing the
+     * high threshold.
+     */
+    protected boolean clusterCanReleaseHost(double clusterUsed, double clusterTotal, double candidateHostTotal,
+            int upHostCount, float lowThreshold, float highThreshold) {
+        if (upHostCount <= 1 || clusterTotal <= 0d) {
+            return false;
+        }
+        if ((clusterUsed / clusterTotal) >= lowThreshold) {
+            return false;
+        }
+        double remainingTotal = clusterTotal - candidateHostTotal;
+        if (remainingTotal <= 0d) {
+            return false;
+        }
+        return (clusterUsed / remainingTotal) <= highThreshold;
+    }
+
+    /**
+     * True when the cluster is above the high utilization threshold and there is a host that DRS powered off
+     * earlier which can be powered back on.
+     */
+    protected boolean clusterNeedsWakeup(double clusterUsed, double clusterTotal, float highThreshold, int poweredOffHostCount) {
+        if (poweredOffHostCount <= 0 || clusterTotal <= 0d) {
+            return false;
+        }
+        return (clusterUsed / clusterTotal) > highThreshold;
+    }
+
+    protected boolean hostHasNoRunningVms(HostVO host) {
+        List<VMInstanceVO> vms = vmInstanceDao.listByHostId(host.getId());
+        return vms == null || vms.isEmpty();
+    }
+
+    protected boolean isPowerManageable(HostVO host) {
+        try {
+            return outOfBandManagementService.isOutOfBandManagementEnabled(host);
+        } catch (Exception e) {
+            logger.debug("Could not determine out-of-band management status for host [{}]: {}", host.getId(), e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * A host can be drained by power management only if every VM on it is a running user VM: a system VM cannot be
+     * moved with a user-VM migration, and a VM in a transitional state must not be forced, so such a host is never
+     * chosen (it could not be fully emptied).
+     */
+    protected boolean hostEvacuatable(HostVO host) {
+        List<VMInstanceVO> vms = vmInstanceDao.listByHostId(host.getId());
+        if (vms == null || vms.isEmpty()) {
+            return false;
+        }
+        for (VMInstanceVO vm : vms) {
+            if (vm.getType().isUsedBySystem() || vm.getState() != VirtualMachine.State.Running) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected boolean isPoweredOffByDrs(HostVO host) {
+        DetailVO detail = hostDetailsDao.findDetail(host.getId(), DRS_POWER_STATE_DETAIL);
+        return detail != null && DRS_POWER_STATE_OFF.equals(detail.getValue());
+    }
+
+    protected void clearStalePowerMarker(HostVO host) {
+        DetailVO detail = hostDetailsDao.findDetail(host.getId(), DRS_POWER_STATE_DETAIL);
+        if (detail != null) {
+            hostDetailsDao.remove(detail.getId());
+        }
+    }
+
+    protected boolean hasInFlightDrsPlan(long clusterId) {
+        return !drsPlanDao.listByClusterIdAndStatus(clusterId, ClusterDrsPlan.Status.UNDER_REVIEW).isEmpty()
+                || !drsPlanDao.listByClusterIdAndStatus(clusterId, ClusterDrsPlan.Status.READY).isEmpty()
+                || !drsPlanDao.listByClusterIdAndStatus(clusterId, ClusterDrsPlan.Status.IN_PROGRESS).isEmpty();
+    }
+
+    protected void powerOffHost(HostVO host, ClusterVO cluster) {
+        logger.info("DRS power management: cluster [{}] is under-utilized; disabling and powering off empty host [{}].", cluster.getId(), host.getId());
+        // Disable first so CloudStack stops scheduling to the host and does not treat the imminent agent disconnect
+        // as a failure (host monitor / HA). A host that was being drained is already Disabled, so only transition an
+        // Enabled host, and abort only when that transition does not take effect, so the host is never powered off
+        // while CloudStack still believes it is schedulable.
+        if (host.getResourceState() == ResourceState.Enabled
+                && !hostDao.updateResourceState(ResourceState.Enabled, ResourceState.Event.Disable, ResourceState.Disabled, host)) {
+            logger.warn("DRS power management: could not disable host [{}]; skipping power-off.", host.getId());
+            return;
+        }
+        // Record the durable wake intent BEFORE the irreversible power-off. If the management server dies between
+        // the power-off and here, the host is still recognised on the next poll and powered back on, rather than
+        // left off forever with no marker. Replace any existing marker (e.g. a draining marker when powering off a
+        // host that has just finished draining) so only the off marker remains.
+        DetailVO existing = hostDetailsDao.findDetail(host.getId(), DRS_POWER_STATE_DETAIL);
+        if (existing != null) {
+            hostDetailsDao.remove(existing.getId());
+        }
+        DetailVO marker = new DetailVO(host.getId(), DRS_POWER_STATE_DETAIL, DRS_POWER_STATE_OFF);
+        hostDetailsDao.persist(marker);
+        try {
+            // Detach the agent without investigation first so the imminent link drop from cutting power is not
+            // reported as a host-down failure (the host is intentionally going away, and it is already empty).
+            agentManager.disconnectWithoutInvestigation(host.getId(), Status.Event.ShutdownRequested);
+            outOfBandManagementService.executePowerOperation(host, OutOfBandManagement.PowerOperation.OFF, null);
+        } catch (Exception e) {
+            // A failure response does not prove the host is still running: a chassis power-off can take effect and
+            // still report a timeout or error. Rather than roll back (which would strand a host that did power off
+            // as enabled and unmarked), leave it disabled and marked. The next poll reclaims it (re-enable, clear
+            // marker) if it is still up, or treats it as a DRS-powered-off host if it is actually down.
+            logger.warn("DRS power management: power-off command for host [{}] failed; leaving it disabled and marked for reconciliation on the next poll.",
+                    host.getId(), e);
+        }
+        drainingVmCountByHost.remove(host.getId());
+    }
+
+    protected void powerOnHost(HostVO host, ClusterVO cluster) {
+        logger.info("DRS power management: cluster [{}] is over-utilized; powering on host [{}].", cluster.getId(), host.getId());
+        // Issue the power-on but keep the marker and leave the host Disabled: the host is still down until its
+        // agent reconnects, and an accepted-but-unconfirmed power-on must not look done. The classification loop
+        // re-enables the host and clears the marker only once it is actually Up. Power-on is idempotent, so a host
+        // still booting is simply re-issued the command on a later poll until it connects.
+        outOfBandManagementService.executePowerOperation(host, OutOfBandManagement.PowerOperation.ON, null);
+    }
+
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{ClusterDrsPlanExpireInterval, ClusterDrsEnabled, ClusterDrsInterval, ClusterDrsMaxMigrations,
                 ClusterDrsAlgorithm, ClusterDrsImbalanceThreshold, ClusterDrsMetric, ClusterDrsMetricType, ClusterDrsMetricUseRatio,
-                ClusterDrsImbalanceSkipThreshold};
+                ClusterDrsImbalanceSkipThreshold, ClusterDrsPowerManagementEnabled, ClusterDrsPowerManagementLowThreshold,
+                ClusterDrsPowerManagementHighThreshold, ClusterDrsPredictiveEnabled, ClusterDrsPredictiveWindow,
+                ClusterDrsPowerManagementEvacuate};
     }
 
     @Override
