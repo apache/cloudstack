@@ -342,6 +342,78 @@ class TestCreateDiskOffering(cloudstackTestCase):
         )
         return
 
+    @attr(tags=["advanced", "basic", "eip", "sg", "advancedns", "smoke"], required_hardware="false")
+    def test_09_create_disk_offering_with_error_policy_type(self):
+        """Test to create disk offering with each one of the valid error policy types : report, stop, ignore and enospace
+
+        # Validate the following:
+        # 1. createDiskOfferings should return valid info for new offering
+        # 2. The Cloud Database contains the valid information
+        """
+        error_policy_types=["report", "stop", "ignore", "enospace"]
+        for i in range(4):
+            disk_offering = DiskOffering.create(
+                self.apiclient,
+                self.services["disk_offering"],
+                errorPolicy=error_policy_types[i]
+            )
+            self.cleanup.append(disk_offering)
+
+            self.debug("Created Disk offering with valid errorPolicy param with ID: %s" % disk_offering.id)
+
+            list_disk_response = list_disk_offering(
+                self.apiclient,
+                id=disk_offering.id
+            )
+            self.assertEqual(
+                isinstance(list_disk_response, list),
+                True,
+                "Check list response returns a valid list"
+            )
+            self.assertNotEqual(
+                len(list_disk_response),
+                0,
+                "Check Disk offering is created"
+            )
+            disk_response = list_disk_response[0]
+
+            self.assertEqual(
+                disk_response.displaytext,
+                self.services["disk_offering"]["displaytext"],
+                "Check server id in createServiceOffering"
+            )
+            self.assertEqual(
+                disk_response.name,
+                self.services["disk_offering"]["name"],
+                "Check name in createServiceOffering"
+            )
+            self.assertEqual(
+                disk_response.errorpolicy,
+                error_policy_types[i],
+                "Check errorPolicy in createServiceOffering"
+            )
+
+        return
+
+    @attr(tags=["advanced", "basic", "eip", "sg", "advancedns", "smoke"], required_hardware="false")
+    def test_10_create_disk_offering_with_invalid_error_policy_type(self):
+        """Test to create disk offering with invalid errorPolicy type
+
+        # Validate the following:
+        # 1. createDiskOfferings should return valid info for new offering
+        # 2. The Cloud Database contains the valid information
+        """
+
+        with self.assertRaises(Exception):
+            disk_offering = DiskOffering.create(
+                self.apiclient,
+                self.services["disk_offering"],
+                errorPolicy="invalid_error_policy_type"
+            )
+
+
+        return
+
 class TestDiskOfferings(cloudstackTestCase):
 
     def setUp(self):

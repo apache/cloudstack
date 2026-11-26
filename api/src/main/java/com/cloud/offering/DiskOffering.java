@@ -51,6 +51,21 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
         }
     };
 
+    enum DiskErrorPolicy {
+        REPORT("report"), STOP("stop"), IGNORE("ignore"), ENOSPACE("enospace");
+
+        private final String diskErrorPolicy;
+
+        DiskErrorPolicy(String errorPolicy) {
+            diskErrorPolicy = errorPolicy;
+        }
+
+        @Override
+        public String toString() {
+            return diskErrorPolicy;
+        }
+    };
+
     String getUniqueName();
 
     boolean isUseLocalStorage();
@@ -144,6 +159,10 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     DiskCacheMode getCacheMode();
 
     void setCacheMode(DiskCacheMode cacheMode);
+
+    DiskErrorPolicy getErrorPolicy();
+
+    void setErrorPolicy(DiskErrorPolicy errorPolicy);
 
     boolean isComputeOnly();
 

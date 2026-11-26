@@ -181,6 +181,9 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "cache_mode")
     String cacheMode;
 
+    @Column(name = "error_policy")
+    String errorPolicy;
+
     @Column(name = "min_cpu")
     Integer minCpu;
 
@@ -446,6 +449,10 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     public String getCacheMode() {
         return cacheMode;
+    }
+
+    public String getErrorPolicy() {
+        return errorPolicy;
     }
 
     public Integer getMinCpu() {

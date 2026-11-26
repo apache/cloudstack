@@ -37,12 +37,14 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
+import com.cloud.utils.PasswordGenerator;
 
 
 @APICommand(name = "createAccount", description = "Creates an account", responseObject = AccountResponse.class, entityType = {Account.class},
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
 public class CreateAccountCmd extends BaseCmd {
 
+    private static final int GENERATED_PASSWORD_LENGTH = 12;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -75,8 +77,8 @@ public class CreateAccountCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.PASSWORD,
                type = CommandType.STRING,
-               required = true,
-               description = "Clear text password (Default hashed to SHA256SALT). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.")
+               description = "Clear text password (Default hashed to SHA256SALT). If you wish to use any other hashing algorithm, you will need to write a custom authentication adapter. See Docs section."
+                       + " If omitted, a random password is generated, e.g. for an account that will only ever authenticate externally via SAML/LDAP.")
     private String password;
 
     @Parameter(name = ApiConstants.TIMEZONE,
@@ -191,10 +193,16 @@ public class CreateAccountCmd extends BaseCmd {
 
     /**
      * TODO: this should be done through a validator. for now replicating the validation logic in create account and user
+     *
+     * <p>An omitted password generates a random one instead of failing, since an account that will
+     * only ever authenticate externally (SAML/LDAP) has no need for the admin to set one. A password
+     * that is passed but blank is still rejected, as that is more likely a client error.
      */
     private void validateParams() {
-        if(StringUtils.isEmpty(getPassword())) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Empty passwords are not allowed");
+        if (getPassword() == null) {
+            password = PasswordGenerator.generateRandomPassword(GENERATED_PASSWORD_LENGTH);
+        } else if (StringUtils.isBlank(getPassword())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Blank passwords are not allowed");
         }
         if (getAccountType() == null && (getRoleId() == null || getRoleId() < 1L)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Neither account type and role ID are not provided");
