@@ -520,6 +520,66 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return null;
     }
 
+    /** The snapshot (and where it is) that a volume is created from. */
+    protected static class SnapshotForVolume {
+        final SnapshotInfo snapInfo;
+        final DataStoreRole dataStoreRole;
+        final boolean kvmSnapshotOnlyInPrimaryStorage;
+
+        SnapshotForVolume(SnapshotInfo snapInfo, DataStoreRole dataStoreRole, boolean kvmSnapshotOnlyInPrimaryStorage) {
+            this.snapInfo = snapInfo;
+            this.dataStoreRole = dataStoreRole;
+            this.kvmSnapshotOnlyInPrimaryStorage = kvmSnapshotOnlyInPrimaryStorage;
+        }
+    }
+
+    /**
+     * Picks the copy of the snapshot to create the volume from. Unless the primary storage creates volumes from its own
+     * snapshots (StorPool and Linstor through CAN_CREATE_TEMPLATE_FROM_SNAPSHOT, PowerFlex through
+     * {@link SnapshotHelper#isSnapshotOnStorageCreatingVolumesFromIt}), a KVM snapshot kept only on primary storage is first
+     * copied to secondary storage.
+     */
+    protected SnapshotForVolume prepareSnapshotForVolumeCreation(Snapshot snapshot, SnapshotForVolume current, boolean storageSupportSnapshotToTemplateEnabled, long zoneId) {
+        if (storageSupportSnapshotToTemplateEnabled) {
+            return current;
+        }
+        if (snapshotHelper.isSnapshotOnStorageCreatingVolumesFromIt(current.snapInfo)) {
+            // The primary storage creates the volume from its own snapshot, there is no temporary copy on secondary storage
+            logger.debug("Creating volume from snapshot [{}] on primary storage, the storage creates the volume from it", current.snapInfo.getSnapshotVO());
+            return new SnapshotForVolume(current.snapInfo, current.dataStoreRole, false);
+        }
+        SnapshotInfo snapInfo = current.snapInfo;
+        boolean kvmSnapshotOnlyInPrimaryStorage = current.kvmSnapshotOnlyInPrimaryStorage;
+        try {
+            DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
+            snapInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapshot.getId(), dataStoreRole, zoneId);
+            kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole);
+            logger.debug("Creating volume from snapshot, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
+            snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
+            return new SnapshotForVolume(snapInfo, dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
+        } catch (CloudRuntimeException e) {
+            snapshotHelper.expungeTemporarySnapshot(kvmSnapshotOnlyInPrimaryStorage, snapInfo);
+            throw e;
+        }
+    }
+
+    /**
+     * When the snapshot's pool creates volumes from its own snapshots (PowerFlex), only that pool can hold the new volume:
+     * adds every other pool of the zone to the pools to avoid.
+     * @return the required pool id, or null when any suitable pool can be used
+     */
+    protected Long avoidPoolsOtherThanRequiredForSnapshot(Snapshot snapshot, long zoneId, Set<StoragePool> poolsToAvoid) {
+        Long requiredPoolId = snapshotHelper.getStoragePoolIdRequiredToCreateVolumeFromSnapshot(snapshot, zoneId);
+        if (requiredPoolId != null) {
+            for (StoragePoolVO otherPool : _storagePoolDao.listByDataCenterId(zoneId)) {
+                if (otherPool.getId() != requiredPoolId) {
+                    poolsToAvoid.add(otherPool);
+                }
+            }
+        }
+        return requiredPoolId;
+    }
+
     @DB
     @Override
     public VolumeInfo createVolumeFromSnapshot(Volume volume, Snapshot snapshot, UserVm vm) throws StorageUnavailableException {
@@ -544,6 +604,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         DiskProfile dskCh = new DiskProfile(volume, diskOffering, snapshot.getHypervisorType());
 
         String msg = String.format("There are no available storage pools to store the volume [%s] in. ", volumeToString);
+
+        Long requiredPoolId = avoidPoolsOtherThanRequiredForSnapshot(snapshot, volume.getDataCenterId(), poolsToAvoid);
+        if (requiredPoolId != null) {
+            msg += "A volume created from this snapshot must be on the snapshot's storage, which is not suitable for it. ";
+        }
 
         if (vm != null) {
             Pod podofVM = _entityMgr.findById(Pod.class, vm.getPodIdToDeployIn());
@@ -618,19 +683,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         boolean kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole, zoneId);
         logger.debug("Creating volume from snapshot, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
 
-        boolean storageSupportSnapshotToTemplateEnabled = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo); // storageSupportSnapshotToTemplateEnabled is true only for StorPool now [TODO: Update to check storage supports snapshot to volume (DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT) - may impact other storages, or StorPool storage type only]
-        try {
-            if (!storageSupportSnapshotToTemplateEnabled) {
-                dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
-                snapInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapshot.getId(), dataStoreRole, zoneId);
-                kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole);
-                logger.debug("Creating volume from snapshot, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
-                snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
-            }
-        } catch (CloudRuntimeException e) {
-            snapshotHelper.expungeTemporarySnapshot(kvmSnapshotOnlyInPrimaryStorage, snapInfo);
-            throw e;
-        }
+        // true for StorPool and Linstor; PowerFlex is handled in prepareSnapshotForVolumeCreation
+        boolean storageSupportSnapshotToTemplateEnabled = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo);
+        SnapshotForVolume snapshotForVolume = prepareSnapshotForVolumeCreation(snapshot, new SnapshotForVolume(snapInfo, dataStoreRole, kvmSnapshotOnlyInPrimaryStorage),
+                storageSupportSnapshotToTemplateEnabled, zoneId);
+        snapInfo = snapshotForVolume.snapInfo;
+        dataStoreRole = snapshotForVolume.dataStoreRole;
+        kvmSnapshotOnlyInPrimaryStorage = snapshotForVolume.kvmSnapshotOnlyInPrimaryStorage;
 
         boolean kvmIncrementalSnapshot = SnapshotManager.kvmIncrementalSnapshot.valueIn(_hostDao.findClusterIdByVolumeInfo(snapInfo.getBaseVolume()));
         if (kvmIncrementalSnapshot && DataStoreRole.Image.equals(dataStoreRole)) {

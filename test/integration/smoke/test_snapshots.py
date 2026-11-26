@@ -493,11 +493,6 @@ class TestSnapshotStandaloneBackup(cloudstackTestCase):
         """Test creating volume from snapshot
         """
         self.services['volume_from_snapshot']['zoneid'] = self.zone.id
-        snapshot_volume_pool_response = list_storage_pools(
-            self.apiclient,
-            id=self.volume.storageid
-        )
-        snapshot_volume_pool = snapshot_volume_pool_response[0]
         try:
             self.volume_from_snap = Volume.create_from_snapshot(
                 self.userapiclient,
@@ -508,11 +503,6 @@ class TestSnapshotStandaloneBackup(cloudstackTestCase):
             )
         except CloudstackAPIException as cs:
            self.debug(cs.errorMsg)
-           if snapshot_volume_pool.type.lower() == "powerflex":
-                self.assertTrue(
-                    cs.errorMsg.find("Create volume from snapshot is not supported for PowerFlex volume snapshots") > 0,
-                    msg="Other than unsupported error while creating volume from snapshot for volume on PowerFlex pool")
-                return
            self.fail("Failed to create volume from snapshot: %s" % cs)
 
         self.cleanup.append(self.volume_from_snap)

@@ -107,8 +107,6 @@ import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
@@ -288,8 +286,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private SnapshotDao _snapshotDao;
     @Inject
     private SnapshotPolicyDetailsDao snapshotPolicyDetailsDao;
-    @Inject
-    private SnapshotDataStoreDao _snapshotDataStoreDao;
     @Inject
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
@@ -920,14 +916,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException(String.format("Snapshot %s is not in %s state yet and can't be used for volume creation", snapshotCheck, Snapshot.State.BackedUp));
             }
 
-            SnapshotDataStoreVO snapshotStore = _snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(snapshotId, DataStoreRole.Primary);
-            if (snapshotStore != null) {
-                StoragePoolVO storagePoolVO = _storagePoolDao.findById(snapshotStore.getDataStoreId());
-                if (storagePoolVO.getPoolType() == Storage.StoragePoolType.PowerFlex) {
-                    throw new InvalidParameterValueException("Create volume from snapshot is not supported for PowerFlex volume snapshots");
-                }
-            }
-
             parentVolume = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
 
             // Don't support creating templates from encrypted volumes (yet)
@@ -958,6 +946,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             // check snapshot permissions
             _accountMgr.checkAccess(caller, null, true, snapshotCheck);
+
+            snapshotHelper.validateVolumeFromSnapshotOnStorageCreatingVolumes(snapshotCheck, zoneId, kmsKeyId != null || diskOffering.getEncrypt());
 
             // one step operation - create volume in VM's cluster and attach it
             // to the VM

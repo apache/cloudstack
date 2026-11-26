@@ -30,6 +30,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -94,10 +95,19 @@ public class SnapshotHelper {
     @Inject
     protected SnapshotJoinDao snapshotJoinDao;
 
+    @Inject
+    protected VolumeDao volumeDao;
+
     protected boolean backupSnapshotAfterTakingSnapshot = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
     protected final Set<StoragePoolType> storagePoolTypesToValidateWithBackupSnapshotAfterTakingSnapshot = new HashSet<>(Arrays.asList(StoragePoolType.RBD,
             StoragePoolType.PowerFlex));
+
+    /**
+     * Storage pool types whose driver creates a volume from a volume snapshot kept on the pool by itself (see
+     * {@link DataStoreCapabilities#CAN_CREATE_VOLUME_FROM_SNAPSHOT}), so the snapshot never has to be copied to secondary storage first.
+     */
+    protected final Set<StoragePoolType> storagePoolTypesCreatingVolumesFromPrimarySnapshots = new HashSet<>(Arrays.asList(StoragePoolType.PowerFlex));
 
      /**
      * If the snapshot is a backup from a KVM snapshot that should be kept only in primary storage, expunges it from secondary storage.
@@ -151,6 +161,68 @@ public class SnapshotHelper {
             storeId = imageStoreSnapInfo.getDataStore().getId();
         }
         snapshotDataStoreDao.expungeReferenceBySnapshotIdAndDataStoreRole(snapInfo.getId(), storeId, DataStoreRole.Image);
+    }
+
+    /**
+     * Verifies if the snapshot info is on a primary storage that creates volumes from its own snapshots (today PowerFlex
+     * only, see {@link #storagePoolTypesCreatingVolumesFromPrimarySnapshots}). Such a snapshot is not staged on
+     * secondary storage to create a volume from it.
+     * @return true if the snapshot info is on primary storage of such a type, else false.
+     */
+    public boolean isSnapshotOnStorageCreatingVolumesFromIt(SnapshotInfo snapInfo) {
+        if (snapInfo == null || snapInfo.getDataStore() == null || !DataStoreRole.Primary.equals(snapInfo.getDataStore().getRole())) {
+            return false;
+        }
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(snapInfo.getDataStore().getId());
+        return storagePoolVO != null && storagePoolTypesCreatingVolumesFromPrimarySnapshots.contains(storagePoolVO.getPoolType());
+    }
+
+    /**
+     * Returns the primary storage pool on which a volume created from the snapshot in the zone must be allocated: the
+     * snapshot's own pool in that zone, when that pool creates volumes from its own snapshots (see
+     * {@link #storagePoolTypesCreatingVolumesFromPrimarySnapshots}).
+     * @return the pool id, or null when any suitable pool can be used.
+     */
+    public Long getStoragePoolIdRequiredToCreateVolumeFromSnapshot(Snapshot snapshot, long zoneId) {
+        StoragePoolVO storagePoolVO = getStoragePoolCreatingVolumesFromSnapshot(snapshot);
+        return storagePoolVO != null && storagePoolVO.getDataCenterId() == zoneId ? storagePoolVO.getId() : null;
+    }
+
+    /**
+     * A volume created from a snapshot on a primary storage pool that creates volumes from its own snapshots (see
+     * {@link #storagePoolTypesCreatingVolumesFromPrimarySnapshots}) is created on that pool, with the snapshot's data copied
+     * in: it must be in the pool's zone, and neither it nor the snapshot's volume can be encrypted. Used by createVolume and
+     * by deploying an Instance from a snapshot, before anything is allocated.
+     * @throws InvalidParameterValueException if the volume can't be created from the snapshot that way
+     */
+    public void validateVolumeFromSnapshotOnStorageCreatingVolumes(Snapshot snapshot, long zoneId, boolean encryptionRequested) {
+        StoragePoolVO storagePoolVO = getStoragePoolCreatingVolumesFromSnapshot(snapshot);
+        if (storagePoolVO == null) {
+            return;
+        }
+        if (storagePoolVO.getDataCenterId() != zoneId) {
+            throw new InvalidParameterValueException(String.format("A volume from snapshot %s can only be created in the zone of the snapshot's storage", snapshot.getUuid()));
+        }
+        if (encryptionRequested) {
+            throw new InvalidParameterValueException(String.format("Creating an encrypted volume from snapshot %s is not supported on the snapshot's storage", snapshot.getUuid()));
+        }
+        VolumeVO snapshotVolume = volumeDao.findByIdIncludingRemoved(snapshot.getVolumeId());
+        if (snapshotVolume == null || snapshotVolume.getPassphraseId() != null || snapshotVolume.getKmsKeyId() != null) {
+            throw new InvalidParameterValueException(String.format("Creating a volume from snapshot %s of an encrypted or unknown volume is not supported on the snapshot's storage",
+                    snapshot.getUuid()));
+        }
+    }
+
+    private StoragePoolVO getStoragePoolCreatingVolumesFromSnapshot(Snapshot snapshot) {
+        SnapshotDataStoreVO snapshotStore = snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(snapshot.getId(), DataStoreRole.Primary);
+        if (snapshotStore == null) {
+            return null;
+        }
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(snapshotStore.getDataStoreId());
+        if (storagePoolVO == null || !storagePoolTypesCreatingVolumesFromPrimarySnapshots.contains(storagePoolVO.getPoolType())) {
+            return null;
+        }
+        return storagePoolVO;
     }
 
     public boolean isStorageSupportSnapshotToTemplate(SnapshotInfo snapInfo) {
