@@ -236,7 +236,24 @@ public class VlanTrunkMigrationHelperTest {
     }
 
     @Test
-    public void sendPostMigrationVlanTrunkMembershipIfNeededWarnsOnNullAnswer() throws Exception {
+    public void sendPostMigrationVlanTrunkMembershipIfNeededStopsRetryingOnceAnAttemptSucceeds() throws Exception {
+        when(hostDetailsDao.findDetail(DEST_HOST_ID, Host.HOST_VLAN_TRUNK_XML_SUPPORTED)).thenReturn(null);
+        when(hostDetailsDao.findDetail(DEST_HOST_ID, Host.HOST_VLAN_FILTERING_ENABLED))
+                .thenReturn(new DetailVO(DEST_HOST_ID, Host.HOST_VLAN_FILTERING_ENABLED, "false"));
+        List<NicVO> trunkNics = Collections.singletonList(vlanNic(true));
+        when(nicDao.listByVmId(VM_ID)).thenReturn(trunkNics);
+        Answer successAnswer = mock(Answer.class);
+        when(successAnswer.getResult()).thenReturn(true);
+        when(commandSender.send(eq(DEST_HOST_ID), any(PostMigrationCommand.class))).thenReturn(null, successAnswer);
+
+        VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, DEST_HOST_ID, nicDao, hostDetailsDao, commandSender, logger, 0L);
+
+        verify(commandSender, times(2)).send(eq(DEST_HOST_ID), any(PostMigrationCommand.class));
+        verify(logger, never()).error(any(String.class), any(Object.class), any(Object.class), any(Object.class));
+    }
+
+    @Test
+    public void sendPostMigrationVlanTrunkMembershipIfNeededRetriesThenErrorsOnNullAnswer() throws Exception {
         when(hostDetailsDao.findDetail(DEST_HOST_ID, Host.HOST_VLAN_TRUNK_XML_SUPPORTED)).thenReturn(null);
         when(hostDetailsDao.findDetail(DEST_HOST_ID, Host.HOST_VLAN_FILTERING_ENABLED))
                 .thenReturn(new DetailVO(DEST_HOST_ID, Host.HOST_VLAN_FILTERING_ENABLED, "false"));
@@ -244,13 +261,14 @@ public class VlanTrunkMigrationHelperTest {
         when(nicDao.listByVmId(VM_ID)).thenReturn(trunkNics);
         when(commandSender.send(eq(DEST_HOST_ID), any(PostMigrationCommand.class))).thenReturn(null);
 
-        VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, DEST_HOST_ID, nicDao, hostDetailsDao, commandSender, logger);
+        VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, DEST_HOST_ID, nicDao, hostDetailsDao, commandSender, logger, 0L);
 
-        verify(logger, times(1)).warn(any(String.class), eq(vmTO), eq(DEST_HOST_ID), any());
+        verify(commandSender, times(3)).send(eq(DEST_HOST_ID), any(PostMigrationCommand.class));
+        verify(logger, times(1)).error(any(String.class), eq(vmTO), eq(DEST_HOST_ID), eq("null answer returned"));
     }
 
     @Test
-    public void sendPostMigrationVlanTrunkMembershipIfNeededWarnsOnFailedAnswer() throws Exception {
+    public void sendPostMigrationVlanTrunkMembershipIfNeededRetriesThenErrorsOnFailedAnswer() throws Exception {
         when(hostDetailsDao.findDetail(DEST_HOST_ID, Host.HOST_VLAN_TRUNK_XML_SUPPORTED)).thenReturn(null);
         when(hostDetailsDao.findDetail(DEST_HOST_ID, Host.HOST_VLAN_FILTERING_ENABLED))
                 .thenReturn(new DetailVO(DEST_HOST_ID, Host.HOST_VLAN_FILTERING_ENABLED, "false"));
@@ -261,13 +279,14 @@ public class VlanTrunkMigrationHelperTest {
         when(failedAnswer.getDetails()).thenReturn("bridge vlan add failed");
         when(commandSender.send(eq(DEST_HOST_ID), any(PostMigrationCommand.class))).thenReturn(failedAnswer);
 
-        VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, DEST_HOST_ID, nicDao, hostDetailsDao, commandSender, logger);
+        VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, DEST_HOST_ID, nicDao, hostDetailsDao, commandSender, logger, 0L);
 
-        verify(logger, times(1)).warn(any(String.class), eq(vmTO), eq(DEST_HOST_ID), eq("bridge vlan add failed"));
+        verify(commandSender, times(3)).send(eq(DEST_HOST_ID), any(PostMigrationCommand.class));
+        verify(logger, times(1)).error(any(String.class), eq(vmTO), eq(DEST_HOST_ID), eq("bridge vlan add failed"));
     }
 
     @Test
-    public void sendPostMigrationVlanTrunkMembershipIfNeededWarnsOnSendException() throws Exception {
+    public void sendPostMigrationVlanTrunkMembershipIfNeededRetriesThenErrorsOnSendException() throws Exception {
         when(hostDetailsDao.findDetail(DEST_HOST_ID, Host.HOST_VLAN_TRUNK_XML_SUPPORTED)).thenReturn(null);
         when(hostDetailsDao.findDetail(DEST_HOST_ID, Host.HOST_VLAN_FILTERING_ENABLED))
                 .thenReturn(new DetailVO(DEST_HOST_ID, Host.HOST_VLAN_FILTERING_ENABLED, "false"));
@@ -276,9 +295,10 @@ public class VlanTrunkMigrationHelperTest {
         when(commandSender.send(eq(DEST_HOST_ID), any(PostMigrationCommand.class)))
                 .thenThrow(new AgentUnavailableException("agent down", DEST_HOST_ID));
 
-        VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, DEST_HOST_ID, nicDao, hostDetailsDao, commandSender, logger);
+        VlanTrunkMigrationHelper.sendPostMigrationVlanTrunkMembershipIfNeeded(vmTO, DEST_HOST_ID, nicDao, hostDetailsDao, commandSender, logger, 0L);
 
-        verify(logger, times(1)).warn(any(String.class), eq(vmTO), eq(DEST_HOST_ID), any(String.class), any(AgentUnavailableException.class));
+        verify(commandSender, times(3)).send(eq(DEST_HOST_ID), any(PostMigrationCommand.class));
+        verify(logger, times(1)).error(any(String.class), eq(vmTO), eq(DEST_HOST_ID), any(String.class));
     }
 
     // -- getVlanFilteringUnsuitableReason --
@@ -312,7 +332,7 @@ public class VlanTrunkMigrationHelperTest {
         when(nicDao.listByVmId(VM_ID)).thenReturn(nics);
         givenHostVlanFiltering(true);
 
-        assertTrue(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao).contains("VLAN 1"));
+        assertTrue(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao, true).contains("VLAN 1"));
     }
 
     @Test
@@ -321,7 +341,7 @@ public class VlanTrunkMigrationHelperTest {
         when(nicDao.listByVmId(VM_ID)).thenReturn(nics);
         givenHostVlanFiltering(false);
 
-        assertNull(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao));
+        assertNull(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao, true));
     }
 
     @Test
@@ -329,7 +349,7 @@ public class VlanTrunkMigrationHelperTest {
         List<NicVO> nics = Collections.singletonList(nicOnVlan(100, false));
         when(nicDao.listByVmId(VM_ID)).thenReturn(nics);
 
-        assertNull(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao));
+        assertNull(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao, true));
     }
 
     @Test
@@ -338,7 +358,7 @@ public class VlanTrunkMigrationHelperTest {
         when(nicDao.listByVmId(VM_ID)).thenReturn(nics);
         givenHostVlanFiltering(false);
 
-        assertTrue(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao).contains("trunk"));
+        assertTrue(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao, true).contains("trunk"));
     }
 
     @Test
@@ -355,7 +375,7 @@ public class VlanTrunkMigrationHelperTest {
         when(networkDao.findById(5L)).thenReturn(network);
         givenHostVlanFiltering(true);
 
-        assertTrue(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao).contains("VLAN 1"));
+        assertTrue(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao, true).contains("VLAN 1"));
     }
 
     @Test
@@ -365,10 +385,10 @@ public class VlanTrunkMigrationHelperTest {
         when(network.getBroadcastUri()).thenReturn(vlanOne);
         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         givenHostVlanFiltering(true);
-        assertTrue(VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, DEST_HOST_ID, hostDetailsDao).contains("VLAN 1"));
+        assertTrue(VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, DEST_HOST_ID, hostDetailsDao, true).contains("VLAN 1"));
 
         givenHostVlanFiltering(false);
-        assertNull(VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, DEST_HOST_ID, hostDetailsDao));
+        assertNull(VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, DEST_HOST_ID, hostDetailsDao, true));
     }
 
     @Test
@@ -376,7 +396,7 @@ public class VlanTrunkMigrationHelperTest {
         List<NicVO> nics = Collections.singletonList(nicOnVlan(1, false, Networks.TrafficType.Public));
         when(nicDao.listByVmId(VM_ID)).thenReturn(nics);
 
-        assertNull(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao));
+        assertNull(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao, true));
     }
 
     @Test
@@ -384,7 +404,7 @@ public class VlanTrunkMigrationHelperTest {
         Network network = mock(Network.class);
         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);
 
-        assertNull(VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, DEST_HOST_ID, hostDetailsDao));
+        assertNull(VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, DEST_HOST_ID, hostDetailsDao, true));
     }
 
     @Test
@@ -417,7 +437,7 @@ public class VlanTrunkMigrationHelperTest {
         List<NicVO> nics = Collections.singletonList(nicOnVlan(100, false));
         when(nicDao.listByVmId(VM_ID)).thenReturn(nics);
 
-        assertNull(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao));
+        assertNull(VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(VM_ID, DEST_HOST_ID, nicDao, networkDao, hostDetailsDao, true));
         verify(networkDao, never()).findById(any(Long.class));
         verify(hostDetailsDao, never()).findDetail(any(Long.class), any(String.class));
     }

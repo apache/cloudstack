@@ -285,6 +285,10 @@ public class LibvirtDomainXMLParser {
 
                 parseVlanTag(nic, def);
 
+                if ("down".equalsIgnoreCase(getAttrValue("link", "state", nic))) {
+                    def.setLinkStateUp(false);
+                }
+
                 interfaces.add(def);
             }
 

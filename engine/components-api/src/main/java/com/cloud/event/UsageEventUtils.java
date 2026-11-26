@@ -137,7 +137,8 @@ public class UsageEventUtils {
             for (NicNetworkMapVO association : s_nicNetworkMapDao.listByNicId(nic.getId())) {
                 NetworkVO associatedNetwork = s_networkDao.findById(association.getNetworkId());
                 if (associatedNetwork != null) {
-                    publishNicNetworkOfferingUsageEvent(usageType, accountId, zoneId, vmId, entityType, entityUUID, nic.getId(), associatedNetwork, isDefault,
+                    // an association is never a nic's default, as in NetworkServiceImpl#publishAssociationUsageEvent
+                    publishNicNetworkOfferingUsageEvent(usageType, accountId, zoneId, vmId, entityType, entityUUID, nic.getId(), associatedNetwork, 0L,
                             displayResource);
                 }
             }

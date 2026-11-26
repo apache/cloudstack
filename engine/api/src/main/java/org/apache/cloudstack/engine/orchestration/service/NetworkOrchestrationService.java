@@ -99,7 +99,10 @@ public interface NetworkOrchestrationService {
             "Whether to allow or deny promiscuous mode on NICs for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
     ConfigKey<Boolean> MultiNetworkNicEnabled = new ConfigKey<>("Advanced", Boolean.class, "multi.network.nic.enabled", "false",
-            "Allow a NIC to be associated with more than one network (multi-VLAN trunk NICs)", true, ConfigKey.Scope.Zone);
+            "Allow a NIC to be associated with more than one network (multi-VLAN trunk NICs). When on, VLAN NICs also use the shared VLAN-aware guest bridge on KVM hosts "
+                    + "with vlan_filtering. Turning it off does not move running Instances: restart them without migrating or reverting them first, "
+                    + "or their plain VLAN NICs can end up on VLAN 1.",
+            true, ConfigKey.Scope.Zone);
 
     ConfigKey<Boolean> MacAddressChanges = new ConfigKey<>("Advanced", Boolean.class, "network.mac.address.changes", "true",
             "Whether to allow or deny mac address changes on NICs for applicable network elements such as for vswitch/dvswitch porgroups.", true);

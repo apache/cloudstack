@@ -207,7 +207,8 @@ public class LibvirtReplugNicCommandWrapperTest {
 
         when(_domain.getXMLDesc(0))
                 .thenReturn(fullfile)
-                .thenReturn(part_1 + part_3);
+                .thenReturn(part_1 + part_3)
+                .thenReturn(fullfile);
         when(conn.domainLookupByName(Mockito.anyString())).thenReturn(_domain);
         when(helper.getConnectionByVmName(Mockito.anyString())).thenReturn(conn);
 
@@ -295,6 +296,7 @@ public class LibvirtReplugNicCommandWrapperTest {
         nic.setName(GUEST_BR);
         nic.setBroadcastType(Networks.BroadcastDomainType.Vlan);
         nic.setMac("02:00:7c:98:00:02");
+        nic.setEnabled(true);
         nic.setBroadcastUri(Networks.BroadcastDomainType.Vlan.toUri(100));
         final ReplugNicCommand command = new ReplugNicCommand(nic, "i-85-285-VM", VirtualMachine.Type.User);
         final Answer result = wrapper.execute(command, res);

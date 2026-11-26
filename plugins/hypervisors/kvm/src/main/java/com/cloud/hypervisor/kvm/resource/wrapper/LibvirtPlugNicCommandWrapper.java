@@ -90,6 +90,11 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
                 logger.debug("Assigning PCI slot 0x" + String.format("%02x", nextSlot) + " to hot-plugged NIC");
             }
 
+            // keep the link down until the tap has its VLANs, else it sits on the bridge's default VLAN 1
+            final boolean linkDownUntilVlansApplied = nic.getBroadcastType() == BroadcastDomainType.Vlan && vifDriver.needsManualVlanMembership(nic);
+            if (linkDownUntilVlansApplied) {
+                interfaceDef.setLinkStateUp(false);
+            }
             vm.attachDevice(interfaceDef.toString());
 
             if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
@@ -99,6 +104,10 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
                 } catch (CloudRuntimeException e) {
                     throw new InternalErrorException("Failed to locate live tap for trunk nic " + nic.getMac() + ": " + e.getMessage());
                 }
+            }
+            if (linkDownUntilVlansApplied) {
+                interfaceDef.setLinkStateUp(nic.isEnabled());
+                vm.updateDeviceFlags(interfaceDef.toString(), Domain.DeviceModifyFlags.LIVE);
             }
 
             // apply default network rules on new nic

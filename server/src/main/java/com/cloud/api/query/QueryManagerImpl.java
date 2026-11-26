@@ -1309,6 +1309,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     SearchBuilder<NicVO> createNicSearchBuilder(Long vpcId, boolean hasAssociatedNics) {
+        return createNicSearchBuilder(vpcId, hasAssociatedNics, false);
+    }
+
+    SearchBuilder<NicVO> createNicSearchBuilder(Long vpcId, boolean hasAssociatedNics, boolean hasVpcAssociatedNics) {
         SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
         if (hasAssociatedNics) {
             // trunk nics list networkId as an association, not as their primary network
@@ -1319,7 +1323,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), Op.EQ);
         }
         nicSearch.and("removed", nicSearch.entity().getRemoved(), Op.NULL);
-        if (vpcId != null) {
+        if (vpcId != null && hasVpcAssociatedNics) {
+            // a trunk nic is in the VPC through its primary network or through one of its associated networks
+            nicSearch.and().op("vpcNetworkIdIN", nicSearch.entity().getNetworkId(), Op.IN);
+            nicSearch.or("vpcAssociatedNicIdIN", nicSearch.entity().getId(), Op.IN);
+            nicSearch.cp();
+        } else if (vpcId != null) {
             SearchBuilder<NetworkVO> networkSearch = networkDao.createSearchBuilder();
             networkSearch.and("vpcId", networkSearch.entity().getVpcId(), Op.EQ);
             nicSearch.join("vpc", networkSearch, networkSearch.entity().getId(), nicSearch.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
@@ -1491,8 +1500,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         List<Long> associatedNicIds = networkId != null ? nicNetworkMapDao.listNicIdsByNetworkId(networkId) : new ArrayList<>();
+        List<Long> vpcNetworkIds = vpcId != null ? networkDao.listByVpc(vpcId).stream().map(NetworkVO::getId).collect(Collectors.toList()) : new ArrayList<>();
+        List<Long> vpcAssociatedNicIds = vpcNetworkIds.stream().flatMap(vpcNetworkId -> nicNetworkMapDao.listNicIdsByNetworkId(vpcNetworkId).stream())
+                .distinct().collect(Collectors.toList());
         if (networkId != null || vpcId != null) {
-            SearchBuilder<NicVO> nicSearch = createNicSearchBuilder(vpcId, !associatedNicIds.isEmpty());
+            SearchBuilder<NicVO> nicSearch = createNicSearchBuilder(vpcId, !associatedNicIds.isEmpty(), !vpcAssociatedNicIds.isEmpty());
             userVmSearchBuilder.join("nic", nicSearch, nicSearch.entity().getInstanceId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
@@ -1730,7 +1742,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (vpcId != null) {
-            userVmSearchCriteria.getJoin("nic").setJoinParameters("vpc", "vpcId", vpcId);
+            if (!vpcAssociatedNicIds.isEmpty()) {
+                userVmSearchCriteria.setJoinParameters("nic", "vpcNetworkIdIN", vpcNetworkIds.toArray());
+                userVmSearchCriteria.setJoinParameters("nic", "vpcAssociatedNicIdIN", vpcAssociatedNicIds.toArray());
+            } else {
+                userVmSearchCriteria.getJoin("nic").setJoinParameters("vpc", "vpcId", vpcId);
+            }
         }
 
         if (userId != null) {

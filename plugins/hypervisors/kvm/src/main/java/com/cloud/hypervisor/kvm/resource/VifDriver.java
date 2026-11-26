@@ -47,6 +47,11 @@ public interface VifDriver {
 
     void deleteBr(NicTO nic);
 
+    // whether the nic's VLAN membership has to be applied by hand once its tap exists (host's libvirt can't do it via <vlan> XML)
+    default boolean needsManualVlanMembership(NicTO nic) {
+        return false;
+    }
+
     // applies manual VLAN trunk membership to a trunk nic's live tap on hosts whose libvirt can't do it via <vlan> XML; no-op otherwise
     default void ensureVlanTrunkMembership(LibvirtVMDef.InterfaceDef iface, NicTO nic) throws InternalErrorException {
     }

@@ -951,8 +951,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             nic = _nicDao.findById(nic.getId());
             refreshNicVlanMappingMetadata(nic);
             for (NetworkVO network : newlyAssociatedNetworks) {
-                pushDhcpEntryForAssociation(vm, nic, network);
                 publishAssociationUsageEvent(vm, nic, network, EventTypes.EVENT_NETWORK_OFFERING_ASSIGN);
+                pushDhcpEntryForAssociationBestEffort(vm, nic, network);
             }
         }
 
@@ -1165,10 +1165,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         rollbackNetworkDisassociation(nic, association, nicMultiNetworkCleared, targetNetwork, vm);
                         throw ex;
                     }
-                    cleanupDhcpEntryForAssociation(vm, nic, targetNetworkId, association.getIp4Address(), association.getIp6Address());
                     if (targetNetwork != null) {
                         publishAssociationUsageEvent(vm, nic, targetNetwork, EventTypes.EVENT_NETWORK_OFFERING_REMOVE);
                     }
+                    cleanupDhcpEntryForAssociationBestEffort(vm, nic, targetNetworkId, association.getIp4Address(), association.getIp6Address());
                     refreshNicVlanMappingMetadata(nic);
                 }
 
@@ -1283,6 +1283,26 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 VirtualMachine.class.getName(), vm.getUuid(), nic.getId(), network, 0L, vm.isDisplay());
     }
 
+    // The association is already committed and billed by now, so an unreachable router must not fail the call;
+    // the entry is re-synced on the Instance's next start (UserVmManagerImpl.finalizeStart).
+    private void pushDhcpEntryForAssociationBestEffort(VirtualMachine vm, NicVO nic, NetworkVO network) {
+        try {
+            pushDhcpEntryForAssociation(vm, nic, network);
+        } catch (ResourceUnavailableException e) {
+            logger.warn("Network {} was associated to nic {} of Instance {}, but its DHCP entry could not be pushed to the router: {}",
+                    network.getUuid(), nic.getUuid(), vm.getUuid(), e.getMessage());
+        }
+    }
+
+    private void cleanupDhcpEntryForAssociationBestEffort(VirtualMachine vm, NicVO nic, long networkId, String ip4Address, String ip6Address) {
+        try {
+            cleanupDhcpEntryForAssociation(vm, nic, networkId, ip4Address, ip6Address);
+        } catch (ResourceUnavailableException e) {
+            logger.warn("Network {} was disassociated from nic {} of Instance {}, but its DHCP entry could not be removed from the router: {}",
+                    networkId, nic.getUuid(), vm.getUuid(), e.getMessage());
+        }
+    }
+
     // Counterpart to pushDhcpEntryForAssociation, for a Running Instance's disassociate.
     private void cleanupDhcpEntryForAssociation(VirtualMachine vm, NicVO nic, long networkId, String ip4Address, String ip6Address) throws ResourceUnavailableException {
         NetworkVO network = _networksDao.findById(networkId);
@@ -1315,8 +1335,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         DetailVO vlanFilteringDetail = _hostDetailsDao.findDetail(vm.getHostId(), Host.HOST_VLAN_FILTERING_ENABLED);
         boolean vlanFilteringEnabled = vlanFilteringDetail != null && Boolean.parseBoolean(vlanFilteringDetail.getValue());
+        boolean sharedVlanBridgeEnabled = NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(vm.getDataCenterId());
         for (NicVO nic : _nicDao.listByVmId(vm.getId())) {
-            if (VlanTrunkMigrationHelper.nicNeedsManualVlanMembership(nic, vlanFilteringEnabled)) {
+            if (VlanTrunkMigrationHelper.nicNeedsManualVlanMembership(nic, vlanFilteringEnabled, sharedVlanBridgeEnabled)) {
                 updateLiveVlanTrunkMembership(vm, nic);
             }
         }

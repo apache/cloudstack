@@ -101,6 +101,8 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicNetworkMapDao;
+import com.cloud.vm.dao.NicNetworkMapVO;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
@@ -145,6 +147,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     ConfigurationManager _configMgr;
     @Inject
     NicDao _nicDao;
+    @Inject
+    NicNetworkMapDao _nicNetworkMapDao;
     @Inject
     ResourceTagDao _resourceTagDao;
     @Inject
@@ -1569,39 +1573,47 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     @Override
     public List<FirewallRuleVO> listAssociatedRulesForGuestNic(Nic nic) {
         logger.debug("Checking if PF/StaticNat/LoadBalancer rules are configured for nic {}", nic);
+        List<FirewallRuleVO> result = listRulesForNicIpInNetwork(nic.getInstanceId(), nic.getNetworkId(), nic.getIPv4Address());
+        for (NicNetworkMapVO association : _nicNetworkMapDao.listByNicId(nic.getId())) {
+            result.addAll(listRulesForNicIpInNetwork(nic.getInstanceId(), association.getNetworkId(), association.getIp4Address()));
+        }
+        return result;
+    }
+
+    private List<FirewallRuleVO> listRulesForNicIpInNetwork(long vmId, long networkId, String ip4Address) {
         List<FirewallRuleVO> result = new ArrayList<FirewallRuleVO>();
         // add PF rules
-        result.addAll(_portForwardingDao.listByNetworkAndDestIpAddr(nic.getIPv4Address(), nic.getNetworkId()));
-        if(result.size() > 0) {
+        result.addAll(_portForwardingDao.listByNetworkAndDestIpAddr(ip4Address, networkId));
+        if (result.size() > 0) {
             logger.debug("Found {} portforwarding rule configured for the nic in the network {}",
-                    result.size(), _networkModel.getNetwork(nic.getNetworkId()));
+                    result.size(), _networkModel.getNetwork(networkId));
         }
         // add static NAT rules
-        List<FirewallRuleVO> staticNatRules = _firewallDao.listStaticNatByVmId(nic.getInstanceId());
+        List<FirewallRuleVO> staticNatRules = _firewallDao.listStaticNatByVmId(vmId);
         for (FirewallRuleVO rule : staticNatRules) {
-            if (rule.getNetworkId() == nic.getNetworkId()) {
+            if (rule.getNetworkId() == networkId) {
                 result.add(rule);
                 logger.debug("Found rule {} configured", rule);
             }
         }
-        List<? extends IpAddress> staticNatIps = _ipAddressDao.listStaticNatPublicIps(nic.getNetworkId());
+        List<? extends IpAddress> staticNatIps = _ipAddressDao.listStaticNatPublicIps(networkId);
         for (IpAddress ip : staticNatIps) {
-            if (ip.getVmIp() != null && ip.getVmIp().equals(nic.getIPv4Address())) {
-                VMInstanceVO vm = _vmInstanceDao.findById(nic.getInstanceId());
+            if (ip.getVmIp() != null && ip.getVmIp().equals(ip4Address)) {
+                VMInstanceVO vm = _vmInstanceDao.findById(vmId);
                 // generate a static Nat rule on the fly because staticNATrule does not persist into db anymore
                 // FIX ME
                 FirewallRuleVO staticNatRule =
-                        new FirewallRuleVO(null, ip.getId(), 0, 65535, NetUtils.ALL_PROTO.toString(), nic.getNetworkId(), vm.getAccountId(), vm.getDomainId(),
+                        new FirewallRuleVO(null, ip.getId(), 0, 65535, NetUtils.ALL_PROTO.toString(), networkId, vm.getAccountId(), vm.getDomainId(),
                                 Purpose.StaticNat, null, null, null, null, null);
                 result.add(staticNatRule);
                 logger.debug("Found rule {} configured", staticNatRule);
             }
         }
         // add LB rules
-        List<LoadBalancerVMMapVO> lbMapList = _loadBalancerVMMapDao.listByInstanceId(nic.getInstanceId());
+        List<LoadBalancerVMMapVO> lbMapList = _loadBalancerVMMapDao.listByInstanceId(vmId);
         for (LoadBalancerVMMapVO lb : lbMapList) {
             FirewallRuleVO lbRule = _firewallDao.findById(lb.getLoadBalancerId());
-            if (lbRule.getNetworkId() == nic.getNetworkId()) {
+            if (lbRule.getNetworkId() == networkId) {
                 result.add(lbRule);
                 logger.debug("Found rule {} configured", lbRule);
             }

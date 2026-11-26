@@ -62,6 +62,16 @@ public class LibvirtCheckNetworkCommandWrapperTest {
     }
 
     @Test
+    public void reportsAllGuestLabelsForVlanFilteringConsistencyCheck() {
+        when(libvirtComputingResource.checkNetwork(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        List<PhysicalNetworkSetupInfo> phyNics = java.util.Arrays.asList(infoWithGuestLabel("cloudbr1"), infoWithGuestLabel("cloudbr2"));
+
+        wrapper.execute(new CheckNetworkCommand(phyNics), libvirtComputingResource);
+
+        verify(libvirtComputingResource).warnIfGuestBridgesDifferInVlanFiltering(new java.util.LinkedHashSet<>(java.util.Arrays.asList("cloudbr1", "cloudbr2")));
+    }
+
+    @Test
     public void clearsGuestTrafficLabelWhenNoPhysicalNetworkCarriesOne() {
         when(libvirtComputingResource.checkNetwork(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(true);
         List<PhysicalNetworkSetupInfo> phyNics = Collections.singletonList(infoWithGuestLabel(null));

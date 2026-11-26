@@ -1128,16 +1128,17 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             if (vmIpsList != null) {
 
-                //check if the ips belongs to nic secondary ip - scoped by network, since the same nic can carry
-                //secondary ips across more than one of its associated networks
+                //check if the ips belongs to nic secondary ip - scoped by the network the VM is in for this rule, since the same nic can carry
+                //secondary ips across more than one of its associated networks and a VPC conserve mode rule can target another tier
+                long vmNetworkId = getVmNetworkIdInLoadBalancer(loadBalancer, loadBalancerNetwork, vmIdNetworkMap, instanceId);
                 for (String ip: vmIpsList) {
                     // skip the primary ip from vm secondary ip comparisions
                     if (ip.equals(priIp)) {
                         continue;
                     }
-                    if(_nicSecondaryIpDao.findByIp4AddressAndNetworkIdAndInstanceId(loadBalancer.getNetworkId(), instanceId, ip) == null) {
+                    if(_nicSecondaryIpDao.findByIp4AddressAndNetworkIdAndInstanceId(vmNetworkId, instanceId, ip) == null) {
                         throw new InvalidParameterValueException("Instance IP "+ ip + " specified does not belong to " +
-                                "NIC in Network " + vmNicInLb.getNetworkId());
+                                "NIC in Network " + vmNetworkId);
                     }
                 }
             } else {
@@ -1227,10 +1228,19 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return success;
     }
 
+    private boolean isNetworkPassedInVpcConserveMode(Network loadBalancerNetwork, Map<Long, Long> vmIdNetworkMap, long vmId) {
+        return _vpcMgr.isNetworkOnVpcEnabledConserveMode(loadBalancerNetwork) && MapUtils.isNotEmpty(vmIdNetworkMap) && vmIdNetworkMap.containsKey(vmId);
+    }
+
+    // The network the VM's ip is in: the tier passed for a VPC conserve mode load balancer, else the load balancer's own network
+    private long getVmNetworkIdInLoadBalancer(LoadBalancerVO loadBalancer, Network loadBalancerNetwork, Map<Long, Long> vmIdNetworkMap, long vmId) {
+        return isNetworkPassedInVpcConserveMode(loadBalancerNetwork, vmIdNetworkMap, vmId) ? vmIdNetworkMap.get(vmId) : loadBalancer.getNetworkId();
+    }
+
     protected Pair<Nic, Network.IpAddresses> getVmNicInLoadBalancer(UserVm vm, LoadBalancerVO loadBalancer, Network loadBalancerNetwork, Map<Long, Long> vmIdNetworkMap, Account vmOwner) {
         boolean isVpcConserveModeEnabled = _vpcMgr.isNetworkOnVpcEnabledConserveMode(loadBalancerNetwork);
 
-        boolean isNetworkPassedVpcConserveMode = isVpcConserveModeEnabled && MapUtils.isNotEmpty(vmIdNetworkMap) && vmIdNetworkMap.containsKey(vm.getId());
+        boolean isNetworkPassedVpcConserveMode = isNetworkPassedInVpcConserveMode(loadBalancerNetwork, vmIdNetworkMap, vm.getId());
         Pair<Nic, Network.IpAddresses> vmNicInLb = isNetworkPassedVpcConserveMode ?
                 getNicForVmInVpcConserveModeTierNetwork(vm, vmIdNetworkMap, vmOwner, loadBalancerNetwork) :
                 getNicForVmLbNetwork(vm, loadBalancer);

@@ -50,7 +50,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
-import com.cloud.agent.api.PostMigrationCommand;
+import com.cloud.alert.PostMigrationAlerts;
 import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.hypervisor.KVMGuru;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -1777,7 +1777,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private String getVlanFilteringUnsuitableReason(VMInstanceVO vm, Host host) {
-        return VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(vm.getId(), host.getId(), _nicsDao, _networkDao, hostDetailsDao);
+        return VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(vm.getId(), host.getId(), _nicsDao, _networkDao, hostDetailsDao,
+                NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(vm.getDataCenterId()));
     }
 
     protected void updateStartCommandWithExternalDetails(Host host, VirtualMachineTO vmTO, StartCommand command) {
@@ -3386,14 +3387,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final String dstHostUuid = _hostDao.findById(dstHostId).getUuid();
         try {
             logger.info("Executing post-migration tasks for VM {} with CLVM volumes on destination host {}", vm.getInstanceName(), dstHostUuid);
-            final PostMigrationCommand postMigrationCommand = new PostMigrationCommand(to, vm.getInstanceName());
-            final Answer postMigrationAnswer = _agentMgr.send(dstHostId, postMigrationCommand);
-
-            if (postMigrationAnswer == null || !postMigrationAnswer.getResult()) {
-                final String details = postMigrationAnswer != null ? postMigrationAnswer.getDetails() : "null answer returned";
+            final String failure = VlanTrunkMigrationHelper.sendPostMigrationCommandWithRetry(to, dstHostId, _agentMgr::send, logger);
+            if (failure != null) {
                 logger.warn("Post-migration tasks failed for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
-                        vm.getInstanceName(), dstHostUuid, details);
-                alertPostMigrationFailure(vm, dstHostUuid, details);
+                        vm.getInstanceName(), dstHostUuid, failure);
+                alertPostMigrationFailure(vm, dstHostUuid, failure);
             } else {
                 logger.info("Successfully completed post-migration tasks for VM {} on destination host {}", vm.getInstanceName(), dstHostUuid);
             }
@@ -3406,15 +3404,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void alertPostMigrationFailure(VMInstanceVO vm, String dstHostUuid, String details) {
-        AlertManager.AlertType alertType = AlertManager.AlertType.ALERT_TYPE_USERVM_MIGRATE;
-        if (VirtualMachine.Type.DomainRouter.equals(vm.getType())) {
-            alertType = AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER_MIGRATE;
-        } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-            alertType = AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY_MIGRATE;
-        }
-        _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
-                String.format("Post-migration tasks failed for VM %s on destination host %s.", vm.getInstanceName(), dstHostUuid),
-                String.format("Post-migration tasks failed: %s. VM network/storage configuration on the destination may be incomplete.", details));
+        PostMigrationAlerts.sendFailureAlert(_alertMgr, vm.getType(), vm.getDataCenterId(), vm.getPodIdToDeployIn(), vm.getInstanceName(), dstHostUuid, details);
     }
 
     /**

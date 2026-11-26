@@ -7859,7 +7859,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vm.getState() != State.Running || vm.getHostId() == null) {
             return;
         }
-        String reason = VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, vm.getHostId(), _hostDetailsDao);
+        String reason = VlanTrunkMigrationHelper.getNativeVlanUnsuitableReason(network, vm.getHostId(), _hostDetailsDao,
+                NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(vm.getDataCenterId()));
         if (reason != null) {
             throw new InvalidParameterValueException(String.format("Cannot add network %s to Instance %s: %s", network.getUuid(), vm.getUuid(), reason));
         }
@@ -7888,7 +7889,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private String getVlanFilteringUnsuitableReason(VMInstanceVO vm, Host host) {
-        return VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(vm.getId(), host.getId(), _nicDao, _networkDao, _hostDetailsDao);
+        return VlanTrunkMigrationHelper.getVlanFilteringUnsuitableReason(vm.getId(), host.getId(), _nicDao, _networkDao, _hostDetailsDao,
+                NetworkOrchestrationService.MultiNetworkNicEnabled.valueIn(vm.getDataCenterId()));
     }
 
     private boolean isOnSupportedHypevisorForMigration(VMInstanceVO vm) {

@@ -35,6 +35,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.Connect;
+import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -111,6 +112,137 @@ public class LibvirtPostMigrationCommandWrapperTest {
             Assert.assertTrue(answer.getResult());
             Mockito.verify(vifDriver).ensureVlanTrunkMembership(liveInterface, vlanNic);
         }
+    }
+
+    private NicTO vlanNicWithMac(String mac, boolean enabled) {
+        NicTO vlanNic = new NicTO();
+        vlanNic.setBroadcastType(Networks.BroadcastDomainType.Vlan);
+        vlanNic.setMac(mac);
+        vlanNic.setEnabled(enabled);
+        return vlanNic;
+    }
+
+    private Answer executeWithVlanNic(NicTO vlanNic, LibvirtVMDef.InterfaceDef liveInterface, VifDriver vifDriver, Domain domain) throws LibvirtException {
+        when(virtualMachineTO.getNics()).thenReturn(new NicTO[]{vlanNic});
+        when(libvirtComputingResource.getInterface(connect, VM_NAME, vlanNic.getMac())).thenReturn(liveInterface);
+        when(libvirtComputingResource.getVifDriver(vlanNic.getType(), vlanNic.getName())).thenReturn(vifDriver);
+        Mockito.lenient().when(libvirtComputingResource.getDomain(connect, VM_NAME)).thenReturn(domain);
+        List<DiskDef> disks = createNonClvmDisks();
+        try (MockedStatic<LibvirtConnection> mockedConnection = Mockito.mockStatic(LibvirtConnection.class)) {
+            mockedConnection.when(() -> LibvirtConnection.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+            when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
+            return wrapper.execute(postMigrationCommand, libvirtComputingResource);
+        }
+    }
+
+    @Test
+    public void testExecute_VlanMembershipFails_SetsNicLinkDownAndFails() throws Exception {
+        NicTO vlanNic = vlanNicWithMac("02:00:00:00:0f:01", true);
+        LibvirtVMDef.InterfaceDef liveInterface = Mockito.mock(LibvirtVMDef.InterfaceDef.class);
+        VifDriver vifDriver = Mockito.mock(VifDriver.class);
+        Domain domain = Mockito.mock(Domain.class);
+        Mockito.doThrow(new com.cloud.exception.InternalErrorException("bridge vlan failed")).when(vifDriver).ensureVlanTrunkMembership(liveInterface, vlanNic);
+
+        Answer answer = executeWithVlanNic(vlanNic, liveInterface, vifDriver, domain);
+
+        Assert.assertFalse(answer.getResult());
+        Mockito.verify(liveInterface).setLinkStateUp(false);
+        Mockito.verify(domain).updateDeviceFlags(any(), eq(Domain.DeviceModifyFlags.LIVE));
+    }
+
+    @Test
+    public void testExecute_VlanMembershipSucceedsAfterFailure_RestoresNicLink() throws Exception {
+        NicTO vlanNic = vlanNicWithMac("02:00:00:00:0f:02", true);
+        LibvirtVMDef.InterfaceDef liveInterface = Mockito.mock(LibvirtVMDef.InterfaceDef.class);
+        VifDriver vifDriver = Mockito.mock(VifDriver.class);
+        Domain domain = Mockito.mock(Domain.class);
+        Mockito.doThrow(new com.cloud.exception.InternalErrorException("bridge vlan failed")).doNothing().when(vifDriver).ensureVlanTrunkMembership(liveInterface, vlanNic);
+
+        Assert.assertFalse(executeWithVlanNic(vlanNic, liveInterface, vifDriver, domain).getResult());
+        Assert.assertTrue(executeWithVlanNic(vlanNic, liveInterface, vifDriver, domain).getResult());
+
+        Mockito.verify(liveInterface).setLinkStateUp(false);
+        Mockito.verify(liveInterface).setLinkStateUp(true);
+    }
+
+    @Test
+    public void testExecute_FirstVlanNicFails_StillProcessesAndCutsOffTheOtherNics() throws Exception {
+        NicTO failingNic = vlanNicWithMac("02:00:00:00:0f:05", true);
+        NicTO secondFailingNic = vlanNicWithMac("02:00:00:00:0f:06", true);
+        NicTO healthyNic = vlanNicWithMac("02:00:00:00:0f:07", true);
+        LibvirtVMDef.InterfaceDef failingLive = Mockito.mock(LibvirtVMDef.InterfaceDef.class);
+        LibvirtVMDef.InterfaceDef secondFailingLive = Mockito.mock(LibvirtVMDef.InterfaceDef.class);
+        LibvirtVMDef.InterfaceDef healthyLive = Mockito.mock(LibvirtVMDef.InterfaceDef.class);
+        VifDriver vifDriver = Mockito.mock(VifDriver.class);
+        Domain domain = Mockito.mock(Domain.class);
+        Mockito.when(healthyLive.isLinkStateUp()).thenReturn(true);
+        Mockito.doThrow(new com.cloud.exception.InternalErrorException("first failed")).when(vifDriver).ensureVlanTrunkMembership(failingLive, failingNic);
+        Mockito.doThrow(new com.cloud.exception.InternalErrorException("second failed")).when(vifDriver).ensureVlanTrunkMembership(secondFailingLive, secondFailingNic);
+        when(virtualMachineTO.getNics()).thenReturn(new NicTO[]{failingNic, healthyNic, secondFailingNic});
+        when(libvirtComputingResource.getInterface(connect, VM_NAME, failingNic.getMac())).thenReturn(failingLive);
+        when(libvirtComputingResource.getInterface(connect, VM_NAME, healthyNic.getMac())).thenReturn(healthyLive);
+        when(libvirtComputingResource.getInterface(connect, VM_NAME, secondFailingNic.getMac())).thenReturn(secondFailingLive);
+        when(libvirtComputingResource.getVifDriver(any(), any())).thenReturn(vifDriver);
+        when(libvirtComputingResource.getDomain(connect, VM_NAME)).thenReturn(domain);
+        List<DiskDef> disks = createNonClvmDisks();
+        Answer answer;
+        try (MockedStatic<LibvirtConnection> mockedConnection = Mockito.mockStatic(LibvirtConnection.class)) {
+            mockedConnection.when(() -> LibvirtConnection.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+            when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
+            answer = wrapper.execute(postMigrationCommand, libvirtComputingResource);
+        }
+
+        Assert.assertFalse(answer.getResult());
+        Mockito.verify(vifDriver).ensureVlanTrunkMembership(healthyLive, healthyNic);
+        Mockito.verify(failingLive).setLinkStateUp(false);
+        Mockito.verify(secondFailingLive).setLinkStateUp(false);
+        Mockito.verify(healthyLive, Mockito.never()).setLinkStateUp(Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testExecute_VlanMembershipSucceeds_DoesNotTouchNicLink() throws Exception {
+        NicTO vlanNic = vlanNicWithMac("02:00:00:00:0f:03", true);
+        LibvirtVMDef.InterfaceDef liveInterface = Mockito.mock(LibvirtVMDef.InterfaceDef.class);
+        Domain domain = Mockito.mock(Domain.class);
+        Mockito.when(liveInterface.isLinkStateUp()).thenReturn(true);
+
+        Assert.assertTrue(executeWithVlanNic(vlanNic, liveInterface, Mockito.mock(VifDriver.class), domain).getResult());
+
+        Mockito.verify(liveInterface, Mockito.never()).setLinkStateUp(Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testExecute_VlanMembershipSucceedsAndLinkWasCutOffByAnEarlierHost_RestoresNicLink() throws Exception {
+        NicTO vlanNic = vlanNicWithMac("02:00:00:00:0f:08", true);
+        LibvirtVMDef.InterfaceDef liveInterface = Mockito.mock(LibvirtVMDef.InterfaceDef.class);
+        Mockito.when(liveInterface.isLinkStateUp()).thenReturn(false);
+
+        Assert.assertTrue(executeWithVlanNic(vlanNic, liveInterface, Mockito.mock(VifDriver.class), Mockito.mock(Domain.class)).getResult());
+
+        Mockito.verify(liveInterface).setLinkStateUp(true);
+    }
+
+    @Test
+    public void testExecute_VlanMembershipSucceedsOnDisabledNicWithLinkDown_LeavesLinkAlone() throws Exception {
+        NicTO vlanNic = vlanNicWithMac("02:00:00:00:0f:09", false);
+        LibvirtVMDef.InterfaceDef liveInterface = Mockito.mock(LibvirtVMDef.InterfaceDef.class);
+        Mockito.lenient().when(liveInterface.isLinkStateUp()).thenReturn(false);
+
+        Assert.assertTrue(executeWithVlanNic(vlanNic, liveInterface, Mockito.mock(VifDriver.class), Mockito.mock(Domain.class)).getResult());
+
+        Mockito.verify(liveInterface, Mockito.never()).setLinkStateUp(Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testExecute_VlanMembershipFailsOnDisabledNic_LeavesLinkAlone() throws Exception {
+        NicTO vlanNic = vlanNicWithMac("02:00:00:00:0f:04", false);
+        LibvirtVMDef.InterfaceDef liveInterface = Mockito.mock(LibvirtVMDef.InterfaceDef.class);
+        VifDriver vifDriver = Mockito.mock(VifDriver.class);
+        Mockito.doThrow(new com.cloud.exception.InternalErrorException("bridge vlan failed")).when(vifDriver).ensureVlanTrunkMembership(liveInterface, vlanNic);
+
+        Assert.assertFalse(executeWithVlanNic(vlanNic, liveInterface, vifDriver, Mockito.mock(Domain.class)).getResult());
+
+        Mockito.verify(liveInterface, Mockito.never()).setLinkStateUp(Mockito.anyBoolean());
     }
 
     @Test

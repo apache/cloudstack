@@ -94,6 +94,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
@@ -537,7 +538,22 @@ public class DeploymentPlanningManagerImplTest {
     }
 
     @Test
-    public void avoidHostsNotReadyForMultiNetworkNicsExcludesFilteringHostsForGuestVlanOneNic() {
+    public void avoidHostsNotReadyForMultiNetworkNicsExcludesFilteringHostsForGuestVlanOneNic() throws Exception {
+        setMultiNetworkNicEnabledDefault("true");
+        try {
+            excludesFilteringHostsForGuestVlanOneNic();
+        } finally {
+            setMultiNetworkNicEnabledDefault("false");
+        }
+    }
+
+    private void setMultiNetworkNicEnabledDefault(String value) throws Exception {
+        Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        f.set(NetworkOrchestrationService.MultiNetworkNicEnabled, value);
+    }
+
+    private void excludesFilteringHostsForGuestVlanOneNic() {
         VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
         Mockito.when(vmProfile.getId()).thenReturn(instanceId);
         DataCenter dc = Mockito.mock(DataCenter.class);

@@ -32,6 +32,7 @@ import com.cloud.utils.FileUtil;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections4.CollectionUtils;
 import org.libvirt.Connect;
+import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.LibvirtException;
 
@@ -56,6 +57,9 @@ import com.cloud.vm.VirtualMachine;
 
 @ResourceWrapper(handles =  StartCommand.class)
 public final class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Answer, LibvirtComputingResource> {
+
+    // libvirt VIR_DOMAIN_START_PAUSED
+    private static final int VIR_DOMAIN_START_PAUSED = 1;
 
 
     @Override
@@ -96,9 +100,19 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             }
             String vmInitialSpecification = vm.toString();
             String vmFinalSpecification = performXmlTransformHook(vmInitialSpecification, libvirtComputingResource);
-            libvirtComputingResource.startVM(conn, vmName, vmFinalSpecification);
+            boolean startPaused = anyNicNeedsManualVlanMembership(nics, libvirtComputingResource);
+            if (startPaused) {
+                logger.debug("Starting {} paused until its VLAN membership is applied to its tap", vmName);
+                libvirtComputingResource.startVM(conn, vmName, vmFinalSpecification, VIR_DOMAIN_START_PAUSED);
+            } else {
+                libvirtComputingResource.startVM(conn, vmName, vmFinalSpecification);
+            }
+            if (startPaused) {
+                applyManualVlanTrunkMembership(conn, vmName, nics, libvirtComputingResource);
+                resumeDomain(conn, vmName);
+                logger.debug("Resumed {} after applying its VLAN membership", vmName);
+            }
             performAgentStartHook(vmName, libvirtComputingResource);
-            applyManualVlanTrunkMembership(conn, vmName, nics, libvirtComputingResource);
 
             libvirtComputingResource.applyDefaultNetworkRules(conn, vmSpec, false);
 
@@ -179,6 +193,26 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                     libvirtComputingResource.getStoragePoolMgr().deleteStoragePool(secondaryStorage.getType(), secondaryStorage.getUuid());
                 }
             }
+        }
+    }
+
+    // The guest must not run until its tap has the right VLANs, else it sits on the bridge's default VLAN 1
+    private boolean anyNicNeedsManualVlanMembership(NicTO[] nics, LibvirtComputingResource libvirtComputingResource) {
+        for (NicTO nic : nics) {
+            if (nic.getBroadcastType() == BroadcastDomainType.Vlan
+                    && libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).needsManualVlanMembership(nic)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void resumeDomain(Connect conn, String vmName) throws LibvirtException {
+        Domain domain = conn.domainLookupByName(vmName);
+        try {
+            domain.resume();
+        } finally {
+            domain.free();
         }
     }
 
