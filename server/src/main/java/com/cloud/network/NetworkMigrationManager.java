@@ -26,6 +26,11 @@ import com.cloud.offering.NetworkOffering;
 public interface NetworkMigrationManager {
 
     String MIGRATION = "migration";
+
+    // VpcDao named lock shared with VPN gateway creation. Keep it separate from the numeric
+    // VPC lock: migration waits for router workers that acquire that lock on another thread.
+    String VPC_MIGRATION_LOCK_PREFIX = "migration-vpn-";
+
     /**
      * Returns a copy of the provided network.
      * All nics in the orginal network will be re-assigned to the newly created network.

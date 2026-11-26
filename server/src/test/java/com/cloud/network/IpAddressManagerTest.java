@@ -51,6 +51,9 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Service;
 import com.cloud.network.dao.IPAddressDao;
@@ -67,6 +70,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.AccountVO;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.Ip;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -134,6 +138,9 @@ public class IpAddressManagerTest {
 
     @Before
     public void setup() throws ResourceUnavailableException {
+
+        networkModel.setNetworkElements(Collections.emptyList());
+        ipAddressManager._networkModel = networkModel;
 
         ipAddressVO = new IPAddressVO(new Ip("192.0.0.1"), 1L, 1L, 1L,false);
         ipAddressVO.setAllocatedToAccountId(1L);
@@ -445,12 +452,80 @@ public class IpAddressManagerTest {
     @Test
     public void updateSourceNatIpAddress() throws Exception {
         IPAddressVO requestedIp = Mockito.mock(IPAddressVO.class);
+        IPAddressVO lockedIp = Mockito.mock(IPAddressVO.class);
         IPAddressVO oldIp = Mockito.mock(IPAddressVO.class);
+        when(requestedIp.getId()).thenReturn(31L);
+        when(lockedIp.getId()).thenReturn(31L);
+        when(ipAddressDao.acquireInLockTable(31L)).thenReturn(lockedIp);
         List<IPAddressVO> userIps = new Vector<>();
         userIps.add(oldIp);
         ipAddressManager.updateSourceNatIpAddress(requestedIp, userIps);
         verify(requestedIp).setSourceNat(true);
+        verify(lockedIp).setSourceNat(true);
         verify(oldIp).setSourceNat(false);
+        verify(ipAddressDao).update(31L, lockedIp);
+        verify(ipAddressDao).releaseFromLockTable(31L);
+    }
+
+    @Test
+    public void updateSourceNatIpRejectsReservationFromFreshLockedAddressBeforeAnyMutation() {
+        IPAddressVO requestedIp = mock(IPAddressVO.class);
+        IPAddressVO lockedIp = mock(IPAddressVO.class);
+        IPAddressVO oldIp = mock(IPAddressVO.class);
+        when(requestedIp.getId()).thenReturn(31L);
+        when(ipAddressDao.acquireInLockTable(31L)).thenReturn(lockedIp);
+        doReturn(true).when(networkModel).isIpAddressReserved(lockedIp);
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> ipAddressManager.updateSourceNatIpAddress(requestedIp, List.of(oldIp)));
+
+        verify(oldIp, never()).setSourceNat(anyBoolean());
+        verify(requestedIp, never()).setSourceNat(anyBoolean());
+        verify(lockedIp, never()).setSourceNat(anyBoolean());
+        verify(ipAddressDao, never()).update(anyLong(), any());
+        verify(ipAddressDao).releaseFromLockTable(31L);
+    }
+
+    @Test
+    public void associateIpToGuestNetworkRejectsReservedEndpointBeforeReleaseOnFailureCleanup() {
+        IPAddressVO ip = mock(IPAddressVO.class);
+        when(ipAddressDao.findById(31L)).thenReturn(ip);
+        when(ipAddressDao.acquireInLockTable(31L)).thenReturn(ip);
+        doReturn(true).when(networkModel).isIpAddressReserved(ip);
+
+        Assert.assertThrows(InvalidParameterValueException.class,
+                () -> ipAddressManager.associateIPToGuestNetwork(31L, 42L, true));
+
+        verify(ipAddressDao, never()).unassignIpAddress(anyLong());
+        verify(ipAddressDao, never()).update(anyLong(), any());
+        verify(networkDao, never()).findById(anyLong());
+        verify(ipAddressDao).releaseFromLockTable(31L);
+    }
+
+    @Test
+    public void associateUnreservedIpToExistingGuestNetworkRemainsIdempotent() throws Exception {
+        IPAddressVO ip = mock(IPAddressVO.class);
+        NetworkVO network = mock(NetworkVO.class);
+        DataCenterVO zone = mock(DataCenterVO.class);
+        EntityManager entityManager = mock(EntityManager.class);
+        CallContext context = mock(CallContext.class);
+        ipAddressManager._entityMgr = entityManager;
+        when(ipAddressDao.findById(31L)).thenReturn(ip);
+        when(ipAddressDao.acquireInLockTable(31L)).thenReturn(ip);
+        when(networkDao.findById(42L)).thenReturn(network);
+        when(entityManager.findById(DataCenter.class, network.getDataCenterId())).thenReturn(zone);
+        when(zone.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+        when(ip.getAllocatedToAccountId()).thenReturn(1L);
+        when(ip.getAssociatedWithNetworkId()).thenReturn(42L);
+
+        try (MockedStatic<CallContext> contexts = Mockito.mockStatic(CallContext.class)) {
+            contexts.when(CallContext::current).thenReturn(context);
+            Assert.assertSame(ip, ipAddressManager.associateIPToGuestNetwork(31L, 42L, true));
+        }
+
+        verify(ipAddressDao, never()).update(anyLong(), any());
+        verify(ipAddressDao, never()).unassignIpAddress(anyLong());
+        verify(ipAddressDao).releaseFromLockTable(31L);
     }
 
     private void prepareForCheckIfIpResourceCountShouldBeUpdatedTests() {
