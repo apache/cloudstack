@@ -565,7 +565,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (imageStore == null) {
-            throw new CloudRuntimeException(String.format("Cannot find an image store for zone [%s].", zoneId));
+            throwExceptionForImageStoreRetrievalFailure(zoneId, "upload volume");
         }
 
         return imageStore;
@@ -2060,7 +2060,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
             DataStore store = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
             if (store == null) {
-                throw new CloudRuntimeException("cannot find an image store for zone " + zoneId);
+                throwExceptionForImageStoreRetrievalFailure(zoneId, "create template");
             }
             AsyncCallFuture<TemplateApiResult> future;
 
@@ -2916,5 +2916,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         _tmpltDao.update(template.getId(), template);
 
         return _tmpltDao.findById(template.getId());
+    }
+
+    private void throwExceptionForImageStoreRetrievalFailure(Long zoneId, String operation) {
+        logger.error("Could not find an available image store to %s in zone [{}].", operation, zoneId);
+        throw new CloudRuntimeException(String.format("Failed to %s in zone %d because there was no available image storage.", operation, zoneId));
     }
 }
