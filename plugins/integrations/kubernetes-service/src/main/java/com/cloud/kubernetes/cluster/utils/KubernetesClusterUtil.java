@@ -269,6 +269,59 @@ public class KubernetesClusterUtil {
         return k8sApiServerSetup;
     }
 
+    // Written by the setup script of an etcd node (conf/etcd-node.yml) with the reason when the setup fails
+    public static final String ETCD_NODE_SETUP_FAILED_FILE = "/home/cloud/etcd-setup-failed";
+    protected static final String ETCD_NODE_ACTIVE = "ACTIVE";
+    protected static final String ETCD_NODE_FAILED = "FAILED:";
+    protected static final String ETCD_NODE_STATUS_COMMAND = String.format(
+            "if [ -f %1$s ]; then echo \"%2$s $(cat %1$s)\"; elif sudo systemctl is-active --quiet etcd; then echo %3$s; else echo WAITING; fi",
+            ETCD_NODE_SETUP_FAILED_FILE, ETCD_NODE_FAILED, ETCD_NODE_ACTIVE);
+
+    protected static Pair<Boolean, String> getEtcdNodeStatus(final String ipAddress, final int port, final String user, final File sshKeyFile) throws Exception {
+        return SshHelper.sshExecute(ipAddress, port, user, sshKeyFile, null, ETCD_NODE_STATUS_COMMAND, 10000, 10000, 20000);
+    }
+
+    /**
+     * Waits for etcd to run on a dedicated etcd node. etcd has to be seen running on two checks in a row, so that
+     * an etcd which keeps crashing and restarting is not taken as running.
+     *
+     * @return null once etcd is running, otherwise the reason why the node is not usable
+     */
+    public static String waitForEtcdOnEtcdNode(final KubernetesCluster kubernetesCluster, final String nodeName, final String ipAddress,
+                                               final int port, final String user, final File sshKeyFile,
+                                               final long timeoutTime, final long waitDuration) {
+        String lastStatus = "the node was not reachable over SSH";
+        boolean activeOnLastCheck = false;
+        while (System.currentTimeMillis() < timeoutTime) {
+            boolean active = false;
+            try {
+                Pair<Boolean, String> result = getEtcdNodeStatus(ipAddress, port, user, sshKeyFile);
+                String output = result.second() == null ? "" : result.second().trim();
+                if (Boolean.TRUE.equals(result.first()) && output.startsWith(ETCD_NODE_FAILED)) {
+                    return output.substring(ETCD_NODE_FAILED.length()).trim();
+                }
+                active = Boolean.TRUE.equals(result.first()) && output.startsWith(ETCD_NODE_ACTIVE);
+                lastStatus = active ? "etcd did not stay running" : "the etcd service was not running";
+            } catch (Exception e) {
+                lastStatus = "the node was not reachable over SSH";
+                LOGGER.debug("Unable to check etcd on node {} of Kubernetes cluster {}: {}", nodeName, kubernetesCluster, e.getMessage());
+            }
+            if (active && activeOnLastCheck) {
+                return null;
+            }
+            activeOnLastCheck = active;
+            LOGGER.info("Waiting for etcd to run on node {} of Kubernetes cluster {}", nodeName, kubernetesCluster);
+            try {
+                Thread.sleep(waitDuration);
+            } catch (InterruptedException ie) {
+                LOGGER.warn("Interrupted while waiting for etcd on node {} of Kubernetes cluster {}", nodeName, kubernetesCluster, ie);
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        return String.format("etcd did not start in time, on the last check %s", lastStatus);
+    }
+
     public static boolean isKubernetesClusterControlVmRunning(final KubernetesCluster kubernetesCluster, final String ipAddress,
                                                               final int port, final long timeoutTime) {
         boolean controlVmRunning = false;

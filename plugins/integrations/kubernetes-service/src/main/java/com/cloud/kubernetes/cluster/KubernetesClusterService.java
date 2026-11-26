@@ -143,6 +143,13 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "Start port for Port forwarding rules for etcd nodes",
             true,
             KubernetesServiceEnabled.key());
+    static final ConfigKey<Long> KubernetesEtcdNodeSetupTimeout = new ConfigKey<Long>("Advanced", Long.class,
+            "cloud.kubernetes.etcd.node.setup.timeout",
+            "600",
+            "Timeout interval (in seconds) in which etcd should be running on each dedicated etcd node of a Kubernetes cluster that is starting. " +
+                    "The cluster start fails when it is not, instead of waiting for the cluster start timeout",
+            true,
+            KubernetesServiceEnabled.key());
 
     KubernetesCluster findById(final Long id);
 
