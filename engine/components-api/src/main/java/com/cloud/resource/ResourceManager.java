@@ -27,6 +27,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import com.cloud.gpu.VgpuProfileVO;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.api.command.admin.host.PrepareForHostMaintenanceCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -131,6 +132,12 @@ public interface ResourceManager extends ResourceService, Configurable {
     boolean migrateAwayFailed(long hostId, long vmId);
 
     public boolean maintain(final long hostId) throws AgentUnavailableException;
+
+    /**
+     * Prepares a host for maintenance; runMaintenanceHooks false skips the hooks of
+     * {@link RollingMaintenanceManager#KvmHostMaintenanceRunHooks}, for callers that run the stages themselves.
+     */
+    Host maintain(PrepareForHostMaintenanceCmd cmd, boolean runMaintenanceHooks);
 
     public boolean checkAndMaintain(final long hostId);
 

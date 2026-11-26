@@ -153,6 +153,11 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
+    public Host maintain(final PrepareForHostMaintenanceCmd cmd, final boolean runMaintenanceHooks) {
+        return null;
+    }
+
+    @Override
     public Host declareHostAsDegraded(DeclareHostAsDegradedCmd cmd) {
         return null;
     }

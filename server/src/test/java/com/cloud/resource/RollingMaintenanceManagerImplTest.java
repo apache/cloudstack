@@ -17,15 +17,19 @@
 
 package com.cloud.resource;
 
+import com.cloud.alert.AlertManager;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Cluster;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
@@ -68,6 +72,10 @@ public class RollingMaintenanceManagerImplTest {
     ServiceOfferingDao serviceOfferingDao;
     @Mock
     VMInstanceDetailsDao vmInstanceDetailsDao;
+    @Mock
+    HostDetailsDao hostDetailsDao;
+    @Mock
+    AlertManager alertManager;
 
     @Spy
     @InjectMocks
@@ -231,5 +239,280 @@ public class RollingMaintenanceManagerImplTest {
         Assert.assertEquals(2, cpuSpeedAndRamSize.first().intValue());
         Assert.assertEquals(1000, cpuSpeedAndRamSize.second().intValue());
         Assert.assertEquals(1024, cpuSpeedAndRamSize.third().intValue());
+    }
+
+    private void mockHook(RollingMaintenanceManager.Stage stage, boolean success, boolean avoidMaintenance) {
+        Mockito.doReturn(new Ternary<>(success, stage + " output", avoidMaintenance)).when(manager).runHookOnHost(host1, stage);
+    }
+
+    private DetailVO mockHooksDetail(String value) {
+        DetailVO detail = new DetailVO(hostId1, RollingMaintenanceManager.HOST_MAINTENANCE_HOOKS_DETAIL, value);
+        Mockito.when(hostDetailsDao.findDetail(hostId1, RollingMaintenanceManager.HOST_MAINTENANCE_HOOKS_DETAIL)).thenReturn(detail);
+        return detail;
+    }
+
+    private GlobalLock mockHooksLock(boolean acquired) {
+        GlobalLock lock = Mockito.mock(GlobalLock.class);
+        Mockito.when(lock.lock(Mockito.anyInt())).thenReturn(acquired);
+        Mockito.doReturn(lock).when(manager).getHooksLock(host1);
+        return lock;
+    }
+
+    private void verifyAlert(int times) {
+        Mockito.verify(alertManager, Mockito.times(times)).sendAlert(Mockito.any(), Mockito.anyLong(), Mockito.any(),
+                Mockito.anyString(), Mockito.anyString());
+    }
+
+    @Test
+    public void testRunPreMaintenanceHooksDisabled() {
+        Mockito.doReturn(false).when(manager).isHostMaintenanceHooksEnabled(host1);
+        Assert.assertFalse(manager.runPreMaintenanceHooks(host1));
+        Mockito.verify(manager, Mockito.never()).runHookOnHost(Mockito.any(), Mockito.any());
+        Mockito.verify(hostDetailsDao, Mockito.never()).persist(Mockito.anyLong(), Mockito.anyMap());
+    }
+
+    @Test
+    public void testRunPreMaintenanceHooksDisabledDropsStaleDetail() {
+        Mockito.when(host1.getId()).thenReturn(hostId1);
+        Mockito.doReturn(false).when(manager).isHostMaintenanceHooksEnabled(host1);
+        mockHooksDetail("true");
+        Assert.assertFalse(manager.runPreMaintenanceHooks(host1));
+        Mockito.verify(hostDetailsDao).remove(Mockito.anyLong());
+    }
+
+    @Test
+    public void testRunPreMaintenanceHooksRunAgainWhenMaintenanceHasNoMarker() {
+        Mockito.when(host1.getId()).thenReturn(hostId1);
+        Mockito.when(host1.getResourceState()).thenReturn(ResourceState.ErrorInMaintenance);
+        Mockito.doReturn(true).when(manager).isHostMaintenanceHooksEnabled(host1);
+        mockHooksLock(true);
+        mockHook(RollingMaintenanceManager.Stage.PreFlight, true, false);
+        mockHook(RollingMaintenanceManager.Stage.PreMaintenance, true, false);
+
+        Assert.assertTrue(manager.runPreMaintenanceHooks(host1));
+        Mockito.verify(hostDetailsDao).persist(Mockito.eq(hostId1), Mockito.anyMap());
+    }
+
+    @Test
+    public void testRunPreMaintenanceHooksSuccess() {
+        Mockito.when(host1.getId()).thenReturn(hostId1);
+        Mockito.doReturn(true).when(manager).isHostMaintenanceHooksEnabled(host1);
+        GlobalLock lock = mockHooksLock(true);
+        mockHook(RollingMaintenanceManager.Stage.PreFlight, true, false);
+        mockHook(RollingMaintenanceManager.Stage.PreMaintenance, true, false);
+
+        Assert.assertTrue(manager.runPreMaintenanceHooks(host1));
+
+        Mockito.verify(manager).runHookOnHost(host1, RollingMaintenanceManager.Stage.PreFlight);
+        Mockito.verify(manager).runHookOnHost(host1, RollingMaintenanceManager.Stage.PreMaintenance);
+        Mockito.verify(hostDetailsDao).persist(Mockito.eq(hostId1), Mockito.anyMap());
+        Mockito.verify(lock).unlock();
+        Mockito.verify(lock).releaseRef();
+    }
+
+    @Test
+    public void testRunPreMaintenanceHooksFailureRefusesMaintenance() {
+        Mockito.doReturn(true).when(manager).isHostMaintenanceHooksEnabled(host1);
+        GlobalLock lock = mockHooksLock(true);
+        mockHook(RollingMaintenanceManager.Stage.PreFlight, false, false);
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> manager.runPreMaintenanceHooks(host1));
+
+        Mockito.verify(manager, Mockito.never()).runHookOnHost(host1, RollingMaintenanceManager.Stage.PreMaintenance);
+        Mockito.verify(hostDetailsDao, Mockito.never()).persist(Mockito.anyLong(), Mockito.anyMap());
+        Mockito.verify(lock).unlock();
+    }
+
+    @Test
+    public void testRunPreMaintenanceHooksAvoidMaintenanceRefusesMaintenance() {
+        Mockito.doReturn(true).when(manager).isHostMaintenanceHooksEnabled(host1);
+        mockHooksLock(true);
+        mockHook(RollingMaintenanceManager.Stage.PreFlight, true, false);
+        mockHook(RollingMaintenanceManager.Stage.PreMaintenance, true, true);
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> manager.runPreMaintenanceHooks(host1));
+
+        Mockito.verify(hostDetailsDao, Mockito.never()).persist(Mockito.anyLong(), Mockito.anyMap());
+    }
+
+    @Test
+    public void testRunPreMaintenanceHooksRefusedWhileOtherHookRuns() {
+        Mockito.doReturn(true).when(manager).isHostMaintenanceHooksEnabled(host1);
+        GlobalLock lock = mockHooksLock(false);
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> manager.runPreMaintenanceHooks(host1));
+
+        Mockito.verify(manager, Mockito.never()).runHookOnHost(Mockito.any(), Mockito.any());
+        Mockito.verify(lock, Mockito.never()).unlock();
+        Mockito.verify(lock).releaseRef();
+    }
+
+    @Test
+    public void testRunPreMaintenanceHooksNotRepeatedWhileInMaintenance() {
+        Mockito.when(host1.getId()).thenReturn(hostId1);
+        Mockito.when(host1.getResourceState()).thenReturn(ResourceState.ErrorInMaintenance);
+        Mockito.doReturn(true).when(manager).isHostMaintenanceHooksEnabled(host1);
+        mockHooksDetail("true");
+
+        Assert.assertFalse(manager.runPreMaintenanceHooks(host1));
+
+        Mockito.verify(manager, Mockito.never()).runHookOnHost(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testRunPreMaintenanceHooksRefusedWhenHostNotUp() {
+        Mockito.when(host1.getStatus()).thenReturn(Status.Disconnected);
+        Mockito.doReturn(true).when(manager).isHostMaintenanceHooksEnabled(host1);
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> manager.runPreMaintenanceHooks(host1));
+
+        Mockito.verify(manager, Mockito.never()).runHookOnHost(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testRunPostMigrateHookNotStartedWithoutPreMaintenance() {
+        Mockito.when(host1.getId()).thenReturn(hostId1);
+        manager.runPostMigrateHook(host1);
+        Mockito.verify(manager, Mockito.never()).runPostMigrateHookWithLock(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testRunPostMigrateHookFailureRaisesAlert() throws Exception {
+        Mockito.when(host1.getId()).thenReturn(hostId1);
+        mockHooksDetail("1");
+        GlobalLock lock = mockHooksLock(true);
+        mockHook(RollingMaintenanceManager.Stage.PostMigrate, false, false);
+        Mockito.when(host1.getResourceState()).thenReturn(ResourceState.Maintenance);
+        manager.configure("RollingMaintenanceManager", Collections.emptyMap());
+        try {
+            manager.runPostMigrateHook(host1);
+            Mockito.verify(alertManager, Mockito.timeout(5000)).sendAlert(Mockito.any(), Mockito.anyLong(), Mockito.any(),
+                    Mockito.anyString(), Mockito.anyString());
+            Mockito.verify(lock, Mockito.timeout(5000)).releaseRef();
+        } finally {
+            manager.stop();
+        }
+        Mockito.verify(lock).unlock();
+    }
+
+    @Test
+    public void testRunPostMigrateHookSkippedForLaterMaintenance() {
+        Mockito.when(host1.getId()).thenReturn(hostId1);
+        Mockito.when(host1.getResourceState()).thenReturn(ResourceState.Maintenance);
+        mockHooksDetail("2");
+        mockHooksLock(true);
+
+        manager.runPostMigrateHookWithLock(host1, "1");
+
+        Mockito.verify(manager, Mockito.never()).runHookOnHost(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testRunPostMigrateHookSkippedWhenHostLeftMaintenance() {
+        Mockito.when(host1.getId()).thenReturn(hostId1);
+        mockHooksDetail("1");
+        mockHooksLock(true);
+
+        manager.runPostMigrateHookWithLock(host1, "1");
+
+        Mockito.verify(manager, Mockito.never()).runHookOnHost(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testRunPostMaintenanceHookNotRunWithoutPreMaintenance() {
+        Mockito.when(host1.getId()).thenReturn(hostId1);
+        manager.runPostMaintenanceHook(host1);
+        Mockito.verify(manager, Mockito.never()).runHookOnHost(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testRunPostMaintenanceHookRunsAndClearsMarker() {
+        Mockito.when(host1.getId()).thenReturn(hostId1);
+        Mockito.doReturn(host1).when(manager).waitForHostUp(host1);
+        mockHooksDetail("1");
+        GlobalLock lock = mockHooksLock(true);
+        mockHook(RollingMaintenanceManager.Stage.PostMaintenance, true, false);
+
+        manager.runPostMaintenanceHook(host1);
+
+        Mockito.verify(manager).runHookOnHost(host1, RollingMaintenanceManager.Stage.PostMaintenance);
+        Mockito.verify(hostDetailsDao).remove(Mockito.anyLong());
+        Mockito.verify(lock).unlock();
+        verifyAlert(0);
+    }
+
+    @Test
+    public void testRunPostMaintenanceHookFailureRaisesAlert() {
+        Mockito.when(host1.getId()).thenReturn(hostId1);
+        Mockito.doReturn(host1).when(manager).waitForHostUp(host1);
+        mockHooksDetail("true");
+        mockHooksLock(true);
+        mockHook(RollingMaintenanceManager.Stage.PostMaintenance, false, false);
+
+        manager.runPostMaintenanceHook(host1);
+
+        verifyAlert(1);
+    }
+
+    @Test
+    public void testRunPostMaintenanceHookWaitTimeoutRefusesCancel() {
+        Mockito.when(host1.getId()).thenReturn(hostId1);
+        mockHooksDetail("true");
+        mockHooksLock(false);
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> manager.runPostMaintenanceHook(host1));
+
+        Mockito.verify(manager, Mockito.never()).runHookOnHost(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testRunPostMaintenanceHookHostNotUpRefusesCancelWhileEnabled() {
+        Mockito.when(host1.getId()).thenReturn(hostId1);
+        Mockito.doReturn(host1).when(manager).waitForHostUp(host1);
+        mockHooksLock(true);
+        Mockito.when(host1.getStatus()).thenReturn(Status.Down);
+        Mockito.doReturn(true).when(manager).isHostMaintenanceHooksEnabled(host1);
+        mockHooksDetail("true");
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> manager.runPostMaintenanceHook(host1));
+
+        Mockito.verify(manager, Mockito.never()).runHookOnHost(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testRunPostMaintenanceHookHostNotUpSkippedWhenDisabled() {
+        Mockito.when(host1.getId()).thenReturn(hostId1);
+        Mockito.doReturn(host1).when(manager).waitForHostUp(host1);
+        mockHooksLock(true);
+        Mockito.when(host1.getStatus()).thenReturn(Status.Down);
+        Mockito.doReturn(false).when(manager).isHostMaintenanceHooksEnabled(host1);
+        mockHooksDetail("true");
+
+        manager.runPostMaintenanceHook(host1);
+
+        Mockito.verify(manager, Mockito.never()).runHookOnHost(Mockito.any(), Mockito.any());
+        verifyAlert(1);
+    }
+
+    @Test
+    public void testRunHookOnHostReportsUnexpectedErrorAsFailure() throws InterruptedException {
+        Mockito.doThrow(new ClassCastException("unexpected answer")).when(manager).doSendRollingMaintenanceCommandToHost(
+                Mockito.eq(host1), Mockito.any(), Mockito.anyInt(), Mockito.any());
+        Ternary<Boolean, String, Boolean> result = manager.runHookOnHost(host1, RollingMaintenanceManager.Stage.PostMigrate);
+        Assert.assertFalse(result.first());
+    }
+
+    @Test
+    public void testClearMaintenanceHooks() {
+        Mockito.when(host1.getId()).thenReturn(hostId1);
+        mockHooksDetail("true");
+        manager.clearMaintenanceHooks(host1);
+        Mockito.verify(hostDetailsDao).remove(Mockito.anyLong());
+    }
+
+    @Test
+    public void testStageOrder() {
+        Assert.assertEquals(RollingMaintenanceManager.Stage.PostMigrate, RollingMaintenanceManager.Stage.PreMaintenance.next());
+        Assert.assertEquals(RollingMaintenanceManager.Stage.Maintenance, RollingMaintenanceManager.Stage.PostMigrate.next());
     }
 }

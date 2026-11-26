@@ -17,6 +17,7 @@
 package com.cloud.resource;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -24,6 +25,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -36,6 +40,7 @@ import org.apache.cloudstack.api.command.admin.host.PrepareForHostMaintenanceCmd
 import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 
@@ -53,11 +58,13 @@ import com.cloud.event.EventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Cluster;
@@ -68,6 +75,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
@@ -99,6 +108,11 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
     private HostTagsDao hostTagsDao;
     @Inject
     private AlertManager alertManager;
+    @Inject
+    private HostDetailsDao hostDetailsDao;
+
+    private final ExecutorService hookExecutor = Executors.newCachedThreadPool(new NamedThreadFactory("HostMaintenanceHook"));
+
 
     protected List<AffinityGroupProcessor> _affinityProcessors;
 
@@ -121,6 +135,12 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        hookExecutor.shutdown();
         return true;
     }
 
@@ -324,8 +344,12 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         }
 
         Date startTime = new Date();
+        clearMaintenanceHooks(host);
         putHostIntoMaintenance(host);
-        result = performMaintenanceStageOnHost(host, timeout, payload, forced, hostsToAvoidMaintenance, hostsSkipped);
+        result = performMaintenanceStageOnHost(host, Stage.PostMigrate, timeout, payload, forced, hostsSkipped);
+        if (!result.first() && !result.second()) {
+            result = performMaintenanceStageOnHost(host, Stage.Maintenance, timeout, payload, forced, hostsSkipped);
+        }
         if (result.first() || result.second()) {
             cancelHostMaintenance(host);
             return result;
@@ -377,18 +401,18 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
     }
 
     /**
-     * Perform Maintenance stage on host
+     * Perform a stage on a host that is in maintenance (PostMigrate or Maintenance)
      * @return tuple: (FAIL, SKIP, DETAILS), where:
      *                  - FAIL: True if rolling maintenance must fail
      *                  - SKIP: True if host must be skipped
      *                  - DETAILS: Information retrieved by the host after executing the stage
      * @throws InterruptedException
      */
-    private Ternary<Boolean, Boolean, String> performMaintenanceStageOnHost(Host host, int timeout, String payload, Boolean forced, Map<Long, String> hostsToAvoidMaintenance, List<HostSkipped> hostsSkipped) throws InterruptedException {
-        Ternary<Boolean, String, Boolean> result = performStageOnHost(host, Stage.Maintenance, timeout, payload, forced);
+    private Ternary<Boolean, Boolean, String> performMaintenanceStageOnHost(Host host, Stage stage, int timeout, String payload, Boolean forced, List<HostSkipped> hostsSkipped) throws InterruptedException {
+        Ternary<Boolean, String, Boolean> result = performStageOnHost(host, stage, timeout, payload, forced);
         if (!result.first()) {
             if (forced) {
-                String msg = "Maintenance script failed: " + result.second();
+                String msg = stage + " script failed: " + result.second();
                 hostsSkipped.add(new HostSkipped(host, msg));
                 return new Ternary<>(true, true, msg);
             }
@@ -407,7 +431,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         logger.debug(String.format("Trying to set %s into maintenance", host));
         PrepareForHostMaintenanceCmd cmd = new PrepareForHostMaintenanceCmd();
         cmd.setId(host.getId());
-        resourceManager.maintain(cmd);
+        resourceManager.maintain(cmd, false);
         waitForHostInMaintenance(host.getId());
     }
 
@@ -529,7 +553,24 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
      *                  - DETAILS: Information retrieved by the host after executing the stage
      *                  - AVOID_MAINTENANCE: True if maintenance stage must be avoided
      */
-    private Ternary<Boolean, String, Boolean> sendRollingMaintenanceCommandToHost(Host host, Stage stage,
+    protected Ternary<Boolean, String, Boolean> sendRollingMaintenanceCommandToHost(Host host, Stage stage,
+                                                                                 int timeout, String payload) throws InterruptedException {
+        GlobalLock lock = getHooksLock(host);
+        try {
+            if (!lock.lock(getHooksLockTimeout())) {
+                return new Ternary<>(false, "Timed out waiting for another maintenance hook to finish on host " + host.getUuid(), false);
+            }
+            try {
+                return doSendRollingMaintenanceCommandToHost(host, stage, timeout, payload);
+            } finally {
+                lock.unlock();
+            }
+        } finally {
+            lock.releaseRef();
+        }
+    }
+
+    protected Ternary<Boolean, String, Boolean> doSendRollingMaintenanceCommandToHost(Host host, Stage stage,
                                                                                  int timeout, String payload) throws InterruptedException {
         boolean completed = false;
         Answer answer = null;
@@ -777,6 +818,233 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         logger.debug("Host " + host.getUuid() + "(" + host.getName() + ") is in maintenance");
     }
 
+    protected boolean isHostMaintenanceHooksEnabled(Host host) {
+        return host.getHypervisorType() == Hypervisor.HypervisorType.KVM && host.getClusterId() != null &&
+                Boolean.TRUE.equals(KvmHostMaintenanceRunHooks.valueIn(host.getClusterId()));
+    }
+
+    /**
+     * Run a hook stage on a host outside rolling maintenance; the caller holds the hooks lock
+     * @return tuple: (SUCCESS, DETAILS, AVOID_MAINTENANCE), as {@link #sendRollingMaintenanceCommandToHost}
+     */
+    protected Ternary<Boolean, String, Boolean> runHookOnHost(Host host, Stage stage) {
+        logger.info("Running maintenance hook {} on {}", stage, host);
+        try {
+            return doSendRollingMaintenanceCommandToHost(host, stage, KvmRollingMaintenanceStageTimeout.value(), null);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return new Ternary<>(false, "Interrupted while running stage " + stage, false);
+        } catch (RuntimeException e) {
+            logger.error("Error running maintenance hook {} on {}", stage, host, e);
+            return new Ternary<>(false, e.getMessage(), false);
+        }
+    }
+
+    private void alert(Host host, String subject, String body) {
+        logger.error("{}: {}", subject, body);
+        alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), subject, body);
+    }
+
+    private void runHookOrAlert(Host host, Stage stage) {
+        Ternary<Boolean, String, Boolean> result = runHookOnHost(host, stage);
+        if (result.first()) {
+            logger.info("Maintenance hook {} finished on {}: {}", stage, host, result.second());
+            return;
+        }
+        alert(host, String.format("Maintenance hook %s failed on host %s", stage, host.getName()),
+                String.format("Stage %s failed on host %s: %s", stage, host.getUuid(), result.second()));
+    }
+
+    private DetailVO findHooksDetail(Host host) {
+        return hostDetailsDao.findDetail(host.getId(), HOST_MAINTENANCE_HOOKS_DETAIL);
+    }
+
+    /**
+     * Cluster-wide lock held while a hook runs, so that two stages never run on the host at the same time
+     */
+    protected GlobalLock getHooksLock(Host host) {
+        return GlobalLock.getInternLock("host.maintenance.hooks." + host.getId());
+    }
+
+    private int getHooksLockTimeout() {
+        long seconds = 3L * KvmRollingMaintenanceStageTimeout.value() + KvmRollingMaintenancePingInterval.value();
+        return (int) Math.min(seconds, Integer.MAX_VALUE / 1000);
+    }
+
+    /**
+     * Run body holding the host's hooks lock
+     * @return false if the lock could not be taken within timeoutSeconds
+     */
+    private boolean withHooksLock(Host host, int timeoutSeconds, Runnable body) {
+        GlobalLock lock = getHooksLock(host);
+        try {
+            if (!lock.lock(timeoutSeconds)) {
+                return false;
+            }
+            try {
+                body.run();
+            } finally {
+                lock.unlock();
+            }
+            return true;
+        } finally {
+            lock.releaseRef();
+        }
+    }
+
+    @Override
+    public boolean runPreMaintenanceHooks(Host host) {
+        DetailVO detail = findHooksDetail(host);
+        boolean inMaintenance = ResourceState.isMaintenanceState(host.getResourceState());
+        if (!isHostMaintenanceHooksEnabled(host)) {
+            if (detail != null && !inMaintenance) {
+                clearMaintenanceHooks(host);
+            }
+            return false;
+        }
+        if (inMaintenance && detail != null) {
+            logger.debug("Pre-maintenance hooks already ran on {}", host);
+            return false;
+        }
+        if (host.getStatus() != Status.Up) {
+            throw new CloudRuntimeException(String.format("%s is %s, cannot run the maintenance hooks required by %s",
+                    host, host.getStatus(), KvmHostMaintenanceRunHooks.key()));
+        }
+        boolean locked = withHooksLock(host, 1, () -> {
+            for (Stage stage : Arrays.asList(Stage.PreFlight, Stage.PreMaintenance)) {
+                Ternary<Boolean, String, Boolean> result = runHookOnHost(host, stage);
+                if (!result.first()) {
+                    throw new CloudRuntimeException(String.format("Maintenance hook %s failed on %s: %s", stage, host, result.second()));
+                }
+                if (result.third()) {
+                    throw new CloudRuntimeException(String.format("Maintenance hook %s on %s refused maintenance: %s", stage, host, result.second()));
+                }
+            }
+            hostDetailsDao.persist(host.getId(), Map.of(HOST_MAINTENANCE_HOOKS_DETAIL, String.valueOf(System.currentTimeMillis())));
+        });
+        if (!locked) {
+            throw new CloudRuntimeException(String.format("Maintenance hooks are already running on %s", host));
+        }
+        return true;
+    }
+
+    @Override
+    public void runPostMigrateHook(Host host) {
+        DetailVO detail = findHooksDetail(host);
+        if (detail == null) {
+            return;
+        }
+        String maintenanceId = detail.getValue();
+        try {
+            hookExecutor.submit(new ManagedContextRunnable() {
+                @Override
+                protected void runInContext() {
+                    try {
+                        runPostMigrateHookWithLock(host, maintenanceId);
+                    } catch (RuntimeException e) {
+                        logger.error("Error running maintenance hook {} on {}", Stage.PostMigrate, host, e);
+                        alert(host, String.format("Maintenance hook %s failed on host %s", Stage.PostMigrate, host.getName()), e.getMessage());
+                    }
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            alert(host, String.format("Maintenance hook %s not run on host %s", Stage.PostMigrate, host.getName()),
+                    "The management server is shutting down");
+        }
+    }
+
+    /**
+     * @param maintenanceId marker value of the maintenance that reached Maintenance, so that a task that waited out a
+     *                      cancel never runs for a later maintenance
+     */
+    protected void runPostMigrateHookWithLock(Host host, String maintenanceId) {
+        boolean locked = withHooksLock(host, getHooksLockTimeout(), () -> {
+            DetailVO detail = findHooksDetail(host);
+            HostVO current = hostDao.findById(host.getId());
+            if (detail == null || !detail.getValue().equals(maintenanceId) || current == null ||
+                    current.getResourceState() != ResourceState.Maintenance) {
+                logger.debug("{} is no longer in that maintenance, not running hook {}", host, Stage.PostMigrate);
+                return;
+            }
+            if (current.getStatus() != Status.Up) {
+                alert(host, String.format("Maintenance hook %s not run on host %s", Stage.PostMigrate, host.getName()),
+                        String.format("Host %s is %s", host.getUuid(), current.getStatus()));
+                return;
+            }
+            runHookOrAlert(current, Stage.PostMigrate);
+        });
+        if (!locked) {
+            alert(host, String.format("Maintenance hook %s not run on host %s", Stage.PostMigrate, host.getName()),
+                    "Timed out waiting for another maintenance hook to finish");
+        }
+    }
+
+    @Override
+    public boolean isMaintenanceHooksActive(Host host) {
+        return findHooksDetail(host) != null;
+    }
+
+    /**
+     * Wait for the agent to connect, e.g. after a reboot during maintenance or an agent restart
+     */
+    protected HostVO waitForHostUp(Host host) {
+        long timeout = KvmRollingMaintenanceStageTimeout.value() * 1000L;
+        long step = Math.max(1, KvmRollingMaintenancePingInterval.value()) * 1000L;
+        HostVO current = hostDao.findById(host.getId());
+        for (long waited = 0; current != null && current.getStatus() != Status.Up && waited < timeout; waited += step) {
+            try {
+                Thread.sleep(step);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new CloudRuntimeException("Interrupted while waiting for " + host + " to connect");
+            }
+            current = hostDao.findById(host.getId());
+        }
+        return current;
+    }
+
+    @Override
+    public void runPostMaintenanceHook(Host host) {
+        if (findHooksDetail(host) == null) {
+            return;
+        }
+        waitForHostUp(host);
+        boolean locked = withHooksLock(host, getHooksLockTimeout(), () -> {
+            if (findHooksDetail(host) == null) {
+                return;
+            }
+            HostVO current = hostDao.findById(host.getId());
+            if (current == null) {
+                return;
+            }
+            if (current.getStatus() == Status.Up) {
+                runHookOrAlert(current, Stage.PostMaintenance);
+                if (Thread.currentThread().isInterrupted()) {
+                    throw new CloudRuntimeException(String.format("Interrupted while running the %s maintenance hook on %s", Stage.PostMaintenance, host));
+                }
+            } else if (isHostMaintenanceHooksEnabled(current)) {
+                throw new CloudRuntimeException(String.format("%s is %s; the %s maintenance hook needs its agent. Connect the agent, " +
+                        "or disable %s for the cluster to leave maintenance without the hook", current, current.getStatus(),
+                        Stage.PostMaintenance, KvmHostMaintenanceRunHooks.key()));
+            } else {
+                alert(host, String.format("Maintenance hook %s not run on host %s", Stage.PostMaintenance, host.getName()),
+                        String.format("Host %s is not Up, stage %s was skipped", host.getUuid(), Stage.PostMaintenance));
+            }
+            clearMaintenanceHooks(host);
+        });
+        if (!locked) {
+            throw new CloudRuntimeException(String.format("A maintenance hook is still running on %s, try again later", host));
+        }
+    }
+
+    @Override
+    public void clearMaintenanceHooks(Host host) {
+        DetailVO detail = findHooksDetail(host);
+        if (detail != null) {
+            hostDetailsDao.remove(detail.getId());
+        }
+    }
+
     @Override
     public String getConfigComponentName() {
         return RollingMaintenanceManagerImpl.class.getSimpleName();
@@ -784,6 +1052,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {KvmRollingMaintenanceStageTimeout, KvmRollingMaintenancePingInterval, KvmRollingMaintenanceWaitForMaintenanceTimeout};
+        return new ConfigKey<?>[] {KvmRollingMaintenanceStageTimeout, KvmRollingMaintenancePingInterval, KvmRollingMaintenanceWaitForMaintenanceTimeout,
+                KvmHostMaintenanceRunHooks};
     }
 }

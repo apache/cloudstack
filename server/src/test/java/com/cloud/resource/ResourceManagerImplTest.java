@@ -29,6 +29,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.event.ActionEventUtils;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
@@ -55,7 +56,9 @@ import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.trilead.ssh2.Connection;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForHostMaintenanceCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -68,6 +71,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
@@ -129,6 +133,8 @@ public class ResourceManagerImplTest {
     private PrimaryDataStoreDao storagePoolDao;
     @Mock
     private StoragePoolHostDao storagePoolHostDao;
+    @Mock
+    private RollingMaintenanceManager rollingMaintenanceManager;
 
     @Spy
     @InjectMocks
@@ -281,6 +287,83 @@ public class ResourceManagerImplTest {
         verify(resourceManager).resourceStateTransitTo(eq(host), eq(InternalEnterMaintenance), anyLong());
 
         Assert.assertTrue(enterMaintenanceMode);
+    }
+
+    @Test
+    public void testSetHostIntoMaintenanceStartsPostMigrateHook() throws NoTransitionException {
+        Mockito.doReturn(true).when(resourceManager).resourceStateTransitTo(eq(host), eq(InternalEnterMaintenance), anyLong());
+        Assert.assertTrue(resourceManager.setHostIntoMaintenance(host));
+        verify(rollingMaintenanceManager).runPostMigrateHook(host);
+    }
+
+    @Test
+    public void testCancelMaintenanceRunsPostMaintenanceHookFirst() {
+        when(host.getResourceState()).thenReturn(ResourceState.Maintenance);
+        Mockito.doReturn(true).when(resourceManager).cancelMaintenance(hostId);
+        when(rollingMaintenanceManager.isMaintenanceHooksActive(host)).thenReturn(true);
+        CancelHostMaintenanceCmd cmd = Mockito.mock(CancelHostMaintenanceCmd.class);
+        when(cmd.getId()).thenReturn(hostId);
+
+        resourceManager.cancelMaintenance(cmd);
+
+        InOrder inOrder = Mockito.inOrder(rollingMaintenanceManager, resourceManager);
+        inOrder.verify(rollingMaintenanceManager).runPostMaintenanceHook(host);
+        inOrder.verify(resourceManager).cancelMaintenance(hostId);
+    }
+
+    @Test
+    public void testMaintainRefusedBeforeHooksWhenStateCannotEnterMaintenance() {
+        PrepareForHostMaintenanceCmd cmd = Mockito.mock(PrepareForHostMaintenanceCmd.class);
+        when(cmd.getId()).thenReturn(hostId);
+        when(host.getResourceState()).thenReturn(ResourceState.Disabled);
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> resourceManager.maintain(cmd, true));
+
+        verify(rollingMaintenanceManager, never()).runPreMaintenanceHooks(any());
+    }
+
+    @Test
+    public void testMaintainUndoesPreMaintenanceHooksWhenPrepareFails() throws AgentUnavailableException {
+        PrepareForHostMaintenanceCmd cmd = Mockito.mock(PrepareForHostMaintenanceCmd.class);
+        when(cmd.getId()).thenReturn(hostId);
+        when(rollingMaintenanceManager.runPreMaintenanceHooks(host)).thenReturn(true);
+        Mockito.doReturn(false).when(resourceManager).maintain(hostId);
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> resourceManager.maintain(cmd, true));
+
+        verify(rollingMaintenanceManager).runPostMaintenanceHook(host);
+    }
+
+    @Test
+    public void testCancelMaintenanceStopsWhenPostMaintenanceHookThrows() {
+        when(host.getResourceState()).thenReturn(ResourceState.Maintenance);
+        when(rollingMaintenanceManager.isMaintenanceHooksActive(host)).thenReturn(true);
+        Mockito.doThrow(new CloudRuntimeException("agent not connected")).when(rollingMaintenanceManager).runPostMaintenanceHook(host);
+        CancelHostMaintenanceCmd cmd = Mockito.mock(CancelHostMaintenanceCmd.class);
+        when(cmd.getId()).thenReturn(hostId);
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> resourceManager.cancelMaintenance(cmd));
+
+        verify(resourceManager, never()).cancelMaintenance(hostId);
+    }
+
+    @Test
+    public void testMaintainWithoutHooksSkipsThem() throws AgentUnavailableException {
+        PrepareForHostMaintenanceCmd cmd = Mockito.mock(PrepareForHostMaintenanceCmd.class);
+        when(cmd.getId()).thenReturn(hostId);
+        Mockito.doReturn(true).when(resourceManager).maintain(hostId);
+
+        resourceManager.maintain(cmd, false);
+
+        verify(rollingMaintenanceManager, never()).runPreMaintenanceHooks(any());
+        verify(rollingMaintenanceManager, never()).runPostMaintenanceHook(any());
+    }
+
+    @Test
+    public void testSetHostIntoMaintenanceNoPostMigrateHookWhenTransitionLost() throws NoTransitionException {
+        Mockito.doReturn(false).when(resourceManager).resourceStateTransitTo(eq(host), eq(InternalEnterMaintenance), anyLong());
+        resourceManager.setHostIntoMaintenance(host);
+        verify(rollingMaintenanceManager, never()).runPostMigrateHook(any());
     }
 
     @Test
