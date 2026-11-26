@@ -48,6 +48,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.hypervisor.kvm.storage.LibvirtStorageAdaptor;
 import com.cloud.hypervisor.kvm.storage.MultipathNVMeOFPool;
 import com.cloud.hypervisor.kvm.storage.MultipathSCSIPool;
 import com.cloud.resource.CommandWrapper;
@@ -187,7 +188,9 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
             /* fetch new size as seen from libvirt, don't want to assume anything */
             pool = storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
             pool.refresh();
-            final long finalSize = pool.getPhysicalDisk(volumeId).getVirtualSize();
+            // an encrypted RBD image keeps its LUKS2 header in front of the data, which is not part of the size of the volume
+            final long finalSize = rbdEncrypted ? LibvirtStorageAdaptor.getEncryptedRbdVolumeSize(pool, volumeId)
+                    : pool.getPhysicalDisk(volumeId).getVirtualSize();
             logger.debug("after resize, size reports as: " + toHumanReadableSize(finalSize) + ", requested: " + toHumanReadableSize(newSize));
             return new ResizeVolumeAnswer(command, true, "success", finalSize);
         } catch (final CloudRuntimeException e) {

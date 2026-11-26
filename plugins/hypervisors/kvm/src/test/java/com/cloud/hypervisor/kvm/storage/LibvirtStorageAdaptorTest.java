@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -347,4 +348,32 @@ public class LibvirtStorageAdaptorTest {
         assert !secureZeroEnabled;
     }
 
+
+    @Test
+    public void maskRbdKeyHidesTheCephKey() {
+        String message = "qemu-img: rbd:pool/image:mon_host=10.0.0.1\\:6789:auth_client_required=cephx:id=pool:key=AQCsecret==:rbd_default_format=2: error while converting raw: error rbd create: File exists";
+        String masked = LibvirtStorageAdaptor.maskRbdKey(message);
+        Assert.assertFalse(masked.contains("AQCsecret"));
+        Assert.assertTrue(masked.contains("key=******:rbd_default_format=2"));
+        Assert.assertTrue(masked.endsWith("File exists"));
+    }
+
+    @Test
+    public void maskRbdKeyKeepsMessagesWithoutKey() {
+        Assert.assertNull(LibvirtStorageAdaptor.maskRbdKey(null));
+        Assert.assertEquals("timeout", LibvirtStorageAdaptor.maskRbdKey("timeout"));
+    }
+
+    /**
+     * Measured with `rbd encryption format` (Ceph 20.2): the data of a LUKS2 encrypted image starts at 16 MiB with
+     * objects of 1, 4 or 8 MiB, and at 32 MiB with objects of 32 MiB.
+     */
+    @Test
+    public void testGetRbdLuks2HeaderSize() {
+        Assert.assertEquals(16L << 20, LibvirtStorageAdaptor.getRbdLuks2HeaderSize(1L << 20));
+        Assert.assertEquals(16L << 20, LibvirtStorageAdaptor.getRbdLuks2HeaderSize(4L << 20));
+        Assert.assertEquals(16L << 20, LibvirtStorageAdaptor.getRbdLuks2HeaderSize(8L << 20));
+        Assert.assertEquals(16L << 20, LibvirtStorageAdaptor.getRbdLuks2HeaderSize(16L << 20));
+        Assert.assertEquals(32L << 20, LibvirtStorageAdaptor.getRbdLuks2HeaderSize(32L << 20));
+    }
 }

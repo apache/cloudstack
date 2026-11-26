@@ -30,11 +30,17 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -107,5 +113,73 @@ public class LibvirtPrepareForMigrationCommandWrapperTest {
             String portWithCommand = String.format(cmd, getTempFilepath());
             runTestRemoveDpdkPortForCommandInjection(portWithCommand);
         }
+    }
+
+    private DiskTO diskWithDestPoolTypeDetail(String destPoolType) {
+        DiskTO disk = Mockito.mock(DiskTO.class);
+        Map<String, String> details = new HashMap<>();
+        if (destPoolType != null) {
+            details.put(DiskTO.MIGRATION_DEST_POOL_TYPE, destPoolType);
+        }
+        Mockito.doReturn(details).when(disk).getDetails();
+        return disk;
+    }
+
+    private VolumeObjectTO volumeOnPool(Storage.StoragePoolType poolType) {
+        VolumeObjectTO volumeObjectTO = Mockito.mock(VolumeObjectTO.class);
+        PrimaryDataStoreTO dataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        Mockito.doReturn(poolType).when(dataStore).getPoolType();
+        Mockito.doReturn(dataStore).when(volumeObjectTO).getDataStore();
+        return volumeObjectTO;
+    }
+
+    @Test
+    public void refuseIfDestinationCannotHotplugEncryptedRbdAllowsANonRbdDestination() {
+        Answer answer = libvirtPrepareForMigrationCommandWrapperSpy.refuseIfDestinationCannotHotplugEncryptedRbd(prepareForMigrationCommandMock,
+                virtualMachineTOMock, diskWithDestPoolTypeDetail(Storage.StoragePoolType.NetworkFilesystem.toString()),
+                volumeOnPool(Storage.StoragePoolType.RBD), libvirtComputingResourceMock);
+
+        Assert.assertNull(answer);
+        Mockito.verify(libvirtComputingResourceMock, Mockito.never()).getHypervisorLibvirtVersion();
+    }
+
+    @Test
+    public void refuseIfDestinationCannotHotplugEncryptedRbdAllowsAHostWithNewEnoughLibvirt() {
+        Mockito.doReturn(10001000L).when(libvirtComputingResourceMock).getHypervisorLibvirtVersion(); // libvirt 10.1.0
+
+        Answer answer = libvirtPrepareForMigrationCommandWrapperSpy.refuseIfDestinationCannotHotplugEncryptedRbd(prepareForMigrationCommandMock,
+                virtualMachineTOMock, diskWithDestPoolTypeDetail(Storage.StoragePoolType.RBD.toString()), volumeOnPool(Storage.StoragePoolType.RBD),
+                libvirtComputingResourceMock);
+
+        Assert.assertNull(answer);
+    }
+
+    @Test
+    public void refuseIfDestinationCannotHotplugEncryptedRbdRefusesByTheDestPoolTypeDetailWhenStorageIsMigrating() {
+        Mockito.doReturn("i-2-3-VM").when(virtualMachineTOMock).getName();
+        Mockito.doReturn(10000000L).when(libvirtComputingResourceMock).getHypervisorLibvirtVersion(); // libvirt 10.0.0
+
+        // the disk's own dataStore still reports the source (NFS) pool: the migration detail is what must be trusted
+        Answer answer = libvirtPrepareForMigrationCommandWrapperSpy.refuseIfDestinationCannotHotplugEncryptedRbd(prepareForMigrationCommandMock,
+                virtualMachineTOMock, diskWithDestPoolTypeDetail(Storage.StoragePoolType.RBD.toString()),
+                volumeOnPool(Storage.StoragePoolType.NetworkFilesystem), libvirtComputingResourceMock);
+
+        Assert.assertNotNull(answer);
+        Assert.assertFalse(((PrepareForMigrationAnswer) answer).getResult());
+        Assert.assertTrue(answer.getDetails(), answer.getDetails().contains("Libvirt version 10.1.0 required"));
+        Assert.assertTrue(answer.getDetails(), answer.getDetails().contains("version 10.0.0 detected"));
+        Assert.assertTrue(answer.getDetails(), answer.getDetails().contains("i-2-3-VM"));
+    }
+
+    @Test
+    public void refuseIfDestinationCannotHotplugEncryptedRbdFallsBackToTheDisksOwnPoolWhenStorageIsNotMigrating() {
+        Mockito.doReturn("i-2-3-VM").when(virtualMachineTOMock).getName();
+        Mockito.doReturn(10000000L).when(libvirtComputingResourceMock).getHypervisorLibvirtVersion(); // libvirt 10.0.0
+
+        Answer answer = libvirtPrepareForMigrationCommandWrapperSpy.refuseIfDestinationCannotHotplugEncryptedRbd(prepareForMigrationCommandMock,
+                virtualMachineTOMock, diskWithDestPoolTypeDetail(null), volumeOnPool(Storage.StoragePoolType.RBD), libvirtComputingResourceMock);
+
+        Assert.assertNotNull(answer);
+        Assert.assertFalse(((PrepareForMigrationAnswer) answer).getResult());
     }
 }

@@ -41,6 +41,7 @@ public class DiskTO {
     public static final String EXPAND_DATASTORE = "expandDatastore";
     public static final String TEMPLATE_RESIGN = "templateResign";
     public static final String SECRET_CONSUMER_DETAIL = "storageMigrateSecretConsumer";
+    public static final String MIGRATION_DEST_POOL_TYPE = "storageMigrateDestPoolType";
 
     private DataTO data;
     private Long diskSeq;

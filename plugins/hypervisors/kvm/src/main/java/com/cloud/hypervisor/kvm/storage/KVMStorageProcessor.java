@@ -157,7 +157,6 @@ import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateLocation;
-import com.cloud.utils.RbdUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -180,16 +179,12 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     private static final String MANAGE_SNAPSTHOT_CREATE_OPTION = "-c";
     private static final String NAME_OPTION = "-n";
-    private static final String CEPH_MON_HOST = "mon_host";
-    private static final String CEPH_AUTH_KEY = "key";
-    private static final String CEPH_CLIENT_MOUNT_TIMEOUT = "client_mount_timeout";
-    private static final String CEPH_DEFAULT_MOUNT_TIMEOUT = "30";
 
     // libvirt < 10.1.0 has an object apply-order bug (fixed in 10.1.0) that breaks hot-plug of an encrypted
     // blockdev: on attach the disk is opened before its LUKS secret object is defined, so the attach fails with
     // "No secret with id '...-format-encryption-secret0'". Booting a VM from an encrypted disk is unaffected (the
     // QEMU command line resolves all -object before -blockdev). See qemuBlockStorageSourceAttachApply() in libvirt.
-    private static final long MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG = 10001000L; // libvirt 10.1.0
+    public static final long MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG = 10001000L; // libvirt 10.1.0
     /**
      * Time interval before rechecking virsh commands
      */
@@ -666,7 +661,8 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             final KVMPhysicalDisk volume = secondaryStoragePool.getPhysicalDisk(srcVolumeName);
 
-            volume.setFormat(PhysicalDiskFormat.valueOf(srcFormat.toString()));
+            // the file tells the format: a volume from RBD or CLVM is RAW, but its copy on secondary storage is qcow2
+            volume.setFormat(srcVolumeName.endsWith(".qcow2") ? PhysicalDiskFormat.QCOW2 : PhysicalDiskFormat.valueOf(srcFormat.toString()));
             volume.setDispName(srcVol.getName());
             volume.setVmName(srcVol.getVmName());
 
@@ -1819,7 +1815,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         if (poolType == StoragePoolType.RBD
                 && resource.getHypervisorLibvirtVersion() < MIN_LIBVIRT_VERSION_FOR_RBD_ENCRYPTED_HOTPLUG) {
             throw new CloudRuntimeException("Libvirt version 10.1.0 required to attach an encrypted RBD volume to a running VM, but version "
-                    + resource.getHypervisorLibvirtVersion() + " detected. Booting a VM from an encrypted RBD disk is not affected.");
+                    + LibvirtComputingResource.prettyVersion(resource.getHypervisorLibvirtVersion()) + " detected. Booting a VM from an encrypted RBD disk is not affected.");
         }
     }
 
@@ -1934,8 +1930,12 @@ public class KVMStorageProcessor implements StorageProcessor {
      * Create full clone volume from VM snapshot
      */
     protected KVMPhysicalDisk createFullCloneVolume(MigrationOptions migrationOptions, VolumeObjectTO volume, KVMStoragePool primaryPool, PhysicalDiskFormat format) {
-            logger.debug("For VM migration with full-clone volume: Creating empty stub disk for source disk " + migrationOptions.getSrcVolumeUuid() + " and size: " + toHumanReadableSize(volume.getSize()) + " and format: " + format);
-        return primaryPool.createPhysicalDisk(volume.getUuid(), format, volume.getProvisioningType(), volume.getSize(), volume.getPassphrase());
+        // The Instance sees the size of the volume on every pool type: an encrypted volume is created with room for its
+        // encryption header, on RBD as on a file based pool. So the declared size is the size of the source disk, which
+        // the host creating the destination may not even reach (a local pool, or a pool of another cluster).
+        long size = volume.getSize();
+        logger.debug("For VM migration with full-clone volume: Creating empty stub disk for source disk " + migrationOptions.getSrcVolumeUuid() + " and size: " + toHumanReadableSize(size) + " and format: " + format);
+        return primaryPool.createPhysicalDisk(volume.getUuid(), format, volume.getProvisioningType(), size, volume.getPassphrase());
     }
 
     @Override
@@ -2610,7 +2610,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         Rbd rbd = null;
         RbdImage image = null;
         try {
-            r = radosConnect(primaryPool);
+            r = LibvirtStorageAdaptor.connectToCeph(primaryPool);
 
             io = r.ioCtxCreate(primaryPool.getSourceDir());
             rbd = new Rbd(io);
@@ -2919,16 +2919,6 @@ public class KVMStorageProcessor implements StorageProcessor {
         return ((availablePoolSize * 1d) / (diskSize * 1d)) < MIN_RATE_BETWEEN_AVAILABLE_POOL_AND_DISK_SIZE_TO_TAKE_DISK_SNAPSHOT;
     }
 
-    protected Rados radosConnect(final KVMStoragePool primaryPool) throws RadosException {
-        Rados r = new Rados(primaryPool.getAuthUserName());
-        r.confSet(CEPH_MON_HOST, RbdUtils.getRbdMonitors(primaryPool.getSourceHost(), primaryPool.getSourcePort()));
-        r.confSet(CEPH_AUTH_KEY, primaryPool.getAuthSecret());
-        r.confSet(CEPH_CLIENT_MOUNT_TIMEOUT, CEPH_DEFAULT_MOUNT_TIMEOUT);
-        r.connect();
-        logger.debug("Successfully connected to Ceph cluster at " + r.confGet(CEPH_MON_HOST));
-        return r;
-    }
-
     /**
      * Closes an RBD image if it was opened; never throws. An image left open keeps this client's RBD
      * exclusive-lock, which later makes 'rbd snap rollback' (revertSnapshot) fail with EROFS and keeps
@@ -3137,11 +3127,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         try {
 
-            r = new Rados(srcPool.getAuthUserName());
-            r.confSet("mon_host", RbdUtils.getRbdMonitors(srcPool.getSourceHost(), srcPool.getSourcePort()));
-            r.confSet("key", srcPool.getAuthSecret());
-            r.confSet("client_mount_timeout", "30");
-            r.connect();
+            r = LibvirtStorageAdaptor.connectToCeph(srcPool);
 
             io = r.ioCtxCreate(srcPool.getSourceDir());
             rbd = new Rbd(io);
@@ -3200,7 +3186,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (primaryPool.getType() == StoragePoolType.RBD) {
                 KVMPhysicalDisk disk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volume.getPath());
                 snapshotFullName = disk.getName() + "@" + snapshotName;
-                Rados r = radosConnect(primaryPool);
+                Rados r = LibvirtStorageAdaptor.connectToCeph(primaryPool);
                 IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
                 Rbd rbd = new Rbd(io);
                 RbdImage image = rbd.open(disk.getName());
@@ -3401,6 +3387,16 @@ public class KVMStorageProcessor implements StorageProcessor {
         return new DirectDownloadAnswer(true, template.getSize(), template.getName());
     }
 
+    /**
+     * CLVM and CLVM_NG volumes are named after the logical volume, without a file extension. The name of an RBD image
+     * survives an online migration to a file based pool, where the block copy writes a qcow2 file, so a ".raw"
+     * extension would outlive the format it names.
+     */
+    protected String generateVolumeName(StoragePoolType poolType, ImageFormat format) {
+        String volumeName = UUID.randomUUID().toString();
+        return ClvmPoolManager.isClvmPoolType(poolType) || StoragePoolType.RBD.equals(poolType) ? volumeName : volumeName + "." + format.getFileExtension();
+    }
+
     @Override
     public Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd) {
         final DataTO srcData = cmd.getSrcTO();
@@ -3454,8 +3450,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else {
                 PhysicalDiskFormat destPoolDefaultFormat = destPool.getDefaultFormat();
                 destFormat = getFormat(destPoolDefaultFormat);
-                final String volumeName = UUID.randomUUID().toString();
-                destVolumeName = volumeName + "." + destFormat.getFileExtension();
+                destVolumeName = generateVolumeName(destPrimaryStore.getPoolType(), destFormat);
 
                 // Update path in the command for reconciliation
                 if (StringUtils.isBlank(destVolumePath)) {
@@ -3498,7 +3493,8 @@ public class KVMStorageProcessor implements StorageProcessor {
             newVol.setPath(path);
             ImageFormat newVolumeFormat = getFormat(newVolume.getFormat());
             newVol.setFormat(newVolumeFormat);
-            newVol.setEncryptFormat(destVol.getEncryptFormat());
+            // an encrypted volume copied to another kind of pool is encrypted differently (librbd LUKS2 on RBD, qemu LUKS otherwise)
+            newVol.setEncryptFormat(newVolume.getQemuEncryptFormat() != null ? newVolume.getQemuEncryptFormat().toString() : destVol.getEncryptFormat());
             return new CopyCmdAnswer(newVol);
         } catch (final CloudRuntimeException e) {
             logger.debug("Failed to copyVolumeFromPrimaryToPrimary: ", e);

@@ -28,7 +28,14 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
+import com.cloud.storage.MigrationOptions;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.mockito.ArgumentCaptor;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -202,6 +209,50 @@ public class KVMStorageProcessorTest {
 
         storageProcessor.validateAvailableSizeOnPoolToTakeVolumeSnapshot(kvmStoragePoolMock, kvmPhysicalDiskMock);
         storageProcessor.validateAvailableSizeOnPoolToTakeVolumeSnapshot(kvmStoragePoolMock, kvmPhysicalDiskMock);
+    }
+
+    /**
+     * The destination of a full clone migration gets the declared size of the volume, whatever the pools are: the
+     * storage adaptor makes the room the encryption header of an encrypted volume needs, on RBD as on a file based
+     * pool. The source pool is not looked up, as the host creating the destination may not reach it.
+     */
+    private void verifyCreateFullCloneVolumeUsesTheDeclaredSize(StoragePoolType srcPoolType, ScopeType srcPoolScope, PhysicalDiskFormat format, byte[] passphrase) {
+        long declaredSize = 1073741824L;
+        Mockito.doReturn(declaredSize).when(volumeObjectToMock).getSize();
+        Mockito.doReturn("volumeUuid").when(volumeObjectToMock).getUuid();
+        Mockito.doReturn(Storage.ProvisioningType.THIN).when(volumeObjectToMock).getProvisioningType();
+        Mockito.doReturn(passphrase).when(volumeObjectToMock).getPassphrase();
+        MigrationOptions migrationOptions = new MigrationOptions("srcPoolUuid", srcPoolType, "srcVolumeUuid", srcPoolScope, 1L);
+
+        storageProcessor.createFullCloneVolume(migrationOptions, volumeObjectToMock, kvmStoragePoolMock, format);
+
+        Mockito.verify(kvmStoragePoolMock).createPhysicalDisk("volumeUuid", format, Storage.ProvisioningType.THIN, declaredSize, passphrase);
+        Mockito.verify(storagePoolManager, Mockito.never()).getStoragePool(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void createFullCloneVolumeNotEncryptedUsesTheDeclaredSize() {
+        verifyCreateFullCloneVolumeUsesTheDeclaredSize(StoragePoolType.NetworkFilesystem, ScopeType.CLUSTER, PhysicalDiskFormat.RAW, null);
+    }
+
+    @Test
+    public void createFullCloneVolumeEncryptedRbdToFileBasedPoolUsesTheDeclaredSize() {
+        verifyCreateFullCloneVolumeUsesTheDeclaredSize(StoragePoolType.RBD, ScopeType.CLUSTER, PhysicalDiskFormat.QCOW2, new byte[] {1, 2, 3});
+    }
+
+    @Test
+    public void createFullCloneVolumeEncryptedNfsToRbdUsesTheDeclaredSize() {
+        verifyCreateFullCloneVolumeUsesTheDeclaredSize(StoragePoolType.NetworkFilesystem, ScopeType.ZONE, PhysicalDiskFormat.RAW, new byte[] {1, 2, 3});
+    }
+
+    @Test
+    public void createFullCloneVolumeEncryptedLocalToRbdUsesTheDeclaredSize() {
+        verifyCreateFullCloneVolumeUsesTheDeclaredSize(StoragePoolType.Filesystem, ScopeType.HOST, PhysicalDiskFormat.RAW, new byte[] {1, 2, 3});
+    }
+
+    @Test
+    public void createFullCloneVolumeEncryptedSharedMountPointToRbdUsesTheDeclaredSize() {
+        verifyCreateFullCloneVolumeUsesTheDeclaredSize(StoragePoolType.SharedMountPoint, ScopeType.CLUSTER, PhysicalDiskFormat.RAW, new byte[] {1, 2, 3});
     }
 
     private List<LibvirtVMDef.DiskDef> createDiskDefs(int iterations, boolean duplicatePath) {
@@ -526,7 +577,6 @@ public class KVMStorageProcessorTest {
         Mockito.lenient().doReturn("cloudstack").when(kvmStoragePoolMock).getAuthUserName();
         Mockito.lenient().doReturn("secret").when(kvmStoragePoolMock).getAuthSecret();
 
-        Mockito.doReturn(radosMock).when(storageProcessorSpy).radosConnect(kvmStoragePoolMock);
         Mockito.doReturn(ioCtxMock).when(radosMock).ioCtxCreate(RBD_POOL_NAME);
         Mockito.lenient().doReturn(SNAPSHOT_SIZE).when(storageProcessorSpy).getRbdSnapshotSize(Mockito.anyString(), Mockito.anyString(),
                 Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
@@ -545,8 +595,10 @@ public class KVMStorageProcessorTest {
         RbdImage rbdImageMock = Mockito.mock(RbdImage.class);
         KVMPhysicalDisk diskMock = prepareRbdSnapshotMocks(radosMock, ioCtxMock);
 
-        try (MockedConstruction<Rbd> rbd = Mockito.mockConstruction(Rbd.class, ((mock, context) ->
+        try (MockedStatic<LibvirtStorageAdaptor> adaptor = Mockito.mockStatic(LibvirtStorageAdaptor.class);
+                MockedConstruction<Rbd> rbd = Mockito.mockConstruction(Rbd.class, ((mock, context) ->
                 Mockito.doReturn(rbdImageMock).when(mock).open(RBD_IMAGE_NAME)))) {
+            adaptor.when(() -> LibvirtStorageAdaptor.connectToCeph(kvmStoragePoolMock)).thenReturn(radosMock);
 
             Long result = storageProcessorSpy.takeRbdVolumeSnapshotOfStoppedVm(kvmStoragePoolMock, diskMock, SNAPSHOT_NAME);
 
@@ -569,8 +621,10 @@ public class KVMStorageProcessorTest {
         KVMPhysicalDisk diskMock = prepareRbdSnapshotMocks(radosMock, ioCtxMock);
         Mockito.doThrow(new RbdException("Failed to create snapshot")).when(rbdImageMock).snapCreate(SNAPSHOT_NAME);
 
-        try (MockedConstruction<Rbd> rbd = Mockito.mockConstruction(Rbd.class, ((mock, context) ->
+        try (MockedStatic<LibvirtStorageAdaptor> adaptor = Mockito.mockStatic(LibvirtStorageAdaptor.class);
+                MockedConstruction<Rbd> rbd = Mockito.mockConstruction(Rbd.class, ((mock, context) ->
                 Mockito.doReturn(rbdImageMock).when(mock).open(RBD_IMAGE_NAME)))) {
+            adaptor.when(() -> LibvirtStorageAdaptor.connectToCeph(kvmStoragePoolMock)).thenReturn(radosMock);
 
             Long result = storageProcessorSpy.takeRbdVolumeSnapshotOfStoppedVm(kvmStoragePoolMock, diskMock, SNAPSHOT_NAME);
 
@@ -751,6 +805,7 @@ public class KVMStorageProcessorTest {
         CloudRuntimeException ex = Assert.assertThrows(CloudRuntimeException.class,
                 () -> storageProcessor.ensureLibvirtSupportsEncryptedRbdHotplug(StoragePoolType.RBD));
         Assert.assertTrue(ex.getMessage(), ex.getMessage().contains("Libvirt version 10.1.0 required"));
+        Assert.assertTrue(ex.getMessage(), ex.getMessage().contains("but version 10.0.0 detected"));
     }
 
     @Test
@@ -764,5 +819,62 @@ public class KVMStorageProcessorTest {
         // The libvirt hot-plug apply-order bug is RBD-specific; other pool types are not gated, and the libvirt
         // version is not even consulted for them.
         storageProcessor.ensureLibvirtSupportsEncryptedRbdHotplug(StoragePoolType.NetworkFilesystem);
+    }
+
+    private String copyVolumeFromPrimaryToPrimaryTo(StoragePoolType destType, PhysicalDiskFormat destFormat, ArgumentCaptor<String> destNameCaptor) {
+        CopyCommand command = Mockito.mock(CopyCommand.class);
+        VolumeObjectTO srcVolume = Mockito.mock(VolumeObjectTO.class);
+        VolumeObjectTO destVolume = Mockito.mock(VolumeObjectTO.class);
+        Mockito.doReturn(srcVolume).when(command).getSrcTO();
+        Mockito.doReturn(destVolume).when(command).getDestTO();
+        Mockito.doReturn(Storage.ImageFormat.RAW).when(srcVolume).getFormat();
+        Mockito.doReturn("src-volume").when(srcVolume).getPath();
+        Mockito.doReturn(Storage.ImageFormat.QCOW2).when(destVolume).getFormat();
+        Mockito.doReturn(null).when(destVolume).getPath();
+
+        PrimaryDataStoreTO srcStore = Mockito.mock(PrimaryDataStoreTO.class);
+        PrimaryDataStoreTO destStore = Mockito.mock(PrimaryDataStoreTO.class);
+        Mockito.doReturn(srcStore).when(srcVolume).getDataStore();
+        Mockito.doReturn(destStore).when(destVolume).getDataStore();
+        Mockito.doReturn(StoragePoolType.NetworkFilesystem).when(srcStore).getPoolType();
+        Mockito.doReturn("src-pool").when(srcStore).getUuid();
+        Mockito.doReturn(destType).when(destStore).getPoolType();
+        Mockito.doReturn("dest-pool").when(destStore).getUuid();
+
+        KVMPhysicalDisk srcDisk = Mockito.mock(KVMPhysicalDisk.class);
+        KVMStoragePool destPool = Mockito.mock(KVMStoragePool.class);
+        KVMPhysicalDisk newDisk = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.doReturn(destFormat).when(newDisk).getFormat();
+        Mockito.doReturn(destFormat).when(destPool).getDefaultFormat();
+        Mockito.doReturn(srcDisk).when(storagePoolManager).getPhysicalDisk(StoragePoolType.NetworkFilesystem, "src-pool", "src-volume");
+        Mockito.doReturn(destPool).when(storagePoolManager).getStoragePool(destType, "dest-pool");
+        Mockito.doReturn(newDisk).when(storagePoolManager).copyPhysicalDisk(Mockito.eq(srcDisk), destNameCaptor.capture(), Mockito.eq(destPool), Mockito.anyInt());
+
+        CopyCmdAnswer answer = (CopyCmdAnswer) storageProcessor.copyVolumeFromPrimaryToPrimary(command);
+
+        Assert.assertTrue(answer.getResult());
+        return ((VolumeObjectTO) answer.getNewData()).getPath();
+    }
+
+    @Test
+    public void testCopyVolumeFromPrimaryToPrimaryNamesAnRbdVolumeAfterItsUuidOnly() {
+        ArgumentCaptor<String> destName = ArgumentCaptor.forClass(String.class);
+
+        String path = copyVolumeFromPrimaryToPrimaryTo(StoragePoolType.RBD, PhysicalDiskFormat.RAW, destName);
+
+        Assert.assertEquals(path, destName.getValue());
+        Assert.assertTrue("a plain UUID, without the extension of a format: " + path, path.matches("[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}"));
+    }
+
+    @Test
+    public void testCopyVolumeFromPrimaryToPrimaryNamesAVolumeOfAFileBasedPoolAfterItsFormat() {
+        for (StoragePoolType fileBased : new StoragePoolType[] {StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint, StoragePoolType.Filesystem}) {
+            ArgumentCaptor<String> destName = ArgumentCaptor.forClass(String.class);
+
+            String path = copyVolumeFromPrimaryToPrimaryTo(fileBased, PhysicalDiskFormat.QCOW2, destName);
+
+            Assert.assertEquals(path, destName.getValue());
+            Assert.assertTrue(fileBased + ": a UUID with the extension of the qcow2 format: " + path, path.matches("[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}\\.qcow2"));
+        }
     }
 }
