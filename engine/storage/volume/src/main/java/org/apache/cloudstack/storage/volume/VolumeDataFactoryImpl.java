@@ -56,6 +56,7 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
         VolumeVO volumeVO = volumeDao.findById(volumeId);
 
         VolumeObject vol = VolumeObject.getVolumeObject(store, volumeVO);
+        setDirectDownloadFlagIfNeeded(vol);
 
         return vol;
     }
@@ -77,6 +78,7 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
                 vol = VolumeObject.getVolumeObject(store, volumeVO);
             }
         }
+        setDirectDownloadFlagIfNeeded(vol);
         return vol;
     }
 
@@ -102,12 +104,7 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
             }
             vol = VolumeObject.getVolumeObject(store, volumeVO);
         }
-        if (vol.getTemplateId() != null) {
-            VMTemplateVO template = templateDao.findById(vol.getTemplateId());
-            if (template != null) {
-                vol.setDirectDownload(template.isDirectDownload());
-            }
-        }
+        setDirectDownloadFlagIfNeeded(vol);
         return vol;
     }
 
@@ -116,6 +113,16 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
         VolumeInfo vol = getVolume(volume.getId(), store);
         vol.addPayload(((VolumeInfo)volume).getpayload());
         return vol;
+    }
+
+    private void setDirectDownloadFlagIfNeeded(VolumeObject vol) {
+        if (vol == null || vol.getTemplateId() == null) {
+            return;
+        }
+        VMTemplateVO template = templateDao.findByIdIncludingRemoved(vol.getTemplateId());
+        if (template != null) {
+            vol.setDirectDownload(template.isDirectDownload());
+        }
     }
 
     @Override
