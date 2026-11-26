@@ -243,6 +243,119 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                 Arrays.asList(60000L, 60000L), importTimeouts);
     }
 
+    /**
+     * {@code rbd import-diff} resizes the image to the size recorded in the diff, the size the volume
+     * had when it was backed up. A volume grown since then keeps its new size in the database, so the
+     * image has to be brought back to the size it was recreated with.
+     */
+    @Test
+    public void testExecuteResizesRbdImageBackToItsSizeAfterReplayingTheDiffChain() throws Exception {
+        when(command.getVmName()).thenReturn("test-vm");
+        lenient().when(command.getBackupPath()).thenReturn("test-vm/inc1");
+        when(command.getBackupFormat()).thenReturn("rbddiff");
+        when(command.getBackupChainPaths()).thenReturn(Arrays.asList("test-vm/full", "test-vm/inc1"));
+        when(command.getBackupRepoAddress()).thenReturn("192.168.1.100:/backup");
+        when(command.getBackupRepoType()).thenReturn("nfs");
+        when(command.getMountOptions()).thenReturn("rw");
+        when(command.isVmExists()).thenReturn(true);
+        when(command.getWait()).thenReturn(60);
+        when(command.getMountTimeout()).thenReturn(30);
+        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        when(primaryDataStore.getUuid()).thenReturn("ceph-pool-uuid");
+        when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+        when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("cephpool/vol-uuid"));
+        when(command.getBackupVolumesUUIDs()).thenReturn(Arrays.asList("vol-uuid"));
+        when(command.getBackupFiles()).thenReturn(Arrays.asList("vol-uuid"));
+
+        KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
+        when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePoolMgr.getStoragePool(any(), anyString())).thenReturn(pool);
+        lenient().when(pool.getSourceHost()).thenReturn("10.0.1.2");
+        lenient().when(pool.getSourcePort()).thenReturn(6789);
+
+        List<String[]> executed = new ArrayList<>();
+        boolean[] imported = {false};
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            Path tempPath = Mockito.mock(Path.class);
+            when(tempPath.toString()).thenReturn("/tmp/csbackup.abc123");
+            filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
+            filesMock.when(() -> Files.deleteIfExists(any(Path.class))).thenReturn(true);
+
+            try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.getExecutableAbsolutePath(anyString()))
+                        .thenAnswer(invocation -> invocation.getArgument(0));
+                scriptMock.when(() -> Script.executeCommand(any(String[].class))).thenReturn(null);
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString())).thenReturn(0);
+                scriptMock.when(() -> Script.executeCommandForExitValue(any(String[].class)))
+                        .thenAnswer(invocation -> {
+                            Object[] raw = invocation.getArguments();
+                            if (raw.length == 1 && raw[0] instanceof String[]) {
+                                executed.add((String[]) raw[0]);
+                            } else {
+                                String[] parts = new String[raw.length];
+                                for (int i = 0; i < raw.length; i++) {
+                                    parts[i] = String.valueOf(raw[i]);
+                                }
+                                executed.add(parts);
+                            }
+                            return 0;
+                        });
+                scriptMock.when(() -> Script.executeCommandForExitValue(anyLong(), any(String[].class)))
+                        .thenAnswer(invocation -> {
+                            Object[] raw = invocation.getArguments();
+                            String[] parts = new String[raw.length - 1];
+                            if (raw.length == 2 && raw[1] instanceof String[]) {
+                                parts = (String[]) raw[1];
+                            } else {
+                                for (int i = 1; i < raw.length; i++) {
+                                    parts[i - 1] = String.valueOf(raw[i]);
+                                }
+                            }
+                            executed.add(parts);
+                            if (Arrays.asList(parts).contains("import-diff")) {
+                                imported[0] = true;
+                            }
+                            return 0;
+                        });
+                // The image is 2 GiB when the restore starts (it was grown after the backup was
+                // taken); once a diff has been replayed it has the 1 GiB the diff recorded.
+                scriptMock.when(() -> Script.executePipedCommands(anyList(), anyLong()))
+                        .thenAnswer(invocation -> {
+                            List<String[]> commands = invocation.getArgument(0);
+                            List<String> args = Arrays.asList(commands.get(0));
+                            if (args.contains("snap") && args.contains("ls")) {
+                                return new Pair<>(0, "[]");
+                            }
+                            return new Pair<>(0, imported[0] ? "{\"name\":\"vol-uuid\",\"size\":1073741824}"
+                                    : "{\"name\":\"vol-uuid\",\"size\":2147483648}");
+                        });
+
+                Answer result = wrapper.execute(command, libvirtComputingResource);
+                Assert.assertTrue(((BackupAnswer) result).getResult());
+            }
+        }
+
+        boolean replayed = false;
+        boolean resized = false;
+        for (String[] cmd : executed) {
+            List<String> args = Arrays.asList(cmd);
+            if (args.contains("import-diff")) {
+                replayed = true;
+            } else if (args.contains("resize")) {
+                Assert.assertTrue("the image must be resized only once the chain has been replayed", replayed);
+                Assert.assertTrue("the image must go back to the size it was recreated with, in bytes",
+                        args.contains("2147483648B"));
+                Assert.assertTrue("the image may have to shrink back if the diff recorded a larger size",
+                        args.contains("--allow-shrink"));
+                resized = true;
+            }
+        }
+        Assert.assertTrue("the image must be resized back after the chain is replayed", resized);
+    }
+
     private static final String SNAPSHOT_LISTING_FAILS = "rbd snap ls fails";
     private static final String IMAGE_DOES_NOT_EXIST = "rbd snap ls finds no image";
 

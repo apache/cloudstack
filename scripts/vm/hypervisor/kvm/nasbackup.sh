@@ -153,6 +153,7 @@ get_linstor_uuid_from_device() {
 RBD_IMAGE=""          # "<pool>/<image>"
 RBD_ARGS=()           # connection arguments to pass to every rbd invocation
 RBD_KEYFILE=""        # temporary cephx keyfile, removed by rbd_cleanup_keyfile
+RBD_NEW_ANCHOR_DISKS=()  # the disks this run tried to create the new anchor on, for on_rbd_backup_exit
 # Prefix NASBackupProvider names every chain anchor with. Snapshots carrying it belong to this
 # tool and no other, which is what makes the stale-anchor sweep safe.
 RBD_SNAPSHOT_PREFIX="csbackup-"
@@ -287,6 +288,23 @@ for s in snaps or []:
   rbd_cleanup_keyfile
 }
 
+# EXIT trap of the RBD backup, armed once the NAS is mounted and cleared once the backup is
+# complete. Any exit in between -- an explicit failure, an unexpected error under "set -e", or
+# TERM/HUP/INT, as when the agent restarts or kills the script on a timeout -- has to let go of the
+# guest, drop the anchor this run created and remove the partial backup before unmounting the NAS,
+# or the Instance stays frozen or paused and the NAS stays mounted with half a backup on it.
+# SIGKILL cannot be trapped: the agent then releases the guest from the state file, see
+# RBD_GUEST_STATE_FILE.
+on_rbd_backup_exit() {
+  local rc=$?
+  trap - EXIT INT TERM HUP
+  [[ $rc -ne 0 ]] || rc=1
+  rbd_release_guest
+  rbd_remove_snapshots "$BITMAP_NEW" "${RBD_NEW_ANCHOR_DISKS[@]}"
+  cleanup
+  exit $rc
+}
+
 rbd_snapshot_exists() {
   local snapName="$1"
   rbd "${RBD_ARGS[@]}" snap ls "$RBD_IMAGE" --format json 2>>"$logFile" | python3 -c '
@@ -379,6 +397,10 @@ backup_rbd_vm() {
   fi
 
   mount_operation
+  trap on_rbd_backup_exit EXIT
+  trap 'exit 129' HUP
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
   mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
 
   # Freezing the guest filesystems makes the snapshot set filesystem-consistent instead of merely
@@ -391,7 +413,6 @@ backup_rbd_vm() {
   local resume=0
   local vm_state
   vm_state=$(virsh -c qemu:///system domstate "$VM" 2>/dev/null || true)
-  trap 'rbd_release_guest; rbd_cleanup_keyfile; exit 143' TERM HUP INT
   if [[ ${QUIESCE} == "true" && "$vm_state" == "running" ]]; then
     # Always thaw after a freeze attempt: a freeze that times out on the host can still
     # complete inside the guest, and nothing else would unfreeze it.
@@ -410,22 +431,23 @@ backup_rbd_vm() {
   # disk needs no pause: one snapshot is already a single point in time.
   if [[ $freeze_ok -eq 0 && "$vm_state" == "running" && ${#disks[@]} -gt 1 ]]; then
     echo "suspended" >> "$guest_state"
-    if timeout "$RBD_GUEST_TIMEOUT" virsh -c qemu:///system suspend "$VM" > /dev/null 2>&1; then
-      resume=1
-    else
+    # A suspend which timed out can still complete in libvirt after the client was killed, as a
+    # freeze can in the guest, so a resume is attempted whenever a suspend was.
+    resume=1
+    if ! timeout "$RBD_GUEST_TIMEOUT" virsh -c qemu:///system suspend "$VM" > /dev/null 2>&1; then
       log -ne "WARNING: unable to pause VM $VM, the disk snapshots will not be taken at the same instant"
     fi
   fi
 
   # Create this cycle's anchor on every disk back to back, so the set is as close to a single
   # point in time for the VM as a whole as Ceph allows.
-  local -a snapped=()
+  # A disk is listed before its snapshot is attempted: one which timed out can still be created
+  # by Ceph afterwards, and the exit trap removes the anchor from every disk listed.
   local snap_failed=0
   for d in "${disks[@]}"; do
     parse_rbd_opts "$d"
-    if timeout "$RBD_SNAPSHOT_TIMEOUT" rbd "${RBD_ARGS[@]}" snap create "$RBD_IMAGE@$BITMAP_NEW" >> "$logFile" 2>&1; then
-      snapped+=("$d")
-    else
+    RBD_NEW_ANCHOR_DISKS+=("$d")
+    if ! timeout "$RBD_SNAPSHOT_TIMEOUT" rbd "${RBD_ARGS[@]}" snap create "$RBD_IMAGE@$BITMAP_NEW" >> "$logFile" 2>&1; then
       log -e "Failed to create RBD snapshot $RBD_IMAGE@$BITMAP_NEW"
       snap_failed=1
       break
@@ -433,28 +455,24 @@ backup_rbd_vm() {
   done
   rbd_cleanup_keyfile
 
-  # Resume before thawing: the guest agent does not answer while the VM is paused.
+  # Resume before thawing: the guest agent does not answer while the VM is paused. The resume
+  # fails on a VM which is not paused, as when the suspend never took effect: only a VM which is
+  # still paused afterwards is an error.
   if [[ $resume -eq 1 ]]; then
-    if ! timeout "$RBD_GUEST_TIMEOUT" virsh -c qemu:///system resume "$VM" > /dev/null 2>&1; then
+    if ! timeout "$RBD_GUEST_TIMEOUT" virsh -c qemu:///system resume "$VM" > /dev/null 2>&1 \
+        && [[ "$(timeout 20 virsh -c qemu:///system domstate "$VM" 2>/dev/null || true)" == "paused" ]]; then
       echo "Failed to resume vm $VM after taking the disk snapshots"
-      rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
-      cleanup
       exit 1
     fi
   fi
 
   if [[ $thaw -eq 1 ]] && ! thaw_guest "$freeze_ok"; then
-    rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
-    cleanup
     exit 1
   fi
   rm -f "$guest_state"
-  trap - TERM HUP INT
 
   if [[ $snap_failed -eq 1 ]]; then
     echo "Failed to create RBD snapshot $BITMAP_NEW for vm $VM"
-    rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
-    cleanup
     exit 1
   fi
 
@@ -469,15 +487,11 @@ backup_rbd_vm() {
     if [[ "$effective_mode" == "incremental" ]]; then
       if ! rbd "${RBD_ARGS[@]}" export-diff --from-snap "$BITMAP_PARENT" "$RBD_IMAGE@$BITMAP_NEW" "$output" >> "$logFile" 2>&1; then
         echo "rbd export-diff --from-snap $BITMAP_PARENT failed for $RBD_IMAGE"
-        rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
-        cleanup
         exit 1
       fi
     else
       if ! rbd "${RBD_ARGS[@]}" export-diff "$RBD_IMAGE@$BITMAP_NEW" "$output" >> "$logFile" 2>&1; then
         echo "rbd export-diff failed for $RBD_IMAGE"
-        rbd_remove_snapshots "$BITMAP_NEW" "${snapped[@]}"
-        cleanup
         exit 1
       fi
     fi
@@ -504,6 +518,9 @@ backup_rbd_vm() {
     # including ones whose chain was abandoned without a chance to clean up. Sweep them all.
     rbd_sweep_stale_anchors "$BITMAP_NEW" "${disks[@]}"
   fi
+
+  # The backup is complete: the trap must not undo it, what is left is to unmount.
+  trap - EXIT INT TERM HUP
 
   local backup_size
   backup_size=$(du -sb "$dest" 2>>"$logFile" | cut -f1) || { log -ne "WARNING: du failed for $dest, reporting size as 0"; backup_size=0; }

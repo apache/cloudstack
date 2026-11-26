@@ -20,7 +20,6 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -51,7 +50,10 @@ public class LibvirtRemoveBackupAnchorsCommandWrapper extends CommandWrapper<Rem
 
         // Only an RBD volume carries an anchor, so the volumes of every other pool type are left out
         // rather than passed to a script which would have nothing to ask about them.
+        // diskPaths are RBDStringBuilder strings, which carry the cephx key: they go to the script and
+        // never into a log, whose volumePaths counterpart names the same volumes without the secret
         List<String> diskPaths = new ArrayList<>();
+        List<String> rbdVolumePaths = new ArrayList<>();
         if (Objects.nonNull(volumePaths)) {
             for (int idx = 0; idx < volumePaths.size(); idx++) {
                 PrimaryDataStoreTO volumePool = volumePools.get(idx);
@@ -60,6 +62,7 @@ public class LibvirtRemoveBackupAnchorsCommandWrapper extends CommandWrapper<Rem
                 }
                 KVMStoragePool volumeStoragePool = storagePoolMgr.getStoragePool(volumePool.getPoolType(), volumePool.getUuid());
                 diskPaths.add(KVMPhysicalDisk.RBDStringBuilder(volumeStoragePool, volumePaths.get(idx)));
+                rbdVolumePaths.add(volumePaths.get(idx));
             }
         }
 
@@ -77,10 +80,10 @@ public class LibvirtRemoveBackupAnchorsCommandWrapper extends CommandWrapper<Rem
         Pair<Integer, String> result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());
 
         logger.debug("Removing the backup anchors of {} returned: {}, exit code: {}",
-                () -> Arrays.toString(diskPaths.toArray()), result::second, result::first);
+                () -> rbdVolumePaths, result::second, result::first);
 
         if (result.first() != 0) {
-            logger.warn("Failed to remove the backup anchors of {}: {}", Arrays.toString(diskPaths.toArray()), result.second());
+            logger.warn("Failed to remove the backup anchors of {}: {}", rbdVolumePaths, result.second());
             return new BackupAnswer(command, false, result.second());
         }
         return new BackupAnswer(command, true, null);
