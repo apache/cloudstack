@@ -3186,11 +3186,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 KubernetesClusterCertificateUtil.MAX_AUTO_RENEW_DAYS);
         boolean autoRenew = autoRenewDays > 0 && Boolean.TRUE.equals(KubernetesClusterCertificateAutoRenewEnabled.valueIn(kubernetesCluster.getAccountId()));
         List<Integer> thresholds = KubernetesClusterCertificateUtil.parseAlertThresholds(KubernetesClusterCertificateExpiryAlertDays.value());
-        boolean operatorKubeConfig = firstLeaf != null && firstLeaf.getName().startsWith(KubernetesClusterCertificateUtil.USER_KUBECONFIG_ENTRY_NAME);
         String leafAdvice;
-        if (operatorKubeConfig) {
-            leafAdvice = "It comes from the operator-supplied /etc/kubernetes/user.conf and must be renewed there.";
-        } else if (firstLeaf != null && firstLeaf.isExternallyManaged()) {
+        if (firstLeaf != null && firstLeaf.isExternallyManaged()) {
             leafAdvice = "It is externally managed, so it has to be renewed outside CloudStack.";
         } else if (autoRenew && !allNodesChecked) {
             leafAdvice = String.format("Automatic renewal is on hold until control nodes %s can be checked; fix their access or run rotateKubernetesClusterCertificates.",
@@ -3202,7 +3199,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             leafAdvice = "Run rotateKubernetesClusterCertificates to renew them.";
         }
         alertOnCertificateExpiry(kubernetesCluster, worker, firstLeaf, thresholds, KubernetesClusterCertificateWorker.CERTIFICATE_ALERT_DETAIL, now,
-                operatorKubeConfig ? "kubeconfig certificate" : "control plane certificate", leafAdvice);
+                "control plane certificate", leafAdvice);
+        alertOnCertificateExpiry(kubernetesCluster, worker, report.getUserKubeConfigExpiry(), thresholds, KubernetesClusterCertificateWorker.USER_KUBECONFIG_ALERT_DETAIL,
+                now, "kubeconfig certificate", "It comes from the operator-supplied /etc/kubernetes/user.conf and must be renewed there.");
         alertOnCertificateExpiry(kubernetesCluster, worker, firstAuthority, thresholds, KubernetesClusterCertificateWorker.CA_CERTIFICATE_ALERT_DETAIL, now,
                 "certificate authority", "CloudStack does not rotate certificate authorities; it has to be done by hand.");
 

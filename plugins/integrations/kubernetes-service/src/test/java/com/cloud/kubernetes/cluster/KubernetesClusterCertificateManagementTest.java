@@ -383,6 +383,19 @@ public class KubernetesClusterCertificateManagementTest {
     }
 
     @Test
+    public void expiredUserConfDoesNotHideTheControlPlaneAlert() {
+        CertificateExpiryReport report = new CertificateExpiryReport();
+        report.add("cks-control-1", Arrays.asList(
+                new CertificateExpiry(KubernetesClusterCertificateUtil.USER_KUBECONFIG_ENTRY_NAME, new Date(now.getTime() - 50 * DAY), false, true),
+                new CertificateExpiry("apiserver", new Date(now.getTime() + 10 * DAY), false, false)));
+        Mockito.doReturn(report).when(worker).checkCertificateExpiry();
+        manager.processKubernetesClusterCertificates(cluster, now);
+        ArgumentCaptor<String> subjects = verifyAlerts(2);
+        Assert.assertTrue(subjects.getAllValues().stream().anyMatch(subject -> subject.contains("control plane certificate")));
+        Assert.assertTrue(subjects.getAllValues().stream().anyMatch(subject -> subject.contains("kubeconfig certificate")));
+    }
+
+    @Test
     public void nothingHappensWhenTheCheckIsDisabledOrTheVersionTooOld() throws Exception {
         setDefault(KubernetesClusterService.KubernetesClusterCertificateCheckInterval, "0");
         manager.processKubernetesClusterCertificates(cluster, now);

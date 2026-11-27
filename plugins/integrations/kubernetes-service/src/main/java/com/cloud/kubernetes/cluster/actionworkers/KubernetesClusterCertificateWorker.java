@@ -73,6 +73,8 @@ public class KubernetesClusterCertificateWorker extends KubernetesClusterActionW
     public static final String CERTIFICATE_CHECK_FAILED_ALERT_DETAIL = "certificateExpiryCheckFailedAlert";
     /** Alert state of the first leaf certificate to expire, see {@link KubernetesClusterCertificateUtil#buildAlertState}. */
     public static final String CERTIFICATE_ALERT_DETAIL = "certificateExpiryAlert";
+    /** Alert state of the client certificate of the operator-supplied user.conf. */
+    public static final String USER_KUBECONFIG_ALERT_DETAIL = "userKubeConfigExpiryAlert";
     /** Alert state of the first certificate authority to expire. */
     public static final String CA_CERTIFICATE_ALERT_DETAIL = "caCertificateExpiryAlert";
     /** Epoch millis at which the running rotation started; removed when it ends. */

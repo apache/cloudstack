@@ -121,6 +121,10 @@ public class KubernetesClusterCertificateUtil {
             return externallyManaged;
         }
 
+        public boolean isUserKubeConfig() {
+            return name.startsWith(USER_KUBECONFIG_ENTRY_NAME);
+        }
+
         @Override
         public String toString() {
             return String.format("%s%s%s: %s", name, authority ? " (CA)" : "", externallyManaged ? " (externally managed)" : "",
@@ -168,6 +172,11 @@ public class KubernetesClusterCertificateUtil {
             return getFirstExpiry(false, false);
         }
 
+        /** @return the client certificate of the operator-supplied user.conf, or null */
+        public CertificateExpiry getUserKubeConfigExpiry() {
+            return entries.stream().filter(CertificateExpiry::isUserKubeConfig).findFirst().orElse(null);
+        }
+
         /** @return the certificate authority that expires first, or null */
         public CertificateExpiry getFirstAuthorityExpiry() {
             return getFirstExpiry(true, true);
@@ -176,7 +185,9 @@ public class KubernetesClusterCertificateUtil {
         private CertificateExpiry getFirstExpiry(boolean authority, boolean includeExternallyManaged) {
             CertificateExpiry first = null;
             for (CertificateExpiry entry : entries) {
-                if (entry.isAuthority() != authority || entry.isMissing() || (!includeExternallyManaged && entry.isExternallyManaged())) {
+                // user.conf has an alert of its own: an expired one would hide the control plane certificates
+                if (entry.isAuthority() != authority || entry.isMissing() || entry.isUserKubeConfig()
+                        || (!includeExternallyManaged && entry.isExternallyManaged())) {
                     continue;
                 }
                 if (first == null || entry.getExpires().before(first.getExpires())) {
