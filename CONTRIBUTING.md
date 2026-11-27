@@ -42,6 +42,8 @@
 This document covers how to contribute to the ACS project. ACS uses GitHub PRs to manage code contributions.
 These instructions assume you have a GitHub.com account, so if you don't have one you will have to create one. Your proposed code changes will be published to your own fork of the ACS project, and you will submit a Pull Request for your changes to be added.
 
+The guides in [docs/development](docs/development) cover building and testing, code conventions, writing commit messages and PR descriptions, reviews, and setting up a test lab.
+
 _Let's get started!!!_
 
 ## Bug fixes
