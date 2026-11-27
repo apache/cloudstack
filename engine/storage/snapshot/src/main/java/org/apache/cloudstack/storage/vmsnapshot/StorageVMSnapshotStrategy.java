@@ -423,18 +423,19 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         }
     }
 
+    /**
+     * Creates a disk (volume) snapshot for one volume of a VM snapshot in progress.
+     * The payload is always given {@code quiescevm=false}: by this point the whole VM is
+     * already frozen via {@link FreezeThawVMCommand}, and {@code DefaultSnapshotStrategy}
+     * rejects {@code quiescevm=true} for volume snapshots.
+     */
     protected SnapshotInfo createDiskSnapshot(VMSnapshot vmSnapshot, List<SnapshotInfo> forRollback, VolumeInfo vol) {
         String snapshotName = vmSnapshot.getId() + "_" + vol.getUuid();
         SnapshotVO snapshot = new SnapshotVO(vol.getDataCenterId(), vol.getAccountId(), vol.getDomainId(), vol.getId(), vol.getDiskOfferingId(),
                               snapshotName, (short) Snapshot.Type.GROUP.ordinal(),  Snapshot.Type.GROUP.name(),  vol.getSize(), vol.getMinIops(),  vol.getMaxIops(), Hypervisor.HypervisorType.KVM, null);
-        VMSnapshotOptions options = ((VMSnapshotVO) vmSnapshot).getOptions();
-        boolean quiescevm = false;
-        if (options != null) {
-            quiescevm = options.needQuiesceVM();
-        }
 
         snapshot = snapshotDao.persist(snapshot);
-        vol.addPayload(setPayload(vol, snapshot, quiescevm));
+        vol.addPayload(setPayload(vol, snapshot, false));
         SnapshotInfo snapshotInfo = snapshotDataFactory.getSnapshot(snapshot.getId(), vol.getDataStore());
         snapshotInfo.addPayload(vol.getpayload());
         SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshotInfo, SnapshotOperation.TAKE);
