@@ -17,6 +17,7 @@
 package com.cloud.api;
 
 import com.cloud.capacity.Capacity;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource;
 import com.cloud.domain.DomainVO;
 import com.cloud.network.PublicIpQuarantine;
@@ -39,17 +40,20 @@ import com.cloud.user.UserData;
 import com.cloud.user.UserDataVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDataDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.NicSecondaryIp;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.junit.After;
@@ -63,6 +67,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
 import java.text.ParseException;
@@ -104,6 +109,9 @@ public class ApiResponseHelperTest {
 
     @Mock
     IPAddressDao ipAddressDaoMock;
+
+    @Mock
+    ConfigurationManager configurationManagerMock;
 
     @Spy
     @InjectMocks
@@ -480,5 +488,16 @@ public class ApiResponseHelperTest {
         Capacity c4 = Mockito.mock(Capacity.class);
         Assert.assertTrue(apiResponseHelper.capacityListingForSingleNonGpuType(List.of(c1, c2)));
         Assert.assertFalse(apiResponseHelper.capacityListingForSingleNonGpuType(List.of(c1, c2, c3)));
+    }
+
+    @Test
+    public void testCreateConfigurationResponseSecureValueIsReturnedAsStored() {
+        ConfigurationVO cfg = new ConfigurationVO("Secure", "DEFAULT", "test", "test.secure.setting", null, "test");
+        ReflectionTestUtils.setField(cfg, "value", "storedEncryptedValue");
+        Mockito.when(configurationManagerMock.getConfigurationGroupAndSubGroup(cfg.getName())).thenReturn(new Pair<>("Miscellaneous", "Others"));
+
+        ConfigurationResponse response = apiResponseHelper.createConfigurationResponse(cfg);
+
+        assertEquals("storedEncryptedValue", response.getValue());
     }
 }
