@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -90,9 +91,14 @@ public class KubernetesClusterActionWorkerIsoTest {
         Mockito.when(vm.getId()).thenReturn(VM_ID);
     }
 
-    private void attachBinariesIso(Long attachedIsoId, boolean binariesIsoInOtherCdrom) {
+    private void attachBinariesIso(Long attachedIsoId, Long... extraIsoIds) {
         Mockito.when(vm.getIsoId()).thenReturn(attachedIsoId);
-        Mockito.lenient().when(vmIsoMapDao.findByVmIdIsoId(VM_ID, BINARIES_ISO_ID)).thenReturn(binariesIsoInOtherCdrom ? Mockito.mock(VmIsoMapVO.class) : null);
+        List<VmIsoMapVO> extraIsos = new ArrayList<>();
+        int deviceSeq = 4;
+        for (Long extraIsoId : extraIsoIds) {
+            extraIsos.add(new VmIsoMapVO(VM_ID, extraIsoId, deviceSeq++));
+        }
+        Mockito.when(vmIsoMapDao.listByVmId(VM_ID)).thenReturn(extraIsos);
         try (MockedStatic<CallContext> callContext = Mockito.mockStatic(CallContext.class)) {
             callContext.when(() -> CallContext.register(Mockito.any(), Mockito.any(ApiCommandResourceType.class))).thenReturn(Mockito.mock(CallContext.class));
             actionWorker.attachIsoKubernetesVMs(List.of(vm), version);
@@ -101,27 +107,42 @@ public class KubernetesClusterActionWorkerIsoTest {
 
     @Test
     public void testAttachIsoKubernetesVMsNoIsoAttached() {
-        attachBinariesIso(null, false);
+        attachBinariesIso(null);
         Mockito.verify(templateService, Mockito.never()).detachIso(Mockito.anyLong(), Mockito.any(), Mockito.any());
         Mockito.verify(templateService).attachIso(BINARIES_ISO_ID, VM_ID, true);
     }
 
     @Test
     public void testAttachIsoKubernetesVMsBinariesIsoAlreadyAttached() {
-        attachBinariesIso(BINARIES_ISO_ID, false);
+        attachBinariesIso(BINARIES_ISO_ID);
         Mockito.verifyNoInteractions(templateService);
     }
 
     @Test
     public void testAttachIsoKubernetesVMsBinariesIsoAttachedToOtherCdrom() {
-        attachBinariesIso(OTHER_ISO_ID, true);
-        Mockito.verifyNoInteractions(templateService);
+        attachBinariesIso(OTHER_ISO_ID, BINARIES_ISO_ID);
+        Mockito.verify(templateService).detachIso(VM_ID, OTHER_ISO_ID, true);
+        Mockito.verify(templateService, Mockito.never()).attachIso(Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
     }
 
     @Test
     public void testAttachIsoKubernetesVMsOtherIsoAttached() {
-        attachBinariesIso(OTHER_ISO_ID, false);
+        attachBinariesIso(OTHER_ISO_ID);
         Mockito.verify(templateService).detachIso(VM_ID, OTHER_ISO_ID, true);
         Mockito.verify(templateService).attachIso(BINARIES_ISO_ID, VM_ID, true);
+    }
+
+    @Test
+    public void testAttachIsoKubernetesVMsOtherIsoAttachedToOtherCdrom() {
+        attachBinariesIso(null, OTHER_ISO_ID);
+        Mockito.verify(templateService).detachIso(VM_ID, OTHER_ISO_ID, true);
+        Mockito.verify(templateService).attachIso(BINARIES_ISO_ID, VM_ID, true);
+    }
+
+    @Test
+    public void testAttachIsoKubernetesVMsBinariesIsoAttachedAndOtherIsoAttachedToOtherCdrom() {
+        attachBinariesIso(BINARIES_ISO_ID, OTHER_ISO_ID);
+        Mockito.verify(templateService).detachIso(VM_ID, OTHER_ISO_ID, true);
+        Mockito.verify(templateService, Mockito.never()).attachIso(Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
     }
 }
