@@ -73,7 +73,7 @@ function install_packages() {
     haproxy \
     haveged \
     radvd \
-    frr \
+    frr frr-pythontools \
     sharutils genisoimage \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins strongswan-charon strongswan-starter \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons cloud-guest-utils \

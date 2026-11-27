@@ -18,6 +18,7 @@
 # under the License.
 
 import logging
+import os
 from . import CsHelper
 from .CsDatabag import CsDataBag
 from .CsFile import CsFile
@@ -25,6 +26,9 @@ from .CsFile import CsFile
 FRR_DIR = "/etc/frr/"
 FRR_DAEMONS = "/etc/frr/daemons"
 FRR_CONFIG = "/etc/frr/frr.conf"
+FRR_RELOAD = "/usr/lib/frr/frr-reload.py"
+IP_FORWARDING = "/proc/sys/net/ipv4/ip_forward"
+IPV6_FORWARDING = "/proc/sys/net/ipv6/conf/all/forwarding"
 
 
 class CsBgpPeers(CsDataBag):
@@ -43,13 +47,10 @@ class CsBgpPeers(CsDataBag):
                 continue
             self._process_dbag_item(self.dbag[item])
 
-        restart_frr = False
-
         CsHelper.mkdir(FRR_DIR, 0o755, False)
         self.frr_daemon = CsFile(FRR_DAEMONS)
         self.frr_daemon.replaceIfFound("bgpd=no", "bgpd=yes")
-        if self.frr_daemon.commit():
-            restart_frr = True
+        start_bgpd = self.frr_daemon.commit()
 
         self.frr_conf = CsFile(FRR_CONFIG)
         self.frr_conf.repopulate()
@@ -58,12 +59,48 @@ class CsBgpPeers(CsDataBag):
         self._process_peers()
         self._route_map_set()
         self._post_set()
-        if self.frr_conf.commit():
-            restart_frr = True
+        conf_changed = self.frr_conf.commit()
 
-        if restart_frr:
-            CsHelper.execute("systemctl enable frr")
-            CsHelper.execute("systemctl restart frr")
+        if start_bgpd:
+            # bgpd only starts with frr, so turning it on needs a restart.
+            self._restart_frr()
+        elif conf_changed:
+            self._reload_frr()
+
+    def _restart_frr(self):
+        CsHelper.execute("systemctl enable frr")
+        CsHelper.execute("systemctl restart frr")
+
+    def _reload_frr(self):
+        # frr-reload.py applies only the differences, so sessions to unchanged peers stay up.
+        # Templates without frr-pythontools have no frr-reload.py, and restart as before.
+        if not os.path.isfile(FRR_RELOAD):
+            logging.info("%s not found, restarting frr" % FRR_RELOAD)
+            self._restart_frr()
+            return
+        # --stdout keeps frr-reload.py from writing its own log file, which records
+        # every applied line with peer passwords in clear text.
+        # communicate() reads the output while waiting, so a long output cannot fill the pipe and block.
+        result = CsHelper.execute2("%s --reload --stdout %s" % (FRR_RELOAD, FRR_CONFIG), False)
+        # The output is not logged, since it can echo config lines with peer passwords.
+        result.communicate()
+        if result.returncode != 0:
+            logging.error("frr-reload.py failed with exit code %s, restarting frr" % result.returncode)
+            self._restart_frr()
+
+    @staticmethod
+    def _kernel_forwarding(path):
+        try:
+            with open(path) as f:
+                return f.read().strip() == "1"
+        except IOError:
+            return False
+
+    def _ip_forwarding(self):
+        return self._kernel_forwarding(IP_FORWARDING)
+
+    def _ipv6_forwarding(self):
+        return self._kernel_forwarding(IPV6_FORWARDING)
 
     def _process_dbag_item(self, item):
         as_number = item['network_as_number']
@@ -80,6 +117,11 @@ class CsBgpPeers(CsDataBag):
         self.frr_conf.add("frr defaults traditional")
         self.frr_conf.add("hostname {}".format(CsHelper.get_hostname()))
         self.frr_conf.add("service integrated-vtysh-config")
+        # zebra shows the kernel's forwarding state in the running config, and frr-reload.py
+        # deletes running lines the file leaves out. Stating the current state keeps a reload
+        # from switching forwarding on or off.
+        self.frr_conf.add("ip forwarding" if self._ip_forwarding() else "no ip forwarding")
+        self.frr_conf.add("ipv6 forwarding" if self._ipv6_forwarding() else "no ipv6 forwarding")
         self.frr_conf.add("ip nht resolve-via-default")
         self.frr_conf.add("ipv6 nht resolve-via-default")
         return
@@ -108,6 +150,8 @@ class CsBgpPeers(CsDataBag):
         for as_number in self.peers.keys():
             self.frr_conf.add("router bgp {}".format(as_number))
             self.frr_conf.add(" bgp router-id {}".format(self.public_ip))
+            self.frr_conf.add(" bgp ebgp-requires-policy")
+            self.frr_conf.add(" bgp network import-check")
             if self.peers[as_number]['ip6_peers']:
                 self.frr_conf.add(" bgp default ipv6-unicast")
             for ip4_peer in self.peers[as_number]['ip4_peers']:
