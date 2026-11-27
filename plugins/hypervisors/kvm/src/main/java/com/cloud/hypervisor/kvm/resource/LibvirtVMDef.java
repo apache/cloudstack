@@ -679,7 +679,7 @@ public class LibvirtVMDef {
         }
 
         public enum DiskBus {
-            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc"), SATA("sata"), VIRTIOBLK("virtio-blk");
+            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc"), SATA("sata");
             String _bus;
 
             DiskBus(String bus) {
@@ -687,6 +687,11 @@ public class LibvirtVMDef {
             }
 
             public static DiskBus fromValue(String bus) {
+                if ("virtio-blk".equalsIgnoreCase(bus)) {
+                    // A disk controller name CloudStack used to offer: the virtio bus already is a
+                    // virtio-blk device. Kept so a VM or template that still has it set uses virtio.
+                    return VIRTIO;
+                }
                 for (DiskBus b : DiskBus.values()) {
                     if (b.toString().equalsIgnoreCase(bus)) {
                         return b;
@@ -737,6 +742,15 @@ public class LibvirtVMDef {
             String _discardType;
             DiscardType(String discardType) {
                 _discardType = discardType;
+            }
+
+            public static DiscardType fromValue(String discardType) {
+                for (DiscardType d : DiscardType.values()) {
+                    if (d.toString().equalsIgnoreCase(discardType)) {
+                        return d;
+                    }
+                }
+                return null;
             }
 
             @Override

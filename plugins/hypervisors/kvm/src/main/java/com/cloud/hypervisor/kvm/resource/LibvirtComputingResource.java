@@ -3229,7 +3229,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 disk.setLogicalBlockIOSize(pool.getSupportedLogicalBlockSize());
                 disk.setPhysicalBlockIOSize(pool.getSupportedPhysicalBlockSize());
 
-                if (diskBusType == DiskDef.DiskBus.SCSI || diskBusType == DiskDef.DiskBus.VIRTIOBLK) {
+                if (diskBusType == DiskDef.DiskBus.SCSI) {
                     disk.setQemuDriver(true);
                     disk.setDiscard(DiscardType.UNMAP);
                 }
@@ -3283,6 +3283,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     defineDiskForDefaultPoolType(disk, volume, isWindowsTemplate, isUefiEnabled, isSecureBoot,
                             physicalDisk, devId, diskBusType, diskBusTypeData, details);
                 }
+                applyDiskDiscardDetail(disk, details);
                 pool.customizeLibvirtDiskDef(disk);
             }
 
@@ -3424,6 +3425,30 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     public boolean isQemuDiscardBugFree(DiskDef.DiskBus diskBus) {
         return diskBus != DiskDef.DiskBus.IDE || getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_IDE_DISCARD_FIXED;
+    }
+
+    /**
+     * Sets the disk's discard mode from the {@link VmDetailConstants#DISK_DISCARD} VM detail, overriding the
+     * mode the disk got from its bus or storage pool. Without the detail the disk is left as it is.
+     * @param disk the disk being defined, with its bus already set
+     * @param details the VM details
+     */
+    public void applyDiskDiscardDetail(DiskDef disk, Map<String, String> details) {
+        String discard = MapUtils.getString(details, VmDetailConstants.DISK_DISCARD);
+        if (StringUtils.isBlank(discard)) {
+            return;
+        }
+        DiscardType discardType = DiscardType.fromValue(discard);
+        if (discardType == null) {
+            LOGGER.warn("Ignoring unknown {} value '{}', expected 'unmap' or 'ignore'", VmDetailConstants.DISK_DISCARD, discard);
+            return;
+        }
+        if (discardType == DiscardType.UNMAP && !isQemuDiscardBugFree(disk.getBusType())) {
+            LOGGER.warn("Not enabling discard on disk {}: QEMU {} has a discard bug on the {} bus", disk.getDiskLabel(),
+                    getHypervisorQemuVersion(), disk.getBusType());
+            return;
+        }
+        disk.setDiscard(discardType);
     }
 
     public boolean isUbuntuOrDebianHost() {
@@ -4352,11 +4377,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String rootDiskController = details.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         if (StringUtils.isNotBlank(rootDiskController)) {
             LOGGER.debug("Passed custom disk controller for ROOT disk " + rootDiskController);
-            for (DiskDef.DiskBus bus : DiskDef.DiskBus.values()) {
-                if (bus.toString().equalsIgnoreCase(rootDiskController)) {
-                    LOGGER.debug("Found matching enum for disk controller for ROOT disk " + rootDiskController);
-                    return bus;
-                }
+            DiskDef.DiskBus bus = DiskDef.DiskBus.fromValue(rootDiskController);
+            if (bus != null) {
+                LOGGER.debug("Found matching enum for disk controller for ROOT disk " + rootDiskController);
+                return bus;
             }
         }
         return null;

@@ -49,6 +49,21 @@ public class LibvirtVMDefTest extends TestCase {
             "Inactive:         949392 kB\n";
 
     @Test
+    public void testDiskBusFromValueReadsVirtioBlkAsVirtio() {
+        assertEquals(DiskDef.DiskBus.VIRTIO, DiskDef.DiskBus.fromValue("virtio-blk"));
+        assertEquals(DiskDef.DiskBus.SCSI, DiskDef.DiskBus.fromValue("SCSI"));
+        assertNull(DiskDef.DiskBus.fromValue("osdefault"));
+    }
+
+    @Test
+    public void testDiscardTypeFromValue() {
+        assertEquals(DiskDef.DiscardType.UNMAP, DiskDef.DiscardType.fromValue("unmap"));
+        assertEquals(DiskDef.DiscardType.IGNORE, DiskDef.DiscardType.fromValue("Ignore"));
+        assertNull(DiskDef.DiscardType.fromValue("on"));
+        assertNull(DiskDef.DiscardType.fromValue(null));
+    }
+
+    @Test
     public void testInterfaceTypeUserWithNetwork() {
         LibvirtVMDef.InterfaceDef interfaceDef = new LibvirtVMDef.InterfaceDef();
         interfaceDef.defUserNet(LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "00:11:22:aa:bb:dd", "192.168.100.0", 24);

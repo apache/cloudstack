@@ -50,6 +50,9 @@ public interface VmDetailConstants {
     String IOTHREADS = "iothreads";
     String IO_POLICY = "io.policy";
 
+    // KVM specific, discard mode of the VM's disks: unmap or ignore
+    String DISK_DISCARD = "disk.discard";
+
     // KVM specific, the number of queues for multiqueue NICs
     String NIC_MULTIQUEUE_NUMBER = "nic.multiqueue.number";
     String NIC_PACKED_VIRTQUEUES_ENABLED = "nic.packed.virtqueues.enabled";
