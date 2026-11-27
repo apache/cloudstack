@@ -950,6 +950,62 @@ public class LibvirtMigrateCommandWrapperTest {
         Assert.assertEquals(updateShares, newVmCpuShares);
     }
 
+    private Element parseRoot(String xml) throws ParserConfigurationException, IOException, SAXException {
+        InputStream inputStream = IOUtils.toInputStream(xml, StandardCharsets.UTF_8);
+        DocumentBuilder docBuilder = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder();
+        return docBuilder.parse(inputStream).getDocumentElement();
+    }
+
+    private void mockSharesMigration(int newVmCpuShares, int currentVmCpuShares) {
+        Mockito.doReturn(newVmCpuShares).when(migrateCommandMock).getNewVmCpuShares();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(currentVmCpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
+    }
+
+    @Test
+    public void updateVmSharesIfNeededTestNoSharesElementShouldAddItToExistingCputune() throws ParserConfigurationException, IOException, TransformerException,
+            SAXException {
+        mockSharesMigration(1, 100);
+        String xmlWithoutShares = fullfile.replace("    <shares>100</shares>\n", "");
+        Assert.assertFalse(xmlWithoutShares.contains("<shares>"));
+
+        String finalXml = libvirtMigrateCmdWrapper.updateVmSharesIfNeeded(migrateCommandMock, xmlWithoutShares, libvirtComputingResourceMock);
+
+        Element root = parseRoot(finalXml);
+        Assert.assertEquals(1, root.getElementsByTagName("cputune").getLength());
+        Node sharesNode = root.getElementsByTagName("shares").item(0);
+        Assert.assertNotNull(sharesNode);
+        Assert.assertEquals("cputune", sharesNode.getParentNode().getNodeName());
+        Assert.assertEquals("1", sharesNode.getTextContent());
+    }
+
+    @Test
+    public void updateVmSharesIfNeededTestNoCputuneElementShouldCreateCputuneAndShares() throws ParserConfigurationException, IOException, TransformerException,
+            SAXException {
+        mockSharesMigration(1, 100);
+        String xmlWithoutCputune = fullfile.replace("  <cputune>\n    <shares>100</shares>\n  </cputune>\n", "");
+        Assert.assertFalse(xmlWithoutCputune.contains("<cputune>"));
+
+        String finalXml = libvirtMigrateCmdWrapper.updateVmSharesIfNeeded(migrateCommandMock, xmlWithoutCputune, libvirtComputingResourceMock);
+
+        Element root = parseRoot(finalXml);
+        Node sharesNode = root.getElementsByTagName("shares").item(0);
+        Assert.assertNotNull(sharesNode);
+        Assert.assertEquals("cputune", sharesNode.getParentNode().getNodeName());
+        Assert.assertEquals("1", sharesNode.getTextContent());
+    }
+
+    @Test
+    public void updateVmSharesIfNeededTestNoSharesElementAndNoNewSharesShouldNotChangeXml() throws ParserConfigurationException, IOException, TransformerException,
+            SAXException {
+        mockSharesMigration(0, 100);
+        String xmlWithoutShares = fullfile.replace("    <shares>100</shares>\n", "");
+
+        String finalXml = libvirtMigrateCmdWrapper.updateVmSharesIfNeeded(migrateCommandMock, xmlWithoutShares, libvirtComputingResourceMock);
+
+        Assert.assertEquals(xmlWithoutShares, finalXml);
+    }
+
     @Test
     public void getMigrateStorageDeviceLabelsTestNoDiskDefinitions() {
         Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage("sourceTest", "/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6");
