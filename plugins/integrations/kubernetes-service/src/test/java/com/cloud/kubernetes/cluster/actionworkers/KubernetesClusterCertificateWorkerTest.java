@@ -248,6 +248,9 @@ public class KubernetesClusterCertificateWorkerTest {
         Assert.assertTrue(worker.rotateCertificates());
         Mockito.verify(worker, Mockito.never()).stateTransitTo(CLUSTER_ID, KubernetesCluster.Event.OperationSucceeded);
         Mockito.verify(kubernetesClusterDetailsDao, Mockito.never()).removeDetail(CLUSTER_ID, KubernetesClusterCertificateWorker.ROTATION_STARTED_DETAIL);
+        Mockito.verify(kubernetesClusterDetailsDao, Mockito.never()).removeDetail(CLUSTER_ID, KubernetesClusterCertificateWorker.ROTATION_FAILED_DETAIL);
+        Mockito.verify(kubernetesClusterDetailsDao, Mockito.never()).addDetail(ArgumentMatchers.eq(CLUSTER_ID),
+                ArgumentMatchers.eq(KubernetesClusterCertificateWorker.ROTATION_SUCCEEDED_DETAIL), ArgumentMatchers.anyString(), ArgumentMatchers.anyBoolean());
     }
 
     @Test
