@@ -847,6 +847,15 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/UpgradeKubernetesCluster.vue')))
         },
         {
+          api: 'rotateKubernetesClusterCertificates',
+          icon: 'sync-outlined',
+          label: 'label.kubernetes.cluster.rotate.certificates',
+          message: 'message.kubernetes.cluster.rotate.certificates',
+          dataView: true,
+          show: (record) => { return ['Running', 'Alert'].includes(record.state) && record.clustertype === 'CloudManaged' },
+          popup: true
+        },
+        {
           api: 'addNodesToKubernetesCluster',
           icon: 'plus-outlined',
           label: 'label.kubernetes.cluster.add.nodes.to.cluster',

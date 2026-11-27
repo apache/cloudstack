@@ -508,6 +508,8 @@ export default {
             return this.$t('label.scaling')
           case 'upgrading':
             return this.$t('label.upgrading')
+          case 'rotatingcertificates':
+            return this.$t('label.rotating.certificates')
           case 'alert':
             return this.$t('label.alert')
           case 'recovering':
