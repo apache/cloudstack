@@ -205,6 +205,83 @@ class TestCsBgpPeers(unittest.TestCase):
             expected = [line.rstrip('\n') for line in f if not line.strip().startswith("#")]
         self.assertEqual(self._frr_conf(), expected)
 
+    @mock.patch('cs.CsBgpPeers.CsBgpPeers._ip_forwarding', return_value=False)
+    @mock.patch('cs.CsBgpPeers.CsBgpPeers._ipv6_forwarding', return_value=False)
+    @mock.patch('cs.CsBgpPeers.CsHelper.get_hostname', return_value="r-1001-VM")
+    def test_pre_set_forwarding_off(self, *_):
+        self.csbgppeers._pre_set()
+        config = self._frr_conf()
+        self.assertIn("no ip forwarding", config)
+        self.assertIn("no ipv6 forwarding", config)
+        self.assertNotIn("ip forwarding", config)
+        self.assertNotIn("ipv6 forwarding", config)
+
+    def test_kernel_forwarding(self):
+        with mock.patch('builtins.open', mock.mock_open(read_data="1\n")):
+            self.assertTrue(CsBgpPeers._kernel_forwarding("/proc/sys/net/ipv4/ip_forward"))
+        with mock.patch('builtins.open', mock.mock_open(read_data="0\n")):
+            self.assertFalse(CsBgpPeers._kernel_forwarding("/proc/sys/net/ipv4/ip_forward"))
+        with mock.patch('builtins.open', side_effect=IOError):
+            self.assertFalse(CsBgpPeers._kernel_forwarding("/proc/sys/net/ipv4/ip_forward"))
+
+    @mock.patch('cs.CsBgpPeers.CsHelper.execute')
+    @mock.patch('cs.CsBgpPeers.CsHelper.execute2')
+    @mock.patch('cs.CsBgpPeers.os.path.isfile', return_value=True)
+    def test_reload_frr(self, mock_isfile, mock_execute2, mock_execute):
+        mock_execute2.return_value.returncode = 0
+        self.csbgppeers._reload_frr()
+        mock_execute2.assert_called_once_with("/usr/lib/frr/frr-reload.py --reload --stdout /etc/frr/frr.conf", False)
+        mock_execute2.return_value.communicate.assert_called_once_with()
+        mock_execute2.return_value.wait.assert_not_called()
+        mock_execute.assert_not_called()
+
+    @mock.patch('cs.CsBgpPeers.CsHelper.execute')
+    @mock.patch('cs.CsBgpPeers.CsHelper.execute2')
+    @mock.patch('cs.CsBgpPeers.os.path.isfile', return_value=False)
+    def test_reload_frr_without_frr_reload(self, mock_isfile, mock_execute2, mock_execute):
+        self.csbgppeers._reload_frr()
+        mock_execute2.assert_not_called()
+        self.assertEqual(mock_execute.call_args_list, [mock.call("systemctl enable frr"), mock.call("systemctl restart frr")])
+
+    @mock.patch('cs.CsBgpPeers.CsHelper.execute')
+    @mock.patch('cs.CsBgpPeers.CsHelper.execute2')
+    @mock.patch('cs.CsBgpPeers.os.path.isfile', return_value=True)
+    def test_reload_frr_failure_restarts(self, mock_isfile, mock_execute2, mock_execute):
+        mock_execute2.return_value.returncode = 1
+        self.csbgppeers._reload_frr()
+        mock_execute2.assert_called_once()
+        self.assertEqual(mock_execute.call_args_list, [mock.call("systemctl enable frr"), mock.call("systemctl restart frr")])
+
+    def _process(self, start_bgpd, conf_changed):
+        self.csbgppeers.dbag = {"id": "bgppeers"}
+        self.csbgppeers.config = mock.Mock()
+        self.csbgppeers.cl = mock.Mock()
+        with mock.patch('cs.CsBgpPeers.CsFile') as mock_csfile, \
+                mock.patch('cs.CsBgpPeers.CsHelper.mkdir'), \
+                mock.patch('cs.CsBgpPeers.CsHelper.get_hostname', return_value="r-1001-VM"), \
+                mock.patch.object(CsBgpPeers, '_ip_forwarding', return_value=True), \
+                mock.patch.object(CsBgpPeers, '_ipv6_forwarding', return_value=True), \
+                mock.patch.object(CsBgpPeers, '_restart_frr') as mock_restart, \
+                mock.patch.object(CsBgpPeers, '_reload_frr') as mock_reload:
+            mock_csfile.return_value.commit.side_effect = [start_bgpd, conf_changed]
+            self.csbgppeers.process()
+        return mock_restart, mock_reload
+
+    def test_process_restarts_frr_when_turning_bgpd_on(self):
+        mock_restart, mock_reload = self._process(start_bgpd=True, conf_changed=True)
+        mock_restart.assert_called_once_with()
+        mock_reload.assert_not_called()
+
+    def test_process_reloads_frr_when_frr_conf_changes(self):
+        mock_restart, mock_reload = self._process(start_bgpd=False, conf_changed=True)
+        mock_reload.assert_called_once_with()
+        mock_restart.assert_not_called()
+
+    def test_process_leaves_frr_alone_when_nothing_changes(self):
+        mock_restart, mock_reload = self._process(start_bgpd=False, conf_changed=False)
+        mock_restart.assert_not_called()
+        mock_reload.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()
