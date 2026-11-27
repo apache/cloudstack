@@ -87,8 +87,7 @@ public class KubernetesClusterCertificateWorker extends KubernetesClusterActionW
     public static final String ROTATION_SUCCEEDED_DETAIL = "certificateRotationLastSuccess";
 
     protected static final int NODE_READY_POLL_INTERVAL_MS = 5000;
-    private static final Set<String> CLIENT_ONLY_KUBECONFIGS = Set.of("admin.conf", "super-admin.conf",
-            KubernetesClusterCertificateUtil.ROOT_KUBECONFIG_ENTRY_NAME);
+    private static final Set<String> CLIENT_ONLY_KUBECONFIGS = Set.of("admin.conf", "super-admin.conf");
     private static final String CHECK_OUTPUT_SEPARATOR = "----- cks root kubeconfig -----";
     private static final String USER_KUBECONFIG_SEPARATOR = "----- cks user kubeconfig -----";
 
