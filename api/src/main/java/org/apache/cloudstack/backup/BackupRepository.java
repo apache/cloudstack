@@ -19,7 +19,9 @@ package org.apache.cloudstack.backup;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import java.util.Arrays;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 public interface BackupRepository extends InternalIdentity, Identity {
     String getProvider();
@@ -31,4 +33,20 @@ public interface BackupRepository extends InternalIdentity, Identity {
     Long getCapacityBytes();
     Long getUsedBytes();
     Date getCreated();
+
+    /**
+     * Trims every entry of a comma separated mount option list and drops the empty ones.
+     * Older releases accepted and stored values such as "vers=4.1 ", whose stray whitespace the
+     * shell used to split away. Now that the options reach mount as a single argument, mount
+     * rejects that whitespace, so the stored value is cleaned before it is used.
+     */
+    static String normalizeMountOptions(String mountOptions) {
+        if (mountOptions == null) {
+            return null;
+        }
+        return Arrays.stream(mountOptions.split(","))
+                .map(String::trim)
+                .filter(option -> !option.isEmpty())
+                .collect(Collectors.joining(","));
+    }
 }
