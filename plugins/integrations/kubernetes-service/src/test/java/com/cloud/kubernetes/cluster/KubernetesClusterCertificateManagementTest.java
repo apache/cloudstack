@@ -451,6 +451,8 @@ public class KubernetesClusterCertificateManagementTest {
     public void rotationOwnedByThisRestartedServerIsMovedToAlertRightAway() {
         Mockito.when(kubernetesClusterDao.findManagedKubernetesClustersInState(KubernetesCluster.State.RotatingCertificates))
                 .thenReturn(Collections.singletonList(cluster));
+        Mockito.when(cluster.getState()).thenReturn(KubernetesCluster.State.RotatingCertificates);
+        Mockito.when(kubernetesClusterDao.findById(CLUSTER_ID)).thenReturn(cluster);
         details.put(KubernetesClusterCertificateWorker.ROTATION_STARTED_DETAIL, String.valueOf(now.getTime() - TimeUnit.MINUTES.toMillis(2)));
         details.put(KubernetesClusterCertificateWorker.ROTATION_OWNER_DETAIL, String.valueOf(ManagementServerNode.getManagementServerId()));
         manager.recoverInterruptedCertificateRotations(now);
@@ -491,6 +493,8 @@ public class KubernetesClusterCertificateManagementTest {
     public void interruptedRotationIsMovedToAlertOnceStale() {
         Mockito.when(kubernetesClusterDao.findManagedKubernetesClustersInState(KubernetesCluster.State.RotatingCertificates))
                 .thenReturn(Collections.singletonList(cluster));
+        Mockito.when(cluster.getState()).thenReturn(KubernetesCluster.State.RotatingCertificates);
+        Mockito.when(kubernetesClusterDao.findById(CLUSTER_ID)).thenReturn(cluster);
         // owned by another management server, which may still be running it
         details.put(KubernetesClusterCertificateWorker.ROTATION_OWNER_DETAIL, String.valueOf(ManagementServerNode.getManagementServerId() + 1));
         details.put(KubernetesClusterCertificateWorker.ROTATION_STARTED_DETAIL, String.valueOf(now.getTime() - TimeUnit.MINUTES.toMillis(30)));

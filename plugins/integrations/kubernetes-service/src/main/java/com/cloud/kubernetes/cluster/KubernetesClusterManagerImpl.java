@@ -3121,8 +3121,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             if (!ownedHere && now.getTime() - started < staleAfterMs) {
                 continue;
             }
-            logger.warn("Certificate rotation of Kubernetes cluster {} did not finish, moving it to Alert", kubernetesCluster);
+            KubernetesClusterVO current = kubernetesClusterDao.findById(kubernetesCluster.getId());
+            if (current == null || !KubernetesCluster.State.RotatingCertificates.equals(current.getState())
+                    || KubernetesClusterCertificateWorker.isRotationActive(kubernetesCluster.getId())) {
+                continue;
+            }
             if (stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed)) {
+                logger.warn("Certificate rotation of Kubernetes cluster {} did not finish, moved it to Alert", kubernetesCluster);
                 kubernetesClusterDetailsDao.removeDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.ROTATION_STARTED_DETAIL);
                 kubernetesClusterDetailsDao.removeDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.ROTATION_OWNER_DETAIL);
                 kubernetesClusterDetailsDao.removeDetail(kubernetesCluster.getId(), KubernetesClusterCertificateWorker.ROTATION_SEEN_DETAIL);
