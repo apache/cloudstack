@@ -93,14 +93,7 @@ public final class RootCACustomTrustManager implements X509TrustManager {
         }
 
         if (authStrictness) {
-            if (caCertificate == null) {
-                throw new CertificateException("Root CA certificate is required to validate client: " + clientAddress);
-            }
-            try {
-                primaryClientCertificate.verify(caCertificate.getPublicKey());
-            } catch (final GeneralSecurityException e) {
-                throw new CertificateException("Client certificate signature verification failed for client: " + clientAddress, e);
-            }
+            validateClientCertificateSignature(primaryClientCertificate);
         }
 
         // Revocation check
@@ -154,6 +147,17 @@ public final class RootCACustomTrustManager implements X509TrustManager {
 
         if (primaryClientCertificate != null && activeCertMap != null && StringUtils.isNotEmpty(clientAddress)) {
             activeCertMap.put(clientAddress, primaryClientCertificate);
+        }
+    }
+
+    private void validateClientCertificateSignature(final X509Certificate certificate) throws CertificateException {
+        if (caCertificate == null) {
+            throw new CertificateException("Root CA certificate is required to validate client: " + clientAddress);
+        }
+        try {
+            certificate.verify(caCertificate.getPublicKey());
+        } catch (final GeneralSecurityException e) {
+            throw new CertificateException("Client certificate signature verification failed for client: " + clientAddress, e);
         }
     }
 
