@@ -286,6 +286,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return null;
     }
 
+    protected void validateClvmSnapshotBackupToSecondary(StoragePoolType poolType, boolean backupSnapToSecondary) {
+        if (ClvmPoolManager.isClvmPoolType(poolType) && !backupSnapToSecondary) {
+            throw new InvalidParameterValueException(String.format("Snapshots of volumes on %s storage require [%s] to be true.", poolType, SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key()));
+        }
+    }
+
     protected boolean isBackupSnapshotToSecondaryForZone(long zoneId) {
         if (Boolean.FALSE.equals(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value())) {
             return false;
@@ -1649,8 +1655,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         boolean backupSnapToSecondary = isBackupSnapshotToSecondaryForZone(volume.getDataCenterId());
 
         StoragePoolType poolType = volume.getStoragePoolType();
+        boolean isClvmNgIncrementalCandidate = StoragePoolType.CLVM_NG == poolType && backupSnapToSecondary && kvmIncrementalSnapshot.valueIn(clusterId);
 
-        updateSnapshotPayload(volume.getPoolId(), payload, isKvmAndFileBasedStorage, poolType, clusterId);
+        updateSnapshotPayload(volume.getPoolId(), payload, isKvmAndFileBasedStorage, isClvmNgIncrementalCandidate, clusterId);
 
         // NetApp ONTAP managed PRIMARY snapshots remain on primary/array storage (FlexVol).
         // They must not use secondary archive bookkeeping (postSnapshotDirectlyToSecondary) or a physical
@@ -1658,7 +1665,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         boolean archiveSnapshotToSecondary = backupSnapToSecondary
                 && !isOntapManagedPrimaryLocationSnapshot(storagePool, payload);
 
-        if (isKvmAndFileBasedStorage && archiveSnapshotToSecondary) {
+        if ((isKvmAndFileBasedStorage || isClvmNgIncrementalCandidate) && archiveSnapshotToSecondary) {
             DataStore imageStore = snapshotSrv.findSnapshotImageStore(snapshot);
             if (imageStore == null) {
                 throw new CloudRuntimeException(String.format("Could not find any secondary storage to allocate snapshot [%s].", snapshot));
@@ -1681,7 +1688,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             SnapshotInfo snapshotOnPrimary = snapshotStrategy.takeSnapshot(snapshot);
 
             if (archiveSnapshotToSecondary) {
-                if (!isKvmAndFileBasedStorage) {
+                if (!isKvmAndFileBasedStorage && !isClvmNgIncrementalCandidate) {
                     backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary, payload.getZoneIds(), payload.getStoragePoolIds());
                     if (!payload.getAsyncBackup() && ClvmPoolManager.isClvmPoolType(storagePool.getPoolType())) {
                         _snapshotStoreDao.removeBySnapshotStore(snapshotId, snapshotOnPrimary.getDataStore().getId(), snapshotOnPrimary.getDataStore().getRole());
@@ -1714,7 +1721,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 snapshotZoneDao.addSnapshotToZone(snapshotId, snapshot.getDataCenterId());
 
                 DataStoreRole dataStoreRole;
-                if (payload.getAsyncBackup() && archiveSnapshotToSecondary && !isKvmAndFileBasedStorage) {
+                if (payload.getAsyncBackup() && archiveSnapshotToSecondary && !isKvmAndFileBasedStorage && !isClvmNgIncrementalCandidate) {
                     dataStoreRole = DataStoreRole.Primary;
                 } else {
                     dataStoreRole = archiveSnapshotToSecondary ? snapshotHelper.getDataStoreRole(snapshot) : DataStoreRole.Primary;
@@ -1739,6 +1746,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                     if (CollectionUtils.isNotEmpty(payload.getStoragePoolIds())) {
                         copyNewSnapshotToZonesOnPrimary(payload, snapshot);
                     }
+                } else if (isClvmNgIncrementalCandidate && archiveSnapshotToSecondary) {
+                    copyNewSnapshotToZones(snapshotId, snapshot.getDataCenterId(), payload.getZoneIds());
                 }
             } catch (Exception e) {
                 logger.debug("post process snapshot failed", e);
@@ -1913,7 +1922,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
-    private void updateSnapshotPayload(long storagePoolId, CreateSnapshotPayload payload, boolean isKvmAndFileBasedStorage, StoragePoolType poolType, Long clusterId) {
+    private void updateSnapshotPayload(long storagePoolId, CreateSnapshotPayload payload, boolean isKvmAndFileBasedStorage, boolean isClvmNgIncrementalCandidate, Long clusterId) {
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
 
         if (storagePoolVO.isManaged()) {
@@ -1926,7 +1935,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             payload.setLocationType(null);
         }
 
-        if (isKvmAndFileBasedStorage && kvmIncrementalSnapshot.valueIn(clusterId)) {
+        if ((isKvmAndFileBasedStorage && kvmIncrementalSnapshot.valueIn(clusterId)) || isClvmNgIncrementalCandidate) {
             payload.setKvmIncrementalSnapshot(true);
         }
     }
@@ -2101,6 +2110,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         HypervisorType hypervisorType = HypervisorType.None;
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getDataStore().getId());
+        if (!Boolean.TRUE.equals(isFromVmSnapshot)) {
+            validateClvmSnapshotBackupToSecondary(storagePool.getPoolType(), isBackupSnapshotToSecondaryForZone(volume.getDataCenterId()));
+        }
         if (storagePool.getScope() == ScopeType.ZONE) {
             hypervisorType = storagePool.getHypervisor();
 

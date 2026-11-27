@@ -78,6 +78,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> storeAndSnapshotIdsSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSnapshotDownloadStatusSearch;
     private SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull;
+    private SearchBuilder<SnapshotDataStoreVO> searchVolumeIdEqStateInKVMCheckpointNotNull;
     private SearchBuilder<SnapshotDataStoreVO> searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore;
     private SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqPathEq;
 
@@ -206,6 +207,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.and(KVM_CHECKPOINT_PATH, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.entity().getKvmCheckpointPath(), SearchCriteria.Op.NNULL);
         searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.and(STORE_ID, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.entity().getDataStoreId(), SearchCriteria.Op.IN);
         searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.done();
+
+        searchVolumeIdEqStateInKVMCheckpointNotNull = createSearchBuilder();
+        searchVolumeIdEqStateInKVMCheckpointNotNull.and(VOLUME_ID, searchVolumeIdEqStateInKVMCheckpointNotNull.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        searchVolumeIdEqStateInKVMCheckpointNotNull.and(STATE, searchVolumeIdEqStateInKVMCheckpointNotNull.entity().getState(), SearchCriteria.Op.IN);
+        searchVolumeIdEqStateInKVMCheckpointNotNull.and(KVM_CHECKPOINT_PATH, searchVolumeIdEqStateInKVMCheckpointNotNull.entity().getKvmCheckpointPath(), SearchCriteria.Op.NNULL);
+        searchVolumeIdEqStateInKVMCheckpointNotNull.done();
 
         searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore = createSearchBuilder();
         searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.and(STATE, searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.entity().getState(), SearchCriteria.Op.EQ);
@@ -714,11 +721,11 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
-    public List<SnapshotDataStoreVO> listReadyByVolumeIdAndCheckpointPathNotNull(long volumeId) {
-        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.create();
+    public List<SnapshotDataStoreVO> listReadyOrHiddenByVolumeIdAndCheckpointPathNotNull(long volumeId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = searchVolumeIdEqStateInKVMCheckpointNotNull.create();
         sc.setParameters(VOLUME_ID, volumeId);
-        sc.setParameters(STATE, State.Ready);
-        return listBy(sc);
+        sc.setParameters(STATE, State.Ready, State.Hidden);
+        return listBy(sc, new Filter(SnapshotDataStoreVO.class, "id", true, null, null));
     }
 
     @Override

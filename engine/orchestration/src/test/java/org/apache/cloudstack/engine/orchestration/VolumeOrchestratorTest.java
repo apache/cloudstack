@@ -641,7 +641,7 @@ public class VolumeOrchestratorTest {
         snapshotDataStoreVO.setKvmCheckpointPath("Test");
         snapshotDataStoreVO.setRole(DataStoreRole.Primary);
 
-        Mockito.doReturn(List.of(snapshotDataStoreVO)).when(snapshotDataStoreDaoMock).listReadyByVolumeIdAndCheckpointPathNotNull(Mockito.anyLong());
+        Mockito.doReturn(List.of(snapshotDataStoreVO)).when(snapshotDataStoreDaoMock).listReadyOrHiddenByVolumeIdAndCheckpointPathNotNull(Mockito.anyLong());
 
         Pair<List<String>, Set<String>> result = volumeOrchestrator.getVolumeCheckpointPathsAndImageStoreUrls(0, Hypervisor.HypervisorType.KVM);
 
@@ -656,7 +656,7 @@ public class VolumeOrchestratorTest {
         snapshotDataStoreVO.setRole(DataStoreRole.Image);
         snapshotDataStoreVO.setDataStoreId(13);
 
-        Mockito.doReturn(List.of(snapshotDataStoreVO)).when(snapshotDataStoreDaoMock).listReadyByVolumeIdAndCheckpointPathNotNull(Mockito.anyLong());
+        Mockito.doReturn(List.of(snapshotDataStoreVO)).when(snapshotDataStoreDaoMock).listReadyOrHiddenByVolumeIdAndCheckpointPathNotNull(Mockito.anyLong());
 
         ImageStoreVO imageStoreVO = new ImageStoreVO();
         imageStoreVO.setUrl("URL");
