@@ -704,8 +704,7 @@ public class KubernetesClusterActionWorker {
             try {
                 // A node can still hold an ISO from an operation that did not finish. An Instance can not have the
                 // same ISO attached twice, nor more ISOs than it has CD-ROMs.
-                UserVmVO userVm = userVmDao.findById(vm.getId());
-                Long attachedIsoId = userVm != null ? userVm.getIsoId() : null;
+                Long attachedIsoId = vm.getIsoId();
                 if (Long.valueOf(iso.getId()).equals(attachedIsoId) || vmIsoMapDao.findByVmIdIsoId(vm.getId(), iso.getId()) != null) {
                     logger.info("Binaries ISO is already attached to VM: {} in cluster: {}", vm, kubernetesCluster);
                     continue;

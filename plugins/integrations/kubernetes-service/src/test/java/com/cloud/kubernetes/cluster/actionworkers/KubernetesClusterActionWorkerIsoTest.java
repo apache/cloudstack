@@ -38,9 +38,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmIsoMapVO;
-import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VmIsoMapDao;
 
 /**
@@ -66,9 +64,6 @@ public class KubernetesClusterActionWorkerIsoTest {
     VMTemplateDao templateDao;
 
     @Mock
-    UserVmDao userVmDao;
-
-    @Mock
     VmIsoMapDao vmIsoMapDao;
 
     @Mock
@@ -85,7 +80,6 @@ public class KubernetesClusterActionWorkerIsoTest {
         actionWorker = new KubernetesClusterActionWorker(kubernetesCluster, kubernetesClusterManager);
         actionWorker.templateService = templateService;
         actionWorker.templateDao = templateDao;
-        actionWorker.userVmDao = userVmDao;
         actionWorker.vmIsoMapDao = vmIsoMapDao;
         Mockito.when(version.getIsoId()).thenReturn(BINARIES_ISO_ID);
         VMTemplateVO iso = Mockito.mock(VMTemplateVO.class);
@@ -97,9 +91,7 @@ public class KubernetesClusterActionWorkerIsoTest {
     }
 
     private void attachBinariesIso(Long attachedIsoId, boolean binariesIsoInOtherCdrom) {
-        UserVmVO userVm = Mockito.mock(UserVmVO.class);
-        Mockito.when(userVm.getIsoId()).thenReturn(attachedIsoId);
-        Mockito.when(userVmDao.findById(VM_ID)).thenReturn(userVm);
+        Mockito.when(vm.getIsoId()).thenReturn(attachedIsoId);
         Mockito.lenient().when(vmIsoMapDao.findByVmIdIsoId(VM_ID, BINARIES_ISO_ID)).thenReturn(binariesIsoInOtherCdrom ? Mockito.mock(VmIsoMapVO.class) : null);
         try (MockedStatic<CallContext> callContext = Mockito.mockStatic(CallContext.class)) {
             callContext.when(() -> CallContext.register(Mockito.any(), Mockito.any(ApiCommandResourceType.class))).thenReturn(Mockito.mock(CallContext.class));
