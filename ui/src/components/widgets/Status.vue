@@ -124,6 +124,9 @@ export default {
           case 'failed':
             state = this.$t('label.failed')
             break
+          case 'rotatingcertificates':
+            state = this.$t('label.rotating.certificates')
+            break
         }
         return state.charAt(0).toUpperCase() + state.slice(1)
       }
@@ -181,6 +184,7 @@ export default {
         case 'starting':
         case 'stopping':
         case 'upgrading':
+        case 'rotatingcertificates':
         case 'inprogress':
         case 'validating':
         case 'compressing':
