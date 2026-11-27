@@ -382,6 +382,16 @@ public class KubernetesClusterCertificateWorkerTest {
     }
 
     @Test
+    public void checkWithoutControlNodesReportsThemUnchecked() {
+        Mockito.doReturn(Collections.emptyList()).when(worker).getControlNodeVMs();
+
+        CertificateExpiryReport report = worker.checkCertificateExpiry();
+
+        Assert.assertTrue(report.isEmpty());
+        Assert.assertEquals(List.of("all control nodes"), report.getUncheckedNodes());
+    }
+
+    @Test
     public void checkComparesTheStoredKubeConfigWithUserConfWhenThereIsOne() throws Exception {
         // getKubernetesClusterConfig hands out user.conf; its certificate is the one stored, so nothing is stale
         storeKubeConfig(CLIENT_CERTIFICATE_DATA);

@@ -162,6 +162,11 @@ public class KubernetesClusterCertificateWorker extends KubernetesClusterActionW
         resolveClusterEndpoints();
         CertificateExpiryReport report = new CertificateExpiryReport();
         List<UserVm> controlVms = getControlNodeVMs();
+        if (CollectionUtils.isEmpty(controlVms)) {
+            logger.warn("No control nodes found for Kubernetes cluster {}", kubernetesCluster);
+            report.addUncheckedNode("all control nodes");
+            return report;
+        }
         Date firstNodeAdminExpiry = null;
         boolean firstNodeUnreachable = false;
         boolean userKubeConfig = false;
