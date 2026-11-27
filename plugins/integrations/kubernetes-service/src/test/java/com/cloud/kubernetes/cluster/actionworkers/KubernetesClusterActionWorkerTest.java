@@ -267,10 +267,11 @@ public class KubernetesClusterActionWorkerTest {
     public void testGetControlNodeVMsFallsBackForClustersWithoutControlFlag() {
         UserVmVO vm3 = Mockito.mock(UserVmVO.class);
         UserVmVO vm4 = Mockito.mock(UserVmVO.class);
-        Mockito.when(kubernetesCluster.getEtcdNodeCount()).thenReturn(2L);
         Mockito.when(kubernetesCluster.getControlNodeCount()).thenReturn(2L);
         KubernetesClusterVmMapVO etcd1 = vmMap(1L);
         KubernetesClusterVmMapVO etcd2 = vmMap(2L);
+        Mockito.when(etcd1.isEtcdNode()).thenReturn(true);
+        Mockito.when(etcd2.isEtcdNode()).thenReturn(true);
         KubernetesClusterVmMapVO control1 = vmMap(3L);
         KubernetesClusterVmMapVO control2 = vmMap(4L);
         KubernetesClusterVmMapVO worker = vmMap(5L);
@@ -284,6 +285,28 @@ public class KubernetesClusterActionWorkerTest {
         List<UserVm> controlVms = actionWorker.getControlNodeVMs();
 
         Assert.assertEquals(Arrays.asList(vm3, vm4), controlVms);
+    }
+
+    @Test
+    public void testGetControlNodeVMsFallbackIgnoresExternalNodes() {
+        UserVmVO vm2 = Mockito.mock(UserVmVO.class);
+        UserVmVO vm3 = Mockito.mock(UserVmVO.class);
+        Mockito.when(kubernetesCluster.getControlNodeCount()).thenReturn(2L);
+        KubernetesClusterVmMapVO external = vmMap(1L);
+        Mockito.when(external.isExternalNode()).thenReturn(true);
+        KubernetesClusterVmMapVO control2 = vmMap(2L);
+        KubernetesClusterVmMapVO control3 = vmMap(3L);
+        KubernetesClusterVmMapVO worker = vmMap(4L);
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterIdAndVmType(DEFAULT_ID, KubernetesClusterNodeType.CONTROL))
+            .thenReturn(Collections.emptyList());
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(DEFAULT_ID))
+            .thenReturn(Arrays.asList(external, control2, control3, worker));
+        Mockito.when(userVmDao.findById(2L)).thenReturn(vm2);
+        Mockito.when(userVmDao.findById(3L)).thenReturn(vm3);
+
+        List<UserVm> controlVms = actionWorker.getControlNodeVMs();
+
+        Assert.assertEquals(Arrays.asList(vm2, vm3), controlVms);
     }
 
     @Test

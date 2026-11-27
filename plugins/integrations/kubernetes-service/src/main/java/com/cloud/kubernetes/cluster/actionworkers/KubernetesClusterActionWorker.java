@@ -774,9 +774,12 @@ public class KubernetesClusterActionWorker {
             if (CollectionUtils.isEmpty(allVmMaps)) {
                 return controlVms;
             }
-            long etcdNodes = Objects.requireNonNullElse(kubernetesCluster.getEtcdNodeCount(), 0L);
-            controlVmIds = allVmMaps.stream().map(KubernetesClusterVmMapVO::getVmId).sorted()
-                    .skip(etcdNodes).limit(Math.max(1, kubernetesCluster.getControlNodeCount())).collect(Collectors.toList());
+            controlVmIds = allVmMaps.stream()
+                    .filter(vmMap -> !vmMap.isEtcdNode() && !vmMap.isExternalNode())
+                    .map(KubernetesClusterVmMapVO::getVmId)
+                    .sorted()
+                    .limit(Math.max(1, kubernetesCluster.getControlNodeCount()))
+                    .collect(Collectors.toList());
         }
         for (Long vmId : controlVmIds) {
             UserVm vm = userVmDao.findById(vmId);
