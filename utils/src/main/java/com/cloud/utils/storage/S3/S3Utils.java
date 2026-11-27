@@ -114,6 +114,8 @@ public final class S3Utils {
             LOGGER.debug(format("Setting the end point for S3 client with access key %1$s to %2$s.", clientOptions.getAccessKey(), clientOptions.getEndPoint()));
 
             client.setEndpoint(clientOptions.getEndPoint());
+            // Enable path-style access for S3-compatible storage
+            client.setS3ClientOptions(com.amazonaws.services.s3.S3ClientOptions.builder().setPathStyleAccess(true).build());
         }
 
         TRANSFERMANAGER_ACCESSKEY_MAP.put(clientOptions.getAccessKey(), new TransferManager(client));

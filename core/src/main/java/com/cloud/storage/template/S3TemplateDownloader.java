@@ -215,9 +215,16 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
         try {
             // Wait for the upload to complete.
             upload.waitForCompletion();
+            // Set status directly to avoid race condition.
+            status = Status.DOWNLOAD_FINISHED;
         } catch (InterruptedException e) {
-            // Interruption while waiting for the upload to complete.
-            logger.warn("Interruption occurred while waiting for upload of " + downloadUrl + " to complete");
+            errorString = "Interruption occurred while waiting for upload of " + downloadUrl + " to complete";
+            logger.warn(errorString);
+            status = Status.UNRECOVERABLE_ERROR;
+        } catch (Exception e) {
+            errorString = "S3 upload failed for " + downloadUrl + ": " + e.getMessage();
+            logger.warn(errorString, e);
+            status = Status.UNRECOVERABLE_ERROR;
         }
 
         downloadTime = new Date().getTime() - start.getTime();
