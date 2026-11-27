@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DiagnosticsFilesListFactoryTest {
@@ -78,5 +80,14 @@ public class DiagnosticsFilesListFactoryTest {
         String[] defaultFileArray = configKey.defaultValue().split(",");
 
         assertEquals(filesList.size(), defaultFileArray.length);
+    }
+
+    @Test
+    public void testDiagnosticsFileListDefaultsRouterIncludeFrrFiles() {
+        List<String> filesList = Objects.requireNonNull(DiagnosticsFilesListFactory.getDiagnosticsFilesList(null, vmInstance)).generateFileList();
+
+        assertTrue(filesList.contains("/var/log/frr/frr.log"));
+        assertTrue(filesList.contains("/var/cache/cloud/frr.conf.masked"));
+        assertFalse(filesList.contains("/etc/frr/frr.conf"));
     }
 }

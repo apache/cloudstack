@@ -17,10 +17,14 @@
 
 """ Test for IPv4 Routed mode"""
 import datetime
+import io
 import logging
 import random
 import time
+import urllib.request
+import zipfile
 
+from marvin.cloudstackAPI import getDiagnosticsData
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import ZoneIpv4Subnet, Domain, Account, ServiceOffering, NetworkOffering, VpcOffering, Network, \
     Ipv4SubnetForGuestNetwork, VirtualMachine, VPC, NetworkACLList, NetworkACL, RoutingFirewallRule, Template, ASNRange, \
@@ -1671,3 +1675,74 @@ class TestIpv4Routing(cloudstackTestCase):
             self.apiclient
         )
         self.cleanup.remove(asnrange_2)
+
+    @attr(tags=['advanced'], required_hardware=True)
+    def test_14_diagnostics_frr_files(self):
+        """ Test for the FRR files in router diagnostics"""
+        """
+            # 1. Create Isolated network with Dynamic routing and a BGP peer with a password
+            # 2. Create VM in the network
+            # 3. Get the router's diagnostics data with the default file list
+            # 4. Verify the zip holds frr.log and frr.conf.masked, and not frr.conf
+            # 5. Verify frr.conf.masked masks the password, and neither file holds it
+        """
+        self.message("Running test_14_diagnostics_frr_files")
+
+        # 1. Create Isolated network with Dynamic routing and a BGP peer with a password
+        bgppeer_1 = BgpPeer.create(
+            self.apiclient,
+            zoneid=self.zone.id,
+            asnumber=ASN_1,
+            ipaddress=IP4_ADDR_1,
+            password=PASSWORD_1
+        )
+        self.cleanup.append(bgppeer_1)
+
+        test_network_dynamic = Network.create(
+            self.apiclient,
+            self.services["network"],
+            networkofferingid=self.network_offering_dynamic.id,
+            zoneid=self.zone.id,
+            domainid=self.sub_domain.id,
+            accountid=self.regular_user.name,
+            gateway=NETWORK_CIDR_PREFIX_DYNAMIC + ".1",
+            netmask="255.255.255.0",
+            bgppeerids=bgppeer_1.id
+        )
+        self.cleanup.append(test_network_dynamic)
+
+        # 2. Create VM in the network
+        test_network_dynamic_vm = VirtualMachine.create(
+            self.regular_user_apiclient,
+            self.services["virtual_machine"],
+            zoneid=self.zone.id,
+            domainid=self.sub_domain.id,
+            accountid=self.regular_user.name,
+            networkids=test_network_dynamic.id,
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id)
+        self.cleanup.append(test_network_dynamic_vm)
+
+        network_router = self.get_router(networkid=test_network_dynamic.id)
+
+        # 3. Get the router's diagnostics data with the default file list
+        cmd = getDiagnosticsData.getDiagnosticsDataCmd()
+        cmd.targetid = network_router.id
+        response = self.apiclient.getDiagnosticsData(cmd)
+        data = urllib.request.urlopen(response.url).read()
+        files = zipfile.ZipFile(io.BytesIO(data))
+        names = files.namelist()
+        self.message("Diagnostics data files: %s" % names)
+
+        # 4. Verify the zip holds frr.log and frr.conf.masked, and not frr.conf
+        for name in ("frr.log", "frr.conf.masked"):
+            self.assertIn(name, names, "The diagnostics data should hold %s" % name)
+        self.assertNotIn("frr.conf", names, "The diagnostics data should not hold frr.conf")
+
+        # 5. Verify frr.conf.masked masks the password, and neither file holds it
+        masked = files.read("frr.conf.masked").decode()
+        self.assertIn("neighbor %s password ****" % IP4_ADDR_1, masked,
+                      "frr.conf.masked should mask the password of %s" % IP4_ADDR_1)
+        for name in ("frr.log", "frr.conf.masked"):
+            self.assertNotIn(PASSWORD_1, files.read(name).decode(errors="replace"),
+                             "%s should not hold the BGP peer password" % name)

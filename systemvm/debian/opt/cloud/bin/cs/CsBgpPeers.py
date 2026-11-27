@@ -18,6 +18,7 @@
 # under the License.
 
 import logging
+import re
 from . import CsHelper
 from .CsDatabag import CsDataBag
 from .CsFile import CsFile
@@ -25,6 +26,8 @@ from .CsFile import CsFile
 FRR_DIR = "/etc/frr/"
 FRR_DAEMONS = "/etc/frr/daemons"
 FRR_CONFIG = "/etc/frr/frr.conf"
+# A copy of frr.conf without passwords, which getDiagnosticsData collects.
+MASKED_COPY = "/var/cache/cloud/frr.conf.masked"
 
 
 class CsBgpPeers(CsDataBag):
@@ -60,10 +63,24 @@ class CsBgpPeers(CsDataBag):
         self._post_set()
         if self.frr_conf.commit():
             restart_frr = True
+        self._write_masked_copy()
 
         if restart_frr:
             CsHelper.execute("systemctl enable frr")
             CsHelper.execute("systemctl restart frr")
+
+    def _write_masked_copy(self):
+        try:
+            with open(MASKED_COPY, "w") as f:
+                for line in self._mask_passwords([line.rstrip("\n") for line in self.frr_conf.new_config]):
+                    f.write(line + "\n")
+        except IOError as e:
+            logging.error("Unable to write %s: %s" % (MASKED_COPY, e))
+
+    def _mask_passwords(self, lines):
+        # DOTALL masks a password that contains a line break, up to the end of the entry.
+        return [re.sub(r'^(\s*neighbor\s+\S+\s+password\s+)\S.*$', r'\g<1>****', line, flags=re.DOTALL)
+                for line in lines]
 
     def _process_dbag_item(self, item):
         as_number = item['network_as_number']
@@ -80,6 +97,8 @@ class CsBgpPeers(CsDataBag):
         self.frr_conf.add("frr defaults traditional")
         self.frr_conf.add("hostname {}".format(CsHelper.get_hostname()))
         self.frr_conf.add("service integrated-vtysh-config")
+        # FRR sends nothing to syslog without a log line. The frr package routes it to /var/log/frr/frr.log.
+        self.frr_conf.add("log syslog informational")
         self.frr_conf.add("ip nht resolve-via-default")
         self.frr_conf.add("ipv6 nht resolve-via-default")
         return

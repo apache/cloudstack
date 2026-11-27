@@ -295,6 +295,10 @@ WHERE   sp.`storage_provider_name` = 'NetApp ONTAP'
 -- Rename persisted FlashArray provider name (plugin getName() changed from 'Flash Array' to 'FlashArray')
 UPDATE `cloud`.`storage_pool` SET `storage_provider_name` = 'FlashArray' WHERE `storage_provider_name` = 'Flash Array';
 
+-- Collect the FRR log and the frr.conf copy with masked passwords in router diagnostics
+UPDATE `cloud`.`configuration` SET `value`=CONCAT(`value`, ',/var/log/frr/frr.log,/var/cache/cloud/frr.conf.masked')
+WHERE `name`='diagnostics.data.router.defaults' AND `value` IS NOT NULL;
+
 --- Recalculate the allocated size in bytes for each Object Storage provider
 UPDATE `cloud`.`object_store`
 JOIN (
