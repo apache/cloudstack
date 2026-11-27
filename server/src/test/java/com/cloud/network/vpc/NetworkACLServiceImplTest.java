@@ -45,6 +45,7 @@ import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1505,5 +1506,17 @@ public class NetworkACLServiceImplTest {
         Mockito.doReturn(null).when(vpcDaoMock).findById(Mockito.anyLong());
 
         networkAclServiceImpl.validateAclAssociatedToVpc(networkMockVpcMockId, accountMock, SOME_UUID);
+    }
+
+    @Test
+    public void updateIcmpCodeAndTypeFullUpgradeHandlesNullProtocol() {
+        NetworkACLItemVO rule = new NetworkACLItemVO();
+        rule.setIcmpCode(5);
+        rule.setIcmpType(8);
+
+        ReflectionTestUtils.invokeMethod(networkAclServiceImpl, "updateIcmpCodeAndTypeFullUpgrade", 1, 2, rule);
+
+        Assert.assertNull(rule.getIcmpCode());
+        Assert.assertNull(rule.getIcmpType());
     }
 }
