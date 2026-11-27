@@ -354,6 +354,14 @@ public class KubernetesClusterCertificateWorkerTest {
         Assert.assertTrue(KubernetesClusterCertificateWorker.isCertificateManagementSupported(version));
         Mockito.when(version.getSemanticVersion()).thenReturn("1.33.1");
         Assert.assertTrue(KubernetesClusterCertificateWorker.isCertificateManagementSupported(version));
+        Mockito.when(version.getSemanticVersion()).thenReturn(null);
+        Assert.assertFalse(KubernetesClusterCertificateWorker.isCertificateManagementSupported(version));
+        Mockito.when(version.getSemanticVersion()).thenReturn("");
+        Assert.assertFalse(KubernetesClusterCertificateWorker.isCertificateManagementSupported(version));
+        Mockito.when(version.getSemanticVersion()).thenReturn("1.2");
+        Assert.assertFalse(KubernetesClusterCertificateWorker.isCertificateManagementSupported(version));
+        Mockito.when(version.getSemanticVersion()).thenReturn("not-a-version");
+        Assert.assertFalse(KubernetesClusterCertificateWorker.isCertificateManagementSupported(version));
     }
 
     private void storeKubeConfig(String certificateData) {

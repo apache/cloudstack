@@ -129,8 +129,15 @@ public class KubernetesClusterCertificateWorker extends KubernetesClusterActionW
     }
 
     public static boolean isCertificateManagementSupported(KubernetesSupportedVersion version) {
-        return version != null && KubernetesVersionManagerImpl.compareSemanticVersions(version.getSemanticVersion(),
-                KubernetesClusterCertificateUtil.MIN_KUBERNETES_VERSION_CERTIFICATES_SUPPORT) >= 0;
+        if (version == null || StringUtils.isEmpty(version.getSemanticVersion())) {
+            return false;
+        }
+        try {
+            return KubernetesVersionManagerImpl.compareSemanticVersions(version.getSemanticVersion(),
+                    KubernetesClusterCertificateUtil.MIN_KUBERNETES_VERSION_CERTIFICATES_SUPPORT) >= 0;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     protected void resolveClusterEndpoints() {
