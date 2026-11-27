@@ -8726,14 +8726,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             applyIfNotProvided(cmd, requestParams, "guestIptype", ApiConstants.GUEST_IP_TYPE, cmd.getGuestIpType(), sourceOffering.getGuestType().toString());
             applyIfNotProvided(cmd, requestParams, "maxConnections", ApiConstants.MAX_CONNECTIONS, cmd.getMaxconnections(), sourceOffering.getConcurrentConnections());
 
-            boolean isL2Offering = StringUtils.equalsIgnoreCase(GuestType.L2.name(), cmd.getGuestIpType());
-            if (!isL2Offering && BooleanUtils.isFalse(cmd.getForVpc())) {
-                applyIfNotProvided(cmd, requestParams, "publicMultiqueueNumber", ApiConstants.PUBLIC_MULTIQUEUE_NUMBER, cmd.getPublicMultiqueueNumber(), sourceOffering.getPublicMultiqueueNumber());
-            }
-            if (!isL2Offering) {
-                applyIfNotProvided(cmd, requestParams, "privateMultiqueueNumber", ApiConstants.PRIVATE_MULTIQUEUE_NUMBER, cmd.getPrivateMultiqueueNumber(), sourceOffering.getPrivateMultiqueueNumber());
-            }
-
             applyBooleanIfNotProvided(cmd, requestParams, "specifyVlan", ApiConstants.SPECIFY_VLAN, sourceOffering.isSpecifyVlan());
             applyBooleanIfNotProvided(cmd, requestParams, "conserveMode", ApiConstants.CONSERVE_MODE, sourceOffering.isConserveMode());
             applyBooleanIfNotProvided(cmd, requestParams, "specifyIpRanges", ApiConstants.SPECIFY_IP_RANGES, sourceOffering.isSpecifyIpRanges());
@@ -8743,6 +8735,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             applyBooleanIfNotProvided(cmd, requestParams, "keepAliveEnabled", ApiConstants.KEEPALIVE_ENABLED, sourceOffering.isKeepAliveEnabled());
             applyBooleanIfNotProvided(cmd, requestParams, "enable", ApiConstants.ENABLE, sourceOffering.getState() == NetworkOffering.State.Enabled);
             applyBooleanIfNotProvided(cmd, requestParams, "specifyAsNumber", ApiConstants.SPECIFY_AS_NUMBER, sourceOffering.isSpecifyAsNumber());
+
+            boolean isL2Offering = StringUtils.equalsIgnoreCase(GuestType.L2.name(), cmd.getGuestIpType());
+            if (!isL2Offering && BooleanUtils.isFalse(cmd.getForVpc())) {
+                applyIfNotProvided(cmd, requestParams, "publicMultiqueueNumber", ApiConstants.PUBLIC_MULTIQUEUE_NUMBER, cmd.getPublicMultiqueueNumber(), sourceOffering.getPublicMultiqueueNumber());
+            }
+            if (!isL2Offering) {
+                applyIfNotProvided(cmd, requestParams, "privateMultiqueueNumber", ApiConstants.PRIVATE_MULTIQUEUE_NUMBER, cmd.getPrivateMultiqueueNumber(), sourceOffering.getPrivateMultiqueueNumber());
+            }
 
             if (!requestParams.containsKey(ApiConstants.INTERNET_PROTOCOL)) {
                 String internetProtocol = networkOfferingDetailsDao.getDetail(sourceOffering.getId(), Detail.internetProtocol);

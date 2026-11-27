@@ -7205,19 +7205,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         Integer nicMultiqueueNumber = getMultiqueueFromVmDetails(details);
         if (nicMultiqueueNumber != null) {
-            logger.info("VM detail [{}] is equal to [{}]; therefore, it will be used as the multiqueue value.", VmDetailConstants.NIC_MULTIQUEUE_NUMBER, nicMultiqueueNumber);
+            logger.debug("VM detail [{}] is equal to [{}]; therefore, it will be used as the multiqueue value.", VmDetailConstants.NIC_MULTIQUEUE_NUMBER, nicMultiqueueNumber);
         } else if (isVr && multiqueueForVrs != null) {
-            logger.info("VM detail [{}] has not been specified. The target VM is a VR and it has an associated multiqueue number. " +
+            logger.debug("VM detail [{}] has not been specified. The target VM is a VR and it has an associated multiqueue number. " +
                     "Considering this associated value, equal to [{}], as the multiqueue value.", VmDetailConstants.NIC_MULTIQUEUE_NUMBER, multiqueueForVrs);
             nicMultiqueueNumber = multiqueueForVrs;
         }
 
         if (nicMultiqueueNumber != null) {
             if (nicMultiqueueNumber == InterfaceDef.MULTI_QUEUE_NUMBER_MEANS_CPU_CORES && cpus != null && cpus > 0) {
-                logger.info("The NIC multiqueue number is equal to [{}]. Thus, defining the multiqueue value as the number of vCPUs [{}].", InterfaceDef.MULTI_QUEUE_NUMBER_MEANS_CPU_CORES, cpus);
-                interfaceDef.setMultiQueueNumber(cpus);
+                logger.debug("The NIC multiqueue number is equal to [{}]. {}.", InterfaceDef.MULTI_QUEUE_NUMBER_MEANS_CPU_CORES,
+                        cpus > 256 ? String.format("Since the number of vCPUs is equal to [%s], defining the multiqueue value as the maximum accepted value ([256])", cpus)
+                                : String.format("Thus, defining the multiqueue value as the number of vCPUs [%s]", cpus));
+                interfaceDef.setMultiQueueNumber(Math.min(cpus, 256));
             } else if (nicMultiqueueNumber == InterfaceDef.MULTI_QUEUE_NUMBER_MEANS_CPU_CORES) {
-                logger.info("Not setting NIC multiqueue number, as it is equal to [{}] and there is not associated number of vCPUs to be considered.", InterfaceDef.MULTI_QUEUE_NUMBER_MEANS_CPU_CORES);
+                logger.debug("Not setting NIC multiqueue number, as it is equal to [{}] and there is not associated number of vCPUs to be considered.", InterfaceDef.MULTI_QUEUE_NUMBER_MEANS_CPU_CORES);
             } else {
                 logger.debug("Defining the NIC multiqueue number as [{}] in the NIC XML definition.", nicMultiqueueNumber);
                 interfaceDef.setMultiQueueNumber(nicMultiqueueNumber);

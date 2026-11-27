@@ -2257,7 +2257,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         });
     }
 
-    private void setGuestNetworkVrNicMultiqueueNumber(Pair<NetworkVO, VpcVO> networks, NetworkVO implementedNetwork, NicProfile nicProfile, List<NicVO> nics) {
+    private void setGuestNetworkVrNicMultiqueueNumber(Pair<NetworkVO, VpcVO> networks, NetworkVO implementedNetwork, NicProfile nicProfile) {
         if (networks == null) {
             logger.debug("Skipping the assignment of multiqueue for VR because it is not related with any network.");
             return;
@@ -2280,10 +2280,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         Integer offeringMultiqueueNumber = implementedNetwork.getTrafficType() == TrafficType.Public ? networkOffering.getPublicMultiqueueNumber() : networkOffering.getPrivateMultiqueueNumber();
         Integer multiqueueNumber = NetworkOrchestrationService.getRouterNicMultiqueueNumber(offeringMultiqueueNumber);
         if (multiqueueNumber == null) {
-            logger.info("Multiqueue for NIC [{}] will not be defined because neither the network offering nor the [{}] configuration define it.",
+            logger.debug("Multiqueue for NIC [{}] will not be defined because neither the network offering nor the [{}] configuration define it.",
                     nicProfile.getUuid(), RouterNicMultiqueueNumber.key());
         } else {
-            logger.info("Setting [{}] as the multiqueue for NIC [{}].", multiqueueNumber, nicProfile.getUuid());
+            logger.debug("Setting [{}] as the multiqueue for NIC [{}].", multiqueueNumber, nicProfile.getUuid());
             nicProfile.setMultiqueueNumber(multiqueueNumber);
         }
     }
@@ -2320,7 +2320,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             if (vmProfile.getType() == Type.DomainRouter) {
                 Pair<NetworkVO, VpcVO> networks = getGuestNetworkRouterAndVpcDetails(vmProfile.getId());
                 setMtuInVRNicProfile(networks, implementedNetwork.getTrafficType(), profile);
-                setGuestNetworkVrNicMultiqueueNumber(networks, implementedNetwork, profile, nics);
+                setGuestNetworkVrNicMultiqueueNumber(networks, implementedNetwork, profile);
             }
             vmProfile.addNic(profile);
         }

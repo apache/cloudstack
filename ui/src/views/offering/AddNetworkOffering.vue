@@ -1222,7 +1222,7 @@ export default {
           // Conserve mode is irrelevant on L2 network offerings as there are no resources to conserve, do not pass it, true by default on server side
           delete params.conservemode
           delete params.publicmultiqueuenumber
-          delete params.privategatewaymultiqueuenumber
+          delete params.privatemultiqueuenumber
         }
 
         if (values.forvpc === true) {
