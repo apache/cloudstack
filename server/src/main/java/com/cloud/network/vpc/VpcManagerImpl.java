@@ -133,7 +133,6 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkElement;
-import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
@@ -2886,10 +2885,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Vpc vpc = vpcDao.findById(routes.get(0).getVpcId());
 
         logger.debug("Applying static routes for vpc " + vpc);
-        final String staticNatProvider = _vpcSrvcDao.getProviderForServiceInVpc(vpc.getId(), Service.StaticNat);
+        final List<Provider> providersToImplement = getVpcProviders(vpc.getId());
 
         for (final VpcProvider provider : getVpcElements()) {
-            if (!(provider instanceof StaticNatServiceProvider && provider.getName().equalsIgnoreCase(staticNatProvider))) {
+            if (!providersToImplement.contains(provider.getProvider())) {
                 continue;
             }
 
