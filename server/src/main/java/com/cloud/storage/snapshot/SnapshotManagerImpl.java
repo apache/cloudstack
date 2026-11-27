@@ -286,6 +286,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return null;
     }
 
+    protected void validateClvmSnapshotBackupToSecondary(StoragePoolType poolType, boolean backupSnapToSecondary) {
+        if (ClvmPoolManager.isClvmPoolType(poolType) && !backupSnapToSecondary) {
+            throw new InvalidParameterValueException(String.format("Snapshots of volumes on %s storage require [%s] to be true.", poolType, SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key()));
+        }
+    }
+
     protected boolean isBackupSnapshotToSecondaryForZone(long zoneId) {
         if (Boolean.FALSE.equals(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value())) {
             return false;
@@ -2104,6 +2110,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         HypervisorType hypervisorType = HypervisorType.None;
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getDataStore().getId());
+        if (!Boolean.TRUE.equals(isFromVmSnapshot)) {
+            validateClvmSnapshotBackupToSecondary(storagePool.getPoolType(), isBackupSnapshotToSecondaryForZone(volume.getDataCenterId()));
+        }
         if (storagePool.getScope() == ScopeType.ZONE) {
             hypervisorType = storagePool.getHypervisor();
 

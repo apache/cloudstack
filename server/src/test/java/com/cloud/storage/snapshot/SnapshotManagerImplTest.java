@@ -822,4 +822,25 @@ public class SnapshotManagerImplTest {
 
         Mockito.verify(snapshotStoreDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any(SnapshotDataStoreVO.class));
     }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateClvmSnapshotBackupToSecondaryRejectsClvmNgWithoutBackup() {
+        snapshotManager.validateClvmSnapshotBackupToSecondary(StoragePoolType.CLVM_NG, false);
+    }
+
+    @Test
+    public void validateClvmSnapshotBackupToSecondaryAllowsClvmNgWithBackup() {
+        snapshotManager.validateClvmSnapshotBackupToSecondary(StoragePoolType.CLVM_NG, true);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateClvmSnapshotBackupToSecondaryRejectsClvmWithoutBackup() {
+        snapshotManager.validateClvmSnapshotBackupToSecondary(StoragePoolType.CLVM, false);
+    }
+
+    @Test
+    public void validateClvmSnapshotBackupToSecondaryAllowsOtherPoolsWithoutBackup() {
+        snapshotManager.validateClvmSnapshotBackupToSecondary(StoragePoolType.NetworkFilesystem, false);
+        snapshotManager.validateClvmSnapshotBackupToSecondary(StoragePoolType.RBD, false);
+    }
 }
