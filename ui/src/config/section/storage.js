@@ -515,7 +515,7 @@ export default {
           message: 'message.action.download.screenshot',
           dataView: true,
           show: (record) => {
-            return record.status === 'BackedUp' && !['NotValidated', 'Validating', 'UnableToValidate'].includes(record.validationstatus)
+            return record.status === 'BackedUp' && ['Valid', 'NotValid'].includes(record.validationstatus)
           },
           args: ['backupid'],
           mapping: {
