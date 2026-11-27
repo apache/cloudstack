@@ -3157,7 +3157,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         CertificateExpiryReport report;
         try {
             report = worker.checkCertificateExpiry();
-        } catch (CloudRuntimeException e) {
+        } catch (Exception e) {
             // e.g. no address to reach the cluster on: as unwatched as when every node fails
             logger.warn("Unable to check the certificate expiry of Kubernetes cluster {}", kubernetesCluster, e);
             report = new CertificateExpiryReport();

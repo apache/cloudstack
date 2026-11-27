@@ -409,6 +409,14 @@ public class KubernetesClusterCertificateManagementTest {
     }
 
     @Test
+    public void unexpectedCheckFailureAlerts() {
+        Mockito.doThrow(new IllegalStateException("boom")).when(worker).checkCertificateExpiry();
+        manager.processKubernetesClusterCertificates(cluster, now);
+        Mockito.verify(worker).sendAlert(ArgumentMatchers.contains("Unable to check"), ArgumentMatchers.anyString());
+        Mockito.verify(worker, Mockito.never()).rotateCertificates();
+    }
+
+    @Test
     public void clusterWhoseNodesCannotBeCheckedAlertsOnceADay() {
         CertificateExpiryReport nothing = new CertificateExpiryReport();
         nothing.addUncheckedNode("cks-control-1");
