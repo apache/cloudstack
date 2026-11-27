@@ -70,7 +70,7 @@ export default {
     this.unwatchProject = this.$store.watch(
       (state, getters) => getters.project?.id,
       (newId) => {
-        this.selectedProjectId = newId
+        this.selectedProjectId = newId || this.defaultOption.id
       }
     )
     eventBus.on('projects-updated', (args) => {
@@ -85,7 +85,7 @@ export default {
   methods: {
     changeProject (project) {
       this.$store.dispatch('ProjectView', project.id)
-      this.$store.dispatch('SetProject', project)
+      this.$store.dispatch('SetProject', project.id ? project : {})
       this.$store.dispatch('ToggleTheme', project.id ? 'dark' : 'light')
       this.$message.success(`${this.$t('message.switch.to')} "${project.displaytext || project.name}"`)
       if (this.$route.name !== 'dashboard') {

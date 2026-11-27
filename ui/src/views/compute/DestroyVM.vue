@@ -209,7 +209,8 @@ export default {
             loading: true,
             opts: []
           }
-          promises.push(this.callListVolume(vmId))
+          const vm = this.selectedItems.find(item => item.id === vmId)
+          promises.push(this.callListVolume(vmId, vm?.projectid))
         })
         Promise.all(promises).then((data) => {
           data.forEach(item => {
@@ -221,15 +222,16 @@ export default {
     },
     async fetchVolumes () {
       this.loading = true
-      const data = await this.callListVolume(this.resource.id)
+      const data = await this.callListVolume(this.resource.id, this.resource.projectid)
       this.volumes = data.volumes || []
       this.loading = false
     },
-    callListVolume (vmId) {
+    callListVolume (vmId, projectId) {
       return new Promise((resolve) => {
         this.volumes = []
         api('listVolumes', {
           virtualMachineId: vmId,
+          projectid: projectId,
           type: 'DATADISK',
           details: 'min',
           listall: 'true'

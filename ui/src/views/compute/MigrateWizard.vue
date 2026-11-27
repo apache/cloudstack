@@ -306,7 +306,8 @@ export default {
       this.volumes = []
       api('listVolumes', {
         listAll: true,
-        virtualmachineid: this.resource.id
+        virtualmachineid: this.resource.id,
+        projectid: this.resource.projectid
       }).then(response => {
         this.volumes = response?.listvolumesresponse?.volume || []
       }).finally(() => {

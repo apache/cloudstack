@@ -75,6 +75,10 @@ export default {
     preFillContent: {
       type: Object,
       default: () => {}
+    },
+    projectId: {
+      type: String,
+      default: null
     }
   },
   data () {
@@ -139,10 +143,11 @@ export default {
   },
   methods: {
     fetchData () {
+      const projectId = this.projectId || this.$store.getters.project?.id
       const params = {
-        projectid: this.$store.getters.project ? this.$store.getters.project.id : null,
-        domainid: this.$store.getters.project && this.$store.getters.project.id ? null : this.$store.getters.userInfo.domainid,
-        account: this.$store.getters.project && this.$store.getters.project.id ? null : this.$store.getters.userInfo.account,
+        projectid: projectId || null,
+        domainid: projectId ? null : this.$store.getters.userInfo.domainid,
+        account: projectId ? null : this.$store.getters.userInfo.account,
         page: this.page,
         pageSize: this.pageSize
       }

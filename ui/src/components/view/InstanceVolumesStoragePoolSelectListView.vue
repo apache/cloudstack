@@ -170,7 +170,8 @@ export default {
       this.volumes = []
       api('listVolumes', {
         listAll: true,
-        virtualmachineid: this.resource.id
+        virtualmachineid: this.resource.id,
+        projectid: this.resource.projectid
       }).then(response => {
         var volumes = response.listvolumesresponse.volume
         if (volumes && volumes.length > 0) {
