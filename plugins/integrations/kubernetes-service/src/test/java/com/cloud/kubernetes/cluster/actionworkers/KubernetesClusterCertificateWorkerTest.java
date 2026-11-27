@@ -244,6 +244,7 @@ public class KubernetesClusterCertificateWorkerTest {
     @Test
     public void rotationLeavesAClusterTakenMeanwhileInItsState() {
         // e.g. moved to Alert as an interrupted rotation by another management server, and maybe retried since
+        worker.setAutomatic(true);
         Mockito.doReturn(false).when(worker).isStillOwnRotation();
         Assert.assertTrue(worker.rotateCertificates());
         Mockito.verify(worker, Mockito.never()).stateTransitTo(CLUSTER_ID, KubernetesCluster.Event.OperationSucceeded);
@@ -251,6 +252,7 @@ public class KubernetesClusterCertificateWorkerTest {
         Mockito.verify(kubernetesClusterDetailsDao, Mockito.never()).removeDetail(CLUSTER_ID, KubernetesClusterCertificateWorker.ROTATION_FAILED_DETAIL);
         Mockito.verify(kubernetesClusterDetailsDao, Mockito.never()).addDetail(ArgumentMatchers.eq(CLUSTER_ID),
                 ArgumentMatchers.eq(KubernetesClusterCertificateWorker.ROTATION_SUCCEEDED_DETAIL), ArgumentMatchers.anyString(), ArgumentMatchers.anyBoolean());
+        Mockito.verify(worker, Mockito.never()).recordEvent(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString());
     }
 
     @Test

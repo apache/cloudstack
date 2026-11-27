@@ -359,15 +359,15 @@ public class KubernetesClusterCertificateWorker extends KubernetesClusterActionW
             clearRotationDetails();
             kubernetesClusterDetailsDao.removeDetail(kubernetesCluster.getId(), ROTATION_FAILED_DETAIL);
             kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), ROTATION_SUCCEEDED_DETAIL, String.valueOf(System.currentTimeMillis()), false);
+            if (automatic) {
+                recordEvent(KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CERTIFICATES_ROTATE, EventVO.LEVEL_INFO,
+                        String.format("Automatically renewed the control plane certificates of Kubernetes cluster %s. Kubeconfigs downloaded " +
+                                "before keep working only until their old certificate expires; download it again", kubernetesCluster.getName()));
+            }
         } else {
             // e.g. taken for an interrupted rotation meanwhile, maybe retried since: leave the state and details alone
             logger.warn("Renewed the certificates of Kubernetes cluster {}, but the cluster was taken out of this rotation meanwhile; leaving its state",
                     kubernetesCluster);
-        }
-        if (automatic) {
-            recordEvent(KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CERTIFICATES_ROTATE, EventVO.LEVEL_INFO,
-                    String.format("Automatically renewed the control plane certificates of Kubernetes cluster %s. Kubeconfigs downloaded " +
-                            "before keep working only until their old certificate expires; download it again", kubernetesCluster.getName()));
         }
         logger.info("Rotated the control plane certificates of Kubernetes cluster {}", kubernetesCluster);
         return true;
