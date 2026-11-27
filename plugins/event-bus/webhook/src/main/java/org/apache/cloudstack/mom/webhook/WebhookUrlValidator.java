@@ -19,11 +19,12 @@ package org.apache.cloudstack.mom.webhook;
 
 import java.net.InetAddress;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.conn.DnsResolver;
+import org.apache.http.impl.conn.SystemDefaultDnsResolver;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.net.NetUtils;
@@ -42,18 +43,9 @@ public final class WebhookUrlValidator {
     public static URI validateWebhookDestinationURI(final URI uri, final boolean allowHttp,
                                                     final String blocklist, final boolean blockLocalAddresses) {
         validateScheme(uri, allowHttp);
-        InetAddress[] resolved = validateResolvedAddresses(uri, blocklist, blockLocalAddresses);
-        return buildResolvedUri(uri, resolved[0]);
-    }
-
-    private static URI buildResolvedUri(final URI uri, final InetAddress address) {
-        try {
-            return new URI(uri.getScheme(), uri.getUserInfo(), address.getHostAddress(), uri.getPort(),
-                    uri.getPath(), uri.getQuery(), uri.getFragment());
-        } catch (URISyntaxException e) {
-            throw new InvalidParameterValueException(
-                    String.format("Failed to build resolved webhook payload URL from [%s]", uri));
-        }
+        validateResolvedAddresses(uri, blocklist, blockLocalAddresses);
+        // Keep hostname for TLS and Host header
+        return uri;
     }
 
     public static void validateScheme(final URI uri, final boolean allowHttp) {
@@ -93,15 +85,22 @@ public final class WebhookUrlValidator {
                     String.format("Failed to resolve webhook payload URL host [%s]", host));
         }
 
-        final String[] blockedCidrs = getNormalizedBlocklist(blocklist);
-        for (InetAddress address : resolved) {
-            if ((blockLocalAddresses && isLocalManagementServerAddress(address)) ||
-                    NetUtils.isIpInCidrList(address, blockedCidrs)) {
-                throw new InvalidParameterValueException(
-                        String.format("Webhook payload URL [%s] resolves to a blocked IP address",  uri));
-            }
+        if (isAnyAddressBlocked(resolved, getNormalizedBlocklist(blocklist), blockLocalAddresses)) {
+            throw new InvalidParameterValueException(
+                    String.format("Webhook payload URL [%s] resolves to a blocked IP address",  uri));
         }
         return resolved;
+    }
+
+    static boolean isAnyAddressBlocked(final InetAddress[] addresses, final String[] blockedCidrs,
+            final boolean blockLocalAddresses) {
+        for (InetAddress address : addresses) {
+            if ((blockLocalAddresses && isLocalManagementServerAddress(address)) ||
+                    NetUtils.isIpInCidrList(address, blockedCidrs)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static boolean isLocalManagementServerAddress(final InetAddress address) {
@@ -119,5 +118,43 @@ public final class WebhookUrlValidator {
                 .map(String::trim)
                 .filter(StringUtils::isNotBlank)
                 .toArray(String[]::new);
+    }
+
+    // DnsResolver can only throw UnknownHostException
+    public static class BlockedDestinationException extends UnknownHostException {
+        public BlockedDestinationException(final String host) {
+            super(String.format("Webhook payload URL host [%s] resolves to a blocked IP address", host));
+        }
+    }
+
+    // Validates addresses HttpClient connects to (not with a proxy)
+    public static class DestinationPolicyDnsResolver implements DnsResolver {
+        private final DnsResolver delegate;
+        private final String[] blockedCidrs;
+        private final boolean blockLocalAddresses;
+
+        public DestinationPolicyDnsResolver(final String blocklist, final boolean blockLocalAddresses) {
+            this(SystemDefaultDnsResolver.INSTANCE, blocklist, blockLocalAddresses);
+        }
+
+        public DestinationPolicyDnsResolver(final DnsResolver delegate, final String blocklist,
+                final boolean blockLocalAddresses) {
+            this.delegate = delegate;
+            this.blockedCidrs = getNormalizedBlocklist(blocklist);
+            this.blockLocalAddresses = blockLocalAddresses;
+        }
+
+        @Override
+        public InetAddress[] resolve(final String host) throws UnknownHostException {
+            final InetAddress[] resolved = delegate.resolve(host);
+            if (resolved == null || resolved.length == 0) {
+                throw new UnknownHostException(host);
+            }
+            // Fail closed if any address is blocked
+            if (isAnyAddressBlocked(resolved, blockedCidrs, blockLocalAddresses)) {
+                throw new BlockedDestinationException(host);
+            }
+            return resolved;
+        }
     }
 }
