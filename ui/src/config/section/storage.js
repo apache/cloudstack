@@ -514,6 +514,7 @@ export default {
           label: 'label.action.download.screenshot',
           message: 'message.action.download.screenshot',
           dataView: true,
+          showSuccessMessage: false,
           show: (record) => {
             return record.status === 'BackedUp' && ['Valid', 'NotValid'].includes(record.validationstatus)
           },

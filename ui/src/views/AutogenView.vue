@@ -1623,6 +1623,7 @@ export default {
           title: this.$t(action.label),
           description: resourceName,
           name: resourceName,
+          showSuccessMessage: action.showSuccessMessage !== false,
           successMethod: result => {
             if (this.selectedItems.length > 0) {
               eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'success' })
