@@ -31,6 +31,9 @@ const service = axios.create({
 })
 
 const err = (error) => {
+  if (axios.isCancel(error)) {
+    return Promise.reject(error)
+  }
   const response = error.response
   let countNotify = store.getters.countNotify
   if (response) {
