@@ -59,6 +59,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -1009,5 +1010,34 @@ public class NetworkOrchestratorTest extends TestCase {
             assertFalse(nicProfile.isSecurityGroupEnabled());
             assertEquals("testtag", nicProfile.getName());
         }
+    }
+
+    private NetworkVO mockPersistentNetwork(URI broadcastUri, GuestType guestType) {
+        NetworkVO network = mock(NetworkVO.class);
+        when(network.getBroadcastUri()).thenReturn(broadcastUri);
+        when(network.getGuestType()).thenReturn(guestType);
+        return network;
+    }
+
+    @Test
+    public void testNetworkMeetsPersistenceCriteriaForVlanAndVxlan() {
+        NetworkOfferingVO offering = mock(NetworkOfferingVO.class);
+        when(offering.isPersistent()).thenReturn(true);
+
+        NetworkVO vlanNetwork = mockPersistentNetwork(BroadcastDomainType.Vlan.toUri(100), GuestType.Isolated);
+        NetworkVO vxlanNetwork = mockPersistentNetwork(BroadcastDomainType.Vxlan.toUri(5000), GuestType.Isolated);
+
+        assertTrue(testOrchestrator.networkMeetsPersistenceCriteria(vlanNetwork, offering, true));
+        assertTrue(testOrchestrator.networkMeetsPersistenceCriteria(vxlanNetwork, offering, true));
+    }
+
+    @Test
+    public void testNetworkMeetsPersistenceCriteriaForNonPersistentOffering() {
+        NetworkOfferingVO offering = mock(NetworkOfferingVO.class);
+        when(offering.isPersistent()).thenReturn(false);
+
+        NetworkVO vxlanNetwork = mockPersistentNetwork(BroadcastDomainType.Vxlan.toUri(5000), GuestType.Isolated);
+
+        assertFalse(testOrchestrator.networkMeetsPersistenceCriteria(vxlanNetwork, offering, true));
     }
 }
