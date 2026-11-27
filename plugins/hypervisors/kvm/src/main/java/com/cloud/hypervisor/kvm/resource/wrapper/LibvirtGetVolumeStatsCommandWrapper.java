@@ -21,12 +21,8 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.util.HashMap;
 
-import org.libvirt.Connect;
-import org.libvirt.LibvirtException;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.resource.CommandWrapper;
@@ -42,33 +38,43 @@ public final class LibvirtGetVolumeStatsCommandWrapper extends CommandWrapper<Ge
 
     @Override
     public Answer execute(final GetVolumeStatsCommand cmd, final LibvirtComputingResource libvirtComputingResource) {
+        String storeUuid = cmd.getPoolUuid();
+        StoragePoolType poolType = cmd.getPoolType();
+        KVMStoragePool sourceKVMPool;
         try {
-            Connect conn = LibvirtConnection.getConnection();
-            String storeUuid = cmd.getPoolUuid();
-            StoragePoolType poolType = cmd.getPoolType();
-            HashMap<String, VolumeStatsEntry> statEntry = new HashMap<String, VolumeStatsEntry>();
-            for (String volumeUuid : cmd.getVolumeUuids()) {
-                VolumeStatsEntry volumeStatsEntry = getVolumeStat(libvirtComputingResource, conn, volumeUuid, storeUuid, poolType);
-                if (volumeStatsEntry == null) {
-                    String msg = "Can't get disk stats as pool or disk details unavailable for volume: " + volumeUuid + " on the storage pool: " + storeUuid;
-                    return new GetVolumeStatsAnswer(cmd, msg, null);
-                }
-                statEntry.put(volumeUuid, volumeStatsEntry);
-            }
-            return new GetVolumeStatsAnswer(cmd, "", statEntry);
-        } catch (LibvirtException | CloudRuntimeException e) {
+            // All volumes of the command are on the same pool, so look it up once instead of once per volume.
+            sourceKVMPool = libvirtComputingResource.getStoragePoolMgr().getStoragePool(poolType, storeUuid);
+        } catch (CloudRuntimeException e) {
             return new GetVolumeStatsAnswer(cmd, "Can't get vm disk stats: " + e.getMessage(), null);
         }
-    }
-
-    private VolumeStatsEntry getVolumeStat(final LibvirtComputingResource libvirtComputingResource, final Connect conn, final String volumeUuid, final String storeUuid, final StoragePoolType poolType) throws LibvirtException {
-        KVMStoragePool sourceKVMPool = libvirtComputingResource.getStoragePoolMgr().getStoragePool(poolType, storeUuid);
         if (sourceKVMPool == null) {
-            return null;
+            return new GetVolumeStatsAnswer(cmd, "Can't get disk stats as the storage pool " + storeUuid + " is unavailable", null);
         }
 
-        KVMPhysicalDisk sourceKVMVolume = sourceKVMPool.getPhysicalDisk(volumeUuid);
+        HashMap<String, VolumeStatsEntry> statEntry = new HashMap<String, VolumeStatsEntry>();
+        for (String volumeUuid : cmd.getVolumeUuids()) {
+            VolumeStatsEntry volumeStatsEntry = getVolumeStat(sourceKVMPool, volumeUuid, storeUuid);
+            if (volumeStatsEntry != null) {
+                statEntry.put(volumeUuid, volumeStatsEntry);
+            }
+        }
+        if (statEntry.isEmpty() && !cmd.getVolumeUuids().isEmpty()) {
+            return new GetVolumeStatsAnswer(cmd, "Can't get disk stats for any volume on the storage pool: " + storeUuid, null);
+        }
+        // A volume that can't be resolved is skipped, so the stats of the other volumes are still reported.
+        return new GetVolumeStatsAnswer(cmd, "", statEntry);
+    }
+
+    private VolumeStatsEntry getVolumeStat(final KVMStoragePool sourceKVMPool, final String volumeUuid, final String storeUuid) {
+        KVMPhysicalDisk sourceKVMVolume;
+        try {
+            sourceKVMVolume = sourceKVMPool.getPhysicalDisk(volumeUuid);
+        } catch (CloudRuntimeException e) {
+            logger.warn("Can't get disk stats for volume {} on the storage pool {}: {}", volumeUuid, storeUuid, e.getMessage());
+            return null;
+        }
         if (sourceKVMVolume == null) {
+            logger.warn("Can't get disk stats as disk details are unavailable for volume {} on the storage pool {}", volumeUuid, storeUuid);
             return null;
         }
 
