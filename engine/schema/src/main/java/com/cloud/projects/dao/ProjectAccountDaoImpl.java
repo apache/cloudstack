@@ -193,14 +193,16 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     }
 
     @Override
-    public void removeUserFromProjects(long userId) {
+    public int removeByProjectIdAccountId(long projectId, long accountId) {
         SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
-        sc.setParameters("userId", userId);
+        sc.setParameters("projectId", projectId);
+        sc.setParameters("accountId", accountId);
 
-        int removedCount = remove(sc);
-        if (removedCount > 0) {
-            logger.debug(String.format("Removed user [%s] from %s project(s).", userId, removedCount));
+        int rowsRemoved = remove(sc);
+        if (rowsRemoved > 0) {
+            logger.debug("Removed {} mappings of account id={} from project id={}", rowsRemoved, accountId, projectId);
         }
+        return rowsRemoved;
     }
 
     @Override
