@@ -82,7 +82,12 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
         return project;
     }
 
-    private void checkAccess(Long projectId) {
+    /**
+     * Guard for creating, updating and deleting project roles and their permissions. Requires the
+     * dynamic API checker to be enabled and the caller to be a root admin, a domain admin whose
+     * domain hierarchy covers the project, or a project Admin member.
+     */
+    private void checkProjectRoleManageAccess(Long projectId) {
         Project project = validateProjectId(projectId);
         CallContext.current().setProject(project);
 
@@ -90,6 +95,27 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
             throw new PermissionDeniedException("Dynamic api checker is not enabled, aborting role operation");
         }
 
+        ProjectAccount projectAccount = checkProjectMembership(project);
+        if (projectAccount != null && ProjectAccount.Role.Admin != projectAccount.getAccountRole()) {
+            throw new PermissionDeniedException("User unauthorized to perform operation in the project");
+        }
+    }
+
+    /**
+     * Guard for looking up project roles and their permissions. Any member of the project is
+     * allowed: the API access checkers resolve a member's own project role on every call made in
+     * project context, so a lookup must not demand project Admin or the dynamic API checker.
+     */
+    private void checkProjectRoleReadAccess(Long projectId) {
+        Project project = validateProjectId(projectId);
+        checkProjectMembership(project);
+    }
+
+    /**
+     * Returns the caller's membership in the project, or null for a root admin or a domain admin
+     * whose domain hierarchy covers the project. Throws when the caller may not see the project.
+     */
+    private ProjectAccount checkProjectMembership(Project project) {
         User user = getCurrentUser();
         Account callerAcc = accountDao.findById(user.getAccountId());
 
@@ -98,32 +124,30 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
         }
 
         if (accountService.isRootAdmin(callerAcc.getId())) {
-            return;
+            return null;
         }
 
         if (accountService.isDomainAdmin(callerAcc.getAccountId())) {
             // A domain admin may only manage a project that belongs to their own domain hierarchy,
             // not an arbitrary project elsewhere in the system.
             accountService.checkAccess(callerAcc, domainDao.findById(project.getDomainId()));
-            return;
+            return null;
         }
 
-        ProjectAccount projectAccount = projAccDao.findByProjectIdUserId(projectId, callerAcc.getAccountId(), user.getId());
+        ProjectAccount projectAccount = projAccDao.findByProjectIdUserId(project.getId(), callerAcc.getAccountId(), user.getId());
         if (projectAccount == null) {
-            projectAccount = projAccDao.findByProjectIdAccountId(projectId, callerAcc.getAccountId());
+            projectAccount = projAccDao.findByProjectIdAccountId(project.getId(), callerAcc.getAccountId());
             if (projectAccount == null) {
                 throw new PermissionDeniedException("User/Account not part of project");
             }
         }
-        if (ProjectAccount.Role.Admin != projectAccount.getAccountRole()) {
-            throw new PermissionDeniedException("User unauthorized to perform operation in the project");
-        }
+        return projectAccount;
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ROLE_CREATE, eventDescription = "creating Project Role")
     public ProjectRole createProjectRole(Long projectId, String name, String description) {
-        checkAccess(projectId);
+        checkProjectRoleManageAccess(projectId);
         return Transaction.execute(new TransactionCallback<ProjectRoleVO>() {
             @Override
             public ProjectRoleVO doInTransaction(TransactionStatus status) {
@@ -135,7 +159,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ROLE_UPDATE, eventDescription = "updating Project Role")
     public ProjectRole updateProjectRole(ProjectRole role, Long projectId, String name, String description) {
-        checkAccess(projectId);
+        checkProjectRoleManageAccess(projectId);
         ProjectRoleVO projectRoleVO = (ProjectRoleVO) role;
         if (StringUtils.isNotEmpty(name)) {
             projectRoleVO.setName(name);
@@ -164,7 +188,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
             return null;
         }
 
-        checkAccess(projectId);
+        checkProjectRoleReadAccess(projectId);
 
         ProjectRoleVO role = projRoleDao.findById(roleId);
         if (role == null) {
@@ -184,7 +208,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
             logger.warn("Invalid project ID provided");
             return null;
         }
-        checkAccess(projectId);
+        checkProjectRoleReadAccess(projectId);
         return ListUtils.toListOfInterface(projRoleDao.findAllRoles(projectId, keyword));
     }
 
@@ -196,7 +220,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
         Rule rule = cmd.getRule();
         Permission permission = cmd.getPermission();
         String description = cmd.getDescription();
-        checkAccess(projectId);
+        checkProjectRoleManageAccess(projectId);
         return Transaction.execute(new TransactionCallback<ProjectRolePermissionVO>() {
             @Override
             public ProjectRolePermissionVO doInTransaction(TransactionStatus status) {
@@ -212,7 +236,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ROLE_PERMISSION_UPDATE, eventDescription = "updating Project Role Permission order")
     public boolean updateProjectRolePermission(Long projectId, ProjectRole projectRole, List<ProjectRolePermission> rolePermissionsOrder) {
-        checkAccess(projectId);
+        checkProjectRoleManageAccess(projectId);
         return projectRole != null && rolePermissionsOrder != null && projRolePermissionsDao.update(projectRole, projectId, rolePermissionsOrder);
 
     }
@@ -220,7 +244,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ROLE_PERMISSION_UPDATE, eventDescription = "updating Project Role Permission")
     public boolean updateProjectRolePermission(Long projectId, ProjectRole projectRole, ProjectRolePermission projectRolePermission, Permission newPermission) {
-        checkAccess(projectId);
+        checkProjectRoleManageAccess(projectId);
         return projectRole != null && projRolePermissionsDao.update(projectRole, projectRolePermission, newPermission);
     }
 
@@ -235,13 +259,13 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ROLE_PERMISSION_DELETE, eventDescription = "deleting Project Role Permission")
     public boolean deleteProjectRolePermission(ProjectRolePermission projectRolePermission) {
-        checkAccess(projectRolePermission.getProjectId());
+        checkProjectRoleManageAccess(projectRolePermission.getProjectId());
         return projRolePermissionsDao.remove(projectRolePermission.getId());
     }
 
     @Override
     public List<ProjectRolePermission> findAllProjectRolePermissions(Long projectId, Long projectRoleId) {
-        checkAccess(projectId);
+        checkProjectRoleReadAccess(projectId);
         List<? extends ProjectRolePermission> permissions = projRolePermissionsDao.findAllByRoleIdSorted(projectRoleId, projectId);
         if (permissions != null) {
             return new ArrayList<>(permissions);
@@ -252,7 +276,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     @Override
     public List<ProjectRole> findProjectRolesByName(Long projectId, String roleName) {
         List<? extends ProjectRole> roles = null;
-        checkAccess(projectId);
+        checkProjectRoleReadAccess(projectId);
         if (StringUtils.isNotBlank(roleName)) {
             roles = projRoleDao.findByName(roleName, projectId);
         }
@@ -262,7 +286,7 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ROLE_DELETE, eventDescription = "deleting Project Role")
     public boolean deleteProjectRole(ProjectRole role, Long projectId) {
-        checkAccess(projectId);
+        checkProjectRoleManageAccess(projectId);
         if (role == null) {
             return false;
         }
