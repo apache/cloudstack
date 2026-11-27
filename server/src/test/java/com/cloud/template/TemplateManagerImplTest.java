@@ -19,11 +19,17 @@
 package com.cloud.template;
 
 
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccountVO;
+import com.cloud.projects.ProjectManager;
+import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
@@ -66,6 +72,7 @@ import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -176,6 +183,15 @@ public class TemplateManagerImplTest extends TestCase {
 
     @Mock
     AccountManager _accountMgr;
+
+    @Mock
+    ProjectManager _projectMgr;
+
+    @Mock
+    ProjectAccountDao _projectAccountDao;
+
+    @Mock
+    DomainDao _domainDao;
 
     @Mock
     VnfTemplateManager vnfTemplateManager;
@@ -761,6 +777,102 @@ public class TemplateManagerImplTest extends TestCase {
         templateManager.verifyHeuristicRulesForZone(vmTemplateVOMock, 1L);
 
         Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.ISO, vmTemplateVOMock);
+    }
+
+    private UpdateTemplatePermissionsCmd mockProjectTemplatePermissionsUpdate() {
+        UpdateTemplatePermissionsCmd cmd = mock(UpdateTemplatePermissionsCmd.class);
+        when(cmd.getId()).thenReturn(10L);
+        when(cmd.getAccountNames()).thenReturn(null);
+        when(cmd.getProjectIds()).thenReturn(null);
+        when(cmd.isFeatured()).thenReturn(null);
+        when(cmd.isPublic()).thenReturn(null);
+        when(cmd.isExtractable()).thenReturn(false);
+        when(cmd.getOperation()).thenReturn(null);
+
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(template.getRemoved()).thenReturn(null);
+        when(template.getAccountId()).thenReturn(5L);
+        when(vmTemplateDao.findById(10L)).thenReturn(template);
+
+        Account projectOwnerAccount = mock(Account.class);
+        when(projectOwnerAccount.getId()).thenReturn(5L);
+        when(projectOwnerAccount.getType()).thenReturn(Account.Type.PROJECT);
+        when(_accountMgr.getAccount(5L)).thenReturn(projectOwnerAccount);
+
+        Project project = mock(Project.class);
+        when(project.getId()).thenReturn(7L);
+        when(_projectMgr.findByProjectAccountId(5L)).thenReturn(project);
+        return cmd;
+    }
+
+    @Test
+    public void testUpdateTemplatePermissionsAllowsProjectAdminToActAsOwner() {
+        UpdateTemplatePermissionsCmd cmd = mockProjectTemplatePermissionsUpdate();
+        VMTemplateVO template = vmTemplateDao.findById(10L);
+        when(template.getId()).thenReturn(10L);
+        when(vmTemplateDao.createForUpdate()).thenReturn(mock(VMTemplateVO.class));
+        Account projectOwnerAccount = _accountMgr.getAccount(5L);
+        when(projectOwnerAccount.getDomainId()).thenReturn(1L);
+        when(_domainDao.findById(1L)).thenReturn(mock(DomainVO.class));
+
+        // caller is a project member who is not the template's owner account (the project) and not a
+        // CloudStack admin, but is the Project Admin of the project that owns the template
+        when(_projectAccountDao.canModifyProjectAccount(anyLong(), eq(5L))).thenReturn(true);
+
+        boolean result = templateManager.updateTemplateOrIsoPermissions(cmd);
+
+        Assert.assertTrue("Project admin should be allowed to update permissions on a project-owned template", result);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateTemplatePermissionsRejectsProjectMemberThatIsNotProjectAdmin() {
+        UpdateTemplatePermissionsCmd cmd = mockProjectTemplatePermissionsUpdate();
+        when(_projectAccountDao.canModifyProjectAccount(anyLong(), eq(5L))).thenReturn(false);
+
+        templateManager.updateTemplateOrIsoPermissions(cmd);
+    }
+
+    @Test
+    public void isAdminOfOwningProjectTestOwnerIsNotAProject() {
+        Account owner = mock(Account.class);
+        when(owner.getType()).thenReturn(Account.Type.NORMAL);
+
+        Assert.assertFalse(templateManager.isAdminOfOwningProject(mock(Account.class), mock(User.class), owner));
+        Mockito.verifyNoInteractions(_projectMgr, _projectAccountDao);
+    }
+
+    @Test
+    public void isAdminOfOwningProjectTestProjectNotFound() {
+        Account owner = mock(Account.class);
+        when(owner.getId()).thenReturn(5L);
+        when(owner.getType()).thenReturn(Account.Type.PROJECT);
+        when(_projectMgr.findByProjectAccountId(5L)).thenReturn(null);
+
+        Assert.assertFalse(templateManager.isAdminOfOwningProject(mock(Account.class), mock(User.class), owner));
+        Mockito.verifyNoInteractions(_projectAccountDao);
+    }
+
+    @Test
+    public void isAdminOfOwningProjectTestUsesUserRoleInOwningProject() {
+        Account caller = mock(Account.class);
+        when(caller.getId()).thenReturn(2L);
+        User user = mock(User.class);
+        when(user.getId()).thenReturn(3L);
+        Account owner = mock(Account.class);
+        when(owner.getType()).thenReturn(Account.Type.PROJECT);
+        when(owner.getId()).thenReturn(5L);
+        Project project = mock(Project.class);
+        when(project.getId()).thenReturn(7L);
+        when(_projectMgr.findByProjectAccountId(5L)).thenReturn(project);
+        when(_projectAccountDao.findByProjectIdUserId(7L, 2L, 3L)).thenReturn(mock(ProjectAccountVO.class));
+        when(_projectAccountDao.canUserModifyProject(7L, 2L, 3L)).thenReturn(false);
+
+        Assert.assertFalse(templateManager.isAdminOfOwningProject(caller, user, owner));
+        Mockito.verify(_projectAccountDao, Mockito.never()).canModifyProjectAccount(anyLong(), anyLong());
+
+        when(_projectAccountDao.canUserModifyProject(7L, 2L, 3L)).thenReturn(true);
+        Assert.assertTrue(templateManager.isAdminOfOwningProject(caller, user, owner));
     }
 
     @Test
