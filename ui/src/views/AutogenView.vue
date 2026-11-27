@@ -1600,7 +1600,7 @@ export default {
           }
         }
         if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
-          this.$store.dispatch('UpdateConfiguration')
+          this.$store.dispatch('UpdateLdapConfigurationFlag')
         }
         if (jobId) {
           eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'InProgress', jobid: jobId })
