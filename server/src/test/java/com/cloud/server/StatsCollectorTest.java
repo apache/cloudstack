@@ -37,6 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import com.cloud.utils.DateUtil;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.google.gson.JsonSyntaxException;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
@@ -133,6 +135,9 @@ public class StatsCollectorTest {
 
     @Mock
     private VlanDao vlanDao;
+
+    @Mock
+    private ManagementServerHostDao managementServerHostDao;
 
     private static Gson gson = new Gson();
 
@@ -376,6 +381,7 @@ public class StatsCollectorTest {
 
     @Test
     public void vmStatsCleanerTestCatchesCloudRuntimeExceptionAndKeepsRunning() {
+        setStatsCleanupOwner(1L);
         Mockito.doThrow(new CloudRuntimeException("Communications link failure")).when(statsCollector).cleanUpVirtualMachineStats();
         StatsCollector.VmStatsCleaner vmStatsCleaner = statsCollector.new VmStatsCleaner();
 
@@ -386,11 +392,72 @@ public class StatsCollectorTest {
 
     @Test
     public void volumeStatsCleanerTestCatchesCloudRuntimeExceptionAndKeepsRunning() {
+        setStatsCleanupOwner(1L);
         Mockito.doThrow(new CloudRuntimeException("Communications link failure")).when(statsCollector).cleanUpVolumeStats();
         StatsCollector.VolumeStatsCleaner volumeStatsCleaner = statsCollector.new VolumeStatsCleaner();
 
         volumeStatsCleaner.run();
 
+        Mockito.verify(statsCollector).cleanUpVolumeStats();
+    }
+
+    private void setStatsCleanupOwner(long ownerId) {
+        statsCollector.managementServerNodeId = 1L;
+        ManagementServerHostVO owner = Mockito.mock(ManagementServerHostVO.class);
+        Mockito.when(owner.getMsid()).thenReturn(ownerId);
+        Mockito.when(managementServerHostDao.findOneByLongestRuntime()).thenReturn(owner);
+    }
+
+    @Test
+    public void statsCleanersRunOnLongestRunningServer() {
+        setStatsCleanupOwner(1L);
+        Mockito.doNothing().when(statsCollector).cleanUpVirtualMachineStats();
+        Mockito.doNothing().when(statsCollector).cleanUpVolumeStats();
+
+        statsCollector.new VmStatsCleaner().runInContext();
+        statsCollector.new VolumeStatsCleaner().runInContext();
+
+        Mockito.verify(statsCollector).cleanUpVirtualMachineStats();
+        Mockito.verify(statsCollector).cleanUpVolumeStats();
+    }
+
+    @Test
+    public void statsCleanersSkipOtherServers() {
+        setStatsCleanupOwner(2L);
+
+        statsCollector.new VmStatsCleaner().runInContext();
+        statsCollector.new VolumeStatsCleaner().runInContext();
+
+        Mockito.verify(statsCollector, Mockito.never()).cleanUpVirtualMachineStats();
+        Mockito.verify(statsCollector, Mockito.never()).cleanUpVolumeStats();
+    }
+
+    @Test
+    public void statsCleanersSkipWhenNoServerIsUp() {
+        statsCollector.new VmStatsCleaner().runInContext();
+        statsCollector.new VolumeStatsCleaner().runInContext();
+
+        Mockito.verify(statsCollector, Mockito.never()).cleanUpVirtualMachineStats();
+        Mockito.verify(statsCollector, Mockito.never()).cleanUpVolumeStats();
+    }
+
+    @Test
+    public void statsCleanersTakeOverWhenOldestServerChanges() {
+        setStatsCleanupOwner(2L);
+        StatsCollector.VmStatsCleaner vmCleaner = statsCollector.new VmStatsCleaner();
+        StatsCollector.VolumeStatsCleaner volumeCleaner = statsCollector.new VolumeStatsCleaner();
+        vmCleaner.runInContext();
+        volumeCleaner.runInContext();
+        Mockito.verify(statsCollector, Mockito.never()).cleanUpVirtualMachineStats();
+        Mockito.verify(statsCollector, Mockito.never()).cleanUpVolumeStats();
+
+        setStatsCleanupOwner(1L);
+        Mockito.doNothing().when(statsCollector).cleanUpVirtualMachineStats();
+        Mockito.doNothing().when(statsCollector).cleanUpVolumeStats();
+        vmCleaner.runInContext();
+        volumeCleaner.runInContext();
+
+        Mockito.verify(statsCollector).cleanUpVirtualMachineStats();
         Mockito.verify(statsCollector).cleanUpVolumeStats();
     }
 

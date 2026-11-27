@@ -1297,6 +1297,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
     }
 
+    private boolean isStatsCleanupOwner() {
+        ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
+        return msHost != null && msHost.getMsid() == managementServerNodeId;
+    }
+
     /**
      * <p>Previously, the VM stats cleanup process was triggered during the data collection process.
      * So, when data collection was disabled, the cleaning process was also disabled.</p>
@@ -1309,6 +1314,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         @Override
         protected void runInContext() {
             try {
+                if (!isStatsCleanupOwner()) {
+                    return;
+                }
                 cleanUpVirtualMachineStats();
             } catch (RuntimeException e) {
                 logger.error("Error trying to clean up VM stats", e);
@@ -1320,6 +1328,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         @Override
         protected void runInContext() {
             try {
+                if (!isStatsCleanupOwner()) {
+                    return;
+                }
                 cleanUpVolumeStats();
             } catch (RuntimeException e) {
                 logger.error("Error trying to clean up Volume stats", e);
