@@ -38,7 +38,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "rotateKubernetesClusterCertificates",
         description = "Renews the kubeadm-managed control plane certificates of a running CloudManaged Kubernetes cluster, " +
-                "one control node at a time, and refreshes the kubeconfig returned by getKubernetesClusterConfig. " +
+                "one control node at a time, and refreshes the kubeconfig returned by getKubernetesClusterConfig; " +
+                "an operator-supplied /etc/kubernetes/user.conf is not renewed. " +
                 "The cluster certificate authorities are not rotated. Requires Kubernetes 1.20 or later",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,

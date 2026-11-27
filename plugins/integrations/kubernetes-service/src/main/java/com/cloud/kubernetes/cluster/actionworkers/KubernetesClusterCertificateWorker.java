@@ -196,6 +196,10 @@ public class KubernetesClusterCertificateWorker extends KubernetesClusterActionW
                 if (i == 0 && userKubeConfigOutput.contains(KubernetesClusterCertificateUtil.USER_KUBECONFIG_PRESENT)) {
                     userKubeConfig = true;
                     userKubeConfigExpiry = KubernetesClusterCertificateUtil.getKubeConfigClientCertificateExpiry(userKubeConfigOutput);
+                    if (userKubeConfigExpiry != null) {
+                        // operator-supplied: monitored, but never renewed by kubeadm
+                        entries.add(new CertificateExpiry(KubernetesClusterCertificateUtil.USER_KUBECONFIG_ENTRY_NAME, userKubeConfigExpiry, false, true));
+                    }
                 }
                 Date rootKubeConfigExpiry = KubernetesClusterCertificateUtil.getKubeConfigClientCertificateExpiry(
                         StringUtils.substringBefore(kubeConfigOutput, USER_KUBECONFIG_SEPARATOR));

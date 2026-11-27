@@ -48,6 +48,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterCertificateWorker;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
+import com.cloud.kubernetes.cluster.utils.KubernetesClusterCertificateUtil;
 import com.cloud.kubernetes.cluster.utils.KubernetesClusterCertificateUtil.CertificateExpiry;
 import com.cloud.kubernetes.cluster.utils.KubernetesClusterCertificateUtil.CertificateExpiryReport;
 import com.cloud.kubernetes.version.KubernetesSupportedVersionVO;
@@ -358,6 +359,20 @@ public class KubernetesClusterCertificateManagementTest {
         Mockito.doReturn(report).when(worker).checkCertificateExpiry();
         manager.processKubernetesClusterCertificates(cluster, now);
         verifyAlerts(1);
+        Mockito.verify(worker, Mockito.never()).rotateCertificates();
+    }
+
+    @Test
+    public void operatorUserConfAlertsButIsNotRenewed() {
+        CertificateExpiryReport report = new CertificateExpiryReport();
+        report.add("cks-control-1", Arrays.asList(
+                new CertificateExpiry(KubernetesClusterCertificateUtil.USER_KUBECONFIG_ENTRY_NAME, new Date(now.getTime() + 10 * DAY), false, true),
+                new CertificateExpiry("apiserver", new Date(now.getTime() + 300 * DAY), false, false)));
+        Mockito.doReturn(report).when(worker).checkCertificateExpiry();
+        manager.processKubernetesClusterCertificates(cluster, now);
+        verifyAlerts(1);
+        ArgumentCaptor<String> bodies = verifyAlertBodies(1);
+        Assert.assertTrue(bodies.getValue().contains("operator-supplied /etc/kubernetes/user.conf"));
         Mockito.verify(worker, Mockito.never()).rotateCertificates();
     }
 

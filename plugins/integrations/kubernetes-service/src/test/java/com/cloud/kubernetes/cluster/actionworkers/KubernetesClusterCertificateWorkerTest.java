@@ -407,7 +407,10 @@ public class KubernetesClusterCertificateWorkerTest {
 
         CertificateExpiryReport report = worker.checkCertificateExpiry();
 
-        Assert.assertEquals(12, report.getEntries().size());
+        Assert.assertEquals(13, report.getEntries().size());
+        Assert.assertTrue(report.getEntries().stream().anyMatch(entry -> entry.getName().startsWith(KubernetesClusterCertificateUtil.USER_KUBECONFIG_ENTRY_NAME)
+                && entry.isExternallyManaged()));
+        Assert.assertFalse(report.getFirstRenewableLeafExpiry().getName().startsWith(KubernetesClusterCertificateUtil.USER_KUBECONFIG_ENTRY_NAME));
         Mockito.verify(worker, Mockito.never()).refreshKubeConfigData(ArgumentMatchers.anyLong());
 
         // a user.conf without a client certificate (e.g. a token) can't be compared, so it is left alone too

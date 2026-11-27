@@ -55,6 +55,7 @@ public class KubernetesClusterCertificateUtil {
     public static final String ROOT_KUBECONFIG_CERTIFICATE_COMMAND = "sudo grep -m1 'client-certificate-data:' /root/.kube/config";
 
     public static final String ROOT_KUBECONFIG_ENTRY_NAME = "/root/.kube/config";
+    public static final String USER_KUBECONFIG_ENTRY_NAME = "/etc/kubernetes/user.conf";
     /**
      * getKubernetesClusterConfig hands out an operator-supplied user.conf instead of admin.conf when there is one, so
      * the stored kubeconfig has to be compared with that. Prints a marker when it exists, then its certificate line.
