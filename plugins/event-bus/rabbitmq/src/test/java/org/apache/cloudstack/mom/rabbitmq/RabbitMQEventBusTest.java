@@ -18,19 +18,28 @@
 package org.apache.cloudstack.mom.rabbitmq;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.cloudstack.framework.events.EventSubscriber;
+import org.apache.cloudstack.managed.context.ManagedContext;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
+import com.cloud.utils.Ternary;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 
@@ -39,6 +48,7 @@ public class RabbitMQEventBusTest {
     private RabbitMQEventBus eventBus;
     private Connection connection;
     private Channel channel;
+    private ConcurrentHashMap<String, Ternary<String, Channel, EventSubscriber>> subscribers;
 
     @Before
     public void setUp() throws Exception {
@@ -51,15 +61,17 @@ public class RabbitMQEventBusTest {
         connection = Mockito.mock(Connection.class);
         Mockito.when(connection.createChannel()).thenReturn(channel);
 
-        ((ArrayDeque<?>)getField("s_buffer").get(null)).clear();
+        subscribers = new ConcurrentHashMap<>();
+        getField("subscribers").set(null, subscribers);
+        ((ArrayDeque<?>)getField("eventBuffer").get(null)).clear();
         setConnection(null);
-        getField("s_connectedOnce").set(null, true);
+        getField("hasBeenConnectedOnce").set(null, true);
     }
 
     @After
     public void tearDown() throws Exception {
         setConnection(null);
-        getField("s_connectedOnce").set(null, false);
+        getField("hasBeenConnectedOnce").set(null, false);
     }
 
     private Field getField(String name) throws Exception {
@@ -69,13 +81,23 @@ public class RabbitMQEventBusTest {
     }
 
     private void setConnection(Connection connection) throws Exception {
-        getField("s_connection").set(null, connection);
+        getField("connection").set(null, connection);
     }
 
     private void flushBuffer() throws Exception {
         Method method = RabbitMQEventBus.class.getDeclaredMethod("flushBuffer");
         method.setAccessible(true);
         method.invoke(eventBus);
+    }
+
+    private Runnable reconnectionTask() throws Exception {
+        Constructor<?> constructor = Class.forName(RabbitMQEventBus.class.getName() + "$ReconnectionTask").getDeclaredConstructor(RabbitMQEventBus.class);
+        constructor.setAccessible(true);
+        return (Runnable)constructor.newInstance(eventBus);
+    }
+
+    private void addSubscriber(String queueName, Channel subscriberChannel) {
+        subscribers.put(queueName, new Ternary<>("#", subscriberChannel, Mockito.mock(EventSubscriber.class)));
     }
 
     private Event event(String description) {
@@ -96,7 +118,7 @@ public class RabbitMQEventBusTest {
 
     @Test(expected = EventBusException.class)
     public void publishFailsWhenBrokerWasNeverReachable() throws Exception {
-        getField("s_connectedOnce").set(null, false);
+        getField("hasBeenConnectedOnce").set(null, false);
         RabbitMQEventBus.setServer("localhost");
         RabbitMQEventBus.setPort(1);
         RabbitMQEventBus.setUsername("guest");
@@ -163,5 +185,53 @@ public class RabbitMQEventBusTest {
         setConnection(connection);
         flushBuffer();
         Mockito.verifyNoInteractions(channel);
+    }
+
+    @Test
+    public void onlySubscribersWithoutOpenChannelAreRegistered() throws Exception {
+        Channel openChannel = Mockito.mock(Channel.class);
+        Mockito.when(openChannel.isOpen()).thenReturn(true);
+        addSubscriber("open", openChannel);
+        addSubscriber("closed", Mockito.mock(Channel.class));
+        addSubscriber("none", null);
+        setConnection(connection); // e.g. connected by subscribe() and not by the task itself
+
+        reconnectionTask().run();
+
+        Mockito.verify(channel).queueBind("closed", "cloudstack-events", "#");
+        Mockito.verify(channel).queueBind("none", "cloudstack-events", "#");
+        Mockito.verify(channel, Mockito.never()).queueBind(ArgumentMatchers.eq("open"), ArgumentMatchers.anyString(), ArgumentMatchers.anyString());
+        Assert.assertSame(openChannel, subscribers.get("open").second());
+        Assert.assertSame(channel, subscribers.get("none").second());
+    }
+
+    @Test
+    public void bufferedEventsAreSentEvenIfSubscriberCannotBeRegistered() throws Exception {
+        addSubscriber("failing", null);
+        Mockito.when(channel.queueBind(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
+                .thenThrow(new IOException("bind failed"));
+        eventBus.publish(event("1"));
+        setConnection(connection);
+
+        reconnectionTask().run();
+        verifyPublishedCount(1);
+    }
+
+    @Test
+    public void reconnectionTaskKeepsRunningAfterUnexpectedFailure() throws Exception {
+        ManagedContext context = Mockito.mock(ManagedContext.class);
+        Mockito.doThrow(new IllegalStateException("context failure")).when(context).runWithContext(ArgumentMatchers.any());
+        ManagedContextRunnable.initializeGlobalContext(context);
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        getField("executorService").set(eventBus, executorService);
+        RabbitMQEventBus.setRetryInterval(10);
+        try {
+            eventBus.start();
+            Mockito.verify(context, Mockito.timeout(5000).atLeast(3)).runWithContext(ArgumentMatchers.any());
+        } finally {
+            eventBus.stop();
+            ManagedContextRunnable.setManagedContext(false);
+        }
+        Assert.assertTrue(executorService.isShutdown());
     }
 }

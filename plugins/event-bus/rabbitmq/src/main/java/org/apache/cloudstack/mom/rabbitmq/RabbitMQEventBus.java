@@ -27,8 +27,9 @@ import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import javax.naming.ConfigurationException;
@@ -87,27 +88,31 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     private static Integer retryInterval;
 
     // max number of events kept in memory while the AMQP server is unreachable, 0 disables buffering
-    private static Integer bufferSize = 1000;
+    private static Integer maxEventBufferSize = 1000;
 
     // time in milliseconds after which a buffered event is dropped if it could not be sent
-    private static Integer bufferExpiry = 300000;
+    private static Integer eventBufferExpiryTime = 300000;
 
-    // events (routing key, description, time of buffering) waiting to be sent, oldest first
-    private static final ArrayDeque<Ternary<String, String, Long>> s_buffer = new ArrayDeque<>();
+    /**
+     * events, stored as {routing key, description, time of buffering}, waiting to be sent, oldest first
+     */
+    private static final ArrayDeque<Ternary<String, String, Long>> eventBuffer = new ArrayDeque<>();
 
-    // events are buffered only after the AMQP server was reachable at least once
-    private static volatile boolean s_connectedOnce = false;
+    /**
+     * indicates whether a connection has ever been made, as events are buffered only after the AMQP server was reachable at least once
+     */
+    private static volatile boolean hasBeenConnectedOnce = false;
 
     // hashmap to book keep the registered subscribers
-    private static ConcurrentHashMap<String, Ternary<String, Channel, EventSubscriber>> s_subscribers;
+    private static ConcurrentHashMap<String, Ternary<String, Channel, EventSubscriber>> subscribers;
 
     // connection to AMQP server,
-    private static volatile Connection s_connection = null;
+    private static volatile Connection connection = null;
 
     // AMQP server should consider messages acknowledged once delivered if _autoAck is true
-    private static boolean s_autoAck = true;
+    private static boolean autoAck = true;
 
-    private ExecutorService executorService;
+    private ScheduledExecutorService executorService;
     private static DisconnectHandler disconnectHandler;
     private static BlockedConnectionHandler blockedConnectionHandler;
 
@@ -141,7 +146,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
                 }
             }
 
-            if (retryInterval == null) {
+            if (retryInterval == null || retryInterval <= 0) {
                 retryInterval = 10000;// default to 10s to try out reconnect
             }
 
@@ -149,8 +154,8 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             throw new ConfigurationException("Invalid port number/retry interval");
         }
 
-        s_subscribers = new ConcurrentHashMap<String, Ternary<String, Channel, EventSubscriber>>();
-        executorService = Executors.newCachedThreadPool();
+        subscribers = new ConcurrentHashMap<String, Ternary<String, Channel, EventSubscriber>>();
+        executorService = Executors.newSingleThreadScheduledExecutor();
         disconnectHandler = new DisconnectHandler();
         blockedConnectionHandler = new BlockedConnectionHandler();
 
@@ -190,12 +195,18 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
         RabbitMQEventBus.retryInterval = retryInterval;
     }
 
+    /**
+     * maximum size to which the event buffer may grow
+     */
     public static void setBufferSize(Integer bufferSize) {
-        RabbitMQEventBus.bufferSize = bufferSize;
+        maxEventBufferSize = bufferSize;
     }
 
+    /**
+     * expiry time, in milliseconds, to set for events that cannot be sent
+     */
     public static void setBufferExpiry(Integer bufferExpiry) {
-        RabbitMQEventBus.bufferExpiry = bufferExpiry;
+        eventBufferExpiryTime = bufferExpiry;
     }
 
     /** Call to subscribe to interested set of events
@@ -222,44 +233,9 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             String bindingKey = createBindingKey(topic);
 
             // store the subscriber details before creating channel
-            s_subscribers.put(queueName, new Ternary(bindingKey, null, subscriber));
+            subscribers.put(queueName, new Ternary(bindingKey, null, subscriber));
 
-            // create a channel dedicated for this subscription
-            Connection connection = getConnection();
-            Channel channel = createChannel(connection);
-
-            // create a queue and bind it to the exchange with binding key formed from event topic
-            createExchange(channel, amqpExchangeName);
-            channel.queueDeclare(queueName, false, false, false, null);
-            channel.queueBind(queueName, amqpExchangeName, bindingKey);
-
-            // register a callback handler to receive the events that a subscriber subscribed to
-            channel.basicConsume(queueName, s_autoAck, queueName, new DefaultConsumer(channel) {
-                @Override
-                public void handleDelivery(String queueName, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-                    Ternary<String, Channel, EventSubscriber> queueDetails = s_subscribers.get(queueName);
-                    if (queueDetails != null) {
-                        EventSubscriber subscriber = queueDetails.third();
-                        String routingKey = envelope.getRoutingKey();
-                        String eventSource = getEventSourceFromRoutingKey(routingKey);
-                        String eventCategory = getEventCategoryFromRoutingKey(routingKey);
-                        String eventType = getEventTypeFromRoutingKey(routingKey);
-                        String resourceType = getResourceTypeFromRoutingKey(routingKey);
-                        String resourceUUID = getResourceUUIDFromRoutingKey(routingKey);
-                        Event event = new Event(eventSource, eventCategory, eventType, resourceType, resourceUUID);
-                        event.setDescription(new String(body));
-
-                        // deliver the event to call back object provided by subscriber
-                        subscriber.onEvent(event);
-                    }
-                }
-            });
-
-            // update the channel details for the subscription
-            Ternary<String, Channel, EventSubscriber> queueDetails = s_subscribers.get(queueName);
-            queueDetails.second(channel);
-            s_subscribers.put(queueName, queueDetails);
-
+            registerSubscriber(getConnection(), queueName);
         } catch (AlreadyClosedException closedException) {
             logger.warn("Connection to AMQP service is lost. Subscription:" + queueName + " will be active after reconnection", closedException);
         } catch (ConnectException connectException) {
@@ -271,16 +247,55 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
         return queueId;
     }
 
+    /**
+     * creates a queue for the subscriber, binds it to the exchange and registers a consumer that delivers the events to the subscriber
+     */
+    private void registerSubscriber(Connection connection, String queueName) throws Exception {
+        Ternary<String, Channel, EventSubscriber> subscriberDetails = subscribers.get(queueName);
+
+        // create a channel dedicated for this subscription
+        Channel channel = createChannel(connection);
+
+        // create a queue and bind it to the exchange with binding key formed from event topic
+        createExchange(channel, amqpExchangeName);
+        channel.queueDeclare(queueName, false, false, false, null);
+        channel.queueBind(queueName, amqpExchangeName, subscriberDetails.first());
+
+        // register a callback handler to receive the events that a subscriber subscribed to
+        channel.basicConsume(queueName, autoAck, queueName, new SubscriberConsumer(channel));
+
+        // update the channel details for the subscription
+        subscriberDetails.second(channel);
+        subscribers.put(queueName, subscriberDetails);
+    }
+
+    /**
+     * registers the subscribers that have no open channel, i.e. all of them after a loss of connection
+     */
+    private void registerDisconnectedSubscribers(Connection connection) {
+        for (Map.Entry<String, Ternary<String, Channel, EventSubscriber>> entry : subscribers.entrySet()) {
+            Channel channel = entry.getValue().second();
+            if (channel != null && channel.isOpen()) {
+                continue;
+            }
+            try {
+                registerSubscriber(connection, entry.getKey());
+            } catch (Exception e) {
+                logger.warn("Failed to recreate queues and binding for the subscribers due to " + e.getMessage());
+            }
+        }
+    }
+
     @Override
     public void unsubscribe(UUID subscriberId, EventSubscriber subscriber) throws EventBusException {
         logger.debug("unsubscribing '{}'", subscriberId);
         try {
             String classname = subscriber.getClass().getName();
             String queueName = UuidUtils.nameUUIDFromBytes(classname.getBytes()).toString();
-            Ternary<String, Channel, EventSubscriber> queueDetails = s_subscribers.get(queueName);
+            Ternary<String, Channel, EventSubscriber> queueDetails = subscribers.get(queueName);
             Channel channel = queueDetails.second();
             channel.basicCancel(queueName);
-            s_subscribers.remove(queueName, queueDetails);
+            subscribers.remove(queueName, queueDetails);
         } catch (Exception e) {
             throw new EventBusException("Failed to unsubscribe from event bus due to " + e.getMessage());
         }
@@ -330,39 +345,35 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
      * @return true if the event was buffered, false if the caller has to deal with it
      */
     private boolean bufferEvent(String routingKey, String eventDescription, boolean sendFailed) {
-        if (!s_connectedOnce || bufferSize <= 0) {
+        if (!hasBeenConnectedOnce || maxEventBufferSize <= 0) {
             return false;
         }
-        synchronized (s_buffer) {
-            if (!sendFailed && s_buffer.isEmpty() && s_connection != null) {
+        synchronized (eventBuffer) {
+            if (!sendFailed && eventBuffer.isEmpty() && connection != null) {
                 return false;
             }
-            if (s_buffer.isEmpty()) {
+            if (eventBuffer.isEmpty()) {
                 logger.warn("Unable to send events to AMQP server, buffering them until they can be sent");
             }
-            if (s_buffer.size() >= bufferSize) {
-                logger.warn("Event buffer is full, dropping the oldest event " + s_buffer.poll().first());
+            if (eventBuffer.size() >= maxEventBufferSize) {
+                logger.warn("Event buffer is full, dropping the oldest event " + eventBuffer.poll().first());
             }
-            s_buffer.add(new Ternary<>(routingKey, eventDescription, System.currentTimeMillis()));
+            eventBuffer.add(new Ternary<>(routingKey, eventDescription, System.currentTimeMillis()));
         }
         return true;
     }
 
-    // drops the expired events and, if connected, sends the buffered ones in the order they were added
+    /**
+     * drops the expired events and, if connected, sends the buffered ones in the order they were added.
+     * Must only be called by the ReconnectionTask: with more than one thread events could be sent twice or out of order.
+     */
     private void flushBuffer() {
         int sent = 0;
-        while (true) {
-            Ternary<String, String, Long> bufferedEvent;
-            synchronized (s_buffer) {
-                bufferedEvent = s_buffer.peek();
-            }
-            if (bufferedEvent == null) {
-                break;
-            }
-
-            boolean expired = System.currentTimeMillis() - bufferedEvent.third() > bufferExpiry;
-            Connection connection = s_connection;
-            if (!expired && connection == null) {
+        Ternary<String, String, Long> bufferedEvent;
+        while ((bufferedEvent = peekBuffer()) != null) {
+            boolean expired = System.currentTimeMillis() - bufferedEvent.third() > eventBufferExpiryTime;
+            Connection currentConnection = connection;
+            if (!expired && currentConnection == null) {
                 break;
             }
 
@@ -370,7 +381,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
                 logger.warn("Dropping expired event " + bufferedEvent.first() + " as it could not be sent to AMQP server in time");
             } else {
                 try {
-                    sendEvent(connection, bufferedEvent.first(), bufferedEvent.second());
+                    sendEvent(currentConnection, bufferedEvent.first(), bufferedEvent.second());
                     sent++;
                 } catch (AlreadyClosedException e) {
                     closeConnection();
@@ -383,14 +394,27 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             }
 
             // the event stays in the buffer while being sent, so that newer events queue up behind it
-            synchronized (s_buffer) {
-                if (s_buffer.peek() == bufferedEvent) {
-                    s_buffer.poll();
-                }
-            }
+            removeFromBuffer(bufferedEvent);
         }
         if (sent > 0) {
             logger.info("Sent " + sent + " buffered events to AMQP server");
+        }
+    }
+
+    private Ternary<String, String, Long> peekBuffer() {
+        synchronized (eventBuffer) {
+            return eventBuffer.peek();
+        }
+    }
+
+    /**
+     * removes the event if it is still the oldest one, it might have been dropped from a full buffer already
+     */
+    private void removeFromBuffer(Ternary<String, String, Long> bufferedEvent) {
+        synchronized (eventBuffer) {
+            if (eventBuffer.peek() == bufferedEvent) {
+                eventBuffer.poll();
+            }
         }
     }
 
@@ -467,7 +491,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     }
 
     private synchronized Connection getConnection() throws Exception {
-        if (s_connection == null) {
+        if (connection == null) {
             try {
                 return createConnection();
             } catch (KeyManagementException | NoSuchAlgorithmException | IOException  | TimeoutException e) {
@@ -475,8 +499,26 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
                 throw e;
             }
         } else {
-            return s_connection;
+            return connection;
         }
+    }
+
+    /**
+     * @return the current connection, a new one if there was none, or null if the AMQP server cannot be reached
+     */
+    private synchronized Connection connectIfDisconnected() {
+        if (connection == null) {
+            try {
+                Connection newConnection = createConnection();
+                logger.info("Connected to AMQP server [AMQP host:{}, port:{}]", amqpHost, port);
+                return newConnection;
+            } catch (IOException e) {
+                logger.trace("Unable to establish connection to AMQP server yet", e);
+            } catch (Exception e) {
+                logger.warn("Failed to reconnect to AMQP server due to " + e.getMessage());
+            }
+        }
+        return connection;
     }
 
     private synchronized Connection createConnection() throws KeyManagementException, NoSuchAlgorithmException, IOException, TimeoutException {
@@ -495,35 +537,35 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             if (useSsl != null && !useSsl.isEmpty() && useSsl.equalsIgnoreCase("true")) {
                 factory.useSslProtocol(secureProtocol);
             }
-            Connection connection = factory.newConnection();
-            connection.addShutdownListener(disconnectHandler);
-            connection.addBlockedListener(blockedConnectionHandler);
-            s_connection = connection;
-            s_connectedOnce = true;
-            return s_connection;
+            Connection newConnection = factory.newConnection();
+            newConnection.addShutdownListener(disconnectHandler);
+            newConnection.addBlockedListener(blockedConnectionHandler);
+            connection = newConnection;
+            hasBeenConnectedOnce = true;
+            return connection;
     }
 
     private synchronized void closeConnection() {
         try {
-            if (s_connection != null) {
-                s_connection.close();
+            if (connection != null) {
+                connection.close();
             }
         } catch (Exception e) {
             logger.warn("Failed to close connection to AMQP server due to " + e.getMessage());
         }
-        s_connection = null;
+        connection = null;
     }
 
     private synchronized void abortConnection() {
-        if (s_connection == null)
+        if (connection == null)
             return;
 
         try {
-            s_connection.abort();
+            connection.abort();
         } catch (Exception e) {
             logger.warn("Failed to abort connection due to " + e.getMessage());
         }
-        s_connection = null;
+        connection = null;
     }
 
     private String replaceNullWithWildcard(String key) {
@@ -594,16 +636,16 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
 
     @Override
     public boolean start() {
-        ReconnectionTask reconnect = new ReconnectionTask(); // initiate connection to AMQP server
-        executorService.submit(reconnect);
+        // initiate connection to AMQP server
+        executorService.scheduleWithFixedDelay(new ReconnectionTask(), retryInterval, retryInterval, TimeUnit.MILLISECONDS);
         return true;
     }
 
     @Override
     public synchronized boolean stop() {
-        if (s_connection != null && s_connection.isOpen()) {
-            for (String subscriberId : s_subscribers.keySet()) {
-                Ternary<String, Channel, EventSubscriber> subscriberDetails = s_subscribers.get(subscriberId);
+        if (connection != null && connection.isOpen()) {
+            for (String subscriberId : subscribers.keySet()) {
+                Ternary<String, Channel, EventSubscriber> subscriberDetails = subscribers.get(subscriberId);
                 Channel channel = subscriberDetails.second();
                 String queueName = subscriberId;
                 try {
@@ -642,98 +684,72 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
         public void shutdownCompleted(ShutdownSignalException shutdownSignalException) {
             if (!shutdownSignalException.isInitiatedByApplication()) {
 
-                for (String subscriberId : s_subscribers.keySet()) {
-                    Ternary<String, Channel, EventSubscriber> subscriberDetails = s_subscribers.get(subscriberId);
+                for (String subscriberId : subscribers.keySet()) {
+                    Ternary<String, Channel, EventSubscriber> subscriberDetails = subscribers.get(subscriberId);
                     subscriberDetails.second(null);
-                    s_subscribers.put(subscriberId, subscriberDetails);
+                    subscribers.put(subscriberId, subscriberDetails);
                 }
 
                 abortConnection(); // disconnected to AMQP server, so abort the connection and channels
-                // the ReconnectionTask started with the event bus takes care of the re-connect
                 logger.warn("Connection has been shutdown by AMQP server. Attempting to reconnect.");
             }
         }
     }
 
-    // runs for the lifetime of the event bus: connects back to AMQP server after any loss of connection
-    // and sends the events buffered in the meantime
+    /**
+     * delivers the events received from AMQP server to the subscriber
+     */
+    private class SubscriberConsumer extends DefaultConsumer {
+
+        SubscriberConsumer(Channel channel) {
+            super(channel);
+        }
+
+        @Override
+        public void handleDelivery(String queueName, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+            Ternary<String, Channel, EventSubscriber> subscriberDetails = subscribers.get(queueName); // queue name == subscriber ID
+            if (subscriberDetails != null) {
+                EventSubscriber subscriber = subscriberDetails.third();
+                String routingKey = envelope.getRoutingKey();
+                String eventSource = getEventSourceFromRoutingKey(routingKey);
+                String eventCategory = getEventCategoryFromRoutingKey(routingKey);
+                String eventType = getEventTypeFromRoutingKey(routingKey);
+                String resourceType = getResourceTypeFromRoutingKey(routingKey);
+                String resourceUUID = getResourceUUIDFromRoutingKey(routingKey);
+
+                // create event object from the message details obtained from AMQP server
+                Event event = new Event(eventSource, eventCategory, eventType, resourceType, resourceUUID);
+                event.setDescription(new String(body));
+
+                // deliver the event to call back object provided by subscriber
+                subscriber.onEvent(event);
+            }
+        }
+    }
+
+    /**
+     * scheduled for the lifetime of the event bus: connects back to AMQP server after any loss of connection
+     * and sends the events buffered in the meantime
+     */
     private class ReconnectionTask extends ManagedContextRunnable {
 
-        Connection connection = null;
+        @Override
+        public void run() {
+            try {
+                super.run();
+            } catch (Throwable t) {
+                // the executor would never run the task again if it ended with an exception
+                logger.error("Failed to reconnect to AMQP server or to send buffered events", t);
+            }
+        }
 
         @Override
         protected void runInContext() {
-
-            while (true) {
-                try {
-                    Thread.sleep(retryInterval);
-                } catch (InterruptedException ie) {
-                    return; // event bus is being stopped
-                }
-
-                try {
-                    flushBuffer();
-                    try {
-                        // check and connect under the same lock as getConnection(), so a connection is never replaced
-                        synchronized (RabbitMQEventBus.this) {
-                            if (s_connection != null) {
-                                continue;
-                            }
-                            connection = createConnection();
-                        }
-                    } catch (IOException ie) {
-                        continue; // can't establish connection to AMQP server yet, so continue
-                    }
-
-                    // prepare consumer on AMQP server for each of subscriber
-                    for (String subscriberId : s_subscribers.keySet()) {
-                        Ternary<String, Channel, EventSubscriber> subscriberDetails = s_subscribers.get(subscriberId);
-                        String bindingKey = subscriberDetails.first();
-                        EventSubscriber subscriber = subscriberDetails.third();
-
-                        /** create a queue with subscriber ID as queue name and bind it to the exchange
-                         *  with binding key formed from event topic
-                         */
-                        Channel channel = createChannel(connection);
-                        createExchange(channel, amqpExchangeName);
-                        channel.queueDeclare(subscriberId, false, false, false, null);
-                        channel.queueBind(subscriberId, amqpExchangeName, bindingKey);
-
-                        // register a callback handler to receive the events that a subscriber subscribed to
-                        channel.basicConsume(subscriberId, s_autoAck, subscriberId, new DefaultConsumer(channel) {
-                            @Override
-                            public void handleDelivery(String queueName, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-
-                                Ternary<String, Channel, EventSubscriber> subscriberDetails = s_subscribers.get(queueName); // queue name == subscriber ID
-
-                                if (subscriberDetails != null) {
-                                    EventSubscriber subscriber = subscriberDetails.third();
-                                    String routingKey = envelope.getRoutingKey();
-                                    String eventSource = getEventSourceFromRoutingKey(routingKey);
-                                    String eventCategory = getEventCategoryFromRoutingKey(routingKey);
-                                    String eventType = getEventTypeFromRoutingKey(routingKey);
-                                    String resourceType = getResourceTypeFromRoutingKey(routingKey);
-                                    String resourceUUID = getResourceUUIDFromRoutingKey(routingKey);
-
-                                    // create event object from the message details obtained from AMQP server
-                                    Event event = new Event(eventSource, eventCategory, eventType, resourceType, resourceUUID);
-                                    event.setDescription(new String(body));
-
-                                    // deliver the event to call back object provided by subscriber
-                                    subscriber.onEvent(event);
-                                }
-                            }
-                        });
-
-                        // update the channel details for the subscription
-                        subscriberDetails.second(channel);
-                        s_subscribers.put(subscriberId, subscriberDetails);
-                    }
-                    flushBuffer();
-                } catch (Exception e) {
-                    logger.warn("Failed to recreate queues and binding for the subscribers due to " + e.getMessage());
-                }
+            Connection currentConnection = connectIfDisconnected();
+            if (currentConnection != null) {
+                registerDisconnectedSubscribers(currentConnection);
             }
+            flushBuffer();
         }
     }
 }
