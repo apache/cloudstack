@@ -279,8 +279,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     private void checkNetfsStoragePoolMounted(String uuid) {
         String targetPath = _mountPoint + File.separator + uuid;
-        int mountpointResult = Script.runSimpleBashScriptForExitValue("mountpoint -q " + targetPath);
-        if (mountpointResult != 0) {
+        if (!isStoragePoolMounted(targetPath)) {
             String errMsg = String.format("libvirt failed to mount storage pool %s at %s", uuid, targetPath);
             logger.error(errMsg);
             throw new CloudRuntimeException(errMsg);
@@ -295,9 +294,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         try {
             logger.debug(spd.toString());
             // check whether the pool is already mounted
-            int mountpointResult = Script.runSimpleBashScriptForExitValue("mountpoint -q " + targetPath);
             // if the pool is mounted, try to unmount it
-            if(mountpointResult == 0) {
+            if (isStoragePoolMounted(targetPath)) {
                 logger.info("Attempting to unmount old mount at " + targetPath);
                 String result = Script.runSimpleBashScript("umount -l " + targetPath);
                 if (result == null) {
@@ -830,6 +828,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             } else if (type == StoragePoolType.CLVM) {
                 sp = createCLVMStoragePool(conn, name, host, path);
             }
+        } else {
+            String targetPath = _mountPoint + File.separator + name;
+            if (type == StoragePoolType.NetworkFilesystem && !isPrimaryStorage && !isStoragePoolMounted(targetPath)) {
+                String storageMountPoint = host + ":" + path;
+                mountNfsStoragePool(storageMountPoint, targetPath, nfsMountOpts);
+            }
         }
 
         if (sp == null) {
@@ -864,6 +868,16 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 throw new CloudRuntimeException(error);
             }
         }
+    }
+
+    private boolean isStoragePoolMounted(String path) {
+        return Script.runSimpleBashScriptForExitValue("mountpoint -q " + path) == 0;
+    }
+
+    private void mountNfsStoragePool(String storageMountPoint, String targetPath, List<String> nfsMountOptions) {
+        String mountOptions = CollectionUtils.isNotEmpty(nfsMountOptions) ? String.format("-o %s", String.join(",", nfsMountOptions)) : "";
+        logger.debug("Attempting to mount NFS storage [{}] at [{}] with options [{}].", storageMountPoint, targetPath, mountOptions);
+        Script.runSimpleBashScript(String.format("mount -t nfs %s %s %s", mountOptions, storageMountPoint, targetPath));
     }
 
     private boolean destroyStoragePool(Connect conn, String uuid) throws LibvirtException {
