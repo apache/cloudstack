@@ -2582,6 +2582,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         Account caller = CallContext.current().getCallingAccount();
         accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
+        if (!Arrays.asList(KubernetesCluster.State.Running, KubernetesCluster.State.Alert).contains(kubernetesCluster.getState())) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster %s is in %s state, nodes can only be added or removed while it is Running or Alert",
+                    kubernetesCluster.getName(), kubernetesCluster.getState()));
+        }
         return kubernetesCluster;
     }
 
