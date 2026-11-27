@@ -532,7 +532,9 @@ public class KubernetesClusterCertificateWorkerTest {
         // behind the cluster public IP: the VM's SSH port forwarding rule on that IP, not a user's on another one
         worker.publicIpAddress = "192.0.2.10";
         worker.sshPort = 2222;
-        List<PortForwardingRuleVO> rules = Arrays.asList(sshRule(2L, 2022, 22), sshRule(1L, 8080, 80), sshRule(1L, 2224, 22));
+        PortForwardingRuleVO revoked = sshRule(1L, 2223, 22);
+        Mockito.when(revoked.getState()).thenReturn(FirewallRule.State.Revoke);
+        List<PortForwardingRuleVO> rules = Arrays.asList(sshRule(2L, 2022, 22), sshRule(1L, 8080, 80), revoked, sshRule(1L, 2224, 22));
         Mockito.when(portForwardingRulesDao.listByVm(102L)).thenReturn(rules);
         Assert.assertEquals(new Pair<>("192.0.2.10", 2224), worker.getControlNodeSshEndpoint(control2, 1));
 
