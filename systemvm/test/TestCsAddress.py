@@ -16,7 +16,8 @@
 # under the License.
 
 import unittest
-from cs.CsAddress import CsAddress
+import mock
+from cs.CsAddress import CsAddress, CsIP
 import merge
 
 
@@ -37,6 +38,37 @@ class TestCsAddress(unittest.TestCase):
 
     def test_get_guest_netmask(self):
         self.assertTrue(self.csaddress.get_guest_netmask() == "255.255.255.0")
+
+
+class TestCsIPRouted(unittest.TestCase):
+
+    def routed_guest_ip(self, dev, is_vpc):
+        config = mock.MagicMock()
+        config.is_vpc.return_value = is_vpc
+        config.is_routed.return_value = True
+        config.get_nft_ipv4_fw.return_value = []
+        config.get_nft_ipv4_acl.return_value = []
+        with mock.patch.object(CsIP, 'list'):
+            ip = CsIP(dev, config)
+        ip.setAddress({"nw_type": "guest", "network": "10.1.1.0/24"})
+        return ip
+
+    def input_rules(self, rules):
+        return [rule['rule'] for rule in rules if rule['chain'] == 'INPUT']
+
+    def test_fw_router_routing_accepts_vrrp_and_conntrackd(self):
+        ip = self.routed_guest_ip("eth0", False)
+        ip.fw_router_routing()
+        rules = self.input_rules(ip.nft_ipv4_fw)
+        self.assertIn("iifname eth0 ip daddr 224.0.0.18 counter accept", rules)
+        self.assertIn("iifname eth0 ip daddr 225.0.0.50 counter accept", rules)
+
+    def test_fw_vpcrouter_routing_accepts_vrrp_and_conntrackd(self):
+        ip = self.routed_guest_ip("eth2", True)
+        ip.fw_vpcrouter_routing()
+        rules = self.input_rules(ip.nft_ipv4_acl)
+        self.assertIn("iifname eth2 ip daddr 224.0.0.18 counter accept", rules)
+        self.assertIn("iifname eth2 ip daddr 225.0.0.50 counter accept", rules)
 
 
 if __name__ == '__main__':
