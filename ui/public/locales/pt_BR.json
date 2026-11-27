@@ -3105,7 +3105,7 @@
 "message.disk.usage.info.data.points": "Cada ponto no gr\u00e1fico representa a diferen\u00e7a de dados lidos/escritos desde a \u00faltima coleta de estat\u00edstica realizada (o ponto anterior)",
 "message.disk.usage.info.sum.of.disks": "O uso de disco apresentado \u00e9 composto pela soma de dados lidos/escritos por todos os discos da VM",
 "message.download.screenshot": "A captura de tela de valida\u00e7\u00e3o encontra-se disponível em:<br><br>{url}",
-"message.download.screenshot.failed": "Falha ao baixar a captura de tela. Por favor, contate um administrador.",
+"message.download.screenshot.failed": "Nenhuma captura de tela de validação está disponível para este backup.",
 "message.download.volume": "Clique <a href=\"#\">00000</a> para baixar o disco",
 "message.download.volume.confirm": "Por favor confirme que voc\u00ea quer baixar este volume",
 "message.drs.plan.description": "O n\u00famero m\u00e1ximo de migra\u00e7\u00f5es ao vivo permitidas para DRS. Configure DRS na aba de configura\u00e7\u00f5es antes de gerar um plano ou para ativar o DRS autom\u00e1tico para o cluster.",

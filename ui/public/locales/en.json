@@ -3570,7 +3570,7 @@
 "message.disk.usage.info.data.points": "Each data point represents the difference in read/write data since the last data point.",
 "message.disk.usage.info.sum.of.disks": "The disk usage shown is made up of the sum of read/write data from all the disks in the Instance.",
 "message.download.screenshot": "Please click on the link to download the validation screenshot:<br><br>{url}",
-"message.download.screenshot.failed": "Failed to download screenshot. Please, contact an administrator.",
+"message.download.screenshot.failed": "No validation screenshot is available for this backup.",
 "message.download.volume": "Please click the link to download the volume:<p><a href=\"#\">00000</a>",
 "message.download.volume.confirm": "Please confirm that you want to download this volume.",
 "message.edit.acl.failed": "Failed to edit ACL rule",
