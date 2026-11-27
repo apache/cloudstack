@@ -94,6 +94,15 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     private static Integer eventBufferExpiryTime = 300000;
 
     /**
+     * heartbeat timeout, in seconds, requested from the AMQP server, which may lower it; 0 takes the value of the server.
+     * The client notices a connection that silently stopped working (e.g. packets dropped by a firewall) only after about
+     * two heartbeat timeouts without any data from the server. Until then events are still sent on the calling thread and
+     * wait for replies that never come, so with the client default of 60 seconds API calls could hang for about 2 minutes.
+     * RabbitMQ recommends values between 5 and 20 seconds.
+     */
+    private static Integer heartbeat = 10;
+
+    /**
      * events, stored as {routing key, description, time of buffering}, waiting to be sent, oldest first
      */
     private static final ArrayDeque<Ternary<String, String, Long>> eventBuffer = new ArrayDeque<>();
@@ -109,7 +118,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     // connection to AMQP server,
     private static volatile Connection connection = null;
 
-    // AMQP server should consider messages acknowledged once delivered if _autoAck is true
+    // AMQP server should consider messages acknowledged once delivered if autoAck is true
     private static boolean autoAck = true;
 
     private ScheduledExecutorService executorService;
@@ -191,22 +200,40 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
         RabbitMQEventBus.amqpExchangeName = exchange;
     }
 
+    /**
+     * time, in milliseconds, between two runs of the ReconnectionTask, set by the bean property "retryInterval".
+     * Default 10000 (10 seconds), also used for values of 0 or less. Each run reconnects if needed, drops the expired
+     * events and sends the buffered ones.
+     */
     public static void setRetryInterval(Integer retryInterval) {
         RabbitMQEventBus.retryInterval = retryInterval;
     }
 
     /**
-     * maximum size to which the event buffer may grow
+     * maximum size to which the event buffer may grow, set by the bean property "bufferSize".
+     * Default 1000; when the buffer is full, the oldest event is dropped. 0 disables buffering: events that cannot be
+     * sent are dropped and publish() connects on the calling thread, as before buffering was added.
      */
     public static void setBufferSize(Integer bufferSize) {
         maxEventBufferSize = bufferSize;
     }
 
     /**
-     * expiry time, in milliseconds, to set for events that cannot be sent
+     * expiry time, in milliseconds, to set for events that cannot be sent, set by the bean property "bufferExpiry".
+     * Default 300000 (5 minutes). Expired events are dropped by the next run of the ReconnectionTask, also while the
+     * AMQP server is unreachable, so an event is kept for at most bufferExpiry plus retryInterval.
      */
     public static void setBufferExpiry(Integer bufferExpiry) {
         eventBufferExpiryTime = bufferExpiry;
+    }
+
+    /**
+     * heartbeat timeout, in seconds, to request from the AMQP server, set by the bean property "heartbeat".
+     * Default 10; 0 takes the value of the server. A lower value notices a connection that silently stopped working
+     * sooner, see the field heartbeat for the reasoning.
+     */
+    public static void setHeartbeat(Integer heartbeat) {
+        RabbitMQEventBus.heartbeat = heartbeat;
     }
 
     /** Call to subscribe to interested set of events
@@ -332,11 +359,22 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
         }
     }
 
+    /**
+     * sends the event on a channel of its own. Once basicPublish() has returned, the event counts as sent even if closing the
+     * channel fails: publishing gets no reply, so the event may already have reached the AMQP server and sending it again could
+     * duplicate it. Losing it instead is the same as losing an event still in the TCP send buffer when the connection breaks.
+     * This also covers events the AMQP server refused, e.g. due to missing write permissions on the exchange: the refusal is
+     * reported only when the channel is closed, and sending such an event again would fail the same way.
+     */
     private void sendEvent(Connection connection, String routingKey, String eventDescription) throws Exception {
         Channel channel = createChannel(connection);
         createExchange(channel, amqpExchangeName);
         publishEventToExchange(channel, amqpExchangeName, routingKey, eventDescription);
-        channel.close();
+        try {
+            channel.close();
+        } catch (Exception e) {
+            logger.warn("Failed to close the channel after publishing event " + routingKey + ", the event might not have been delivered: " + getErrorMessage(e));
+        }
     }
 
     /** adds the event to the buffer, dropping the oldest one if the buffer is full
@@ -527,6 +565,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             factory.setPassword(password);
             factory.setHost(amqpHost);
             factory.setPort(port);
+            factory.setRequestedHeartbeat(heartbeat);
 
             if (virtualHost != null && !virtualHost.isEmpty()) {
                 factory.setVirtualHost(virtualHost);
@@ -580,9 +619,25 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
         try {
             return connection.createChannel();
         } catch (java.io.IOException exception) {
-            logger.warn("Failed to create a channel due to " + exception.getMessage());
+            logger.warn("Failed to create a channel due to " + getErrorMessage(exception));
             throw exception;
         }
+    }
+
+    /**
+     * @return the messages of the exception and of its causes. The AMQP client reports a lost connection as an IOException
+     * without a message, wrapping a ShutdownSignalException ("connection error") that in turn wraps the actual reason, e.g.
+     * "Connection reset" or "Heartbeat missing", so logging only getMessage() showed "null".
+     */
+    private static String getErrorMessage(Throwable exception) {
+        StringBuilder message = new StringBuilder();
+        for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+            // skip messages already included, e.g. by exceptions created with the cause as their message
+            if (cause.getMessage() != null && message.indexOf(cause.getMessage()) < 0) {
+                message.append(message.length() > 0 ? ": " : "").append(cause.getMessage());
+            }
+        }
+        return message.length() > 0 ? message.toString() : exception.toString();
     }
 
     private void createExchange(Channel channel, String exchangeName) throws Exception {
@@ -599,7 +654,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             byte[] messageBodyBytes = eventDescription.getBytes();
             channel.basicPublish(exchangeName, routingKey, MessageProperties.PERSISTENT_TEXT_PLAIN, messageBodyBytes);
         } catch (Exception e) {
-            logger.error("Failed to publish event " + routingKey + " on exchange " + exchangeName + "  of message broker due to " + e.getMessage());
+            logger.error("Failed to publish event " + routingKey + " on exchange " + exchangeName + "  of message broker due to " + getErrorMessage(e));
             throw e;
         }
     }

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.SocketException;
 import java.util.ArrayDeque;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -42,6 +43,7 @@ import org.mockito.Mockito;
 import com.cloud.utils.Ternary;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ShutdownSignalException;
 
 public class RabbitMQEventBusTest {
 
@@ -159,6 +161,34 @@ public class RabbitMQEventBusTest {
 
         flushBuffer();
         verifyPublishedCount(2);
+    }
+
+    @Test
+    public void eventIsNotSentAgainWhenClosingTheChannelFails() throws Exception {
+        setConnection(connection);
+        Mockito.doThrow(new IOException()).doNothing().when(channel).close();
+
+        eventBus.publish(event("1"));
+        flushBuffer();
+        Assert.assertTrue(((ArrayDeque<?>)getField("eventBuffer").get(null)).isEmpty());
+        verifyPublishedCount(1);
+
+        eventBus.publish(event("2")); // nothing buffered, sent directly
+        verifyPublishedCount(2);
+    }
+
+    @Test
+    public void errorMessageIncludesTheCauses() throws Exception {
+        Method method = RabbitMQEventBus.class.getDeclaredMethod("getErrorMessage", Throwable.class);
+        method.setAccessible(true);
+        ShutdownSignalException shutdown = new ShutdownSignalException(true, false, null, connection);
+        shutdown.initCause(new SocketException("Connection reset"));
+        IOException exception = new IOException();
+        exception.initCause(shutdown);
+
+        Assert.assertEquals("connection error: Connection reset", method.invoke(null, exception));
+        Assert.assertEquals("java.net.SocketException: broken pipe", method.invoke(null, new IOException(new SocketException("broken pipe"))));
+        Assert.assertEquals("java.io.IOException", method.invoke(null, new IOException()));
     }
 
     @Test
