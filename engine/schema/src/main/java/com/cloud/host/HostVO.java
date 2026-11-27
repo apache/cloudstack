@@ -600,6 +600,10 @@ public class HostVO implements Host {
         return removed;
     }
 
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
     @Override
     public String getVersion() {
         return version;

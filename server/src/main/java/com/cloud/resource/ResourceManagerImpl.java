@@ -2281,8 +2281,30 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return host;
         }
 
+        host = reviveRemovedHostByGuid(fullGuid);
+        if (host != null) {
+            return host;
+        }
+
         logger.debug(String.format("Could not find Host by guid %s", fullGuid));
         return null;
+    }
+
+    /**
+     * A host can be marked removed (e.g. a system VM force-stopped and destroyed from the UI) while the
+     * underlying resource is still alive and later reconnects with the same guid. The `guid` column is
+     * uniquely constrained regardless of removal, so blindly inserting a new row for it fails with a
+     * SQLIntegrityConstraintViolationException. Revive the removed row instead of creating a duplicate.
+     */
+    private HostVO reviveRemovedHostByGuid(String guid) {
+        HostVO removedHost = _hostDao.findByGuidIncludingRemoved(guid);
+        if (removedHost == null || removedHost.getRemoved() == null) {
+            return null;
+        }
+        logger.warn(String.format("Host with guid %s reconnected but was previously removed (id: %s); reviving the removed host record instead of creating a duplicate",
+                guid, removedHost.getId()));
+        removedHost.setRemoved(null);
+        return removedHost;
     }
 
     protected void validateExistingHostLocationImmutable(final HostVO host, final boolean newHost,

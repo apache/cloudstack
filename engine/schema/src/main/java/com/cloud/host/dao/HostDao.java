@@ -79,6 +79,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     HostVO findByGuid(String guid);
 
+    HostVO findByGuidIncludingRemoved(String guid);
+
     HostVO findByTypeNameAndZoneId(long zoneId, String name, Host.Type type);
 
     List<HostVO> findHypervisorHostInCluster(long clusterId);
