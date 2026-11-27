@@ -293,12 +293,19 @@ public class KubernetesClusterCertificateWorkerTest {
     }
 
     @Test
-    public void rotationFailsWhenTheKubeConfigCannotBeRefreshed() {
+    public void rotationSucceedsWhenTheKubeConfigCannotBeRefreshed() {
         Mockito.doReturn(false).when(worker).refreshKubeConfigData(ArgumentMatchers.anyLong());
 
-        assertRotationFailed();
+        Assert.assertTrue(worker.rotateCertificates());
 
         Mockito.verify(worker).renewCertificatesOnControlNode(control3, 2);
+        Mockito.verify(worker).sendAlert(ArgumentMatchers.contains("kubeconfig"), ArgumentMatchers.anyString());
+        Mockito.verify(worker).stateTransitTo(CLUSTER_ID, KubernetesCluster.Event.OperationSucceeded);
+        Mockito.verify(worker, Mockito.never()).stateTransitTo(CLUSTER_ID, KubernetesCluster.Event.OperationFailed);
+        Mockito.verify(kubernetesClusterDetailsDao, Mockito.never()).addDetail(ArgumentMatchers.eq(CLUSTER_ID),
+                ArgumentMatchers.eq(KubernetesClusterCertificateWorker.ROTATION_FAILED_DETAIL), ArgumentMatchers.anyString(), ArgumentMatchers.anyBoolean());
+        Mockito.verify(kubernetesClusterDetailsDao).addDetail(ArgumentMatchers.eq(CLUSTER_ID),
+                ArgumentMatchers.eq(KubernetesClusterCertificateWorker.ROTATION_SUCCEEDED_DETAIL), ArgumentMatchers.anyString(), ArgumentMatchers.anyBoolean());
     }
 
     @Test

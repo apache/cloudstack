@@ -346,8 +346,11 @@ public class KubernetesClusterCertificateWorker extends KubernetesClusterActionW
             }
             // a budget of its own: the certificates are renewed by now, even if that used up the rotation timeout
             if (!refreshKubeConfigData(System.currentTimeMillis() + KUBE_CONFIG_REFRESH_TIMEOUT_MS)) {
-                failRotation(String.format("Renewed the certificates of Kubernetes cluster %s but failed to refresh its stored kubeconfig",
-                        kubernetesCluster.getName()), null);
+                logger.warn("Renewed the certificates of Kubernetes cluster {} but failed to refresh its stored kubeconfig", kubernetesCluster);
+                sendAlert(String.format("Unable to refresh the kubeconfig of Kubernetes cluster %s after certificate rotation", kubernetesCluster.getName()),
+                        String.format("The control plane certificates of Kubernetes cluster %s were renewed, but its stored kubeconfig could not be refreshed. " +
+                                "The previous kubeconfig remains valid until its old certificate expires; the next certificate check retries the refresh.",
+                                kubernetesCluster.getName()));
             }
         } catch (RotationFailedException e) {
             throw e;
