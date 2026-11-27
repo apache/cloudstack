@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,8 +90,12 @@ public class VirtualRoutingResource {
 
     protected Logger logger = LogManager.getLogger(getClass());
     private VirtualRouterDeployer _vrDeployer;
+    // Agent request threads run in parallel, so these maps are synchronized. The aggregation maps are
+    // only read and changed for a router while holding that router's lock from _vrLockMap.
     private Map<String, Queue<NetworkElementCommand>> _vrAggregateCommandsSet;
-    protected Map<String, Lock> _vrLockMap = new HashMap<String, Lock>();
+    // Router name -> failure details of the last aggregated apply on it, if that apply failed
+    private Map<String, String> _vrAggregateFailures;
+    protected Map<String, Lock> _vrLockMap = Collections.synchronizedMap(new HashMap<>());
 
     private String _name;
     private int _sleep;
@@ -107,13 +112,7 @@ public class VirtualRoutingResource {
     public Answer executeRequest(final NetworkElementCommand cmd) {
         boolean aggregated = false;
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-        Lock lock;
-        if (_vrLockMap.containsKey(routerName)) {
-            lock = _vrLockMap.get(routerName);
-        } else {
-            lock = new ReentrantLock();
-            _vrLockMap.put(routerName, lock);
-        }
+        Lock lock = _vrLockMap.computeIfAbsent(routerName, k -> new ReentrantLock());
         lock.lock();
 
         try {
@@ -538,7 +537,8 @@ public class VirtualRoutingResource {
             throw new ConfigurationException("Unable to find the resource for VirtualRouterDeployer!");
         }
 
-        _vrAggregateCommandsSet = new HashMap<>();
+        _vrAggregateCommandsSet = Collections.synchronizedMap(new HashMap<>());
+        _vrAggregateFailures = Collections.synchronizedMap(new HashMap<>());
         return true;
     }
 
@@ -605,14 +605,31 @@ public class VirtualRoutingResource {
         assert cmd.getRouterAccessIp() != null;
 
         if (action == Action.Start) {
-            assert (!_vrAggregateCommandsSet.containsKey(routerName));
-
+            if (_vrAggregateCommandsSet.containsKey(routerName)) {
+                // Another job is aggregating commands for this router. Keep its queue: replacing it would
+                // drop the commands queued so far, and the first Finish applies the commands of both jobs.
+                logger.warn("Command aggregation is already in progress for router {}, joining it", routerName);
+                return new Answer(cmd, true, "Command aggregation already in progress");
+            }
             Queue<NetworkElementCommand> queue = new LinkedBlockingQueue<>();
             _vrAggregateCommandsSet.put(routerName, queue);
             return new Answer(cmd, true, "Command aggregation started");
         } else if (action == Action.Finish) {
             Queue<NetworkElementCommand> queue = _vrAggregateCommandsSet.get(routerName);
+            if (queue == null) {
+                // A concurrent job joined this aggregation and its Finish has already applied the queued
+                // commands; commands sent since then were applied directly. Report the result of that apply.
+                String failure = _vrAggregateFailures.get(routerName);
+                logger.warn("No command aggregation in progress for router {}, the last aggregated apply {}", routerName,
+                        failure == null ? "succeeded" : "failed: " + failure);
+                if (failure != null) {
+                    return new Answer(cmd, false, failure);
+                }
+                return new Answer(cmd, true, "Aggregated commands already applied");
+            }
             int answerCounts = 0;
+            boolean applied = false;
+            String failure = "Failed to apply aggregated commands";
             try {
                 StringBuilder sb = new StringBuilder();
                 sb.append("#Apache CloudStack Virtual Router Config File\n");
@@ -642,16 +659,24 @@ public class VirtualRoutingResource {
 
                 ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), fileConfigItem, timeout);
                 if (!result.isSuccess()) {
+                    failure = StringUtils.defaultIfBlank(result.getDetails(), failure);
                     return new Answer(cmd, false, result.getDetails());
                 }
 
                 result = applyConfigToVR(cmd.getRouterAccessIp(), scriptConfigItem, timeout);
                 if (!result.isSuccess()) {
+                    failure = StringUtils.defaultIfBlank(result.getDetails(), failure);
                     return new Answer(cmd, false, result.getDetails());
                 }
 
+                applied = true;
                 return new Answer(cmd, true, "Command aggregation finished");
             } finally {
+                if (applied) {
+                    _vrAggregateFailures.remove(routerName);
+                } else {
+                    _vrAggregateFailures.put(routerName, failure);
+                }
                 queue.clear();
                 _vrAggregateCommandsSet.remove(routerName);
             }
