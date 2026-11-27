@@ -32,6 +32,8 @@ import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationSe
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
@@ -104,6 +106,12 @@ public class TemplateServiceImplTest {
     @Mock
     DataCenterDao _dcDao;
 
+    @Mock
+    ImageStoreDao imageStoreDao;
+
+    @Mock
+    ImageStoreVO imageStoreMock;
+
     Map<String, TemplateProp> templatesInSourceStore = new HashMap<>();
 
     @Before
@@ -156,6 +164,13 @@ public class TemplateServiceImplTest {
     public void shouldDownloadTemplateToStoreTestSkipsPrivateExistingTemplate() {
         Mockito.when(templateDataStoreDao.findByTemplateZone(tmpltMock.getId(), zoneScopeMock.getScopeId(), DataStoreRole.Image)).thenReturn(Mockito.mock(TemplateDataStoreVO.class));
         Assert.assertFalse(templateService.shouldDownloadTemplateToStore(tmpltMock, dataStoreMock));
+    }
+
+    @Test
+    public void shouldDownloadTemplateToStoreTestSkipsWhenStorageIsReadOnly() {
+        Mockito.when(dataStoreManagerMock.isRemovedOrReadonly(Mockito.any())).thenReturn(true);
+        Assert.assertFalse(templateService.shouldDownloadTemplateToStore(tmpltMock, dataStoreMock));
+
     }
 
     @Test
