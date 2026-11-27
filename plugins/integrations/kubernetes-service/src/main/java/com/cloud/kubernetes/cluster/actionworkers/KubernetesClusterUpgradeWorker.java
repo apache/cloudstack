@@ -79,7 +79,7 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                 10000, 10000, 10 * 60 * 1000);
     }
 
-    private void upgradeKubernetesClusterNodes() {
+    protected void upgradeKubernetesClusterNodes() {
         for (int i = 0; i < clusterVMs.size(); ++i) {
             UserVm vm = clusterVMs.get(i);
             String hostName = vm.getHostName();
@@ -184,9 +184,26 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         if (!updated) {
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         } else {
+            refreshKubeConfigDataAfterUpgrade();
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         }
         return updated;
+    }
+
+    /**
+     * kubeadm upgrade renews the control plane certificates, admin.conf included, so the stored kubeConfigData
+     * has to be read again or getKubernetesClusterConfig keeps handing out the old admin certificate until it expires.
+     * A failure here doesn't fail the upgrade: the certificate expiry check refreshes a stale copy later on.
+     */
+    protected void refreshKubeConfigDataAfterUpgrade() {
+        try {
+            apiPublicIpAddress = resolveApiPublicIpAddress(networkDao.findById(kubernetesCluster.getNetworkId()));
+            if (!refreshKubeConfigData(System.currentTimeMillis() + KUBE_CONFIG_REFRESH_TIMEOUT_MS)) {
+                logger.warn("Unable to refresh the stored kubeconfig of Kubernetes cluster {} after the upgrade", kubernetesCluster);
+            }
+        } catch (Exception e) {
+            logger.warn("Unable to refresh the stored kubeconfig of Kubernetes cluster {} after the upgrade", kubernetesCluster, e);
+        }
     }
 
     protected void filterOutManualUpgradeNodesFromClusterUpgrade() {

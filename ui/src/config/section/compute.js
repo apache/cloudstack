@@ -810,7 +810,7 @@ export default {
           message: 'message.kubernetes.cluster.stop',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#stopping-kubernetes-cluster',
           dataView: true,
-          show: (record) => { return !['Stopped', 'Destroyed', 'Destroying'].includes(record.state) && record.clustertype === 'CloudManaged' },
+          show: (record) => { return !['Stopped', 'Destroyed', 'Destroying', 'RotatingCertificates'].includes(record.state) && record.clustertype === 'CloudManaged' },
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
@@ -847,6 +847,15 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/UpgradeKubernetesCluster.vue')))
         },
         {
+          api: 'rotateKubernetesClusterCertificates',
+          icon: 'sync-outlined',
+          label: 'label.kubernetes.cluster.rotate.certificates',
+          message: 'message.kubernetes.cluster.rotate.certificates',
+          dataView: true,
+          show: (record) => { return ['Running', 'Alert'].includes(record.state) && record.clustertype === 'CloudManaged' },
+          popup: true
+        },
+        {
           api: 'addNodesToKubernetesCluster',
           icon: 'plus-outlined',
           label: 'label.kubernetes.cluster.add.nodes.to.cluster',
@@ -873,7 +882,7 @@ export default {
           message: 'message.kubernetes.cluster.delete',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#deleting-kubernetes-cluster',
           dataView: true,
-          show: (record) => { return !['Destroyed', 'Destroying'].includes(record.state) },
+          show: (record) => { return !['Destroyed', 'Destroying', 'RotatingCertificates'].includes(record.state) },
           groupAction: true,
           popup: true,
           args: (record, store, group) => {

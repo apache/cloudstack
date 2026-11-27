@@ -1447,6 +1447,10 @@ export default {
             name: 'label.upgrading'
           },
           {
+            id: 'RotatingCertificates',
+            name: 'label.rotating.certificates'
+          },
+          {
             id: 'Alert',
             name: 'label.alert'
           },

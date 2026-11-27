@@ -123,6 +123,13 @@ if [ -d "$BINARIES_DIR" ]; then
   tar -f "${BINARIES_DIR}/cni/cni-plugins-"*64.tgz -C /opt/cni/bin -xz
   tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-"*64.tar.gz -C /opt/bin -xz
 
+  # root's kubeconfig is kept in step with admin.conf below; note now, before
+  # kubeadm renews admin.conf, whether it is something else worth a backup
+  root_kubeconfig_custom=false
+  if [ -f /etc/kubernetes/admin.conf ] && [ -f /root/.kube/config ] && ! cmp -s /etc/kubernetes/admin.conf /root/.kube/config; then
+    root_kubeconfig_custom=true
+  fi
+
   if [ "${IS_MAIN_CONTROL}" == 'true' ]; then
     set +e
     kubeadm --v=5 upgrade apply ${UPGRADE_VERSION} -y
@@ -146,6 +153,20 @@ if [ -d "$BINARIES_DIR" ]; then
   systemctl daemon-reload
   systemctl restart containerd
   systemctl restart kubelet
+
+  # kubeadm upgrade renews admin.conf on control nodes; keep root's copy, used by kubectl here, in step with it
+  if [ -f /etc/kubernetes/admin.conf ] && [ -d /root/.kube ]; then
+    # never overwrite an earlier backup
+    if [ "${root_kubeconfig_custom}" = true ]; then
+      backup=/root/.kube/config.cks-backup
+      if [ -e "${backup}" ] && ! cmp -s /root/.kube/config "${backup}"; then
+        backup="${backup}.$(date +%s)"
+      fi
+      cp -p /root/.kube/config "${backup}"
+    fi
+    cp /etc/kubernetes/admin.conf /root/.kube/config
+    chmod 600 /root/.kube/config
+  fi
 
   if [ "${IS_MAIN_CONTROL}" == 'true' ]; then
     if [[ ${EXTERNAL_CNI} == true ]]; then
