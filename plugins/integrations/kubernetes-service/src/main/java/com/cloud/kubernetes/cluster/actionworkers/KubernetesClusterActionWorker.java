@@ -136,9 +136,11 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.VmIsoMapVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
+import com.cloud.vm.dao.VmIsoMapDao;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.ETCD;
@@ -195,6 +197,8 @@ public class KubernetesClusterActionWorker {
     protected TemplateApiService templateService;
     @Inject
     protected UserVmDao userVmDao;
+    @Inject
+    protected VmIsoMapDao vmIsoMapDao;
     @Inject
     protected VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
@@ -699,6 +703,26 @@ public class KubernetesClusterActionWorker {
             CallContext vmContext  = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
             vmContext.putContextParameter(VirtualMachine.class, vm.getUuid());
             try {
+                // A node can still hold an ISO from an operation that did not finish. An Instance can not have the
+                // same ISO attached twice, nor more ISOs than it has CD-ROMs.
+                Long attachedIsoId = vm.getIsoId();
+                List<VmIsoMapVO> extraIsos = vmIsoMapDao.listByVmId(vm.getId());
+                boolean binariesIsoAttached = Long.valueOf(iso.getId()).equals(attachedIsoId)
+                        || extraIsos.stream().anyMatch(extraIso -> extraIso.getIsoId() == iso.getId());
+                if (attachedIsoId != null && !Long.valueOf(iso.getId()).equals(attachedIsoId)) {
+                    logger.info("Detaching ISO {} from VM: {} in cluster: {} to attach the binaries ISO", attachedIsoId, vm, kubernetesCluster);
+                    templateService.detachIso(vm.getId(), attachedIsoId, true);
+                }
+                for (VmIsoMapVO extraIso : extraIsos) {
+                    if (extraIso.getIsoId() != iso.getId()) {
+                        logger.info("Detaching ISO {} from VM: {} in cluster: {} to attach the binaries ISO", extraIso.getIsoId(), vm, kubernetesCluster);
+                        templateService.detachIso(vm.getId(), extraIso.getIsoId(), true);
+                    }
+                }
+                if (binariesIsoAttached) {
+                    logger.info("Binaries ISO is already attached to VM: {} in cluster: {}", vm, kubernetesCluster);
+                    continue;
+                }
                 templateService.attachIso(iso.getId(), vm.getId(), true);
                 if (logger.isInfoEnabled()) {
                     logger.info("Attached binaries ISO for VM: {} in cluster: {}", vm, kubernetesCluster);
