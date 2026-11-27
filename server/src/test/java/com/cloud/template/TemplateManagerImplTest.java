@@ -19,11 +19,13 @@
 package com.cloud.template;
 
 
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.projects.ProjectManager;
 import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
@@ -66,6 +68,7 @@ import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -188,6 +191,12 @@ public class TemplateManagerImplTest extends TestCase {
 
     @Mock
     private UserDataVO userDataMock;
+
+    @Mock
+    ProjectManager projectManagerMock;
+
+    @Mock
+    DomainDao domainDaoMock;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -773,4 +782,74 @@ public class TemplateManagerImplTest extends TestCase {
         Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.TEMPLATE, vmTemplateVOMock);
     }
 
+    private Account mockUpdateTemplatePermissionsCall(Account.Type ownerType, long callerId, boolean callerIsAdmin) {
+        Account caller = Mockito.mock(Account.class);
+        when(caller.getId()).thenReturn(callerId);
+        CallContext.unregister();
+        CallContext.register(Mockito.mock(User.class), caller);
+
+        Account owner = Mockito.mock(Account.class);
+        when(owner.getType()).thenReturn(ownerType);
+        when(_accountMgr.getAccount(2L)).thenReturn(owner);
+        when(_accountMgr.isAdmin(callerId)).thenReturn(callerIsAdmin);
+
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(template.getAccountId()).thenReturn(2L);
+        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(vmTemplateDao.findById(10L)).thenReturn(template);
+        return caller;
+    }
+
+    private UpdateTemplatePermissionsCmd mockUpdateTemplatePermissionsCmd() {
+        UpdateTemplatePermissionsCmd cmd = Mockito.mock(UpdateTemplatePermissionsCmd.class);
+        when(cmd.getId()).thenReturn(10L);
+        when(cmd.getAccountNames()).thenReturn(null);
+        when(cmd.getProjectIds()).thenReturn(null);
+        when(cmd.isPublic()).thenReturn(true);
+        when(cmd.isExtractable()).thenReturn(true);
+        return cmd;
+    }
+
+    @Test
+    public void updateTemplateOrIsoPermissionsTestProjectAdminCanUpdateProjectTemplate() {
+        Account caller = mockUpdateTemplatePermissionsCall(Account.Type.PROJECT, 5L, false);
+        when(projectManagerMock.canModifyProjectAccount(caller, 2L)).thenReturn(true);
+        when(vmTemplateDao.createForUpdate()).thenReturn(Mockito.mock(VMTemplateVO.class));
+
+        Assert.assertTrue(templateManager.updateTemplateOrIsoPermissions(mockUpdateTemplatePermissionsCmd()));
+        Mockito.verify(vmTemplateDao, Mockito.times(1)).update(Mockito.eq(0L), Mockito.any(VMTemplateVO.class));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void updateTemplateOrIsoPermissionsTestProjectMemberCannotUpdateProjectTemplate() {
+        Account caller = mockUpdateTemplatePermissionsCall(Account.Type.PROJECT, 5L, false);
+        when(projectManagerMock.canModifyProjectAccount(caller, 2L)).thenReturn(false);
+
+        templateManager.updateTemplateOrIsoPermissions(mockUpdateTemplatePermissionsCmd());
+    }
+
+    @Test
+    public void updateTemplateOrIsoPermissionsTestOwnerCanUpdateTemplate() {
+        mockUpdateTemplatePermissionsCall(Account.Type.NORMAL, 2L, false);
+        when(vmTemplateDao.createForUpdate()).thenReturn(Mockito.mock(VMTemplateVO.class));
+
+        Assert.assertTrue(templateManager.updateTemplateOrIsoPermissions(mockUpdateTemplatePermissionsCmd()));
+        Mockito.verify(projectManagerMock, Mockito.never()).canModifyProjectAccount(Mockito.any(Account.class), Mockito.anyLong());
+    }
+
+    @Test
+    public void updateTemplateOrIsoPermissionsTestAdminCanUpdateProjectTemplate() {
+        mockUpdateTemplatePermissionsCall(Account.Type.PROJECT, 5L, true);
+        when(vmTemplateDao.createForUpdate()).thenReturn(Mockito.mock(VMTemplateVO.class));
+
+        Assert.assertTrue(templateManager.updateTemplateOrIsoPermissions(mockUpdateTemplatePermissionsCmd()));
+        Mockito.verify(projectManagerMock, Mockito.never()).canModifyProjectAccount(Mockito.any(Account.class), Mockito.anyLong());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void updateTemplateOrIsoPermissionsTestNonOwnerCannotUpdateTemplate() {
+        mockUpdateTemplatePermissionsCall(Account.Type.NORMAL, 5L, false);
+
+        templateManager.updateTemplateOrIsoPermissions(mockUpdateTemplatePermissionsCmd());
+    }
 }
