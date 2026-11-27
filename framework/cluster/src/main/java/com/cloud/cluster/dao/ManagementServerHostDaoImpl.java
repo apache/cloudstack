@@ -26,6 +26,7 @@ import java.util.TimeZone;
 
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.cluster.ClusterInvalidSessionException;
 import org.apache.cloudstack.management.ManagementServerHost;
@@ -43,6 +44,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServerHostVO, Long> implements ManagementServerHostDao {
 
     private final SearchBuilder<ManagementServerHostVO> MsIdSearch;
+    private final SearchBuilder<ManagementServerHostVO> NameSearch;
     private final SearchBuilder<ManagementServerHostVO> ActiveSearch;
     private final SearchBuilder<ManagementServerHostVO> InactiveSearch;
     private final SearchBuilder<ManagementServerHostVO> StateSearch;
@@ -73,6 +75,16 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         }
 
         return null;
+    }
+
+    @Override
+    public List<ManagementServerHostVO> findAllByName(String name) {
+        if (StringUtils.isBlank(name)) {
+            return List.of();
+        }
+        SearchCriteria<ManagementServerHostVO> sc = NameSearch.create();
+        sc.setParameters("name", name);
+        return listBy(sc);
     }
 
     @Override
@@ -190,6 +202,10 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         MsIdSearch = createSearchBuilder();
         MsIdSearch.and("msid", MsIdSearch.entity().getMsid(), SearchCriteria.Op.EQ);
         MsIdSearch.done();
+
+        NameSearch = createSearchBuilder();
+        NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        NameSearch.done();
 
         ActiveSearch = createSearchBuilder();
         ActiveSearch.and("lastUpdateTime", ActiveSearch.entity().getLastUpdateTime(), SearchCriteria.Op.GT);
