@@ -20,6 +20,7 @@ import store from '@/store'
 import { isZoneCreated } from '@/utils/zone'
 import { isAdmin } from '@/role'
 import { i18n } from '@/locales'
+import { escapeHtml } from '@/utils/util'
 
 export default {
   name: 'storage',
@@ -530,7 +531,8 @@ export default {
             if (state !== 'DOWNLOAD_URL_CREATED' || !url) {
               return i18n.global.t('message.download.screenshot.failed')
             }
-            return i18n.global.t('message.download.screenshot', { url: `<a href="${url}" target="_blank">${url}</a>` })
+            const escapedUrl = escapeHtml(url)
+            return i18n.global.t('message.download.screenshot', { url: `<a href="${escapedUrl}" target="_blank">${escapedUrl}</a>` })
           }
         },
         {
