@@ -278,23 +278,29 @@ public class KubernetesClusterCertificateManagementTest {
 
         // renewed through the API while the automatic renewal waited for a thread
         details.put(KubernetesClusterCertificateWorker.ROTATION_SUCCEEDED_DETAIL, String.valueOf(queuedAt + 1000));
-        manager.runQueuedAutomaticRotation(CLUSTER_ID, queuedAt);
+        manager.runQueuedAutomaticRotation(CLUSTER_ID, queuedAt, 4L);
         Mockito.verify(worker, Mockito.never()).rotateCertificates();
 
         // failed meanwhile, e.g. through the API: the backoff applies
         details.put(KubernetesClusterCertificateWorker.ROTATION_SUCCEEDED_DETAIL, String.valueOf(queuedAt - DAY));
         details.put(KubernetesClusterCertificateWorker.ROTATION_FAILED_DETAIL, String.valueOf(queuedAt + 1000));
-        manager.runQueuedAutomaticRotation(CLUSTER_ID, queuedAt);
+        manager.runQueuedAutomaticRotation(CLUSTER_ID, queuedAt, 4L);
         Mockito.verify(worker, Mockito.never()).rotateCertificates();
         details.remove(KubernetesClusterCertificateWorker.ROTATION_FAILED_DETAIL);
 
         // no longer Running
         Mockito.when(cluster.getState()).thenReturn(KubernetesCluster.State.Alert);
-        manager.runQueuedAutomaticRotation(CLUSTER_ID, queuedAt);
+        manager.runQueuedAutomaticRotation(CLUSTER_ID, queuedAt, 4L);
         Mockito.verify(worker, Mockito.never()).rotateCertificates();
 
+        // upgraded meanwhile: kubeadm renewed the certificates without a rotation marker
         Mockito.when(cluster.getState()).thenReturn(KubernetesCluster.State.Running);
-        manager.runQueuedAutomaticRotation(CLUSTER_ID, queuedAt);
+        Mockito.when(cluster.getKubernetesVersionId()).thenReturn(5L);
+        manager.runQueuedAutomaticRotation(CLUSTER_ID, queuedAt, 4L);
+        Mockito.verify(worker, Mockito.never()).rotateCertificates();
+        Mockito.when(cluster.getKubernetesVersionId()).thenReturn(4L);
+
+        manager.runQueuedAutomaticRotation(CLUSTER_ID, queuedAt, 4L);
         Mockito.verify(worker).setAutomatic(true);
         Mockito.verify(worker).rotateCertificates();
     }

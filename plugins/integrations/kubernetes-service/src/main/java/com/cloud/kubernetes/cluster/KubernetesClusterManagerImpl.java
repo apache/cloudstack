@@ -3238,12 +3238,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             return;
         }
         final long queuedAt = System.currentTimeMillis();
+        final Long queuedVersionId = kubernetesCluster.getKubernetesVersionId();
         try {
             _certificateRotationExecutor.execute(new ManagedContextRunnable() {
                 @Override
                 protected void runInContext() {
                     try {
-                        runQueuedAutomaticRotation(kubernetesCluster.getId(), queuedAt);
+                        runQueuedAutomaticRotation(kubernetesCluster.getId(), queuedAt, queuedVersionId);
                     } finally {
                         queuedCertificateRotations.remove(kubernetesCluster.getId());
                     }
@@ -3256,10 +3257,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     /** The cluster may have changed while the renewal waited for a thread, e.g. been renewed through the API. */
-    protected void runQueuedAutomaticRotation(long kubernetesClusterId, long queuedAt) {
+    protected void runQueuedAutomaticRotation(long kubernetesClusterId, long queuedAt, Long queuedVersionId) {
         KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(kubernetesClusterId);
         if (kubernetesCluster == null || !KubernetesCluster.State.Running.equals(kubernetesCluster.getState())) {
             logger.info("Skipping the queued automatic certificate renewal of Kubernetes cluster {}, it is no longer Running", kubernetesClusterId);
+            return;
+        }
+        if (!Objects.equals(queuedVersionId, kubernetesCluster.getKubernetesVersionId())) {
+            logger.info("Skipping the queued automatic certificate renewal of Kubernetes cluster {}, it was upgraded meanwhile", kubernetesCluster);
             return;
         }
         Long lastSuccess = getLongDetail(kubernetesClusterId, KubernetesClusterCertificateWorker.ROTATION_SUCCEEDED_DETAIL);
