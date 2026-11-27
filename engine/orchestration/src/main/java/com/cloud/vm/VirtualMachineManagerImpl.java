@@ -4936,8 +4936,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     EventTypes.EVENT_VM_STOP, "Out of band VM power off", vm.getId(), getApiCommandResourceTypeForVm(vm).toString());
         case Migrating:
             logger.info("VM {} is at {} and we received a {} report while there is no pending jobs on it"
-                            , vm, vm.getState(), vm.getPowerState());
-            if((HighAvailabilityManager.ForceHA.value() || vm.isHaEnabled()) && vm.getState() == State.Running
+                            , vm.getInstanceName(), vm.getState(), vm.getPowerState());
+            Pair<Long, Long> clusterHostPair = findClusterAndHostIdForVm(vm, false);
+            if ((HighAvailabilityManager.ForceHA.valueIn(clusterHostPair.first()) || vm.isHaEnabled()) && vm.getState() == State.Running
                     && HaVmRestartHostUp.value()
                     && vm.getHypervisorType() != HypervisorType.VMware
                     && vm.getHypervisorType() != HypervisorType.Hyperv) {
