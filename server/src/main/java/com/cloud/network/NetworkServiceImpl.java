@@ -1184,16 +1184,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, account);
 
-        VlanVO vlan = findOneVlanRangeMatchingVlanDetailKey(zone, vlanDetailKey);
-        if (vlan == null) {
-            String msg = String.format("Cannot find any vlan matching the detail key %s on zone %s", vlanDetailKey, zone.getName());
-            logger.error(msg);
-            throw new CloudRuntimeException(msg);
-        }
-
-        List<IPAddressVO> freeIps = _ipAddressDao.listByVlanIdAndState(vlan.getId(), State.Free);
+        List<IPAddressVO> freeIps = findFreeIpsInVlanRangesMatchingDetailKey(zone, vlanDetailKey);
         if (CollectionUtils.isEmpty(freeIps)) {
-            String msg = String.format("Cannot find any free IP matching on the VLAN range %s on zone %s", vlan.getIpRange(), zone.getName());
+            String msg = String.format("Cannot find any free IP in the VLAN ranges matching the detail key %s on zone %s", vlanDetailKey, zone.getName());
             logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
@@ -1218,16 +1211,19 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return selectedIp;
     }
 
-    private VlanVO findOneVlanRangeMatchingVlanDetailKey(DataCenter zone, String vlanDetailKey) {
-        List<VlanVO> zoneVlans = _vlanDao.listByZone(zone.getId());
-        for (VlanVO zoneVlan : zoneVlans) {
+    private List<IPAddressVO> findFreeIpsInVlanRangesMatchingDetailKey(DataCenter zone, String vlanDetailKey) {
+        for (VlanVO zoneVlan : _vlanDao.listByZone(zone.getId())) {
             VlanDetailsVO detail = vlanDetailsDao.findDetail(zoneVlan.getId(), vlanDetailKey);
-            if (detail != null && detail.getValue().equalsIgnoreCase("true")) {
-                logger.debug(String.format("Found the VLAN range %s is set for NSX on zone %s", zoneVlan.getIpRange(), zone.getName()));
-                return zoneVlan;
+            if (detail == null || !detail.getValue().equalsIgnoreCase("true")) {
+                continue;
+            }
+            List<IPAddressVO> freeIps = _ipAddressDao.listByVlanIdAndState(zoneVlan.getId(), State.Free);
+            if (CollectionUtils.isNotEmpty(freeIps)) {
+                logger.debug("Using VLAN range {} tagged {} on zone {}", zoneVlan.getIpRange(), vlanDetailKey, zone.getName());
+                return freeIps;
             }
         }
-        return null;
+        return Collections.emptyList();
     }
 
     private Long getIpDedicatedAccountId(Long vlanId) {
