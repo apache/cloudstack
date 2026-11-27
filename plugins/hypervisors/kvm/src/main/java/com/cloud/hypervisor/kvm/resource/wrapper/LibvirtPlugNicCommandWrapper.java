@@ -78,9 +78,7 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
             }
             final VifDriver vifDriver = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName());
             final InterfaceDef interfaceDef = vifDriver.plug(nic, "Other PV", "", null);
-            if (command.getDetails() != null) {
-                libvirtComputingResource.setInterfaceDefQueueSettings(command.getDetails(), null, interfaceDef);
-            }
+            libvirtComputingResource.setInterfaceDefQueueSettings(command.getDetails(), command.getTargetVmCpus(), interfaceDef, nic.getMultiqueueNumber(), vmType == VirtualMachine.Type.DomainRouter);
 
             // Pin the PCI slot to the lowest free one above the existing NICs so the guest sees a
             // deterministic, monotonic NIC order across hot-plugs (see findNextAvailablePciSlot).

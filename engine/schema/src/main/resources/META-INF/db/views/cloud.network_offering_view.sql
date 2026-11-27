@@ -63,6 +63,8 @@ SELECT
     `network_offerings`.`service_package_id` AS `service_package_id`,
     `network_offerings`.`routing_mode` AS `routing_mode`,
     `network_offerings`.`specify_as_number` AS `specify_as_number`,
+    `network_offerings`.`public_multiqueue_number` AS `public_multiqueue_number`,
+    `network_offerings`.`private_multiqueue_number` AS `private_multiqueue_number`,
     GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
     GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
     GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,

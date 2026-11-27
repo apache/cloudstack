@@ -5206,8 +5206,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     ResourceUnavailableException, InsufficientCapacityException {
         boolean result = true;
 
-        final VMInstanceVO router = _vmDao.findById(vm.getId());
-        if (router.getState() == State.Running) {
+        final VMInstanceVO targetVm = _vmDao.findById(vm.getId());
+        if (targetVm.getState() == State.Running) {
             try {
                 NetworkDetailVO pvlanTypeDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.ISOLATED_PVLAN_TYPE);
                 if (pvlanTypeDetail != null) {
@@ -5216,7 +5216,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     nicDetails.putIfAbsent(NetworkOffering.Detail.pvlanType, pvlanTypeDetail.getValue());
                     nic.setDetails(nicDetails);
                 }
-                final PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName(), vm.getType(), vm.getDetails());
+                final PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName(), vm.getType(), vm.getCpus(), vm.getDetails());
                 final Commands cmds = new Commands(Command.OnError.Stop);
                 cmds.addCommand("plugnic", plugNicCmd);
                 _agentMgr.send(dest.getHost().getId(), cmds);
@@ -5229,11 +5229,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 throw new AgentUnavailableException("Unable to plug nic for router " + vm.getName() + " in network " + network, dest.getHost().getId(), e);
             }
         } else {
-            String message = String.format("Unable to apply PlugNic, VM [%s] is not in the right state (\"Running\"). VM state [%s].", router.toString(), router.getState());
+            String message = String.format("Unable to plug NIC to VM [%s], as it is not in the right state (\"Running\"). VM state [%s].", targetVm, targetVm.getState());
             logger.warn(message);
 
             throw new ResourceUnavailableException(message, DataCenter.class,
-                    router.getDataCenterId());
+                    targetVm.getDataCenterId());
         }
 
         return result;

@@ -29,9 +29,12 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.agent.routing.ManageServiceCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -381,21 +384,23 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     @Override
     public boolean finalizeCommandsOnStart(final Commands cmds, final VirtualMachineProfile profile) {
         final DomainRouterVO domainRouterVO = _routerDao.findById(profile.getId());
-
-        Map<String, String> details = new HashMap<String, String>();
-
-        if(profile.getHypervisorType() == Hypervisor.HypervisorType.VMware){
-            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(profile.getHypervisorType());
-            VirtualMachineTO vmTO = hvGuru.implement(profile);
-            if(vmTO.getDetails() != null){
-                details = vmTO.getDetails();
-            }
-        }
-
         final boolean isVpc = domainRouterVO.getVpcId() != null;
         if (!isVpc) {
             return super.finalizeCommandsOnStart(cmds, profile);
         }
+
+        Map<String, String> details = new HashMap<>();
+        VirtualMachineTO vmTO = null;
+        if (profile.getHypervisorType() == Hypervisor.HypervisorType.VMware || profile.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
+            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(profile.getHypervisorType());
+            vmTO = hvGuru.implement(profile);
+            if (vmTO.getDetails() != null) {
+                details = vmTO.getDetails();
+            }
+        }
+
+        VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());
+        VpcOfferingVO vpcOffering = _entityMgr.findByIdIncludingRemoved(VpcOfferingVO.class, vpc.getVpcOfferingId());
 
         if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
             // 1) FORM SSH CHECK COMMAND
@@ -462,10 +467,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                         }
                     }
                     String broadcastURI = publicNic.getBroadcastUri() != null ? publicNic.getBroadcastUri().toString() : null;
-                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, publicNic.getNetworkId(), broadcastURI),
-                            domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
+                    Integer publicMultiqueueNumber = NetworkOrchestrationService.getRouterNicMultiqueueNumber(vpcOffering.getPublicMultiqueueNumber());
+                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, publicNic.getNetworkId(), broadcastURI, publicMultiqueueNumber),
+                            domainRouterVO.getInstanceName(), domainRouterVO.getType(), vmTO != null ? vmTO.getCpus() : null, details);
                     cmds.addCommand(plugNicCmd);
-                    final VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());
                     if (routedIpv4Manager.isRoutedVpc(vpc)) {
                         continue;
                     }
@@ -490,7 +495,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     final Nic guestNic = updateNicWithDeviceId(nicNtwk.first().getId(), deviceId);
                     deviceId ++;
                     // plug guest nic
-                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null), domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
+                    Integer privateGatewayMultiqueueNumber = NetworkOrchestrationService.getRouterNicMultiqueueNumber(vpcOffering.getPrivateGatewayMultiqueueNumber());
+                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null, privateGatewayMultiqueueNumber),
+                            domainRouterVO.getInstanceName(), domainRouterVO.getType(), vmTO != null ? vmTO.getCpus() : null, details);
                     cmds.addCommand(plugNicCmd);
                     // set private network
                     final PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(guestNic.getNetworkId(), guestNic.getIPv4Address());
@@ -520,7 +527,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     final Nic guestNic = updateNicWithDeviceId(nicNtwk.first().getId(), deviceId);
                     deviceId ++;
                     // plug guest nic
-                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null), domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
+                    NetworkOffering tierOffering = _entityMgr.findByIdIncludingRemoved(NetworkOffering.class, nicNtwk.second().getNetworkOfferingId());
+                    Integer tierMultiqueueNumber = NetworkOrchestrationService.getRouterNicMultiqueueNumber(tierOffering.getPrivateMultiqueueNumber());
+                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null, tierMultiqueueNumber),
+                            domainRouterVO.getInstanceName(), domainRouterVO.getType(), vmTO != null ? vmTO.getCpus() : null, details);
                     cmds.addCommand(plugNicCmd);
                     // set guest network
                     final VirtualMachine vm = _vmDao.findById(domainRouterVO.getId());

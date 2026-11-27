@@ -2538,6 +2538,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         Pair<String, String> ip6Dns = getNetworkIp6Dns(network, dataCenter);
         profile.setIPv6Dns1(ip6Dns.first());
         profile.setIPv6Dns2(ip6Dns.second());
+
         return profile;
     }
 

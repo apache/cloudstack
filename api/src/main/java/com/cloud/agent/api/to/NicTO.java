@@ -36,6 +36,7 @@ public class NicTO extends NetworkTO {
     boolean enabled;
 
     String networkSegmentName;
+    private Integer multiqueueNumber;
 
     boolean trunkVlan;
     List<NetworkTO> associatedNetworks;
@@ -182,5 +183,13 @@ public class NicTO extends NetworkTO {
 
     public void setAssociatedNetworks(List<NetworkTO> associatedNetworks) {
         this.associatedNetworks = associatedNetworks;
+    }
+
+    public Integer getMultiqueueNumber() {
+        return multiqueueNumber;
+    }
+
+    public void setMultiqueueNumber(Integer multiqueueNumber) {
+        this.multiqueueNumber = multiqueueNumber;
     }
 }

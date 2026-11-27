@@ -141,6 +141,25 @@ public interface NetworkOrchestrationService {
     ConfigKey<Integer> VmNetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, "vm.network.throttling.rate", "200",
             "Default data transfer rate in megabits per second allowed in User vm's default network.", true, ConfigKey.Scope.Zone);
 
+    ConfigKey<Integer> RouterNicMultiqueueNumber = new ConfigKey<>(
+            "Network",
+            Integer.class,
+            "router.nic.multiqueue.number",
+            "1",
+            "Default number of queues for the NICs of virtual routers (KVM only), used when the corresponding " +
+            "multiqueue parameter of the network or VPC offering is not set. Accepted values are -1 (one queue per " +
+            "VR vCPU) or an integer from 1 to 256. When unset, multiqueue is defined as 1.",
+            true,
+            Scope.Global);
+
+    /**
+     * Returns the multiqueue number to be used for a VR NIC: the value defined in the network/VPC offering, if any;
+     * otherwise, the value of {@link #RouterNicMultiqueueNumber}.
+     */
+    static Integer getRouterNicMultiqueueNumber(Integer offeringMultiqueueNumber) {
+        return offeringMultiqueueNumber != null ? offeringMultiqueueNumber : RouterNicMultiqueueNumber.value();
+    }
+
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
 

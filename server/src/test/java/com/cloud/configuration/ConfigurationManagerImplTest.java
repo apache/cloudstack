@@ -68,6 +68,7 @@ import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -96,6 +97,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -467,6 +469,8 @@ public class ConfigurationManagerImplTest {
         when(createNetworkOfferingCmd.getTraffictype()).thenReturn(Networks.TrafficType.Guest.name());
         when(createNetworkOfferingCmd.getGuestIpType()).thenReturn(Network.GuestType.Isolated.name());
         when(createNetworkOfferingCmd.getAvailability()).thenReturn(NetworkOffering.Availability.Optional.name());
+        when(createNetworkOfferingCmd.getPrivateMultiqueueNumber()).thenReturn(null);
+        when(createNetworkOfferingCmd.getPublicMultiqueueNumber()).thenReturn(null);
         when(configDao.getValue(anyString())).thenReturn("1000");
         when(networkOfferingDao.persist(any(NetworkOfferingVO.class), anyMap())).thenReturn(offeringVO);
         doNothing().when(networkService).validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(anyLong());
@@ -1461,5 +1465,32 @@ public class ConfigurationManagerImplTest {
         Assert.assertSame(cfg, result);
         Assert.assertEquals("condensed", result.getValue());
         Mockito.verify(cfg, Mockito.never()).setValue(Mockito.anyString());
+    }
+
+    @Test
+    public void validateRouterNicMultiqueueNumberConfigValueTestAcceptsValidValues() {
+        for (String value : List.of("-1", "1", "8", "256")) {
+            configurationManagerImplSpy.validateRouterNicMultiqueueNumberConfigValue(value);
+        }
+    }
+
+    @Test
+    public void validateRouterNicMultiqueueNumberConfigValueTestIgnoresNonIntegerValues() {
+        for (String value : Arrays.asList(null, "", "abc")) {
+            configurationManagerImplSpy.validateRouterNicMultiqueueNumberConfigValue(value);
+        }
+    }
+
+    @Test
+    public void validateRouterNicMultiqueueNumberConfigValueTestRejectsInvalidValues() {
+        for (String value : List.of("0", "-2", "257")) {
+            Assert.assertThrows(InvalidParameterValueException.class,
+                    () -> configurationManagerImplSpy.validateRouterNicMultiqueueNumberConfigValue(value));
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateSpecificConfigurationValuesTestValidatesRouterNicMultiqueueNumber() {
+        configurationManagerImplSpy.validateSpecificConfigurationValues(NetworkOrchestrationService.RouterNicMultiqueueNumber.key(), "0", Integer.class);
     }
 }

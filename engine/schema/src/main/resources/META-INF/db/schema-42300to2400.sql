@@ -304,3 +304,11 @@ JOIN (
     GROUP BY object_store_id
 ) buckets_quota_sum_view ON `object_store`.id = buckets_quota_sum_view.object_store_id
 SET `object_store`.allocated_size = buckets_quota_sum_view.total_quota;
+
+-- Multiqueue for VRs
+-- Add 'public_multiqueue_number' and 'private_multiqueue_number' columns to the 'cloud.network_offerings' table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings', 'public_multiqueue_number', 'INT DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings', 'private_multiqueue_number', 'INT DEFAULT NULL');
+-- Add 'public_multiqueue_number' and 'private_gateway_multiqueue_number' columns to the 'cloud.vpc_offerings' table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings', 'public_multiqueue_number', 'INT DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings', 'private_gateway_multiqueue_number', 'INT DEFAULT NULL');

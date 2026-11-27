@@ -72,6 +72,8 @@ public class VpcOfferingJoinDaoImpl extends GenericDaoBase<VpcOfferingJoinVO, Lo
         offeringResponse.setSupportsRegionLevelVpc(offering.isOffersRegionLevelVPC());
         offeringResponse.setCreated(offering.getCreated());
         offeringResponse.setRedundantRouter(offering.isRedundantRouter());
+        offeringResponse.setPublicMultiqueueNumber(offering.getPublicMultiqueueNumber());
+        offeringResponse.setPrivateGatewayMultiqueueNumber(offering.getPrivateGatewayMultiqueueNumber());
         if (offering.getRoutingMode() != null) {
             offeringResponse.setRoutingMode(offering.getRoutingMode().toString());
         }

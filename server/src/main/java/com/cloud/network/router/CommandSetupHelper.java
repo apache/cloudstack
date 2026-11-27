@@ -741,7 +741,7 @@ public class CommandSetupHelper {
             }
         }
 
-        NicTO nicTO = _networkHelper.getNicTO(router, guestNetworkId, null);
+        NicTO nicTO = _networkHelper.getNicTO(router, guestNetworkId, null, null);
         final SetNetworkACLCommand cmd = new SetNetworkACLCommand(rulesTO, nicTO);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
