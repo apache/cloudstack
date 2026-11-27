@@ -453,12 +453,12 @@ public class KubernetesClusterCertificateWorker extends KubernetesClusterActionW
         if (isStillOwnRotation()) {
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             clearRotationDetails();
-        }
-        kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), ROTATION_FAILED_DETAIL, String.valueOf(System.currentTimeMillis()), false);
-        sendAlert(String.format("Certificate rotation failed for Kubernetes cluster %s", kubernetesCluster.getName()), message);
-        // the API records the failure of its own async job event
-        if (automatic) {
-            recordEvent(KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CERTIFICATES_ROTATE, EventVO.LEVEL_ERROR, message);
+            kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), ROTATION_FAILED_DETAIL, String.valueOf(System.currentTimeMillis()), false);
+            sendAlert(String.format("Certificate rotation failed for Kubernetes cluster %s", kubernetesCluster.getName()), message);
+            // the API records the failure of its own async job event
+            if (automatic) {
+                recordEvent(KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CERTIFICATES_ROTATE, EventVO.LEVEL_ERROR, message);
+            }
         }
         throw new RotationFailedException(message, e);
     }

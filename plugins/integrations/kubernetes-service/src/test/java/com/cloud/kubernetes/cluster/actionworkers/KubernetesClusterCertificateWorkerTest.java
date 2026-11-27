@@ -256,6 +256,22 @@ public class KubernetesClusterCertificateWorkerTest {
     }
 
     @Test
+    public void failureLeavesAClusterTakenMeanwhileInItsState() {
+        worker.setAutomatic(true);
+        Mockito.doReturn(false).when(worker).isStillOwnRotation();
+        Mockito.doReturn(false).when(worker).renewCertificatesOnControlNode(control1, 0);
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> worker.rotateCertificates());
+
+        Mockito.verify(worker).renewCertificatesOnControlNode(control1, 0);
+        Mockito.verify(worker, Mockito.never()).stateTransitTo(CLUSTER_ID, KubernetesCluster.Event.OperationFailed);
+        Mockito.verify(kubernetesClusterDetailsDao, Mockito.never()).addDetail(ArgumentMatchers.eq(CLUSTER_ID),
+                ArgumentMatchers.eq(KubernetesClusterCertificateWorker.ROTATION_FAILED_DETAIL), ArgumentMatchers.anyString(), ArgumentMatchers.anyBoolean());
+        Mockito.verify(worker, Mockito.never()).sendAlert(ArgumentMatchers.anyString(), ArgumentMatchers.anyString());
+        Mockito.verify(worker, Mockito.never()).recordEvent(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString());
+    }
+
+    @Test
     public void rotationOfAnUnreachableClusterFailsWhenANodeDoesNotComeBack() {
         Mockito.doReturn(true).when(worker).areCertificatesExpired(ArgumentMatchers.anyList());
         Mockito.doReturn(false).when(worker).waitForControlNodeReady(control2);
