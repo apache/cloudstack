@@ -20,6 +20,7 @@
 package com.cloud.utils;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -261,5 +262,31 @@ public class StringUtilsTest {
         Pair<String, String> output = StringUtils.getKeyValuePairWithSeparator(kp, "=");
         assertEquals(key, output.first());
         assertEquals(value, output.second());
+    }
+
+    @Test
+    public void testFormatValuesForLogMasksSensitiveParameters() {
+        String result = StringUtils.formatValuesForLog(
+            "password",
+            new String[]{"SECRET_ONE", "SECRET_TWO"});
+
+        assertEquals("[REDACTED, REDACTED]", result);
+    }
+
+    @Test
+    public void testFormatValuesForLogDoesNotMaskNormalParameters() {
+        String result = StringUtils.formatValuesForLog(
+            "username",
+            new String[]{"alice", "bob"});
+
+        assertEquals("[alice, bob]", result);
+    }
+
+    @Test
+    public void testIsSensitiveParameter() {
+        assertTrue(StringUtils.isSensitiveParameter("adminpassword"));
+        assertTrue(StringUtils.isSensitiveParameter("usersecretkey"));
+        assertTrue(StringUtils.isSensitiveParameter("sessiontoken"));
+        assertFalse(StringUtils.isSensitiveParameter("username"));
     }
 }
