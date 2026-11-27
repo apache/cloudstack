@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import javax.inject.Inject;
 import javax.mail.MessagingException;
@@ -161,6 +162,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     private final ExecutorService _executor;
 
+    private ThreadPoolExecutor capacityExecutorService;
+
     protected SMTPMailSender mailSender;
     protected String[] recipients = null;
     protected String senderAddress = null;
@@ -249,6 +252,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Override
     public boolean stop() {
         _timer.cancel();
+        if (capacityExecutorService != null) {
+            capacityExecutorService.shutdown();
+        }
         return true;
     }
 
@@ -282,6 +288,43 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     }
 
     /**
+     * Shared, long-lived pool for capacity recalculation, reused across every
+     * recalculateHostCapacities()/recalculateStorageCapacities() call instead of creating and
+     * tearing down a new thread pool per invocation. Repeatedly creating/shutting down pools was
+     * unnecessary overhead under frequent callers (e.g. the Prometheus exporter used to trigger a
+     * full recalculation on every scrape, see https://github.com/apache/cloudstack/issues/13586).
+     * Lazily created so this remains safe for callers that invoke the recalculate methods directly
+     * without going through configure()/start() (e.g. unit tests).
+     * CapacityCalculateWorkers is a dynamic setting, so the pool is resized in place whenever its
+     * value changes rather than requiring a management server restart to take effect.
+     */
+    private synchronized ExecutorService getCapacityExecutorService() {
+        int configuredWorkers = Math.max(1, CapacityManager.CapacityCalculateWorkers.value());
+        if (capacityExecutorService == null || capacityExecutorService.isShutdown()) {
+            capacityExecutorService = (ThreadPoolExecutor) Executors.newFixedThreadPool(configuredWorkers, new NamedThreadFactory("Capacity-Calculator"));
+        } else if (configuredWorkers != capacityExecutorService.getCorePoolSize()) {
+            resizePool(capacityExecutorService, configuredWorkers);
+        }
+        return capacityExecutorService;
+    }
+
+    /**
+     * Resizes a fixed-size pool's core and maximum sizes in place. The order of the two calls
+     * matters: ThreadPoolExecutor rejects setCorePoolSize(x) when x exceeds the current maximum,
+     * and setMaximumPoolSize(x) when x is below the current core, so the size that is moving away
+     * from the other bound must be set first.
+     */
+    private static void resizePool(ThreadPoolExecutor pool, int desiredSize) {
+        if (desiredSize > pool.getMaximumPoolSize()) {
+            pool.setMaximumPoolSize(desiredSize);
+            pool.setCorePoolSize(desiredSize);
+        } else {
+            pool.setCorePoolSize(desiredSize);
+            pool.setMaximumPoolSize(desiredSize);
+        }
+    }
+
+    /**
      * Recalculates the capacities of hosts, including CPU and RAM.
      */
     protected void recalculateHostCapacities() {
@@ -290,10 +333,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             return;
         }
         ConcurrentHashMap<Long, Future<Void>> futures = new ConcurrentHashMap<>();
-        ExecutorService executorService = Executors.newFixedThreadPool(Math.max(1,
-                Math.min(CapacityManager.CapacityCalculateWorkers.value(), hostIds.size())));
         for (Long hostId : hostIds) {
-            futures.put(hostId, executorService.submit(() -> {
+            futures.put(hostId, getCapacityExecutorService().submit(() -> {
                 final HostVO host = hostDao.findById(hostId);
                 _capacityMgr.updateCapacityForHost(host);
                 return null;
@@ -307,7 +348,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                         entry.getKey(), e.getMessage()), e);
             }
         }
-        executorService.shutdown();
     }
 
     protected void recalculateStorageCapacities() {
@@ -316,10 +356,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             return;
         }
         ConcurrentHashMap<Long, Future<Void>> futures = new ConcurrentHashMap<>();
-        ExecutorService executorService = Executors.newFixedThreadPool(Math.max(1,
-                Math.min(CapacityManager.CapacityCalculateWorkers.value(), storagePoolIds.size())));
         for (Long poolId: storagePoolIds) {
-            futures.put(poolId, executorService.submit(() -> {
+            futures.put(poolId, getCapacityExecutorService().submit(() -> {
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
@@ -343,7 +381,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                         entry.getKey(), e.getMessage()), e);
             }
         }
-        executorService.shutdown();
     }
 
     @Override
