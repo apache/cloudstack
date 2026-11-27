@@ -19,6 +19,8 @@ import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { isZoneCreated } from '@/utils/zone'
 import { isAdmin } from '@/role'
+import { i18n } from '@/locales'
+import { escapeHtml } from '@/utils/util'
 
 export default {
   name: 'storage',
@@ -507,6 +509,32 @@ export default {
         }
       ],
       actions: [
+        {
+          api: 'downloadValidationScreenshot',
+          icon: 'picture-outlined',
+          label: 'label.action.download.screenshot',
+          message: 'message.action.download.screenshot',
+          dataView: true,
+          showSuccessMessage: false,
+          show: (record) => {
+            return record.status === 'BackedUp' && ['Valid', 'NotValid'].includes(record.validationstatus)
+          },
+          args: ['backupid'],
+          mapping: {
+            backupid: {
+              value: (record) => { return record.id }
+            }
+          },
+          response: (result) => {
+            const state = result?.downloadvalidationscreenshotresponse?.state
+            const url = result?.downloadvalidationscreenshotresponse?.url
+            if (state !== 'DOWNLOAD_URL_CREATED' || !url) {
+              return i18n.global.t('message.download.screenshot.failed')
+            }
+            const escapedUrl = escapeHtml(url)
+            return i18n.global.t('message.download.screenshot', { url: `<a href="${escapedUrl}" target="_blank">${escapedUrl}</a>` })
+          }
+        },
         {
           api: 'restoreBackup',
           icon: 'sync-outlined',
