@@ -1609,7 +1609,7 @@ class IpTablesExecutor:
         CsHelper.save_iptables("ip6tables-save", "/etc/iptables/rules.v6")
 
         # Save nftables configuration
-        CsHelper.save_iptables("nft list ruleset", "/etc/iptables/rules.nftables")
+        CsHelper.save_nftables("/etc/iptables/rules.nftables")
 
 def main(argv):
     # The file we are currently processing, if it is "cmd_line.json" everything will be processed.
