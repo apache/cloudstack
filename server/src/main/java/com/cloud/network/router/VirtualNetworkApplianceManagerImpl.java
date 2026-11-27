@@ -276,6 +276,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     private static final String FILESYSTEM_WRITABLE_TEST = "filesystem.writable.test";
     private static final String READONLY_FILESYSTEM_ERROR = "Read-only file system";
     private static final String BACKUP_ROUTER_EXCLUDED_TESTS = "gateways_check.py";
+    private static final String INTERNAL_LB_EXCLUDED_TESTS = "dhcp_check.py,dns_check.py";
     /**
      * Used regex to ensure that the value that will be passed to the VR is an acceptable value
      */
@@ -1615,6 +1616,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     routerGuestNtwkIds == null || routerGuestNtwkIds.isEmpty()) {
                 excludedTests = excludedTests.isEmpty() ? BACKUP_ROUTER_EXCLUDED_TESTS : excludedTests + "," + BACKUP_ROUTER_EXCLUDED_TESTS;
             }
+        }
+        if (router.getRole() == Role.INTERNAL_LB_VM) {
+            excludedTests = excludedTests.isEmpty() ? INTERNAL_LB_EXCLUDED_TESTS : excludedTests + "," + INTERNAL_LB_EXCLUDED_TESTS;
         }
 
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, excludedTests);
