@@ -494,7 +494,7 @@ export default {
       permission: ['listBackups'],
       params: { listvmdetails: 'true' },
       columns: ['name', 'status', 'compressionstatus', 'validationstatus', 'size', 'virtualsize', 'virtualmachinename', 'backupofferingname', 'intervaltype', 'type', 'created', 'account', 'domain', 'zone'],
-      details: ['name', 'description', 'virtualmachinename', 'id', 'intervaltype', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
+      details: ['name', 'description', 'virtualmachinename', 'id', 'intervaltype', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'backuppaths', 'zone', 'account', 'domain', 'created'],
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'backupofferingid', 'status', 'type', 'virtualmachineid'],
       tabs: [
         {

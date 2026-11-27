@@ -19,18 +19,27 @@ package org.apache.cloudstack.backup.dao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
+import org.apache.cloudstack.api.response.helper.BackupVolumeNameAndPath;
 import org.apache.cloudstack.backup.InternalBackupDataStoreVO;
 
 import javax.annotation.PostConstruct;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class InternalBackupDataStoreDaoImpl extends GenericDaoBase<InternalBackupDataStoreVO, Long> implements InternalBackupDataStoreDao {
-
     private SearchBuilder<InternalBackupDataStoreVO> backupSearch;
 
     private static final String BACKUP_ID = "backup_id";
     private static final String VOLUME_ID = "volume_id";
+
+    private static final String SELECT_SECONDARY_PATH_AND_VOLUME_NAME = "select v.name, v.uuid, ibsr.`path` from internal_backup_store_ref ibsr join volumes v on ibsr.volume_id = v.id "
+            + "where ibsr.backup_id = ?";
 
     @PostConstruct
     protected void init() {
@@ -71,4 +80,28 @@ public class InternalBackupDataStoreDaoImpl extends GenericDaoBase<InternalBacku
         UpdateBuilder ub = getUpdateBuilder(delta);
         update(ub, sc, null);
     }
+
+    @Override
+    public Map<String, BackupVolumeNameAndPath> listVolumeNamesAndBackupPaths(long backupId) {
+        Map<String, BackupVolumeNameAndPath> volumeIdentifierToObjectMap = new HashMap<>();
+        try (TransactionLegacy transactionLegacy = TransactionLegacy.currentTxn()) {
+            try (PreparedStatement preparedStatement = transactionLegacy.prepareStatement(SELECT_SECONDARY_PATH_AND_VOLUME_NAME)) {
+                preparedStatement.setLong(1, backupId);
+
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    while (resultSet.next()) {
+                        String volumeName = resultSet.getString(1);
+                        String volumeUuid = resultSet.getString(2);
+                        String backupPath = resultSet.getString(3);
+
+                        volumeIdentifierToObjectMap.put(volumeUuid, new BackupVolumeNameAndPath(volumeName, backupPath));
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            logger.warn("Failed to find volume names and backup paths on secondary for backup [{}].", backupId, e);
+        }
+        return volumeIdentifierToObjectMap;
+    }
+
 }
