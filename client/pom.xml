@@ -318,11 +318,6 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-hypervisor-ucs</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-hypervisor-kvm</artifactId>
             <version>${project.version}</version>
             <exclusions>
@@ -331,11 +326,6 @@
                     <artifactId>servlet-api</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-hypervisor-hyperv</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
