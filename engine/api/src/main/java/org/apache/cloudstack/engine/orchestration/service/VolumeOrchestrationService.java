@@ -109,6 +109,11 @@ public interface VolumeOrchestrationService {
 
     StoragePool findChildDataStoreInDataStoreCluster(DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Long datastoreClusterId);
 
+    /**
+     * Sets up the encryption of a volume if its disk offering is encrypted and the volume has none yet.
+     */
+    void setUpVolumeEncryption(long volumeId, DiskOffering diskOffering);
+
     VolumeInfo createVolumeFromSnapshot(Volume volume, Snapshot snapshot, UserVm vm) throws StorageUnavailableException;
 
     Volume migrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException;

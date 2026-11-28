@@ -1090,6 +1090,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with the storage pool", diskOffering.getUuid()));
         }
 
+        _volumeMgr.setUpVolumeEncryption(volumeId, diskOffering);
+
         DataStore dataStore = dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
         VolumeInfo volumeInfo = volFactory.getVolume(volumeId, dataStore);
         AsyncCallFuture<VolumeApiResult> createVolumeFuture = volService.createVolumeAsync(volumeInfo, dataStore);
