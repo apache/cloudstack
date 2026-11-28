@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -1908,8 +1909,7 @@ public class VolumeApiServiceImplTest {
         }
     }
 
-    @Test
-    public void testResizeVolumeWithoutEnoughCapacity() throws ResourceAllocationException, ExecutionException, InterruptedException {
+    private ResizeVolumeCmd setupResizeVolumeNeedingMigration() throws ExecutionException, InterruptedException {
         ResizeVolumeCmd cmd = new ResizeVolumeCmd();
         ReflectionTestUtils.setField(cmd, "id", volumeMockId);
         ReflectionTestUtils.setField(cmd, "newDiskOfferingId", newDiskOfferingMockId);
@@ -1921,6 +1921,12 @@ public class VolumeApiServiceImplTest {
         StoragePoolVO suitableStoragePool = Mockito.mock(StoragePoolVO.class);
         Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = new Pair<>(Arrays.asList(suitableStoragePool), Arrays.asList(suitableStoragePool));
         when(managementService.listStoragePoolsForSystemMigrationOfVolume(anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyBoolean(), anyBoolean())).thenReturn(poolsPair);
+        return cmd;
+    }
+
+    @Test
+    public void testResizeVolumeWithoutEnoughCapacity() throws ResourceAllocationException, ExecutionException, InterruptedException {
+        ResizeVolumeCmd cmd = setupResizeVolumeNeedingMigration();
         doReturn(volumeInfoMock).when(volumeApiServiceImpl).migrateVolume(any());
         when(volumeInfoMock.getId()).thenReturn(volumeMockId);
 
@@ -1930,6 +1936,74 @@ public class VolumeApiServiceImplTest {
             verify(volumeApiServiceImpl).migrateVolume(any());
             verify(volumeServiceMock).resize(any(VolumeInfo.class));
         }
+    }
+
+    @Test
+    public void testResizeVolumeFailsCleanlyWhenMigrationReturnsNoVolume() throws ResourceAllocationException, ExecutionException, InterruptedException {
+        ResizeVolumeCmd cmd = setupResizeVolumeNeedingMigration();
+        doReturn(null).when(volumeApiServiceImpl).migrateVolume(any());
+
+        try {
+            volumeApiServiceImpl.resizeVolume(cmd);
+            fail("Expected CloudRuntimeException when the migration returns no volume");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("the migration did not return the migrated volume"));
+        }
+        verify(volumeApiServiceImpl).migrateVolume(any());
+        verify(volumeServiceMock, times(0)).resize(any(VolumeInfo.class));
+    }
+
+    @Test
+    public void testResizeVolumeReportsMigrationFailureReason() throws ResourceAllocationException, ExecutionException, InterruptedException {
+        ResizeVolumeCmd cmd = setupResizeVolumeNeedingMigration();
+        CloudRuntimeException migrationFailure = new CloudRuntimeException("destination pool unreachable");
+        doThrow(migrationFailure).when(volumeApiServiceImpl).migrateVolume(any());
+
+        try {
+            volumeApiServiceImpl.resizeVolume(cmd);
+            fail("Expected CloudRuntimeException when the migration fails");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("due to destination pool unreachable"));
+            Assert.assertSame(migrationFailure, e.getCause());
+        }
+        verify(volumeApiServiceImpl).migrateVolume(any());
+        verify(volumeServiceMock, times(0)).resize(any(VolumeInfo.class));
+    }
+
+    @Test
+    public void testChangeDiskOfferingFailsCleanlyWhenMigrationReturnsNoVolume() throws ResourceAllocationException {
+        long poolId = 11L;
+        long newPoolId = 12L;
+        when(volumeDaoMock.findById(volumeMockId)).thenReturn(volumeVoMock);
+        when(volumeVoMock.getId()).thenReturn(volumeMockId);
+        when(volumeVoMock.getDiskOfferingId()).thenReturn(diskOfferingMockId);
+        when(volumeVoMock.getState()).thenReturn(Volume.State.Ready);
+        when(volumeVoMock.getSize()).thenReturn(volumeSizeMock);
+        when(volumeVoMock.getPoolId()).thenReturn(poolId);
+        when(_diskOfferingDao.findByIdIncludingRemoved(diskOfferingMockId)).thenReturn(diskOfferingMock);
+        when(_diskOfferingDao.findById(newDiskOfferingMockId)).thenReturn(newDiskOfferingMock);
+        when(newDiskOfferingMock.getId()).thenReturn(newDiskOfferingMockId);
+        doNothing().when(volumeApiServiceImpl).validateVolumeResizeWithNewDiskOfferingAndLoad(any(), any(), any(), any(), any(), any(), any());
+        when(volumeDataFactoryMock.getVolume(volumeMockId)).thenReturn(volumeInfoMock);
+
+        StoragePoolVO currentPool = Mockito.mock(StoragePoolVO.class);
+        when(currentPool.getId()).thenReturn(poolId);
+        when(primaryDataStoreDaoMock.findById(poolId)).thenReturn(currentPool);
+        StoragePoolVO suitablePool = Mockito.mock(StoragePoolVO.class);
+        when(suitablePool.getId()).thenReturn(newPoolId);
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = new Pair<>(Arrays.asList(suitablePool), Arrays.asList(suitablePool));
+        when(managementService.listStoragePoolsForSystemMigrationOfVolume(anyLong(), anyLong(), anyLong(), nullable(Long.class), nullable(Long.class), anyBoolean(), anyBoolean())).thenReturn(poolsPair);
+        when(storageMgr.storagePoolHasEnoughSpaceForResize(any(), anyLong(), anyLong())).thenReturn(true);
+        doReturn(null).when(volumeApiServiceImpl).migrateVolume(any());
+
+        try {
+            volumeApiServiceImpl.changeDiskOfferingForVolumeInternal(volumeMockId, newDiskOfferingMockId, volumeSizeMock, null, null, true, false);
+            fail("Expected CloudRuntimeException when the migration returns no volume");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("the migration did not return the migrated volume"));
+            Assert.assertFalse(e.getMessage(), e.getMessage().contains("volume: null"));
+        }
+        verify(volumeApiServiceImpl).migrateVolume(Mockito.argThat(cmd -> cmd.getStoragePoolId() == newPoolId));
     }
 
     @Test
