@@ -41,7 +41,7 @@ public class RegisterCniConfigurationCmd extends BaseRegisterUserDataCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.CNI_CONFIG, type = CommandType.STRING, description = "CNI Configuration content to be registered as User data", length = 1048576)
+    @Parameter(name = ApiConstants.CNI_CONFIG, type = CommandType.STRING, required = true, description = "CNI Configuration content to be registered as User data", length = 1048576)
     private String cniConfig;
 
     /////////////////////////////////////////////////////

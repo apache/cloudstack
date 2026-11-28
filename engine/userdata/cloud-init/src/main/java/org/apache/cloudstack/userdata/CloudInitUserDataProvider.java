@@ -21,9 +21,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
@@ -53,6 +55,8 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
     private static final String BASH_SCRIPT_CONTENT_TYPE = "text/x-shellscript";
     private static final String INCLUDE_FILE_CONTENT_TYPE = "text/x-include-url";
     private static final String CLOUD_BOOTHOOK_CONTENT_TYPE = "text/cloud-boothook";
+    private static final String JINJA_TEMPLATE_CONTENT_TYPE = "text/jinja2";
+    private static final String JINJA_TEMPLATE_HEADER = "## template: jinja";
 
     private static final Map<FormatType, String> formatContentTypeMap = Map.ofEntries(
             Map.entry(FormatType.CLOUD_CONFIG, CLOUD_CONFIG_CONTENT_TYPE),
@@ -60,6 +64,8 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
             Map.entry(FormatType.CLOUD_BOOTHOOK, CLOUD_BOOTHOOK_CONTENT_TYPE),
             Map.entry(FormatType.INCLUDE_FILE, INCLUDE_FILE_CONTENT_TYPE)
     );
+
+    private static final Set<FormatType> JINJA_TEMPLATE_FORMAT_TYPES = EnumSet.of(FormatType.CLOUD_CONFIG, FormatType.BASH_SCRIPT);
 
     private static final Session session = Session.getDefaultInstance(new Properties());
 
@@ -138,11 +144,29 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
             NoIdMimeMessage msg = new NoIdMimeMessage(session, new ByteArrayInputStream(userData.getBytes()));
             return msg.getContentType();
         }
+        if (JINJA_TEMPLATE_FORMAT_TYPES.contains(formatType) && isJinjaTemplate(userData)) {
+            // cloud-init renders jinja only for text/jinja2 parts, then handles the result by its own header
+            return JINJA_TEMPLATE_CONTENT_TYPE;
+        }
         if (!formatContentTypeMap.containsKey(formatType)) {
             throw new CloudRuntimeException(String.format("Cannot get the user data content type as " +
                     "its format type %s is invalid", formatType.name()));
         }
         return formatContentTypeMap.get(formatType);
+    }
+
+    /**
+     * True when the first line is the jinja header and the next line is the user data header,
+     * which is what cloud-init needs to render the part and then pick a handler for the result.
+     */
+    protected boolean isJinjaTemplate(String userData) {
+        String firstLine = StringUtils.stripEnd(StringUtils.substringBefore(userData, "\n"), null);
+        if (!JINJA_TEMPLATE_HEADER.equalsIgnoreCase(firstLine)) {
+            return false;
+        }
+        String rest = StringUtils.substringAfter(userData, "\n");
+        String header = extractUserDataHeader(rest);
+        return header != null && rest.startsWith(header);
     }
 
     protected String getBodyPartContentAsString(BodyPart bodyPart) throws MessagingException, IOException {
@@ -184,12 +208,16 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
     }
 
     private void addBodyPartToMultipart(Multipart existingMultipart, MimeBodyPart bodyPart) throws MessagingException, IOException {
+        String newContentType = getBodyPartContentType(bodyPart);
+        if (JINJA_TEMPLATE_CONTENT_TYPE.equals(newContentType)) {
+            existingMultipart.addBodyPart(bodyPart);
+            return;
+        }
         boolean added = false;
         final int existingCount = existingMultipart.getCount();
         for (int j = 0; j < existingCount; ++j) {
             MimeBodyPart existingBodyPart = (MimeBodyPart)existingMultipart.getBodyPart(j);
             String existingContentType = getBodyPartContentType(existingBodyPart);
-            String newContentType = getBodyPartContentType(bodyPart);
             if (existingContentType.equals(newContentType)) {
                 String existingContent = getBodyPartContentAsString(existingBodyPart);
                 String newContent = getBodyPartContentAsString(bodyPart);
