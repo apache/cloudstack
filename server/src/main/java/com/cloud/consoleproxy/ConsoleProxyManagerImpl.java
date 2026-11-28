@@ -1011,18 +1011,21 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public ConsoleProxyManagementState getManagementState() {
-        String configKey = ConsoleProxyServiceManagementState.key();
-        String value = ConsoleProxyServiceManagementState.value();
+        return readManagementState(ConsoleProxyServiceManagementState);
+    }
+
+    private ConsoleProxyManagementState readManagementState(ConfigKey<String> configKey) {
+        String value = configurationDao.getValue(configKey.key());
 
         if (value != null) {
-            ConsoleProxyManagementState state = ConsoleProxyManagementState.valueOf(value);
-
-            if (state != null) {
-                return state;
+            try {
+                return ConsoleProxyManagementState.valueOf(value);
+            } catch (IllegalArgumentException e) {
+                logger.debug("Unable to parse console proxy management state [{}]", value, e);
             }
         }
 
-        logger.error(String.format("Value [%s] set in global configuration [%s] is not a valid console proxy management state.", value, configKey));
+        logger.error("Value [{}] set in global configuration [{}] is not a valid console proxy management state.", value, configKey.key());
         return null;
     }
 
@@ -1045,19 +1048,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     private ConsoleProxyManagementState getLastManagementState() {
-        String configKey = ConsoleProxyManagementLastState.key();
-        String value = ConsoleProxyManagementLastState.value();
-
-        if (value != null) {
-            ConsoleProxyManagementState state = ConsoleProxyManagementState.valueOf(value);
-
-            if (state != null) {
-                return state;
-            }
-        }
-
-        logger.error(String.format("Value [%s] set in global configuration [%s] is not a valid console proxy management state.", value, configKey));
-        return null;
+        return readManagementState(ConsoleProxyManagementLastState);
     }
 
     @Override
