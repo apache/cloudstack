@@ -55,6 +55,38 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     private static final String SUBTRACT_ALLOCATED_SQL =
             "UPDATE `cloud`.`op_host_capacity` SET used_capacity = used_capacity - ? WHERE host_id = ? AND capacity_type = ?";
 
+    private static final String DECREMENT_USED_CAPACITY_SQL =
+            "UPDATE `cloud`.`op_host_capacity` SET " +
+            "used_capacity = CASE WHEN used_capacity >= ? THEN used_capacity - ? ELSE used_capacity END, " +
+            "update_time = NOW() WHERE id = ?";
+
+    private static final String DECREMENT_RESERVED_CAPACITY_SQL =
+            "UPDATE `cloud`.`op_host_capacity` SET " +
+            "reserved_capacity = CASE WHEN reserved_capacity >= ? THEN reserved_capacity - ? ELSE reserved_capacity END, " +
+            "update_time = NOW() WHERE id = ?";
+
+    private static final String INCREMENT_USED_CAPACITY_SQL =
+            "UPDATE `cloud`.`op_host_capacity` SET used_capacity = used_capacity + ?, " +
+            "update_time = NOW() WHERE id = ?";
+
+    private static final String DECREMENT_USED_INCREMENT_RESERVED_CAPPED_SQL =
+            "UPDATE `cloud`.`op_host_capacity` SET " +
+            "used_capacity = CASE WHEN used_capacity >= ? THEN used_capacity - ? ELSE used_capacity END, " +
+            "reserved_capacity = CASE WHEN reserved_capacity + ? <= CAST(total_capacity * ? AS SIGNED) " +
+            "THEN reserved_capacity + ? ELSE reserved_capacity END, " +
+            "update_time = NOW() WHERE id = ?";
+
+    private static final String DECREMENT_USED_INCREMENT_RESERVED_SQL =
+            "UPDATE `cloud`.`op_host_capacity` SET " +
+            "used_capacity = CASE WHEN used_capacity >= ? THEN used_capacity - ? ELSE used_capacity END, " +
+            "reserved_capacity = reserved_capacity + ?, " +
+            "update_time = NOW() WHERE id = ?";
+
+    private static final String INCREMENT_USED_DECREMENT_RESERVED_SQL =
+            "UPDATE `cloud`.`op_host_capacity` SET used_capacity = used_capacity + ?, " +
+            "reserved_capacity = GREATEST(reserved_capacity - ?, 0), " +
+            "update_time = NOW() WHERE id = ?";
+
     private static final String LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART1 =
             "SELECT DISTINCT capacity.cluster_id  FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`cluster` cluster on (cluster.id = capacity.cluster_id AND cluster.removed is NULL)   INNER JOIN `cloud`.`cluster_details` cluster_details ON (cluster.id = cluster_details.cluster_id ) WHERE ";
     private static final String LIST_CLUSTERSINZONE_BY_HOST_CAPACITIES_PART2 =
@@ -1289,6 +1321,93 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             logger.warn("Error checking cluster threshold", e);
         }
         return 0;
+    }
+
+    @Override
+    public void decrementUsedCapacity(long id, long amount) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            PreparedStatement pstmt = txn.prepareAutoCloseStatement(DECREMENT_USED_CAPACITY_SQL);
+            pstmt.setLong(1, amount);
+            pstmt.setLong(2, amount);
+            pstmt.setLong(3, id);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Error decrementing used capacity for id: " + id, e);
+        }
+    }
+
+    @Override
+    public void decrementReservedCapacity(long id, long amount) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            PreparedStatement pstmt = txn.prepareAutoCloseStatement(DECREMENT_RESERVED_CAPACITY_SQL);
+            pstmt.setLong(1, amount);
+            pstmt.setLong(2, amount);
+            pstmt.setLong(3, id);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Error decrementing reserved capacity for id: " + id, e);
+        }
+    }
+
+    @Override
+    public void incrementUsedCapacity(long id, long amount) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            PreparedStatement pstmt = txn.prepareAutoCloseStatement(INCREMENT_USED_CAPACITY_SQL);
+            pstmt.setLong(1, amount);
+            pstmt.setLong(2, id);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Error incrementing used capacity for id: " + id, e);
+        }
+    }
+
+    @Override
+    public void decrementUsedIncrementReservedCapacity(long id, long usedDecrement, long reservedIncrement, float overcommitRatio) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            PreparedStatement pstmt = txn.prepareAutoCloseStatement(DECREMENT_USED_INCREMENT_RESERVED_CAPPED_SQL);
+            pstmt.setLong(1, usedDecrement);
+            pstmt.setLong(2, usedDecrement);
+            pstmt.setLong(3, reservedIncrement);
+            pstmt.setFloat(4, overcommitRatio);
+            pstmt.setLong(5, reservedIncrement);
+            pstmt.setLong(6, id);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Error updating capacity (decrement used, increment reserved capped) for id: " + id, e);
+        }
+    }
+
+    @Override
+    public void decrementUsedIncrementReservedCapacity(long id, long usedDecrement, long reservedIncrement) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            PreparedStatement pstmt = txn.prepareAutoCloseStatement(DECREMENT_USED_INCREMENT_RESERVED_SQL);
+            pstmt.setLong(1, usedDecrement);
+            pstmt.setLong(2, usedDecrement);
+            pstmt.setLong(3, reservedIncrement);
+            pstmt.setLong(4, id);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Error updating capacity (decrement used, increment reserved) for id: " + id, e);
+        }
+    }
+
+    @Override
+    public void incrementUsedDecrementReservedCapacity(long id, long usedIncrement, long reservedDecrement) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            PreparedStatement pstmt = txn.prepareAutoCloseStatement(INCREMENT_USED_DECREMENT_RESERVED_SQL);
+            pstmt.setLong(1, usedIncrement);
+            pstmt.setLong(2, reservedDecrement);
+            pstmt.setLong(3, id);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Error updating capacity (increment used, decrement reserved) for id: " + id, e);
+        }
     }
 
 }
