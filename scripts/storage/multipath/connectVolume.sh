@@ -37,6 +37,11 @@ systemctl is-active multipathd || systemctl restart multipathd || {
 
 echo "$(date): Looking for ${WWID} on lun ${LUN}"
 
+if ! command -v lsscsi >/dev/null 2>&1; then
+   echo "$(date): lsscsi is not installed, devices left behind by an earlier use of lun ${LUN} will not be cleaned up"
+   logger -t "CS_SCSI_VOL_FIND" "${WWID} lsscsi is not installed, skipping cleanup of devices left on lun ${LUN}"
+fi
+
 # get vendor OUI.  we will only delete a device on the designated lun if it matches the
 # incoming WWN OUI value.  This is because multiple storage arrays may be mapped to the
 # host on different fiber channel hosts with the same LUN

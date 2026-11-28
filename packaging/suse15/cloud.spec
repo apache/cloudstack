@@ -127,6 +127,7 @@ Requires: rng-tools
 Requires: (libgcrypt > 1.8.3 or libgcrypt20)
 Requires: (selinux-tools if selinux-tools)
 Requires: sysstat
+Requires: lsscsi
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent
