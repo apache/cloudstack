@@ -48,6 +48,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveNodesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -440,5 +441,117 @@ public class KubernetesClusterManagerImplTest {
         Mockito.when(cksIso.getArch()).thenReturn(CPU.CPUArch.amd64);
         String cksClusterPreferredArch = kubernetesClusterManager.getCksClusterPreferredArch(systemVMArch, cksIso);
         Assert.assertEquals(CPU.CPUArch.amd64.getType(), cksClusterPreferredArch);
+    }
+
+    private KubernetesClusterVmMapVO clusterNode(long vmId, boolean control, boolean etcd, boolean external) {
+        KubernetesClusterVmMapVO map = new KubernetesClusterVmMapVO(1L, vmId, control);
+        map.setEtcdNode(etcd);
+        map.setExternalNode(external);
+        return map;
+    }
+
+    private void assertNodeNotRemovable(long vmId, List<KubernetesClusterVmMapVO> clusterNodes, String expectedMessage) {
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.when(cluster.getId()).thenReturn(1L);
+        Mockito.when(cluster.getUuid()).thenReturn("cks");
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getUuid()).thenReturn("vm-uuid");
+        Mockito.when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(1L, List.of(vmId))).thenReturn(clusterNodes);
+        InvalidParameterValueException e = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> kubernetesClusterManager.validateNodesRemovable(cluster, List.of(vmId)));
+        Assert.assertTrue(e.getMessage().contains("vm-uuid"));
+        Assert.assertTrue(e.getMessage().contains(expectedMessage));
+    }
+
+    @Test
+    public void validateNodesRemovableAcceptsAddedWorker() {
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.when(cluster.getId()).thenReturn(1L);
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(1L, List.of(10L, 11L)))
+                .thenReturn(List.of(clusterNode(10L, false, false, true), clusterNode(11L, false, false, true)));
+        kubernetesClusterManager.validateNodesRemovable(cluster, List.of(10L, 11L));
+        Mockito.verify(vmInstanceDao, Mockito.never()).findById(Mockito.anyLong());
+    }
+
+    @Test
+    public void validateNodesRemovableRejectsVmNotInCluster() {
+        assertNodeNotRemovable(10L, Collections.emptyList(), "is not a node of");
+    }
+
+    @Test
+    public void validateNodesRemovableRejectsControlNode() {
+        assertNodeNotRemovable(10L, List.of(clusterNode(10L, true, false, false)), "is a control node");
+    }
+
+    @Test
+    public void validateNodesRemovableRejectsEtcdNode() {
+        assertNodeNotRemovable(10L, List.of(clusterNode(10L, false, true, false)), "is an etcd node");
+    }
+
+    @Test
+    public void validateNodesRemovableRejectsExternalControlNode() {
+        assertNodeNotRemovable(10L, List.of(clusterNode(10L, true, false, true)), "is a control node");
+    }
+
+    @Test
+    public void validateNodesRemovableRejectsExternalEtcdNode() {
+        assertNodeNotRemovable(10L, List.of(clusterNode(10L, false, true, true)), "is an etcd node");
+    }
+
+    @Test
+    public void validateNodesRemovableRejectsCksManagedWorker() {
+        assertNodeNotRemovable(10L, List.of(clusterNode(10L, false, false, false)), "use scaleKubernetesCluster");
+    }
+
+    @Test
+    public void validateNodesRemovableRejectsWhenAnyNodeIsNotRemovable() {
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.when(cluster.getId()).thenReturn(1L);
+        Mockito.when(cluster.getUuid()).thenReturn("cks");
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getUuid()).thenReturn("other-vm-uuid");
+        Mockito.when(vmInstanceDao.findById(11L)).thenReturn(vm);
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(1L, List.of(10L, 11L)))
+                .thenReturn(List.of(clusterNode(10L, false, false, true)));
+        InvalidParameterValueException e = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> kubernetesClusterManager.validateNodesRemovable(cluster, List.of(10L, 11L)));
+        Assert.assertTrue(e.getMessage().contains("other-vm-uuid"));
+    }
+
+    private RemoveNodesFromKubernetesClusterCmd mockRemoveNodesCmd(KubernetesCluster.ClusterType clusterType, List<Long> nodeIds) {
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.when(cluster.getClusterType()).thenReturn(clusterType);
+        Mockito.when(kubernetesClusterDao.findById(1L)).thenReturn(cluster);
+        for (Long id : nodeIds) {
+            VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+            Mockito.lenient().when(vm.getUuid()).thenReturn("vm-uuid-" + id);
+            Mockito.when(vmInstanceDao.findById(id)).thenReturn(vm);
+        }
+        RemoveNodesFromKubernetesClusterCmd cmd = Mockito.mock(RemoveNodesFromKubernetesClusterCmd.class);
+        Mockito.when(cmd.getClusterId()).thenReturn(1L);
+        Mockito.when(cmd.getNodeIds()).thenReturn(nodeIds);
+        Mockito.when(cmd.getActualCommandName()).thenReturn(BaseCmd.getCommandNameByClass(RemoveNodesFromKubernetesClusterCmd.class));
+        return cmd;
+    }
+
+    @Test
+    public void removeNodesFromKubernetesClusterRejectsControlNode() {
+        RemoveNodesFromKubernetesClusterCmd cmd = mockRemoveNodesCmd(KubernetesCluster.ClusterType.CloudManaged, List.of(10L));
+        Mockito.when(kubernetesClusterDao.findById(1L).getId()).thenReturn(1L);
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(1L, List.of(10L)))
+                .thenReturn(List.of(clusterNode(10L, true, false, false)));
+        InvalidParameterValueException e = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> kubernetesClusterManager.removeNodesFromKubernetesCluster(cmd));
+        Assert.assertTrue(e.getMessage().contains("vm-uuid-10 is a control node"));
+    }
+
+    @Test
+    public void removeNodesFromKubernetesClusterRejectsExternalManagedCluster() {
+        RemoveNodesFromKubernetesClusterCmd cmd = mockRemoveNodesCmd(KubernetesCluster.ClusterType.ExternalManaged, List.of(10L));
+        InvalidParameterValueException e = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> kubernetesClusterManager.removeNodesFromKubernetesCluster(cmd));
+        Assert.assertTrue(e.getMessage().contains("ExternalManaged"));
+        Mockito.verify(kubernetesClusterVmMapDao, Mockito.never()).listByClusterIdAndVmIdsIn(Mockito.anyLong(), Mockito.anyList());
     }
 }
