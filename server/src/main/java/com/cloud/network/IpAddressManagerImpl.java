@@ -792,11 +792,15 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 logger.debug("Releasing ip {}; sourceNat = {}", ip, ip.isSourceNat());
             }
 
+            Network associatedNetwork = null;
             if (ip.getAssociatedWithNetworkId() != null) {
-                Network network = _networksDao.findById(ip.getAssociatedWithNetworkId());
+                associatedNetwork = _networksDao.findById(ip.getAssociatedWithNetworkId());
+            }
+
+            if (associatedNetwork != null) {
                 try {
-                    if (!applyIpAssociations(network, rulesContinueOnErrFlag)) {
-                        logger.warn("Unable to apply ip address associations for " + network);
+                    if (!applyIpAssociations(associatedNetwork, rulesContinueOnErrFlag)) {
+                        logger.warn("Unable to apply ip address associations for " + associatedNetwork);
                         success = false;
                     }
                 } catch (ResourceUnavailableException e) {
