@@ -270,12 +270,25 @@ for example:
             self.dbsecretkey = self.options.dbsecretkey
             self.isDebug = self.options.debug
 
+        def warnOnPlaceholderSecretKey(value, description):
+            if value is not None and value.lower() in ("password", "secret", "changeme"):
+                sys.stderr.write(
+                    "WARNING: %s is set to the well known value '%s'. Anyone who can read "
+                    "db.properties can decrypt it. On a new installation pass a random key "
+                    "instead, for example one generated with: openssl rand -base64 32. On an "
+                    "existing installation keep the key that was used before - a different key "
+                    "makes the already encrypted values unreadable.\n" % (description, value)
+                )
+                sys.stderr.flush()
+
         def validateParameters():
             if self.encryptiontype != "file" and self.encryptiontype != "web":
                 self.errorAndExit(
                     'Wrong encryption type %s, --encrypt-type can only be "file" or "web'
                     % self.encryptiontype
                 )
+            warnOnPlaceholderSecretKey(self.mgmtsecretkey, "The management server secret key")
+            warnOnPlaceholderSecretKey(self.dbsecretkey, "The database secret key")
 
         # ---------------------- option parsing and command line checks ------------------------
         usage = """%prog [-e ENCRYPTIONTYPE] [-m MGMTSECRETKEY] [-k DBSECRETKEY] [--debug]
@@ -308,7 +321,9 @@ for example:
             type="string",
             dest="mgmtsecretkey",
             default="password",
-            help="Secret key used to encrypt confidential parameters in db.properties. A string, default is password",
+            help="Secret key used to encrypt confidential parameters in db.properties. A string, defaults to a well-known placeholder. "
+            "On a new installation pass a random key, for example one generated with: openssl rand -base64 32. "
+            "On an existing installation keep the key that was used before",
         )
         self.parser.add_option(
             "-k",
@@ -317,7 +332,9 @@ for example:
             type="string",
             dest="dbsecretkey",
             default="password",
-            help="Secret key used to encrypt sensitive database values. A string, default is password",
+            help="Secret key used to encrypt sensitive database values. A string, defaults to a well-known placeholder. "
+            "On a new installation pass a random key, for example one generated with: openssl rand -base64 32. "
+            "On an existing installation keep the key that was used before",
         )
 
         (self.options, self.args) = self.parser.parse_args()
