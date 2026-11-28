@@ -164,6 +164,11 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
         return ApiCommandResourceType.KubernetesCluster;
     }
 
+    @Override
+    public Long getApiResourceId() {
+        return getId();
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

@@ -25,7 +25,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.UpdateBuilder;
 
 @Component
 public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO, Long> implements KubernetesClusterDao {
@@ -36,6 +36,8 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
     private final SearchBuilder<KubernetesClusterVO> ManagedStateSearch;
     private final SearchBuilder<KubernetesClusterVO> SameNetworkSearch;
     private final SearchBuilder<KubernetesClusterVO> KubernetesVersionSearch;
+    private final SearchBuilder<KubernetesClusterVO> StateChangeSearch;
+    private final SearchBuilder<KubernetesClusterVO> ManagedStatesSearch;
 
     public KubernetesClusterDaoImpl() {
         CleanupAccountIdSearch = createSearchBuilder();
@@ -61,6 +63,11 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
         ManagedStateSearch.and("cluster_type", ManagedStateSearch.entity().getClusterType(), SearchCriteria.Op.EQ);
         ManagedStateSearch.done();
 
+        ManagedStatesSearch = createSearchBuilder();
+        ManagedStatesSearch.and("state", ManagedStatesSearch.entity().getState(), SearchCriteria.Op.IN);
+        ManagedStatesSearch.and("cluster_type", ManagedStatesSearch.entity().getClusterType(), SearchCriteria.Op.EQ);
+        ManagedStatesSearch.done();
+
         SameNetworkSearch = createSearchBuilder();
         SameNetworkSearch.and("network_id", SameNetworkSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         SameNetworkSearch.done();
@@ -68,6 +75,11 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
         KubernetesVersionSearch = createSearchBuilder();
         KubernetesVersionSearch.and("kubernetesVersionId", KubernetesVersionSearch.entity().getKubernetesVersionId(), SearchCriteria.Op.EQ);
         KubernetesVersionSearch.done();
+
+        StateChangeSearch = createSearchBuilder();
+        StateChangeSearch.and("id", StateChangeSearch.entity().getId(), SearchCriteria.Op.EQ);
+        StateChangeSearch.and("state", StateChangeSearch.entity().getState(), SearchCriteria.Op.EQ);
+        StateChangeSearch.done();
     }
 
     @Override
@@ -105,17 +117,41 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
     }
 
     @Override
+    public List<KubernetesClusterVO> findManagedKubernetesClustersInStates(List<KubernetesCluster.State> states) {
+        SearchCriteria<KubernetesClusterVO> sc = ManagedStatesSearch.create();
+        sc.setParameters("state", states.toArray());
+        sc.setParameters("cluster_type", KubernetesCluster.ClusterType.CloudManaged);
+        return listBy(sc);
+    }
+
+    /**
+     * Moves the cluster to the next state only if it is still in the given current state, so that of two operations
+     * started on the same cluster at once only one gets past its first transition.
+     */
+    @Override
     public boolean updateState(KubernetesCluster.State currentState, KubernetesCluster.Event event, KubernetesCluster.State nextState,
                                KubernetesCluster vo, Object data) {
-        // TODO: ensure this update is correct
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        txn.start();
-
         KubernetesClusterVO ccVo = (KubernetesClusterVO)vo;
-        ccVo.setState(nextState);
-        super.update(ccVo.getId(), ccVo);
+        SearchCriteria<KubernetesClusterVO> sc = StateChangeSearch.create();
+        sc.setParameters("id", ccVo.getId());
+        sc.setParameters("state", currentState);
 
-        txn.commit();
+        UpdateBuilder builder = getUpdateBuilder(ccVo);
+        builder.set(ccVo, "state", nextState);
+        int rows = update(builder, sc, null);
+        if (rows == 0) {
+            // the builder set the next state on the cluster object too: put back the state the caller read, which
+            // the database no longer has either, without leaving it as a change for a later update to write
+            builder.set(ccVo, "state", currentState);
+            builder.clear();
+            if (!logger.isDebugEnabled()) {
+                return false;
+            }
+            KubernetesClusterVO dbCluster = findByIdIncludingRemoved(ccVo.getId());
+            logger.debug("Unable to move Kubernetes cluster {} from state {} to {} on event {}, its state is now {}", ccVo, currentState, nextState, event,
+                    dbCluster == null ? null : dbCluster.getState());
+            return false;
+        }
         return true;
     }
 

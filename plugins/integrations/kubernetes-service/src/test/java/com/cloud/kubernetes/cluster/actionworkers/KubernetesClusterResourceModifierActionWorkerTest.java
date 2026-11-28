@@ -19,10 +19,12 @@ package com.cloud.kubernetes.cluster.actionworkers;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -134,5 +136,59 @@ public class KubernetesClusterResourceModifierActionWorkerTest {
 
         Mockito.when(kubernetesClusterMock.getName()).thenReturn(originalPrefix);
         Assert.assertEquals(expectedPrefix, kubernetesClusterResourceModifierActionWorker.getKubernetesClusterNodeNamePrefix());
+    }
+
+    @Test
+    public void enterScalingStateTransitionsOnlyOnceForAllStepsOfAnOperation() {
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.when(cluster.getState()).thenReturn(KubernetesCluster.State.Running);
+        Mockito.when(kubernetesClusterMock.getId()).thenReturn(1L);
+        Mockito.when(kubernetesClusterMock.getState()).thenReturn(KubernetesCluster.State.Running);
+        kubernetesClusterResourceModifierActionWorker = new KubernetesClusterResourceModifierActionWorker(kubernetesClusterMock, kubernetesClusterManagerMock);
+        Mockito.when(kubernetesClusterDaoMock.findById(1L)).thenReturn(cluster);
+        Mockito.when(kubernetesClusterDaoMock.updateState(KubernetesCluster.State.Running, KubernetesCluster.Event.ScaleUpRequested,
+                KubernetesCluster.State.Scaling, cluster, null)).thenReturn(true);
+
+        kubernetesClusterResourceModifierActionWorker.enterScalingState(KubernetesCluster.Event.ScaleUpRequested);
+        kubernetesClusterResourceModifierActionWorker.enterScalingState(KubernetesCluster.Event.ScaleDownRequested);
+
+        Mockito.verify(kubernetesClusterDaoMock, Mockito.times(1)).updateState(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void enterScalingStateFailsWhenAnotherOperationMovedTheClusterFirst() {
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.when(cluster.getState()).thenReturn(KubernetesCluster.State.Upgrading);
+        Mockito.when(kubernetesClusterMock.getId()).thenReturn(1L);
+        Mockito.when(kubernetesClusterMock.getState()).thenReturn(KubernetesCluster.State.Running);
+        kubernetesClusterResourceModifierActionWorker = new KubernetesClusterResourceModifierActionWorker(kubernetesClusterMock, kubernetesClusterManagerMock);
+        Mockito.when(kubernetesClusterDaoMock.findById(1L)).thenReturn(cluster);
+
+        kubernetesClusterResourceModifierActionWorker.enterScalingState(KubernetesCluster.Event.ScaleUpRequested);
+    }
+
+    private void mockNeverStartedClusterNowIn(KubernetesCluster.State state) {
+        Mockito.when(kubernetesClusterMock.getId()).thenReturn(1L);
+        Mockito.when(kubernetesClusterMock.getState()).thenReturn(KubernetesCluster.State.Created);
+        kubernetesClusterResourceModifierActionWorker = new KubernetesClusterResourceModifierActionWorker(kubernetesClusterMock, kubernetesClusterManagerMock);
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.when(cluster.getState()).thenReturn(state);
+        Mockito.when(kubernetesClusterDaoMock.findById(1L)).thenReturn(cluster);
+    }
+
+    @Test
+    public void enterScalingStateLeavesNeverStartedClusterInItsState() {
+        mockNeverStartedClusterNowIn(KubernetesCluster.State.Created);
+
+        kubernetesClusterResourceModifierActionWorker.enterScalingState(KubernetesCluster.Event.ScaleUpRequested);
+
+        Mockito.verify(kubernetesClusterDaoMock, Mockito.never()).updateState(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void enterScalingStateFailsForNeverStartedClusterTakenByAStart() {
+        mockNeverStartedClusterNowIn(KubernetesCluster.State.Starting);
+
+        kubernetesClusterResourceModifierActionWorker.enterScalingState(KubernetesCluster.Event.ScaleUpRequested);
     }
 }

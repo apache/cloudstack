@@ -120,8 +120,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     }
 
     private void logTransitStateToFailedIfNeededAndThrow(final Level logLevel, final String message, final Exception e) throws CloudRuntimeException {
-        KubernetesCluster cluster = kubernetesClusterDao.findById(kubernetesCluster.getId());
-        if (cluster != null && KubernetesCluster.State.Scaling.equals(cluster.getState())) {
+        // only fail the scaling this worker started: before it moved the cluster, a scaling state belongs to another one
+        if (isScalingStateEntered()) {
             logTransitStateAndThrow(logLevel, message, kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
         } else {
             logAndThrow(logLevel, message, e);
@@ -381,10 +381,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     private void scaleKubernetesClusterOffering(KubernetesClusterNodeType nodeType, ServiceOffering serviceOffering,
                                                 boolean updateNodeOffering, boolean updateClusterOffering) throws CloudRuntimeException {
         validateKubernetesClusterScaleOfferingParameters();
-        List<KubernetesCluster.State> scalingStates = List.of(KubernetesCluster.State.Scaling, KubernetesCluster.State.ScalingStoppedCluster);
-        if (!scalingStates.contains(kubernetesCluster.getState())) {
-            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.ScaleUpRequested);
-        }
+        enterScalingState(KubernetesCluster.Event.ScaleUpRequested);
         if (KubernetesCluster.State.Created.equals(originalState)) {
             kubernetesCluster = updateKubernetesClusterEntryForNodeType(null, nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
             return;
@@ -457,9 +454,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     }
 
     private void scaleDownKubernetesClusterSize() throws CloudRuntimeException {
-        if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
-            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.ScaleDownRequested);
-        }
+        enterScalingState(KubernetesCluster.Event.ScaleDownRequested);
         List<KubernetesClusterVmMapVO> vmList;
         if (this.nodeIds != null) {
             vmList = getKubernetesClusterVMMapsForNodes(this.nodeIds).stream().filter(vm -> !vm.isExternalNode()).collect(Collectors.toList());
@@ -489,9 +484,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     }
 
     private void scaleUpKubernetesClusterSize(final long newVmCount) throws CloudRuntimeException {
-        if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
-            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.ScaleUpRequested);
-        }
+        enterScalingState(KubernetesCluster.Event.ScaleUpRequested);
         List<UserVm> clusterVMs = new ArrayList<>();
         if (isDefaultTemplateUsed()) {
             LaunchPermissionVO launchPermission = new LaunchPermissionVO(clusterTemplate.getId(), owner.getId());
@@ -528,9 +521,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         final long originalClusterSize = kubernetesCluster.getNodeCount();
         final long newVmRequiredCount = clusterSize - originalClusterSize;
         if (KubernetesCluster.State.Created.equals(originalState)) {
-            if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
-                stateTransitTo(kubernetesCluster.getId(), newVmRequiredCount > 0 ? KubernetesCluster.Event.ScaleUpRequested : KubernetesCluster.Event.ScaleDownRequested);
-            }
+            enterScalingState(newVmRequiredCount > 0 ? KubernetesCluster.Event.ScaleUpRequested : KubernetesCluster.Event.ScaleDownRequested);
             kubernetesCluster = updateKubernetesClusterEntryForNodeType(null, nodeType, serviceOfferingNodeTypeMap.get(nodeType.name()), false, false);
             return;
         }
@@ -606,7 +597,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                 if (autoScaled && isNodeOfferingScalingNeeded) {
                     scaleKubernetesClusterOffering(nodeType, scalingServiceOffering, updateNodeOffering, updateClusterOffering);
                 }
-                stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
+                completeScaling();
                 return autoScaled;
             }
             final boolean clusterSizeScalingNeeded = isWorkerNode && clusterSize != null && clusterSize != originalClusterSize;
@@ -625,8 +616,15 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             }
         }
 
-        stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
+        completeScaling();
         return true;
+    }
+
+    private void completeScaling() {
+        // a cluster this worker did not move, such as one never started, may now be held by another operation
+        if (isScalingStateEntered()) {
+            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
+        }
     }
 
     private ServiceOffering getExistingServiceOfferingForNodeType(KubernetesClusterNodeType nodeType, KubernetesCluster kubernetesCluster) {

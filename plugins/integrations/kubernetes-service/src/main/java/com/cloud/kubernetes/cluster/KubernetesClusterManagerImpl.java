@@ -29,7 +29,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -118,6 +117,8 @@ import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.commons.beanutils.BeanUtils;
@@ -350,6 +351,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected UserDao userDao;
     @Inject
     protected VMInstanceDao vmInstanceDao;
+    @Inject
+    protected AsyncJobDao asyncJobDao;
     @Inject
     protected UserVmJoinDao userVmJoinDao;
     @Inject
@@ -2636,8 +2639,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                             startWorker = ComponentContext.inject(startWorker);
                             startWorker.reconcileAlertCluster();
                         } else if (isClusterVMsInDesiredState(kubernetesCluster, VirtualMachine.State.Stopped)) {
-                            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StopRequested);
-                            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
+                            // move the cluster as listed, so that an operation started on it since then, which may
+                            // also allow a stop, is left alone
+                            if (_stateMachine.transitTo(kubernetesCluster, KubernetesCluster.Event.StopRequested, null, kubernetesClusterDao)) {
+                                _stateMachine.transitTo(kubernetesCluster, KubernetesCluster.Event.OperationSucceeded, null, kubernetesClusterDao);
+                            }
                         }
                     } catch (Exception e) {
                         logger.warn("Failed to run Kubernetes cluster Alert state scanner on Kubernetes cluster: {} status scanner", kubernetesCluster, e);
@@ -2645,26 +2651,15 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
 
 
+                // move clusters left in an operation's state by a management server that stopped to a state the
+                // reconciliation above can work from
+                try {
+                    recoverOrphanedOperationStates();
+                } catch (Exception e) {
+                    logger.warn("Failed to recover Kubernetes clusters left in an operation's state", e);
+                }
+
                 if (firstRun) {
-                    // run through Kubernetes clusters in 'Starting' state and reconcile state as 'Alert' or 'Error' if the VM's are running
-                    List<KubernetesClusterVO> startingKubernetesClusters = kubernetesClusterDao.findManagedKubernetesClustersInState(KubernetesCluster.State.Starting);
-                    for (KubernetesCluster kubernetesCluster : startingKubernetesClusters) {
-                        if ((new Date()).getTime() - kubernetesCluster.getCreated().getTime() < 10*60*1000) {
-                            continue;
-                        }
-                        if (logger.isInfoEnabled()) {
-                            logger.info("Running Kubernetes cluster state scanner on Kubernetes cluster: {} for state: {}", kubernetesCluster, KubernetesCluster.State.Starting.toString());
-                        }
-                        try {
-                            if (isClusterVMsInDesiredState(kubernetesCluster, VirtualMachine.State.Running)) {
-                                stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.FaultsDetected);
-                            } else {
-                                stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
-                            }
-                        } catch (Exception e) {
-                            logger.warn("Failed to run Kubernetes cluster Starting state scanner on Kubernetes cluster: {} status scanner", kubernetesCluster, e);
-                        }
-                    }
                     List<KubernetesClusterVO> destroyingKubernetesClusters = kubernetesClusterDao.findManagedKubernetesClustersInState(KubernetesCluster.State.Destroying);
                     for (KubernetesCluster kubernetesCluster : destroyingKubernetesClusters) {
                         if (logger.isInfoEnabled()) {
@@ -2681,6 +2676,65 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 logger.warn("Caught exception while running Kubernetes cluster state scanner", e);
             }
             firstRun = false;
+        }
+    }
+
+    /**
+     * States which a cluster holds only while an operation runs on it, and which nothing else moves it out of.
+     */
+    protected static final List<KubernetesCluster.State> OPERATION_STATES = List.of(KubernetesCluster.State.Starting,
+            KubernetesCluster.State.Stopping, KubernetesCluster.State.Scaling, KubernetesCluster.State.ScalingStoppedCluster,
+            KubernetesCluster.State.Upgrading, KubernetesCluster.State.Importing, KubernetesCluster.State.RemovingNodes,
+            KubernetesCluster.State.Recovering);
+
+    /**
+     * Fails the operation of each cluster in an operation's state which has no job in progress on any management
+     * server. Such a cluster was left there by a management server that stopped during the operation: the jobs of a
+     * stopped management server are failed when it starts again or when another one sees it leave, but nothing moved
+     * the cluster on, and every later operation on it was refused.
+     */
+    protected void recoverOrphanedOperationStates() {
+        List<KubernetesClusterVO> clusters = kubernetesClusterDao.findManagedKubernetesClustersInStates(OPERATION_STATES);
+        if (clusters.isEmpty()) {
+            return;
+        }
+        // A management server of an older version does not record the cluster of its start, stop, scale and upgrade
+        // jobs, but their parameters name it by its UUID. A cluster that such a job may be acting on is left alone.
+        List<String> untaggedJobsCmdInfo = new ArrayList<>();
+        for (AsyncJobVO job : asyncJobDao.findInstancePendingAsyncJobs(ApiCommandResourceType.KubernetesCluster.toString(), null)) {
+            if (job.getInstanceId() == null) {
+                untaggedJobsCmdInfo.add(StringUtils.defaultString(job.getCmdInfo()));
+            }
+        }
+        for (KubernetesClusterVO cluster : clusters) {
+            if (untaggedJobsCmdInfo.stream().anyMatch(cmdInfo -> cmdInfo.isEmpty() || cmdInfo.contains(cluster.getUuid()))) {
+                logger.debug("Not recovering Kubernetes cluster {} from state {} while a job of an older management server may be acting on it", cluster, cluster.getState());
+                continue;
+            }
+            try {
+                recoverOrphanedOperationState(cluster.getId());
+            } catch (Exception e) {
+                logger.warn("Failed to recover Kubernetes cluster {} from state {}", cluster, cluster.getState(), e);
+            }
+        }
+    }
+
+    /**
+     * The cluster is read before its jobs. An operation that ends between the two reads moves the cluster to another
+     * state, so the compare-and-set of the state as read misses. For it to hit a live operation instead, one operation
+     * would have to end and another start and reach the same state between the two reads and the update right after.
+     */
+    protected void recoverOrphanedOperationState(long clusterId) throws NoTransitionException {
+        KubernetesClusterVO cluster = kubernetesClusterDao.findById(clusterId);
+        if (cluster == null || !OPERATION_STATES.contains(cluster.getState())) {
+            return;
+        }
+        if (asyncJobDao.findInstancePendingAsyncJob(ApiCommandResourceType.KubernetesCluster.toString(), clusterId) != null) {
+            return;
+        }
+        final KubernetesCluster.State state = cluster.getState();
+        if (_stateMachine.transitTo(cluster, KubernetesCluster.Event.OperationFailed, null, kubernetesClusterDao)) {
+            logger.warn("Kubernetes cluster {} was in state {} with no operation in progress, as its operation ended without moving it on, for example because the management server running it stopped; marked the operation as failed", cluster, state);
         }
     }
 
