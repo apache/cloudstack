@@ -38,6 +38,7 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.vm.UserVmVO;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesClusterActionWorkerTest {
@@ -129,5 +130,27 @@ public class KubernetesClusterActionWorkerTest {
         Mockito.when(ipAddressDao.findByUuid(uuid)).thenReturn(address);
         IpAddress result = actionWorker.getVpcTierKubernetesPublicIp(mockNetworkForGetVpcTierKubernetesPublicIpTest());
         Assert.assertNotNull(result);
+    }
+
+    @Test
+    public void testGetKubernetesNodeNameLowercasesHostName() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getHostName()).thenReturn("External-Node-1");
+        Assert.assertEquals("external-node-1", actionWorker.getKubernetesNodeName(vm));
+        Mockito.verify(vm, Mockito.never()).getDisplayName();
+    }
+
+    @Test
+    public void testGetKubernetesNodeNameBlankHostName() {
+        for (String hostName : new String[] {null, "", " "}) {
+            UserVmVO vm = Mockito.mock(UserVmVO.class);
+            Mockito.when(vm.getHostName()).thenReturn(hostName);
+            Assert.assertNull("hostName=" + hostName, actionWorker.getKubernetesNodeName(vm));
+        }
+    }
+
+    @Test
+    public void testGetKubernetesNodeNameNullVm() {
+        Assert.assertNull(actionWorker.getKubernetesNodeName(null));
     }
 }

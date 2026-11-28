@@ -41,7 +41,6 @@ import javax.inject.Inject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -95,8 +94,14 @@ public class KubernetesClusterRemoveWorker extends KubernetesClusterActionWorker
                 logger.debug(String.format("Couldn't find a VM with ID %s, skipping removal from Kubernetes cluster", nodeId));
                 continue;
             }
+            String nodeName = getKubernetesNodeName(vm);
+            if (nodeName == null) {
+                logger.error("Node {} has no host name, unable to remove it from Kubernetes cluster {}", vm, kubernetesCluster);
+                result = false;
+                continue;
+            }
             try {
-                removeNodeVmFromCluster(nodeId, vm.getDisplayName().toLowerCase(Locale.ROOT), publicIp.getAddress().addr());
+                removeNodeVmFromCluster(nodeId, nodeName, publicIp.getAddress().addr());
                 result &= removeNodePortForwardingRules(nodeId, network, vm);
                 if (System.currentTimeMillis() > removeNodeTimeoutTime) {
                     logger.error(String.format("Removal of node %s from Kubernetes cluster %s timed out", vm.getName(), kubernetesCluster.getName()));
