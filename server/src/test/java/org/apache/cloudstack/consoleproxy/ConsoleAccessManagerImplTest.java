@@ -60,6 +60,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ConsoleSessionVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
@@ -786,5 +787,46 @@ public class ConsoleAccessManagerImplTest {
         Assert.assertNull(endpoint.getWebsocketPath());
         Assert.assertNull(endpoint.getWebsocketExtra());
         Assert.assertNull(endpoint.getWebsocketHost());
+    }
+
+    @Test
+    public void composeConsoleAccessEndpointReturnsDirectUrlWhenNoConsoleProxyIsAvailable() {
+        String url = "url";
+        long vmId = 100L;
+        long hostId = 1L;
+        String sessionUuid = UUID.randomUUID().toString();
+        String addr = "addr";
+        ConsoleConnectionDetails details = new ConsoleConnectionDetails("password", "en", "tag", null);
+        details.setDirectUrl(url);
+        details.setModeFromExternalProtocol("direct");
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getId()).thenReturn(hostId);
+        Mockito.doReturn(details).when(consoleAccessManager).getConsoleConnectionDetails(vm, host);
+        Mockito.doNothing().when(consoleAccessManager).persistConsoleSession(sessionUuid, vmId, hostId, addr);
+
+        ConsoleEndpoint endpoint = consoleAccessManager.composeConsoleAccessEndpoint(null, vm, host, addr, sessionUuid, "");
+
+        Assert.assertTrue(endpoint.isResult());
+        Assert.assertEquals(url, endpoint.getUrl());
+        Mockito.verify(consoleAccessManager).persistConsoleSession(sessionUuid, vmId, hostId, addr);
+    }
+
+    @Test
+    public void composeConsoleAccessEndpointThrowsWhenProxiedConsoleHasNoConsoleProxy() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        HostVO host = Mockito.mock(HostVO.class);
+        ConsoleConnectionDetails details = new ConsoleConnectionDetails("password", "en", "tag", null);
+        details.setHost("192.168.1.100");
+        details.setPort(5900);
+        Mockito.doReturn(details).when(consoleAccessManager).getConsoleConnectionDetails(vm, host);
+
+        CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
+                () -> consoleAccessManager.composeConsoleAccessEndpoint(null, vm, host, "addr", "sessionUuid", ""));
+
+        Assert.assertEquals("Console access will be ready in a few minutes. Please try it again later.", exception.getMessage());
+        Mockito.verify(consoleAccessManager, Mockito.never()).persistConsoleSession(Mockito.anyString(), Mockito.anyLong(),
+                Mockito.anyLong(), Mockito.anyString());
     }
 }
