@@ -796,6 +796,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return cmdsTimeout;
     }
 
+    public int getQcow2DeltaMergeTimeout() {
+        return qcow2DeltaMergeTimeout;
+    }
+
     public String manageSnapshotPath() {
         return manageSnapshotPath;
     }
