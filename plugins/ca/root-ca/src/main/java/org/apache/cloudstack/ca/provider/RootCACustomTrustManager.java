@@ -18,6 +18,7 @@
 package org.apache.cloudstack.ca.provider;
 
 import java.math.BigInteger;
+import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -91,6 +92,10 @@ public final class RootCACustomTrustManager implements X509TrustManager {
             return;
         }
 
+        if (authStrictness) {
+            validateClientCertificateSignature(primaryClientCertificate);
+        }
+
         // Revocation check
         final BigInteger serialNumber = primaryClientCertificate.getSerialNumber();
         if (serialNumber == null || crlDao.findBySerial(serialNumber) != null) {
@@ -142,6 +147,17 @@ public final class RootCACustomTrustManager implements X509TrustManager {
 
         if (primaryClientCertificate != null && activeCertMap != null && StringUtils.isNotEmpty(clientAddress)) {
             activeCertMap.put(clientAddress, primaryClientCertificate);
+        }
+    }
+
+    private void validateClientCertificateSignature(final X509Certificate certificate) throws CertificateException {
+        if (caCertificate == null) {
+            throw new CertificateException("Root CA certificate is required to validate client: " + clientAddress);
+        }
+        try {
+            certificate.verify(caCertificate.getPublicKey());
+        } catch (final GeneralSecurityException e) {
+            throw new CertificateException("Client certificate signature verification failed for client: " + clientAddress, e);
         }
     }
 

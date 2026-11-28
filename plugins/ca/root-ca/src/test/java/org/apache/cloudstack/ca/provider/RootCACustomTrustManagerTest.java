@@ -62,6 +62,70 @@ public class RootCACustomTrustManagerTest {
     }
 
     @Test
+    public void testAuthStrictWithRootSignedClientCertificate() throws Exception {
+        final X509Certificate certificate = CertUtils.generateV3Certificate(caCertificate, caKeypair, clientKeypair.getPublic(),
+                "CN=client", "SHA256withRSA", 1, null, Collections.singletonList(clientIp));
+        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, true, false, certMap, caCertificate, crlDao);
+
+        trustManager.checkClientTrusted(new X509Certificate[]{certificate}, "RSA");
+
+        Assert.assertEquals(certificate, certMap.get(clientIp));
+    }
+
+    @Test
+    public void testAuthStrictWithSelfSignedClientCertificate() throws Exception {
+        final X509Certificate certificate = CertUtils.generateV3Certificate(null, clientKeypair, clientKeypair.getPublic(),
+                "CN=client", "SHA256withRSA", 1, null, Collections.singletonList(clientIp));
+
+        assertCertificateRejected(new X509Certificate[]{certificate}, caCertificate);
+    }
+
+    @Test
+    public void testAuthStrictWithDifferentRootUsingSameSubject() throws Exception {
+        final KeyPair otherKeypair = CertUtils.generateRandomKeyPair(1024);
+        final X509Certificate otherCa = CertUtils.generateV3Certificate(null, otherKeypair, otherKeypair.getPublic(),
+                "CN=ca", "SHA256withRSA", 365, null, null);
+        final X509Certificate certificate = CertUtils.generateV3Certificate(otherCa, otherKeypair, clientKeypair.getPublic(),
+                "CN=client", "SHA256withRSA", 1, null, Collections.singletonList(clientIp));
+
+        assertCertificateRejected(new X509Certificate[]{certificate, otherCa}, caCertificate);
+    }
+
+    @Test
+    public void testAuthStrictWithUntrustedClientAndTrustedRootInChain() throws Exception {
+        final X509Certificate certificate = CertUtils.generateV3Certificate(null, clientKeypair, clientKeypair.getPublic(),
+                "CN=client", "SHA256withRSA", 1, null, Collections.singletonList(clientIp));
+
+        assertCertificateRejected(new X509Certificate[]{certificate, caCertificate}, caCertificate);
+    }
+
+    @Test
+    public void testAuthStrictWithoutRootCertificate() throws Exception {
+        assertCertificateRejected(new X509Certificate[]{expiredClientCertificate}, null);
+    }
+
+    private void assertCertificateRejected(final X509Certificate[] certificates, final X509Certificate rootCertificate) throws Exception {
+        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, true, true, certMap, rootCertificate, crlDao);
+        try {
+            trustManager.checkClientTrusted(certificates, "RSA");
+            Assert.fail("Expected client certificate rejection");
+        } catch (final CertificateException expected) {
+            Assert.assertTrue(certMap.isEmpty());
+        }
+    }
+
+    @Test
+    public void testAuthNotStrictWithSelfSignedClientCertificate() throws Exception {
+        final X509Certificate certificate = CertUtils.generateV3Certificate(null, clientKeypair, clientKeypair.getPublic(),
+                "CN=client", "SHA256withRSA", 1, null, Collections.singletonList(clientIp));
+        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, false, true, certMap, caCertificate, crlDao);
+
+        trustManager.checkClientTrusted(new X509Certificate[]{certificate}, "RSA");
+
+        Assert.assertEquals(certificate, certMap.get(clientIp));
+    }
+
+    @Test
     public void testAuthNotStrictWithInvalidCert() throws Exception {
         final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, false, true, certMap, caCertificate, crlDao);
         trustManager.checkClientTrusted(null, null);
