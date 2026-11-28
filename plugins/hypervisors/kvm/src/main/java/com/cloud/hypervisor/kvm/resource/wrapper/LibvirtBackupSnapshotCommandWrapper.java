@@ -41,6 +41,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.CephUtil;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -96,17 +97,17 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
              * cmds.timeout
              */
             if (primaryPool.getType() == StoragePoolType.RBD) {
+                Rados r = null;
+                IoCTX io = null;
+                Rbd rbd = null;
+                RbdImage image = null;
                 try {
-                    final Rados r = new Rados(primaryPool.getAuthUserName());
-                    r.confSet("mon_host", primaryPool.getSourceHost() + ":" + primaryPool.getSourcePort());
-                    r.confSet("key", primaryPool.getAuthSecret());
-                    r.confSet("client_mount_timeout", "30");
-                    r.connect();
-                    logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
+                    r = CephUtil.connect(primaryPool.getAuthUserName(), primaryPool.getSourceHost(), primaryPool.getSourcePort(), primaryPool.getAuthSecret());
 
-                    final IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
-                    final Rbd rbd = new Rbd(io);
-                    final RbdImage image = rbd.open(snapshotDisk.getName(), snapshotName);
+                    io = r.ioCtxCreate(primaryPool.getSourceDir());
+                    rbd = new Rbd(io);
+                    // The snapshot is only read from here, so it is opened read only.
+                    image = rbd.openReadOnly(snapshotDisk.getName(), snapshotName);
                     final File fh = new File(snapshotDestPath);
                     try(BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(fh));) {
                         final int chunkSize = 4194304;
@@ -115,24 +116,38 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
                         while (true) {
                             final byte[] buf = new byte[chunkSize];
                             final int bytes = image.read(offset, buf, chunkSize);
-                            if (bytes <= 0) {
+                            if (bytes < 0) {
+                                /*
+                                 * rbd_read returns a negative errno rather than throwing. Treating that as
+                                 * end of image would store a short backup and report it as a success.
+                                 */
+                                throw new RbdException("Failed to read " + snapshotDisk.getName() + " at offset " + offset, bytes);
+                            }
+                            if (bytes == 0) {
                                 break;
                             }
                             bos.write(buf, 0, bytes);
                             offset += bytes;
                         }
                         logger.debug("Completed backing up RBD snapshot " + snapshotName + " to  " + snapshotDestPath + ". Bytes written: " + toHumanReadableSize(offset));
-                    }catch(final IOException ex)
-                    {
-                        logger.error("BackupSnapshotAnswer:Exception:"+ ex.getMessage());
+                    } catch (final IOException ex) {
+                        /*
+                         * A failed read or write leaves a short file on secondary storage. Reporting success
+                         * here would record a backup that cannot be restored from.
+                         */
+                        logger.error("Failed to back up " + snapshotDisk.getName() + " to " + snapshotDestPath + ". The error was: " + ex.getMessage(), ex);
+                        return new BackupSnapshotAnswer(command, false, ex.toString(), null, true);
                     }
-                    r.ioCtxDestroy(io);
                 } catch (final RadosException e) {
                     logger.error("A RADOS operation failed. The error was: " + e.getMessage());
                     return new BackupSnapshotAnswer(command, false, e.toString(), null, true);
                 } catch (final RbdException e) {
                     logger.error("A RBD operation on " + snapshotDisk.getName() + " failed. The error was: " + e.getMessage());
                     return new BackupSnapshotAnswer(command, false, e.toString(), null, true);
+                } finally {
+                    CephUtil.closeQuietly(rbd, image, snapshotDisk.getName());
+                    CephUtil.ioCtxDestroyQuietly(r, io);
+                    CephUtil.shutDownQuietly(r);
                 }
             } else {
                 final Script scriptCommand = new Script(manageSnapshotPath, cmdsTimeout, logger);
