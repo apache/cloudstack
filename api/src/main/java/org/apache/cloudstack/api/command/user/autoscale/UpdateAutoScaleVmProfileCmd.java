@@ -43,7 +43,7 @@ import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateAutoScaleVmProfile", description = "Updates an existing autoscale Instance profile.", responseObject = AutoScaleVmProfileResponse.class, entityType = {AutoScaleVmProfile.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
 
 

@@ -34,7 +34,7 @@ import com.cloud.vm.VirtualMachine;
         responseObject = UserVmResponse.class,
         responseView = ResponseObject.ResponseView.Full,
         entityType = {VirtualMachine.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true,
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = true,
         since = "4.21.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateVMFromBackupCmdByAdmin extends CreateVMFromBackupCmd implements AdminCmd {

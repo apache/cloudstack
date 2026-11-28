@@ -16,9 +16,19 @@
 // under the License.
 package org.apache.cloudstack.framework.jobs;
 
+import java.util.List;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.vm.CreateVMFromBackupCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.DeployVnfApplianceCmdByAdmin;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.command.user.vm.CreateVMFromBackupCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.junit.Assert;
 import org.junit.Test;
@@ -173,6 +183,21 @@ public class AsyncJobDataHelperTest {
     public void decryptResultIfNeededBlankReturnsBlank() {
         Assert.assertNull(AsyncJobDataHelper.decryptResultIfNeeded(SensitiveResponseAsyncCmd.class.getName(), null));
         Assert.assertEquals("", AsyncJobDataHelper.decryptResultIfNeeded(SensitiveResponseAsyncCmd.class.getName(), ""));
+    }
+
+    @Test
+    public void encryptInfoIfNeededEncryptsCommandsWithUserData() {
+        try (MockedStatic<EncryptionSecretKeyChecker> encryptionKeyCheckerMock = Mockito.mockStatic(EncryptionSecretKeyChecker.class);
+             MockedStatic<DBEncryptionUtil> dbEncryptionMock = Mockito.mockStatic(DBEncryptionUtil.class)) {
+            encryptionKeyCheckerMock.when(EncryptionSecretKeyChecker::useEncryption).thenReturn(true);
+            dbEncryptionMock.when(() -> DBEncryptionUtil.encrypt(RAW_CMD_INFO)).thenReturn("encrypted-value");
+
+            for (Class<? extends BaseAsyncCmd> cmdClass : List.of(DeployVMCmd.class, DeployVMCmdByAdmin.class, DeployVnfApplianceCmd.class,
+                    DeployVnfApplianceCmdByAdmin.class, CreateVMFromBackupCmd.class, CreateVMFromBackupCmdByAdmin.class,
+                    CreateAutoScaleVmProfileCmd.class, UpdateAutoScaleVmProfileCmd.class)) {
+                Assert.assertEquals(cmdClass.getSimpleName(), "encrypted-value", AsyncJobDataHelper.encryptInfoIfNeeded(cmdClass.getName(), RAW_CMD_INFO));
+            }
+        }
     }
 
     @APICommand(name = "testSensitiveAsyncCmd", responseObject = SuccessResponse.class,

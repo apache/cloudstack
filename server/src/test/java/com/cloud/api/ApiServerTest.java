@@ -24,8 +24,12 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.events.Event;
+import org.apache.cloudstack.framework.events.EventDistributor;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.user.UserPasswordResetManager;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -34,6 +38,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
@@ -244,5 +249,25 @@ public class ApiServerTest {
     @Test(expected = PermissionDeniedException.class)
     public void testCheckCommandAvailableThrowsWhenUserNull() throws Exception {
         ReflectionTestUtils.invokeMethod(apiServer, "checkCommandAvailable", null, "listVirtualMachines", InetAddress.getByName("127.0.0.1"));
+    }
+
+    @Test
+    public void handleAsyncJobPublishEventMasksSensitiveCmdInfo() {
+        AsyncJob job = Mockito.mock(AsyncJob.class);
+        Mockito.when(job.getDispatcher()).thenReturn("ApiAsyncJobDispatcher");
+        Mockito.when(job.getCmdInfo()).thenReturn("{\"userdata\":\"I2Nsb3VkLWNvbmZpZw==\",\"name\":\"vm1\"}");
+        User user = Mockito.mock(User.class);
+        Mockito.when(accountMgr.getUserIncludingRemoved(Mockito.anyLong())).thenReturn(user);
+        Mockito.when(accountMgr.getAccount(Mockito.anyLong())).thenReturn(Mockito.mock(Account.class));
+        EventDistributor eventDistributor = Mockito.mock(EventDistributor.class);
+        apiServer.setEventDistributor(eventDistributor);
+
+        apiServer.handleAsyncJobPublishEvent(null, null, new Pair<>(job, "test"));
+
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        Mockito.verify(eventDistributor).publish(eventCaptor.capture());
+        String description = eventCaptor.getValue().getDescription();
+        Assert.assertFalse(description.contains("I2Nsb3VkLWNvbmZpZw=="));
+        Assert.assertTrue(description.contains("vm1"));
     }
 }
