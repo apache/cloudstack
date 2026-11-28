@@ -240,6 +240,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sCertificate, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(externalCniPlugin, String.valueOf(externalCni));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(setupCsiDriver, String.valueOf(setupCsi));
+        k8sControlNodeConfig = replaceKubeletCloudProviderArg(k8sControlNodeConfig);
 
         k8sControlNodeConfig = updateKubeConfigWithRegistryDetails(k8sControlNodeConfig);
 
@@ -356,6 +357,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterHACertificateKey, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
+        k8sControlNodeConfig = replaceKubeletCloudProviderArg(k8sControlNodeConfig);
         k8sControlNodeConfig = updateKubeConfigWithRegistryDetails(k8sControlNodeConfig);
 
         return k8sControlNodeConfig;
@@ -789,6 +791,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         } catch (ManagementServerException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster : %s as its network cannot be started", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
+        if (!manager.isDirectAccess(network) && KubernetesClusterService.KubernetesClusterExternalCloudProviderEnabled.valueIn(kubernetesCluster.getZoneId())) {
+            kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), EXTERNAL_CLOUD_PROVIDER_DETAIL, "true", false);
+        }
         Pair<String, Integer> publicIpSshPort = new Pair<>(null, null);
         try {
             publicIpSshPort = getKubernetesClusterServerIpSshPort(null, true);
@@ -886,11 +891,15 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (!isKubernetesClusterKubeConfigAvailable(startTimeoutTime)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to retrieve kube-config for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
+        try {
+            deployProvider();
+        } catch (RuntimeException e) {
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s as unable to deploy the CloudStack Kubernetes provider", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
+        }
         if (!isKubernetesClusterDashboardServiceRunning(true, startTimeoutTime)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to get Dashboard service running for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(),KubernetesCluster.Event.OperationFailed);
         }
         taintControlNodes();
-        deployProvider();
         if (kubernetesCluster.isCsiEnabled()) {
             deployCsiDriver();
         }

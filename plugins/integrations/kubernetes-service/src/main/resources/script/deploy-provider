@@ -23,14 +23,23 @@ if [ -e /opt/provider/provider.yaml ]; then
     exit 0
 else
     mkdir -p /opt/provider
-    PROVIDER_URL="https://raw.githubusercontent.com/apache/cloudstack-kubernetes-provider/main/deployment.yaml"
+    PROVIDER_VERSION="v1.3.0"
+    PROVIDER_URL="https://raw.githubusercontent.com/apache/cloudstack-kubernetes-provider/${PROVIDER_VERSION}/deployment.yaml"
+    PROVIDER_IMAGE="apache/cloudstack-kubernetes-provider:${PROVIDER_VERSION}"
     provider_conf_file="/opt/provider/provider.yaml"
-    curl -sSL ${PROVIDER_URL} -o ${provider_conf_file}
-    if [ $? -ne 0 ]; then
+    provider_tmp_file="${provider_conf_file}.tmp.$$"
+    trap 'rm -f "$provider_tmp_file"' EXIT
+    if ! curl -fsSL "$PROVIDER_URL" -o "$provider_tmp_file"; then
         echo "Unable to connect to the internet to download the provider deployment and image"
         exit 1
-    else
-        /opt/bin/kubectl apply -f /opt/provider/provider.yaml
-        exit 0
     fi
+    # The v1.3.0 release manifest still references the v1.2.0 image
+    sed -i "s|image: apache/cloudstack-kubernetes-provider:.*|image: ${PROVIDER_IMAGE}|" "$provider_tmp_file"
+    if ! grep -qF "image: ${PROVIDER_IMAGE}" "$provider_tmp_file"; then
+        echo "The provider deployment does not reference ${PROVIDER_IMAGE}"
+        exit 1
+    fi
+    mv -f "$provider_tmp_file" "$provider_conf_file"
+    /opt/bin/kubectl apply -f /opt/provider/provider.yaml
+    exit 0
 fi
