@@ -1216,6 +1216,75 @@ class CsVpnUser(CsDataBag):
 
 class CsRemoteAccessVpn(CsDataBag):
     VPNCONFDIR = "/etc/ipsec.d"
+    # Route protocol number that marks the client throw routes owned by client_routes()
+    CLIENT_ROUTE_PROTO = "147"
+
+    def client_networks(self, obj, include_local_ip=False):
+        # The client range as CIDRs, plus the router's ppp address if asked. CloudStack only refuses
+        # a range that overlaps the VPC CIDR, so a network that overlaps a subnet on the router or a
+        # site-to-site peer network is left out and logged: routing it to the tunnels and dropping it
+        # off the tunnels would take that traffic over. A static route counts only when it equals or
+        # lies inside the network; a broader one (a supernet via a private gateway) leaves it alone.
+        start, end = [ipaddress.IPv4Address(a.strip()) for a in obj['ip_range'].split('-')]
+        nets = list(ipaddress.summarize_address_range(start, end))
+        if include_local_ip:
+            nets.append(ipaddress.IPv4Network(obj['local_ip'] + '/32'))
+
+        def ipv4(cidrs):
+            return [n for n in (ipaddress.ip_network(c.strip(), strict=False) for c in cidrs if c.strip() not in ("", "ERROR")) if n.version == 4]
+
+        taken = [interface.get_network() for interface in self.config.address().get_interfaces()]
+        for peer in CsSite2SiteVpn("site2sitevpn", self.config).get_bag().values():
+            if isinstance(peer, dict) and peer.get('create', True):
+                taken += peer.get('peer_guest_cidr_list', '').split(',')
+        taken = ipv4(taken)
+        static_routes = CsStaticRoutes("staticroutes", self.config).get_bag()
+        routes = ipv4([r.get('network', '') for k, r in static_routes.items() if k != "id" and not r.get('revoke')])
+        usable = []
+        for net in nets:
+            clash = [str(t) for t in taken if net.overlaps(t)] + [str(r) for r in routes if r.subnet_of(net)]
+            if clash:
+                logging.error("VPN client network %s overlaps %s on this router, not routing it to the VPN" % (net, ", ".join(clash)))
+            else:
+                usable.append(str(net))
+        return usable
+
+    def client_routes(self):
+        # Replies the router sends to VPN clients from an address on a public NIC (an LB address,
+        # ICMP) match "from <public subnet> lookup Table_ethX" and would leave by that NIC's gateway.
+        # A throw for each client network in every per-NIC table sends them on to main, which holds
+        # the per-session ppp routes, the same way tier networks are thrown. Reconciled on every pass:
+        # NIC changes rebuild the tables, and a deleted VPN is already gone from the data bag.
+        rules = CsHelper.execute("ip rule show")
+        if not rules:
+            logging.warning("ip rule show returned nothing, leaving VPN client routes alone")
+            return
+        tables = set()
+        for line in rules:
+            m = re.search(r"\blookup (Table_eth\d+)(?=\s|$)", line)
+            if m:
+                tables.add(m.group(1))
+        nets = set()
+        for public_ip in self.dbag:
+            if public_ip == "id" or not self.dbag[public_ip].get('create'):
+                continue
+            # An entry that can't be read adds nothing, like a deleted one; its spoofing rules go too
+            try:
+                nets.update(self.client_networks(self.dbag[public_ip], include_local_ip=True))
+            except Exception as e:
+                logging.error("Failed to read the VPN client networks of %s: %s" % (public_ip, e))
+        desired = set((n, t) for n in nets for t in tables)
+        present = set()
+        for line in CsHelper.execute("ip -4 route show table all proto %s" % self.CLIENT_ROUTE_PROTO):
+            words = line.split()
+            if len(words) < 2 or words[0] != "throw":
+                continue
+            table = words[words.index("table") + 1] if "table" in words else "main"
+            present.add((str(ipaddress.IPv4Network(words[1])), table))
+        for net, table in sorted(present - desired):
+            CsHelper.execute("ip route delete throw %s table %s proto %s" % (net, table, self.CLIENT_ROUTE_PROTO))
+        for net, table in sorted(desired - present):
+            CsHelper.execute("ip route add throw %s table %s proto %s" % (net, table, self.CLIENT_ROUTE_PROTO))
 
     def process(self):
         self.confips = []
@@ -1317,6 +1386,17 @@ class CsRemoteAccessVpn(CsDataBag):
         self.fw.append(["", "", "-A INPUT -i ppp+ -m udp -p udp --dport 53 -j ACCEPT"])
         self.fw.append(["", "", "-A INPUT -i ppp+ -m tcp -p tcp --dport 53 -j ACCEPT"])
         self.fw.append(["nat", "", "-I PREROUTING -i ppp+ -p tcp -m tcp --dport 53 -j DNAT --to-destination %s" % local_ip])
+
+        # A packet that claims a client's address must have come through a tunnel: the client throw
+        # routes would send replies to a spoofed one into that client's tunnel. No lo exception is
+        # needed: the router never owns a pool address (local_ip is outside the range and not listed)
+        try:
+            client_nets = self.client_networks(obj)
+        except Exception as e:
+            logging.error("Failed to read the VPN client networks, no spoofing rules: %s" % e)
+            client_nets = []
+        for net in client_nets:
+            self.fw.append(["mangle", "front", "-A PREROUTING -s %s ! -i ppp+ -j DROP" % net])
 
         if self.config.is_vpc():
             return
@@ -1669,6 +1749,12 @@ def main(argv):
     logging.debug("Configuring ip addresses")
     config.address().compare()
     config.address().process()
+
+    # Every pass, not only iptables passes: an ip_associations pass can rebuild a per-NIC table
+    try:
+        CsRemoteAccessVpn("remoteaccessvpn", config).client_routes()
+    except Exception as e:
+        logging.error("Failed to reconcile VPN client routes: %s" % e)
 
     databag_map = OrderedDict([("guest_network",       {"process_iptables": True,  "executor": [CsVpcGuestNetwork("guestnetwork", config)]}),
                                ("bgp_peers",           {"process_iptables": False,  "executor": [CsBgpPeers("bgppeers", config)]}),
