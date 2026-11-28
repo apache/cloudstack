@@ -229,7 +229,7 @@ public class ResourceManagerImplTest {
         BDDMockito.given(SSHCmdHelper.acquireAuthorizedConnection(eq(hostPrivateIp), eq(22),
                 eq(hostUsername), eq(hostPassword), eq(hostPrivateKey))).willReturn(sshConnection);
         BDDMockito.given(SSHCmdHelper.sshExecuteCmdOneShot(eq(sshConnection),
-                eq("service cloudstack-agent restart"))).
+                eq("sudo service cloudstack-agent restart"))).
                 willReturn(new SSHCmdHelper.SSHCmdResult(0,"",""));
 
         overrideDefaultConfigValue(ResourceManager.KvmSshToAgentEnabled, "_defaultValue", "true");
@@ -473,8 +473,14 @@ public class ResourceManagerImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void testConnectAndRestartAgentOnHostCannotRestart() throws Exception {
         BDDMockito.given(SSHCmdHelper.sshExecuteCmdOneShot(eq(sshConnection),
-                eq("service cloudstack-agent restart"))).willThrow(new SshException("exception"));
+                eq("sudo service cloudstack-agent restart"))).willThrow(new SshException("exception"));
         resourceManager.connectAndRestartAgentOnHost(host, hostUsername, hostPassword, hostPrivateKey);
+    }
+
+    @Test
+    public void testGetAgentRestartCommand() {
+        Assert.assertEquals("service cloudstack-agent restart", resourceManager.getAgentRestartCommand("root"));
+        Assert.assertEquals("sudo service cloudstack-agent restart", resourceManager.getAgentRestartCommand("cloudstack"));
     }
 
     @Test
