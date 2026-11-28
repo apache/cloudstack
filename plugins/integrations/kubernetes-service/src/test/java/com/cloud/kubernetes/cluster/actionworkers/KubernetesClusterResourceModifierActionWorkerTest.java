@@ -19,17 +19,23 @@ package com.cloud.kubernetes.cluster.actionworkers;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.WORKER;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesClusterResourceModifierActionWorkerTest {
@@ -134,5 +140,63 @@ public class KubernetesClusterResourceModifierActionWorkerTest {
 
         Mockito.when(kubernetesClusterMock.getName()).thenReturn(originalPrefix);
         Assert.assertEquals(expectedPrefix, kubernetesClusterResourceModifierActionWorker.getKubernetesClusterNodeNamePrefix());
+    }
+
+    private KubernetesClusterVO createClusterWithNodeOfferings(long clusterOfferingId, Long controlOfferingId, Long workerOfferingId) {
+        KubernetesClusterVO cluster = new KubernetesClusterVO();
+        cluster.setServiceOfferingId(clusterOfferingId);
+        cluster.setControlNodeCount(1);
+        cluster.setNodeCount(2);
+        cluster.setControlNodeServiceOfferingId(controlOfferingId);
+        cluster.setWorkerNodeServiceOfferingId(workerOfferingId);
+        return cluster;
+    }
+
+    @Test
+    public void syncClusterServiceOfferingWithNodeOfferingsSetsCommonOffering() {
+        KubernetesClusterVO cluster = createClusterWithNodeOfferings(1L, 2L, 2L);
+        kubernetesClusterResourceModifierActionWorker.syncClusterServiceOfferingWithNodeOfferings(cluster);
+        Assert.assertEquals(Long.valueOf(2L), cluster.getServiceOfferingId());
+        Mockito.verify(kubernetesClusterDaoMock).update(cluster.getId(), cluster);
+    }
+
+    @Test
+    public void syncClusterServiceOfferingWithNodeOfferingsKeepsOfferingWhenNodeOfferingsDiffer() {
+        KubernetesClusterVO cluster = createClusterWithNodeOfferings(1L, 2L, 3L);
+        kubernetesClusterResourceModifierActionWorker.syncClusterServiceOfferingWithNodeOfferings(cluster);
+        Assert.assertEquals(Long.valueOf(1L), cluster.getServiceOfferingId());
+        Mockito.verify(kubernetesClusterDaoMock, Mockito.never()).update(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    public void syncClusterServiceOfferingWithNodeOfferingsKeepsOfferingWhenAlreadyInSync() {
+        KubernetesClusterVO cluster = createClusterWithNodeOfferings(2L, null, 2L);
+        kubernetesClusterResourceModifierActionWorker.syncClusterServiceOfferingWithNodeOfferings(cluster);
+        Assert.assertEquals(Long.valueOf(2L), cluster.getServiceOfferingId());
+        Mockito.verify(kubernetesClusterDaoMock, Mockito.never()).update(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test
+    public void updateKubernetesClusterEntrySyncsClusterServiceOfferingAfterNodeOfferingScale() {
+        KubernetesClusterVO forUpdate = new KubernetesClusterVO();
+        KubernetesClusterVO stored = createClusterWithNodeOfferings(1L, 2L, null);
+        Mockito.when(kubernetesClusterDaoMock.createForUpdate(Mockito.anyLong())).thenReturn(forUpdate);
+        Mockito.when(kubernetesClusterDaoMock.persist(forUpdate)).thenAnswer(invocation -> {
+            stored.setWorkerNodeServiceOfferingId(forUpdate.getWorkerNodeServiceOfferingId());
+            return forUpdate;
+        });
+        Mockito.when(kubernetesClusterDaoMock.findById(Mockito.anyLong())).thenReturn(stored);
+        try (MockedStatic<Transaction> transactionMock = Mockito.mockStatic(Transaction.class)) {
+            transactionMock.when(() -> Transaction.execute(Mockito.any(TransactionCallback.class))).thenAnswer(invocation ->
+                    ((TransactionCallback<?>) invocation.getArgument(0)).doInTransaction(null));
+            KubernetesClusterVO result = kubernetesClusterResourceModifierActionWorker.updateKubernetesClusterEntry(null, null, null,
+                    2L, false, null, null, WORKER, true, false);
+            Assert.assertSame(stored, result);
+        }
+        Assert.assertEquals(Long.valueOf(2L), forUpdate.getWorkerNodeServiceOfferingId());
+        Assert.assertNull(forUpdate.getServiceOfferingId());
+        Assert.assertEquals(Long.valueOf(2L), stored.getServiceOfferingId());
+        Mockito.verify(kubernetesClusterDaoMock).persist(forUpdate);
+        Mockito.verify(kubernetesClusterDaoMock).update(stored.getId(), stored);
     }
 }

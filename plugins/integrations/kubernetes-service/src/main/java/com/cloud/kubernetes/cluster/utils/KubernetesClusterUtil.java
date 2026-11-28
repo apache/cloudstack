@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URL;
 import java.security.SecureRandom;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -327,6 +328,30 @@ public class KubernetesClusterUtil {
             token.append(token);
         }
         return token.toString().substring(0, 64);
+    }
+
+    /**
+     * The service offering shared by every node type that has nodes, or null if they differ. A node type without an
+     * offering of its own uses the one of the cluster.
+     */
+    public static Long getCommonNodeServiceOfferingId(final KubernetesCluster kubernetesCluster) {
+        Long clusterOfferingId = kubernetesCluster.getServiceOfferingId();
+        List<Pair<Long, Long>> nodeCountAndOfferingIds = List.of(
+                new Pair<>(kubernetesCluster.getControlNodeCount(), kubernetesCluster.getControlNodeServiceOfferingId()),
+                new Pair<>(kubernetesCluster.getNodeCount(), kubernetesCluster.getWorkerNodeServiceOfferingId()),
+                new Pair<>(kubernetesCluster.getEtcdNodeCount(), kubernetesCluster.getEtcdNodeServiceOfferingId()));
+        Long commonOfferingId = null;
+        for (Pair<Long, Long> nodeCountAndOfferingId : nodeCountAndOfferingIds) {
+            if (nodeCountAndOfferingId.first() == null || nodeCountAndOfferingId.first() <= 0) {
+                continue;
+            }
+            Long offeringId = nodeCountAndOfferingId.second() != null ? nodeCountAndOfferingId.second() : clusterOfferingId;
+            if (offeringId == null || (commonOfferingId != null && !commonOfferingId.equals(offeringId))) {
+                return null;
+            }
+            commonOfferingId = offeringId;
+        }
+        return commonOfferingId;
     }
 
     public static boolean clusterNodeVersionMatches(final String version,
