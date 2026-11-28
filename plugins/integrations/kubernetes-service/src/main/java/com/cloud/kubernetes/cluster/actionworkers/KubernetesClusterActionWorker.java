@@ -286,10 +286,18 @@ public class KubernetesClusterActionWorker {
         Hypervisor.HypervisorType type = template.getHypervisorType();
         KubernetesSupportedVersionVO kubernetesSupportedVersion = kubernetesSupportedVersionDao.findById(this.kubernetesCluster.getKubernetesVersionId());
         this.clusterTemplate = manager.getKubernetesServiceTemplate(dataCenterVO, type, null, KubernetesClusterNodeType.DEFAULT, kubernetesSupportedVersion);
-        this.controlNodeTemplate = templateDao.findById(this.kubernetesCluster.getControlNodeTemplateId());
-        this.workerNodeTemplate = templateDao.findById(this.kubernetesCluster.getWorkerNodeTemplateId());
-        this.etcdTemplate = templateDao.findById(this.kubernetesCluster.getEtcdNodeTemplateId());
+        this.controlNodeTemplate = getNodeTypeTemplate(this.kubernetesCluster.getControlNodeTemplateId());
+        this.workerNodeTemplate = getNodeTypeTemplate(this.kubernetesCluster.getWorkerNodeTemplateId());
+        this.etcdTemplate = getNodeTypeTemplate(this.kubernetesCluster.getEtcdNodeTemplateId());
         this.sshKeyFile = getManagementServerSshPublicKeyFile();
+    }
+
+    /**
+     * A cluster created before 4.21 has no template set for its node types. Its nodes are deployed from the default
+     * template, as they were before.
+     */
+    protected VirtualMachineTemplate getNodeTypeTemplate(Long nodeTypeTemplateId) {
+        return nodeTypeTemplateId != null ? templateDao.findById(nodeTypeTemplateId) : clusterTemplate;
     }
 
     protected String readResourceFile(String resource) throws IOException {
@@ -985,6 +993,10 @@ public class KubernetesClusterActionWorker {
     }
 
     protected boolean isDefaultTemplateUsed() {
+        if (kubernetesCluster.getControlNodeTemplateId() == null || kubernetesCluster.getWorkerNodeTemplateId() == null) {
+            // created before 4.21, see getNodeTypeTemplate()
+            return true;
+        }
         if (Arrays.asList(kubernetesCluster.getControlNodeTemplateId(), kubernetesCluster.getWorkerNodeTemplateId(), kubernetesCluster.getEtcdNodeTemplateId()).contains(kubernetesCluster.getTemplateId())) {
             return true;
         }
