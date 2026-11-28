@@ -122,7 +122,8 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         sc.setParameters("name", keys.toArray());
 
         List<R> results = search(sc, null);
-        return results.stream().collect(Collectors.toMap(R::getName, R::getValue));
+        // Like listDetailsKeyPairs(long), a name stored more than once keeps the last value instead of failing
+        return results.stream().collect(Collectors.toMap(R::getName, R::getValue, (first, second) -> second));
     }
 
     public Map<String, Boolean> listDetailsVisibility(long resourceId) {
@@ -145,7 +146,7 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         Map<Boolean, Map<String, String>> partitioned = results.stream()
                 .collect(Collectors.partitioningBy(
                         R::isDisplay,
-                        Collectors.toMap(R::getName, R::getValue)
+                        Collectors.toMap(R::getName, R::getValue, (first, second) -> second)
                 ));
         return new Pair<>(partitioned.get(true), partitioned.get(false));
     }
