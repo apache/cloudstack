@@ -2924,7 +2924,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
-        ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
+        ReservationContext context = new ReservationContextImpl(null, null, callerUser, caller);
 
         return _networkMgr.destroyNetwork(networkId, context, forced);
     }
