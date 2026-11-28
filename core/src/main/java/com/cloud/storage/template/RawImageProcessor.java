@@ -20,6 +20,9 @@
 package com.cloud.storage.template;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -31,6 +34,8 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.component.AdapterBase;
 
 public class RawImageProcessor extends AdapterBase implements Processor {
+    private static final byte[] QCOW2_MAGIC = {'Q', 'F', 'I', (byte) 0xfb};
+
     StorageLayer _storage;
 
     @Override
@@ -60,6 +65,10 @@ public class RawImageProcessor extends AdapterBase implements Processor {
             logger.debug("Unable to find raw image:" + imgPath);
             return null;
         }
+        if (isQcow2(imgPath)) {
+            throw new InternalErrorException("Template " + templateName + " was registered as RAW but the image is QCOW2, "
+                    + "register it again with format QCOW2");
+        }
         FormatInfo info = new FormatInfo();
         info.format = ImageFormat.RAW;
         info.filename = templateName + "." + ImageFormat.RAW.getFileExtension();
@@ -72,6 +81,17 @@ public class RawImageProcessor extends AdapterBase implements Processor {
     @Override
     public long getVirtualSize(File file) {
         return file.length();
+    }
+
+    // Taking a QCOW2 file's length as its size makes block storage create a volume that is too small
+    boolean isQcow2(String path) {
+        byte[] magic = new byte[QCOW2_MAGIC.length];
+        try (FileInputStream in = new FileInputStream(path)) {
+            return in.read(magic) == magic.length && Arrays.equals(magic, QCOW2_MAGIC);
+        } catch (IOException e) {
+            logger.debug("Unable to read the header of " + path + ": " + e.getMessage());
+            return false;
+        }
     }
 
 }
