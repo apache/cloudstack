@@ -16,14 +16,21 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
+import com.cloud.utils.Pair;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.libvirt.Connect;
+import org.libvirt.Domain;
+import org.libvirt.DomainBlockInfo;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.List;
 import java.util.UUID;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -69,5 +76,59 @@ public class LibvirtGetUnmanagedInstancesCommandWrapperTest {
         String imagePath = String.format("/mnt/97e4c9ed-e3bc-3e26-b103-7967fc9feae1/%s", relativePath);
         Mockito.when(diskDef.getSourcePath()).thenReturn(imagePath);
         Assert.assertEquals(relativePath, wrapper.getDiskRelativePath(diskDef));
+    }
+
+    @Test
+    public void testGlusterDiskStillUsesMountLookup() throws Exception {
+        LibvirtComputingResource libvirtComputingResource = Mockito.mock(LibvirtComputingResource.class);
+        Connect conn = Mockito.mock(Connect.class);
+        Domain domain = Mockito.mock(Domain.class);
+        String domainName = "i-2-40-VM";
+        Mockito.when(conn.domainLookupByName(domainName)).thenReturn(domain);
+        Mockito.when(domain.blockInfo(Mockito.anyString())).thenReturn(Mockito.mock(DomainBlockInfo.class));
+        Mockito.when(libvirtComputingResource.getSourceHostPath("vol1"))
+                .thenReturn(new Pair<>("10.0.0.5", "/vol1"));
+
+        LibvirtVMDef.DiskDef glusterDisk = new LibvirtVMDef.DiskDef();
+        glusterDisk.defNetworkBasedDisk("vol1/img.qcow2", "10.0.0.5", 24007, null, null, 0,
+                LibvirtVMDef.DiskDef.DiskBus.VIRTIO, LibvirtVMDef.DiskDef.DiskProtocol.GLUSTER,
+                LibvirtVMDef.DiskDef.DiskFmtType.QCOW2);
+
+        List<UnmanagedInstanceTO.Disk> disks = wrapper.getUnmanagedInstanceDisks(List.of(glusterDisk),
+                libvirtComputingResource, conn, domainName);
+
+        Assert.assertEquals(1, disks.size());
+        Assert.assertEquals("10.0.0.5", disks.get(0).getDatastoreHost());
+        Assert.assertEquals("/vol1", disks.get(0).getDatastorePath());
+        Mockito.verify(libvirtComputingResource).getSourceHostPath("vol1");
+    }
+
+    @Test
+    public void testRbdDiskIsNotResolvedThroughMountLookup() throws Exception {
+        LibvirtComputingResource libvirtComputingResource = Mockito.mock(LibvirtComputingResource.class);
+        Connect conn = Mockito.mock(Connect.class);
+        Domain domain = Mockito.mock(Domain.class);
+        String domainName = "i-2-35-VM";
+        Mockito.when(conn.domainLookupByName(domainName)).thenReturn(domain);
+        Mockito.when(domain.blockInfo(Mockito.anyString())).thenReturn(Mockito.mock(DomainBlockInfo.class));
+
+        LibvirtVMDef.DiskDef rbdDisk = new LibvirtVMDef.DiskDef();
+        String imageName = "230e1224-f7b7-4dfc-97a7-3a0752636a31";
+        rbdDisk.defNetworkBasedDisk("cloudstack/" + imageName, "192.168.55.201", 6789, null, null, 0,
+                LibvirtVMDef.DiskDef.DiskBus.VIRTIO, LibvirtVMDef.DiskDef.DiskProtocol.RBD,
+                LibvirtVMDef.DiskDef.DiskFmtType.RAW);
+
+        List<UnmanagedInstanceTO.Disk> disks = wrapper.getUnmanagedInstanceDisks(List.of(rbdDisk),
+                libvirtComputingResource, conn, domainName);
+
+        Assert.assertEquals(1, disks.size());
+        UnmanagedInstanceTO.Disk disk = disks.get(0);
+        Assert.assertEquals("192.168.55.201", disk.getDatastoreHost());
+        Assert.assertEquals("cloudstack", disk.getDatastorePath());
+        Assert.assertEquals("cloudstack", disk.getDatastoreName());
+        Assert.assertEquals("network", disk.getDatastoreType());
+        Assert.assertEquals("cloudstack/" + imageName, disk.getImagePath());
+        Assert.assertEquals(imageName, disk.getFileBaseName());
+        Mockito.verify(libvirtComputingResource, Mockito.never()).getSourceHostPath(Mockito.anyString());
     }
 }
