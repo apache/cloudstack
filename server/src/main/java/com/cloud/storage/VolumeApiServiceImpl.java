@@ -901,6 +901,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             parentVolume = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
+            if (parentVolume == null) {
+                throw new InvalidParameterValueException(String.format("Cannot create a volume from snapshot %s, because the volume it was taken from no longer exists", snapshotCheck.getUuid()));
+            }
 
             // Don't support creating templates from encrypted volumes (yet)
             if (parentVolume.getPassphraseId() != null) {
