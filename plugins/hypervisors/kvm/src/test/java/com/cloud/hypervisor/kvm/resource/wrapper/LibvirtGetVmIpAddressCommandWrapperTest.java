@@ -35,6 +35,7 @@ import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.GetVmIpAddressAnswer;
 import com.cloud.agent.api.GetVmIpAddressCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.utils.Pair;
@@ -57,6 +58,24 @@ public class LibvirtGetVmIpAddressCommandWrapperTest {
             " Ethernet Instance 0          02:0c:02:f9:00:80    ipv4         192.168.0.10/24\n" + //
             " Loopback Pseudo-Interface 1    ipv6         ::1/128\n" + //
             " -     -       ipv4        127.0.0.1/8\n";
+
+    // Windows guest that has not obtained a DHCP lease yet and self-assigned an APIPA address
+    private static String VIRSH_DOMIF_OUTPUT_WINDOWS_APIPA = " Name       MAC address          Protocol     Address\n" + //
+            "-------------------------------------------------------------------------------\n" + //
+            " Ethernet   02:01:00:d0:00:87    ipv6         fe80::df84:2984:e396:8ac3%6/64\n" + //
+            " -          -                    ipv4         169.254.149.120/16\n" + //
+            " Loopback Pseudo-Interface 1                      ipv6         ::1/128\n" + //
+            " -          -                    ipv4         127.0.0.1/8\n";
+
+    // Same Windows guest once the DHCP lease has been obtained
+    private static String VIRSH_DOMIF_OUTPUT_WINDOWS_DHCP = " Name       MAC address          Protocol     Address\n" + //
+            "-------------------------------------------------------------------------------\n" + //
+            " Ethernet   02:01:00:d0:00:87    ipv6         fd00:ac19:0:1910:0:d3fc:4177:2c32/128\n" + //
+            " -          -                    ipv6         fe80::df84:2984:e396:8ac3%6/64\n" + //
+            " -          -                    ipv4         172.25.16.236/22\n" + //
+            " -          -                    ipv4         169.254.149.120/16\n" + //
+            " Loopback Pseudo-Interface 1                      ipv6         ::1/128\n" + //
+            " -          -                    ipv4         127.0.0.1/8\n";
 
     @Before
     public void setUp() {
@@ -322,6 +341,116 @@ public class LibvirtGetVmIpAddressCommandWrapperTest {
             if (scriptMock != null)
                 scriptMock.close();
         }
+    }
+
+    private Answer executeOnL2Network(String domIfOutput, boolean windows) {
+        LibvirtComputingResource libvirtComputingResource = mock(LibvirtComputingResource.class);
+        GetVmIpAddressCommand getVmIpAddressCommand = mock(GetVmIpAddressCommand.class);
+        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
+        try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+            when(getVmIpAddressCommand.getVmName()).thenReturn("i-2-187-VM");
+            // L2 networks have no CIDR
+            when(getVmIpAddressCommand.getVmNetworkCidr()).thenReturn(null);
+            when(getVmIpAddressCommand.getMacAddress()).thenReturn("02:01:00:d0:00:87");
+            when(getVmIpAddressCommand.isWindows()).thenReturn(windows);
+            when(Script.executePipedCommands(anyList(), anyLong())).thenReturn(new Pair<>(0, domIfOutput));
+
+            return commandWrapper.execute(getVmIpAddressCommand, libvirtComputingResource);
+        }
+    }
+
+    @Test
+    public void testExecuteWithWindowsVmOnlyApipaAddressOnL2Network() {
+        Answer answer = executeOnL2Network(VIRSH_DOMIF_OUTPUT_WINDOWS_APIPA, true);
+
+        assertFalse(answer.getResult());
+        assertNull(answer.getDetails());
+    }
+
+    private void assertAddresses(Answer answer, boolean result, String ip4, String ip6) {
+        assertEquals(result, answer.getResult());
+        assertEquals(ip4, answer.getDetails());
+        assertEquals(ip6, ((GetVmIpAddressAnswer) answer).getIp6Address());
+    }
+
+    @Test
+    public void testExecuteWithIpv4Only() {
+        String output = " Name       MAC address          Protocol     Address\n" +
+                "-------------------------------------------------------------------------------\n" +
+                " Ethernet   02:01:00:d0:00:87    ipv4         172.25.16.236/22\n";
+
+        assertAddresses(executeOnL2Network(output, false), true, "172.25.16.236", null);
+    }
+
+    @Test
+    public void testExecuteWithIpv6Only() {
+        String output = " Name       MAC address          Protocol     Address\n" +
+                "-------------------------------------------------------------------------------\n" +
+                " Ethernet   02:01:00:d0:00:87    ipv6         fd00::1/128\n";
+
+        assertAddresses(executeOnL2Network(output, false), true, null, "fd00::1");
+    }
+
+    @Test
+    public void testExecuteWithIpv4AndIpv6LinkLocalFirstGlobalSecond() {
+        String output = " Name       MAC address          Protocol     Address\n" +
+                "-------------------------------------------------------------------------------\n" +
+                " Ethernet   02:01:00:d0:00:87    ipv6         fe80::1:2:3:4%6/64\n" +
+                " -          -                    ipv6         fd00::1/128\n" +
+                " -          -                    ipv4         172.25.16.236/22\n";
+
+        assertAddresses(executeOnL2Network(output, false), true, "172.25.16.236", "fd00::1");
+    }
+
+    @Test
+    public void testExecuteWithIpv4AndIpv6LinkLocalOnly() {
+        String output = " Name       MAC address          Protocol     Address\n" +
+                "-------------------------------------------------------------------------------\n" +
+                " Ethernet   02:01:00:d0:00:87    ipv6         fe80::1:2:3:4%6/64\n" +
+                " -          -                    ipv4         172.25.16.236/22\n";
+
+        assertAddresses(executeOnL2Network(output, false), true, "172.25.16.236", "fe80::1:2:3:4");
+    }
+
+    @Test
+    public void testExecuteWithIpv4AndIpv6GlobalFirstLinkLocalSecond() {
+        String output = " Name       MAC address          Protocol     Address\n" +
+                "-------------------------------------------------------------------------------\n" +
+                " Ethernet   02:01:00:d0:00:87    ipv6         fd00::1/128\n" +
+                " -          -                    ipv6         fe80::1:2:3:4%6/64\n" +
+                " -          -                    ipv4         172.25.16.236/22\n";
+
+        assertAddresses(executeOnL2Network(output, false), true, "172.25.16.236", "fd00::1");
+    }
+
+    @Test
+    public void testExecuteWithMultipleGlobalIpv6ReturnsFirst() {
+        String output = " Name       MAC address          Protocol     Address\n" +
+                "-------------------------------------------------------------------------------\n" +
+                " Ethernet   02:01:00:d0:00:87    ipv6         fe80::1:2:3:4%6/64\n" +
+                " -          -                    ipv6         fd00::1/128\n" +
+                " -          -                    ipv6         fd00::2/128\n" +
+                " -          -                    ipv4         172.25.16.236/22\n";
+
+        assertAddresses(executeOnL2Network(output, false), true, "172.25.16.236", "fd00::1");
+    }
+
+    @Test
+    public void testExecuteWithIpv6LinkLocalOnlyNoIpv4() {
+        String output = " Name       MAC address          Protocol     Address\n" +
+                "-------------------------------------------------------------------------------\n" +
+                " Ethernet   02:01:00:d0:00:87    ipv6         fe80::1:2:3:4%6/64\n";
+
+        assertAddresses(executeOnL2Network(output, false), false, null, "fe80::1:2:3:4");
+    }
+
+    @Test
+    public void testExecuteWithWindowsVmDhcpAndApipaAddressOnL2Network() {
+        Answer answer = executeOnL2Network(VIRSH_DOMIF_OUTPUT_WINDOWS_DHCP, true);
+
+        assertTrue(answer.getResult());
+        assertEquals("172.25.16.236", answer.getDetails());
+        assertEquals("fd00:ac19:0:1910:0:d3fc:4177:2c32", ((GetVmIpAddressAnswer) answer).getIp6Address());
     }
 
     @Test

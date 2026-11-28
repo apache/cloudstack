@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.GetVmIpAddressAnswer;
 import com.cloud.agent.api.GetVmIpAddressCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
@@ -58,10 +59,11 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
     @Override
     public Answer execute(final GetVmIpAddressCommand command, final LibvirtComputingResource libvirtComputingResource) {
         String ip = null;
+        String ip6 = null;
         boolean result = false;
         String vmName = command.getVmName();
         if (!NetUtils.verifyDomainNameLabel(vmName, true)) {
-            return new Answer(command, result, ip);
+            return new GetVmIpAddressAnswer(command, result, ip, ip6);
         }
 
         String sanitizedVmName = sanitizeBashCommandArgument(vmName);
@@ -70,7 +72,9 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
 
         init();
 
-        ip = ipFromDomIf(sanitizedVmName, networkCidr, macAddress);
+        Pair<String, String> ipAddresses = ipFromDomIf(sanitizedVmName, networkCidr, macAddress);
+        ip = ipAddresses.first();
+        ip6 = ipAddresses.second();
 
         if (ip == null && networkCidr != null) {
             if(!command.isWindows()) {
@@ -80,18 +84,21 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
             }
         }
 
-        if(ip != null){
+        // success needs an IPv4 address or a global IPv6 address (IPv6-only guests); a link-local IPv6 address alone
+        // is only reported along with an IPv4 address
+        if (ip != null || (ip6 != null && !NetUtils.isLinkLocalIp6(ip6))) {
             result = true;
-            logger.debug("GetVmIp: "+ vmName + " Found Ip: "+ip);
+            logger.debug("GetVmIp: " + vmName + " Found Ip: " + ip + ", Ipv6: " + ip6);
         } else {
             logger.warn("GetVmIp: "+ vmName + " IP not found.");
         }
 
-        return new Answer(command, result, ip);
+        return new GetVmIpAddressAnswer(command, result, ip, ip6);
     }
 
-    private String ipFromDomIf(String sanitizedVmName, String networkCidr, String macAddress) {
+    private Pair<String, String> ipFromDomIf(String sanitizedVmName, String networkCidr, String macAddress) {
         String ip = null;
+        String ip6 = null;
         List<String[]> commands = new ArrayList<>();
         commands.add(new String[]{virsh_path, "domifaddr", sanitizedVmName, "--source", "agent"});
         Pair<Integer,String> response = executePipedCommands(commands, 0);
@@ -102,15 +109,17 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
             if (networkCidr == null || NetUtils.isIpWithInCidrRange(ipv4, networkCidr)) {
                 ip = ipv4;
             }
+            ip6 = ipAddresses.second();
         } else {
             logger.error("ipFromDomIf: Command execution failed for VM: " + sanitizedVmName);
         }
-        return ip;
+        return new Pair<>(ip, ip6);
     }
 
     private Pair<String, String> getIpAddresses(String output, String macAddress) {
         String ipv4 = null;
         String ipv6 = null;
+        String linkLocalIpv6 = null;
         boolean found = false;
         String[] lines = output.split("\n");
         for (String line : lines) {
@@ -130,11 +139,28 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
             found = true;
             String ipFamily = parts[parts.length - 2];
             String ipPart = parts[parts.length - 1].split("/")[0];
+            // Skip link-local IPv4 addresses (e.g. Windows APIPA 169.254.0.0/16 before a DHCP lease is obtained),
+            // they are not routable and must not be reported as the instance IP
             if (ipFamily.equals("ipv4")) {
-                ipv4 = ipPart;
+                if (NetUtils.isLinkLocalIp4(ipPart)) {
+                    logger.debug(String.format("Ignoring link-local ipv4 %s with mac address %s", ipPart, macAddress));
+                } else {
+                    ipv4 = ipPart;
+                }
             } else if (ipFamily.equals("ipv6")) {
-                ipv6 = ipPart;
+                // keep the first global address, and the first link-local one as a fallback
+                if (NetUtils.isLinkLocalIp6(ipPart)) {
+                    if (linkLocalIpv6 == null) {
+                        int zoneIndex = ipPart.indexOf('%');
+                        linkLocalIpv6 = zoneIndex >= 0 ? ipPart.substring(0, zoneIndex) : ipPart;
+                    }
+                } else if (ipv6 == null) {
+                    ipv6 = ipPart;
+                }
             }
+        }
+        if (ipv6 == null) {
+            ipv6 = linkLocalIpv6;
         }
         logger.debug(String.format("Found ipv4: %s and ipv6: %s with mac address %s", ipv4, ipv6, macAddress));
         return new Pair<>(ipv4, ipv6);
