@@ -39,7 +39,9 @@ public final class LibvirtNetworkRulesSystemVmCommandWrapper extends CommandWrap
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName());
-            success = libvirtComputingResource.configureDefaultNetworkRulesForSystemVm(conn, command.getVmName());
+            // this command is only sent after a migration; the rules are re-applied on the
+            // destination host, but the bridge firewall framework must not be created there
+            success = libvirtComputingResource.configureDefaultNetworkRulesForSystemVm(conn, command.getVmName(), true);
         } catch (final LibvirtException e) {
             logger.trace("Ignoring libvirt error.", e);
         }

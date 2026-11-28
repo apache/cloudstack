@@ -371,8 +371,15 @@ def refactor_ebtable_rules(vm_name):
     logging.debug("Refactoring ebtables rules for vm " + vm_name + " is done")
     return True
 
-def default_network_rules_systemvm(vm_name, localbrname):
+def default_network_rules_systemvm(vm_name, localbrname, only_existing_framework=False):
     bridges = get_bridges(vm_name)
+    if only_existing_framework:
+        # do not create the bridge firewall framework, only program the vm into the bridges
+        # which already have one
+        bridges = [bridge for bridge in bridges if bridge != localbrname and has_fw_framework(bridge)]
+        if not bridges:
+            logging.debug("No bridge firewall framework on the bridges of " + vm_name + ", nothing to program")
+            return True
     domid = get_vm_id(vm_name)
     vmchain = iptables_chain_name(vm_name)
 
@@ -1277,6 +1284,31 @@ def get_br_fw(brname):
     return brfwname
 
 
+def has_fw_framework(brname):
+    try:
+        execute("iptables -n -L " + get_br_fw(brname))
+    except:
+        return False
+    return True
+
+
+def add_systemvm_rules_for_bridge(brname):
+    # The bridge firewall framework has just been created on this bridge. Any system vm
+    # (router, secondary storage vm, console proxy) already attached to it has no rules in
+    # the framework and would be dropped, so program them now.
+    try:
+        for vm_name in virshlist(['running', 'paused']):
+            if 1 not in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-'] ]:
+                continue
+            if not get_vifs_for_bridge(vm_name, brname):
+                continue
+            logging.debug("Programming default rules on bridge " + brname + " for system vm " + vm_name)
+            # the link local bridge never has a bridge firewall framework, so it is skipped anyway
+            default_network_rules_systemvm(vm_name, None, True)
+    except:
+        logging.debug("Failed to program default rules for the system vms on bridge " + brname)
+
+
 def add_fw_framework(brname):
     try:
         execute("modprobe br_netfilter")
@@ -1342,6 +1374,7 @@ def add_fw_framework(brname):
             execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-in -j " + brfwin)
             execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-out -j " + brfwout)
             execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-out " + physdev + " -j ACCEPT")
+            add_systemvm_rules_for_bridge(brname)
 
         if refs6 == 0:
             execute('ip6tables -I FORWARD -i ' + brname + ' -j DROP')
@@ -1616,6 +1649,7 @@ if __name__ == '__main__':
     parser.add_argument("--privnic", dest="privnic")
     parser.add_argument("--isFirstNic", action="store_true", dest="isFirstNic")
     parser.add_argument("--check", action="store_true", dest="check")
+    parser.add_argument("--onlyexistingframework", action="store_true", dest="onlyExistingFramework")
     args = parser.parse_args()
     cmd = args.command
     logging.debug("Executing command: %s", cmd)
@@ -1639,7 +1673,7 @@ if __name__ == '__main__':
         else:
             destroy_network_rules_for_nic(args.vmName, args.vmIP, args.vmMAC, args.vif, args.nicSecIps)
     elif cmd == "default_network_rules_systemvm":
-        default_network_rules_systemvm(args.vmName, args.localbrname)
+        default_network_rules_systemvm(args.vmName, args.localbrname, args.onlyExistingFramework)
     elif cmd == "get_rule_logs_for_vms":
         get_rule_logs_for_vms()
     elif cmd == "add_network_rules":
