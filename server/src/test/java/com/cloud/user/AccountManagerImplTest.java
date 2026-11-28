@@ -34,6 +34,7 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
@@ -1730,5 +1731,69 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         setPrivateField(accountManagerImpl, "apiNameList", new ArrayList<>(allApis));
 
         accountManagerImpl.checkRoleEscalation(caller, requested);
+    }
+
+    @Test
+    public void testIsRootAdminAccountReturnsFalseForNullAccount() {
+        Assert.assertFalse(accountManagerImpl.isRootAdmin((Account) null));
+        Mockito.verifyNoInteractions(securityChecker);
+    }
+
+    @Test
+    public void testIsRootAdminAccountReturnsTrueWhenACheckerGrantsAccess() throws Exception {
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(securityChecker.checkAccess(account, null, null, "SystemCapability")).thenReturn(true);
+
+        Assert.assertTrue(accountManagerImpl.isRootAdmin(account));
+    }
+
+    @Test
+    public void testIsRootAdminAccountReturnsFalseWhenNoCheckerGrantsAccess() throws Exception {
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(securityChecker.checkAccess(account, null, null, "SystemCapability")).thenReturn(false);
+
+        Assert.assertFalse(accountManagerImpl.isRootAdmin(account));
+    }
+
+    @Test
+    public void testIsRootAdminAccountReturnsFalseWhenCheckerThrowsPermissionDenied() throws Exception {
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(securityChecker.checkAccess(account, null, null, "SystemCapability"))
+                .thenThrow(new PermissionDeniedException("denied"));
+
+        Assert.assertFalse(accountManagerImpl.isRootAdmin(account));
+    }
+
+    @Test
+    public void testIsRootAdminAccountStopsAtFirstGrantingChecker() throws Exception {
+        Account account = Mockito.mock(Account.class);
+        SecurityChecker secondChecker = Mockito.mock(SecurityChecker.class);
+        Mockito.when(securityChecker.checkAccess(account, null, null, "SystemCapability")).thenReturn(true);
+        accountManagerImpl.setSecurityCheckers(Arrays.asList(securityChecker, secondChecker));
+
+        Assert.assertTrue(accountManagerImpl.isRootAdmin(account));
+        Mockito.verifyNoInteractions(secondChecker);
+    }
+
+    @Test
+    public void testIsRootAdminLongReturnsFalseForNullAccountId() {
+        Assert.assertFalse(accountManagerImpl.isRootAdmin((Long) null));
+        Mockito.verifyNoInteractions(_accountDao);
+    }
+
+    @Test
+    public void testIsRootAdminLongReturnsFalseWhenAccountNotFound() {
+        Mockito.when(_accountDao.findById(99L)).thenReturn(null);
+
+        Assert.assertFalse(accountManagerImpl.isRootAdmin(99L));
+    }
+
+    @Test
+    public void testIsRootAdminLongDelegatesToAccountOverload() throws Exception {
+        AccountVO account = Mockito.mock(AccountVO.class);
+        Mockito.when(_accountDao.findById(1L)).thenReturn(account);
+        Mockito.when(securityChecker.checkAccess(account, null, null, "SystemCapability")).thenReturn(true);
+
+        Assert.assertTrue(accountManagerImpl.isRootAdmin(1L));
     }
 }

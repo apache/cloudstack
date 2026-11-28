@@ -1244,6 +1244,7 @@ public class UnmanagedVMsManagerImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void testSelectKVMHostForImportingInClusterFailure() {
         ClusterVO cluster = getClusterForTests();
+        when(cluster.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType())).thenReturn(List.of());
 
         unmanagedVMsManager.selectKVMHostForImportingInCluster(cluster, null);
@@ -1374,6 +1375,7 @@ public class UnmanagedVMsManagerImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void testSelectKVMHostForConversionInClusterWithImportInstanceIdFailure() {
         ClusterVO cluster = getClusterForTests();
+        when(cluster.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
 
         when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
                 cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION)).thenReturn(List.of());

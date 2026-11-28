@@ -306,4 +306,11 @@ public class StringUtilsTest {
                 + "%26details%5B1%5D.value%3DSECRET_SENTINEL%26details%5B1%5D.key%3Dsecretkey";
         assertEquals("command%3DaddImageStore%26name%3Dstore-1&", StringUtils.cleanString(query));
     }
+
+    @Test
+    public void testToNullSafeString() {
+        assertEquals("null", StringUtils.toNullSafeString(null));
+        assertEquals("value", StringUtils.toNullSafeString("value"));
+        assertEquals("", StringUtils.toNullSafeString(""));
+    }
 }

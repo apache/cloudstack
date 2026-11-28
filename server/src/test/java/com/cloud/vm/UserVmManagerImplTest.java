@@ -1671,7 +1671,6 @@ public class UserVmManagerImplTest {
         when(accountMock.getId()).thenReturn(userId);
         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
         when(userVmVoMock.getAccountId()).thenReturn(accountId);
-        when(userVmVoMock.getUuid()).thenReturn("a967643d-7633-4ab4-ac26-9c0b63f50cc1");
         when(accountDao.findById(accountId)).thenReturn(callerAccount);
         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Starting);
 
@@ -1687,7 +1686,6 @@ public class UserVmManagerImplTest {
         when(accountMock.getId()).thenReturn(userId);
         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
         when(userVmVoMock.getAccountId()).thenReturn(accountId);
-        when(userVmVoMock.getUuid()).thenReturn("a967643d-7633-4ab4-ac26-9c0b63f50cc1");
         when(accountDao.findById(accountId)).thenReturn(callerAccount);
         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
         when(userVmVoMock.getTemplateId()).thenReturn(currentTemplateId);
@@ -1708,7 +1706,6 @@ public class UserVmManagerImplTest {
         when(accountMock.getId()).thenReturn(userId);
         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
         when(userVmVoMock.getAccountId()).thenReturn(accountId);
-        when(userVmVoMock.getUuid()).thenReturn("a967643d-7633-4ab4-ac26-9c0b63f50cc1");
         when(accountDao.findById(accountId)).thenReturn(callerAccount);
         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
         when(userVmVoMock.getTemplateId()).thenReturn(currentTemplateId);
@@ -2060,25 +2057,25 @@ public class UserVmManagerImplTest {
 
     @Test
     public void validateIfVmSupportsMigrationTestVmIsNullThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("There is no VM by ID [%s].", 1L);
+        String expectedMessageKey = "vm.assign.vm.not.found";
 
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.validateIfVmSupportsMigration(null, 1L);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
     public void validateIfVmSupportsMigrationTestVmIsRunningThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("Unable to move VM [%s] in [%s] state.", userVmVoMock, VirtualMachine.State.Running);
+        String expectedMessageKey = "vm.assign.vm.not.right.state";
         Mockito.doReturn(VirtualMachine.State.Running).when(userVmVoMock).getState();
 
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.validateIfVmSupportsMigration(userVmVoMock, 1L);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
@@ -2089,7 +2086,7 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.validateIfVmSupportsMigration(userVmVoMock, 1L);
         });
 
-        Assert.assertEquals("Migration is not supported for Shared FileSystem Instances.", assertThrows.getMessage());
+        Assert.assertEquals("vm.assign.sharedfs.not.supported", assertThrows.getMessageKey());
     }
 
     @Test
@@ -2107,29 +2104,30 @@ public class UserVmManagerImplTest {
 
     @Test
     public void validateOldAndNewAccountsTestOldAccountIsNullThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("Invalid old account [%s] for VM in domain [%s].", userVmVoMock.getAccountId(), assignVmCmdMock.getDomainId());
+        String expectedMessageKey = "vm.assign.old.account.invalid";
 
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.validateOldAndNewAccounts(null, accountMock, userVmVoMock.getAccountId(), "", assignVmCmdMock.getDomainId());
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
     public void validateOldAndNewAccountsTestNewAccountIsNullThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("Invalid new account [%s] for VM in domain [%s].", assignVmCmdMock.getAccountName(), assignVmCmdMock.getDomainId());
+        String expectedMessageKey = "vm.assign.new.account.invalid";
+        Mockito.doReturn("test").when(assignVmCmdMock).getAccountName();
 
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.validateOldAndNewAccounts(accountMock, null, 1L, assignVmCmdMock.getAccountName(), assignVmCmdMock.getDomainId());
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
     public void validateOldAndNewAccountsTestNewAccountStateIsDisabledThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("The new account owner [%s] is disabled.", accountMock);
+        String expectedMessageKey = "vm.assign.new.account.disabled";
 
         Mockito.doReturn(Account.State.DISABLED).when(accountMock).getState();
 
@@ -2137,12 +2135,12 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.validateOldAndNewAccounts(accountMock, accountMock, 1L, "", 1L);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
     public void validateOldAndNewAccountsTestOldAccountIsTheSameAsNewAccountThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("The new account [%s] is the same as the old account.", accountMock);
+        String expectedMessageKey = "vm.assign.same.account";
 
         Mockito.doReturn(Account.State.ENABLED).when(accountMock).getState();
 
@@ -2150,7 +2148,7 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.validateOldAndNewAccounts(accountMock, accountMock, 1L, "", 1L);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
@@ -2173,7 +2171,7 @@ public class UserVmManagerImplTest {
 
     @Test
     public void validateIfVmHasNoRulesTestPortForwardingRulesExistThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("Remove any Port Forwarding rules for VM [%s] before assigning it to another user.", userVmVoMock);
+        String expectedMessageKey = "vm.assign.portforwarding.rules.exist";
 
         Mockito.doReturn(portForwardingRulesListMock).when(portForwardingRulesDaoMock).listByVm(Mockito.anyLong());
 
@@ -2181,12 +2179,12 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.validateIfVmHasNoRules(userVmVoMock, 1L);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
     public void validateIfVmHasNoRulesTestStaticNatRulesExistThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("Remove the StaticNat rules for VM [%s] before assigning it to another user.", userVmVoMock);
+        String expectedMessageKey = "vm.assign.staticnat.rules.exist";
 
         Mockito.doReturn(firewallRuleVoListMock).when(firewallRulesDaoMock).listStaticNatByVmId(Mockito.anyLong());
 
@@ -2194,12 +2192,12 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.validateIfVmHasNoRules(userVmVoMock, 1L);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
     public void validateIfVmHasNoRulesTestLoadBalancingRulesExistThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("Remove the Load Balancing rules for VM [%s] before assigning it to another user.", userVmVoMock);
+        String expectedMessageKey = "vm.assign.loadbalancer.rules.exist";
 
         Mockito.doReturn(loadBalancerVmMapVoListMock).when(loadBalancerVmMapDaoMock).listByInstanceId(Mockito.anyLong());
 
@@ -2207,12 +2205,12 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.validateIfVmHasNoRules(userVmVoMock, 1L);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
     public void validateIfVmHasNoRulesTestOneToOneNatRulesExistThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("Remove the One to One Nat rule for VM [%s] for IP [%s].", userVmVoMock, ipAddressVoMock.toString());
+        String expectedMessageKey = "vm.assign.onetoonat.rule.exists";
 
         LinkedList<IPAddressVO> ipAddressVoList = new LinkedList<>();
 
@@ -2224,7 +2222,7 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.validateIfVmHasNoRules(userVmVoMock, 1L);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
@@ -2258,13 +2256,13 @@ public class UserVmManagerImplTest {
 
     @Test
     public void validateIfNewOwnerHasAccessToTemplateTestTemplateIsNullThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("Template for VM [%s] cannot be found.", userVmVoMock.getUuid());
+        String expectedMessageKey = "vm.assign.template.not.found";
 
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.validateIfNewOwnerHasAccessToTemplate(userVmVoMock, accountMock, null);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
@@ -2319,13 +2317,13 @@ public class UserVmManagerImplTest {
 
     @Test
     public void addDefaultNetworkToNetworkListTestDefaultNetworkIsNullThrowsInvalidParameterValueException() {
-        String expectedMessage = "Unable to find a default network to start a VM.";
+        String expectedMessageKey = "vm.assign.default.network.not.found";
 
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.addDefaultNetworkToNetworkList(networkVoListMock, null);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
@@ -2348,7 +2346,7 @@ public class UserVmManagerImplTest {
 
     @Test
     public void addSecurityGroupsToVmTestIsVmWareAndSecurityGroupIdListIsNotNullThrowsInvalidParameterValueException() {
-        String expectedMessage = "Security group feature is not supported for VMWare hypervisor.";
+        String expectedMessageKey = "vm.assign.securitygroup.vmware.not.supported";
         LinkedList<Long> securityGroupIdList = new LinkedList<>();
 
         Mockito.doReturn(Hypervisor.HypervisorType.VMware).when(virtualMachineTemplateMock).getHypervisorType();
@@ -2357,7 +2355,7 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.addSecurityGroupsToVm(accountMock, userVmVoMock, virtualMachineTemplateMock, securityGroupIdList, networkMock);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
@@ -2390,8 +2388,7 @@ public class UserVmManagerImplTest {
 
     @Test
     public void getOfferingWithRequiredAvailabilityForNetworkCreationTestRequiredOfferingsListHasNoOfferingsThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("Unable to find network offering with availability [%s] to automatically create the network as a part of VM creation.",
-                NetworkOffering.Availability.Required);
+        String expectedMessageKey = "vm.assign.network.offering.required.not.found";
         LinkedList<NetworkOfferingVO> requiredOfferings = new LinkedList<>();
 
         Mockito.doReturn(requiredOfferings).when(networkOfferingDaoMock).listByAvailability(NetworkOffering.Availability.Required, false);
@@ -2400,25 +2397,23 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.getOfferingWithRequiredAvailabilityForNetworkCreation();
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
     public void getOfferingWithRequiredAvailabilityForNetworkCreationTestFirstOfferingIsNotEnabledThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("Required network offering ID [%s] is not in [%s] state.", 1L, NetworkOffering.State.Enabled);
+        String expectedMessageKey = "vm.assign.network.offering.required.not.enabled";
 
         Mockito.doReturn(networkOfferingVoListMock).when(networkOfferingDaoMock).listByAvailability(NetworkOffering.Availability.Required, false);
         Mockito.doReturn(networkOfferingVoMock).when(networkOfferingVoListMock).get(0);
 
         Mockito.doReturn(NetworkOffering.State.Disabled).when(networkOfferingVoMock).getState();
 
-        Mockito.doReturn(1L).when(networkOfferingVoMock).getId();
-
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.getOfferingWithRequiredAvailabilityForNetworkCreation();
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -2435,7 +2430,7 @@ public class UserVmManagerImplTest {
 
     @Test
     public void selectApplicableNetworkToCreateVmTestVirtualNetworkHasMultipleNetworksThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("More than one default isolated network has been found for account [%s]; please specify networkIDs.", accountMock);
+        String expectedMessageKey = "vm.assign.multiple.default.networks";
         HashSet<NetworkVO> applicableNetworks = new HashSet<>();
         LinkedList<NetworkVO> virtualNetworks = new LinkedList<>();
 
@@ -2448,7 +2443,7 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.selectApplicableNetworkToCreateVm(accountMock, _dcMock, applicableNetworks);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
@@ -2629,7 +2624,7 @@ public class UserVmManagerImplTest {
 
     @Test
     public void addAdditionalNetworksToVmTestNetworkIsNullThrowsInvalidParameterValueException() {
-        String expectedMessage = "Unable to find specified Network ID.";
+        String expectedMessageKey = "vm.assign.network.not.found";
         LinkedList<Long> networkIdList = new LinkedList<>();
         HashSet<NetworkVO> applicableNetworks = Mockito.spy(new HashSet<>());
         HashMap<Long, String> requestedIPv4ForNics = new HashMap<>();
@@ -2641,12 +2636,12 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.addAdditionalNetworksToVm(userVmVoMock, accountMock, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
     public void addAdditionalNetworksToVmTestNetworkOfferingIsSystemOnlyThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("Specified network [%s] is system only and cannot be used for VM deployment.", networkMock);
+        String expectedMessageKey = "vm.assign.network.system.only";
         LinkedList<Long> networkIdList = new LinkedList<>();
         HashSet<NetworkVO> applicableNetworks = Mockito.spy(new HashSet<>());
         HashMap<Long, String> requestedIPv4ForNics = new HashMap<>();
@@ -2662,7 +2657,7 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.addAdditionalNetworksToVm(userVmVoMock, accountMock, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
@@ -2752,12 +2747,12 @@ public class UserVmManagerImplTest {
     public void createApplicableNetworkToCreateVmTestPhysicalNetworkIsNullThrowsInvalidParameterValueException() {
         Mockito.doReturn(networkOfferingVoMock).when(userVmManagerImpl).getOfferingWithRequiredAvailabilityForNetworkCreation();
 
-        String expectedMessage = String.format("Unable to find physical network with ID [%s] and tag [%s].", 0L, null);
+        String expectedMessageKey = "vm.assign.physical.network.not.found";
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.createApplicableNetworkToCreateVm(accountMock, _dcMock);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
@@ -2949,7 +2944,7 @@ public class UserVmManagerImplTest {
 
     @Test
     public void implementNetworkTestImplementedNetworkCatchException() throws ResourceUnavailableException, InsufficientCapacityException {
-        String expectedMessage = String.format("Failed to implement network [%s] elements and resources as a part of network provision.", networkMock);
+        String expectedMessageKey = "vm.assign.network.implement.failed";
 
         CallContext callContextMock = Mockito.mock(CallContext.class);
 
@@ -2967,13 +2962,13 @@ public class UserVmManagerImplTest {
                 userVmManagerImpl.implementNetwork(accountMock, _dcMock, networkMock);
             });
 
-            Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+            Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
         }
     }
 
     @Test
     public void updateBasicTypeNetworkForVmTestNetworkIdListIsNotEmptyThrowsInvalidParameterValueException() {
-        String expectedMessage = "Cannot move VM with Network IDs; this is a basic zone VM.";
+        String expectedMessageKey = "vm.assign.basic.zone.network.ids.not.allowed";
         LinkedList<Long> networkIdList = new LinkedList<>();
         LinkedList<Long> securityGroupIdList = new LinkedList<>();
 
@@ -2984,7 +2979,7 @@ public class UserVmManagerImplTest {
                     securityGroupIdList);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
@@ -3024,7 +3019,7 @@ public class UserVmManagerImplTest {
 
     @Test
     public void updateAdvancedTypeNetworkForVmTestSecurityGroupIsEnabledApplicableNetworksIsEmptyThrowsInvalidParameterValueException() {
-        String expectedMessage = "No network is specified, please specify one when you move the VM. For now, please add a network to VM on NICs tab.";
+        String expectedMessageKey = "vm.assign.advanced.sg.no.network";
         LinkedList<Long> securityGroupIdList = Mockito.mock(LinkedList.class);
         LinkedList<Long> networkIdList = new LinkedList<>();
 
@@ -3036,7 +3031,7 @@ public class UserVmManagerImplTest {
         });
 
         Mockito.verify(securityGroupManagerMock).removeInstanceFromGroups(Mockito.any());
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
@@ -3062,7 +3057,7 @@ public class UserVmManagerImplTest {
 
     @Test
     public void updateAdvancedTypeNetworkForVmTestSecurityGroupIsNotEnabledSecurityGroupIdListIsNotEmptyThrowsInvalidParameterValueException() {
-        String expectedMessage = "Cannot move VM with security groups; security group feature is not enabled in this zone.";
+        String expectedMessageKey = "vm.assign.securitygroup.zone.not.enabled";
         LinkedList<Long> securityGroupIdList = Mockito.mock(LinkedList.class);
         LinkedList<Long> networkIdList = new LinkedList<>();
 
@@ -3075,7 +3070,7 @@ public class UserVmManagerImplTest {
                     _dcMock, networkIdList, securityGroupIdList);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
@@ -3171,8 +3166,7 @@ public class UserVmManagerImplTest {
 
     @Test
     public void validateIfVolumesHaveNoSnapshotsTestVolumeHasSnapshotsThrowsInvalidParameterException() {
-        String expectedMessage = String.format("Snapshots exist for volume [%s]. Detach volume or remove snapshots for the volume before assigning VM to another user.",
-                volumeVOMock.getName());
+        String expectedMessageKey = "vm.assign.volume.snapshots.exist";
 
         LinkedList<VolumeVO> volumes = new LinkedList<>();
         volumes.add(volumeVOMock);
@@ -3185,7 +3179,7 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.validateIfVolumesHaveNoSnapshots(volumes);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
@@ -3201,7 +3195,7 @@ public class UserVmManagerImplTest {
 
     @Test
     public void moveVmToUserTestCallerIsNotRootAdminAndDomainAdminThrowsInvalidParameterValueException() {
-        String expectedMessage = String.format("Only root or domain admins are allowed to assign VMs. Caller [%s] is of type [%s].", callerAccount, callerAccount.getType());
+        String expectedMessageKey = "vm.assign.permission.denied";
 
         Mockito.doReturn(false).when(accountManager).isRootAdmin(Mockito.anyLong());
         Mockito.doReturn(false).when(accountManager).isDomainAdmin(Mockito.anyLong());
@@ -3210,7 +3204,7 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.moveVmToUser(assignVmCmdMock);
         });
 
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        Assert.assertEquals(expectedMessageKey, assertThrows.getMessageKey());
     }
 
     @Test
@@ -3986,6 +3980,7 @@ public class UserVmManagerImplTest {
     public void testApplyLeaseOnUpdateInstanceForNoLease() {
         UserVmVO userVm = Mockito.mock(UserVmVO.class);
         when(userVm.getId()).thenReturn(vmId);
+        when(userVm.getUuid()).thenReturn(UUID.randomUUID().toString());
         when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(5, VMLeaseManager.LeaseActionExecution.DISABLED.name()));
         userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
         Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
@@ -3995,6 +3990,7 @@ public class UserVmManagerImplTest {
     public void testApplyLeaseOnUpdateInstanceForLease() {
         UserVmVO userVm = Mockito.mock(UserVmVO.class);
         when(userVm.getId()).thenReturn(vmId);
+        when(userVm.getUuid()).thenReturn(UUID.randomUUID().toString());
         when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(5, VMLeaseManager.LeaseActionExecution.PENDING.name()));
         userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
         Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
@@ -4004,6 +4000,7 @@ public class UserVmManagerImplTest {
     public void testApplyLeaseOnUpdateInstanceForDisabledLeaseInstance() {
         UserVmVO userVm = Mockito.mock(UserVmVO.class);
         when(userVm.getId()).thenReturn(vmId);
+        when(userVm.getUuid()).thenReturn(UUID.randomUUID().toString());
         when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(5, VMLeaseManager.LeaseActionExecution.DISABLED.name()));
         userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
         Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
@@ -4226,7 +4223,7 @@ public class UserVmManagerImplTest {
 
         InvalidParameterValueException ex = assertThrows(InvalidParameterValueException.class,
                 () -> userVmManagerImpl.createVirtualMachine(deployVMCmd));
-        assertEquals("Deployment of virtual machine is supported only for Zone-wide storage pools", ex.getMessage());
+        assertEquals("vm.deploy.volume.storage.pool.zone.required", ex.getMessageKey());
     }
 
     @Test
@@ -4242,7 +4239,7 @@ public class UserVmManagerImplTest {
 
         InvalidParameterValueException ex = assertThrows(InvalidParameterValueException.class,
                 () -> userVmManagerImpl.createVirtualMachine(deployVMCmd));
-        assertEquals("Deployment of virtual machine is supported only for Zone-wide storage pools", ex.getMessage());
+        assertEquals("vm.deploy.volume.storage.pool.zone.required", ex.getMessageKey());
     }
 
     @Test
@@ -4376,7 +4373,7 @@ public class UserVmManagerImplTest {
         InvalidParameterValueException exception = assertThrows(InvalidParameterValueException.class, () -> {
             userVmManagerImpl.unmanageUserVM(vmId, null);
         });
-        assertEquals("Unable to find a VM with ID = " + vmId, exception.getMessage());
+        assertEquals("vm.unmanage.vm.not.found", exception.getMessageKey());
         verify(userVmDao, never()).acquireInLockTable(anyLong());
         verify(userVmDao, never()).releaseFromLockTable(anyLong());
     }
@@ -4400,7 +4397,7 @@ public class UserVmManagerImplTest {
         CloudRuntimeException exception = assertThrows(CloudRuntimeException.class, () -> {
             userVmManagerImpl.unmanageUserVM(vmId, null);
         });
-        assertEquals("Instance: test-vm is not running or stopped, cannot be unmanaged", exception.getMessage());
+        assertEquals("vm.unmanage.vm.not.right.state", exception.getMessageKey());
         verify(userVmDao, times(1)).releaseFromLockTable(vmId);
     }
 
@@ -4417,7 +4414,7 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.unmanageUserVM(vmId, null);
         });
 
-        assertEquals("Unmanaging a VM is currently not supported on hypervisor Hyperv", exception.getMessage());
+        assertEquals("vm.unmanage.hypervisor.not.supported", exception.getMessageKey());
         verify(userVmDao, times(1)).releaseFromLockTable(vmId);
     }
 
@@ -4440,7 +4437,7 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.unmanageUserVM(vmId, null);
         });
 
-        assertEquals("Error while unmanaging VM: " + vmUuid, exception.getMessage());
+        assertEquals("vm.unmanage.failed", exception.getMessageKey());
         verify(userVmManagerImpl, never()).cleanupUnmanageVMResources(any(UserVmVO.class));
         verify(userVmManagerImpl, never()).unmanageVMFromDB(anyLong());
         verify(userVmDao, times(1)).releaseFromLockTable(vmId);
@@ -4548,7 +4545,6 @@ public class UserVmManagerImplTest {
 
     private ServiceOfferingVO getMockedServiceOffering(boolean custom, boolean customSpeed) {
         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
-        when(serviceOffering.getUuid()).thenReturn("offering-uuid");
         when(serviceOffering.isDynamic()).thenReturn(custom);
         when(serviceOffering.isCustomCpuSpeedSupported()).thenReturn(customSpeed);
         if (custom) {
@@ -4569,7 +4565,7 @@ public class UserVmManagerImplTest {
         ServiceOfferingVO serviceOffering = getMockedServiceOffering(true, true);
         InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
                 userVmManagerImpl.validateCustomParameters(serviceOffering, Collections.emptyMap()));
-        assertEquals("Need to specify custom parameter values cpu, cpu speed and memory when using custom offering", ex.getMessage());
+        assertEquals("vm.validate.serviceoffering.custom.params.missing", ex.getMessageKey());
     }
 
     @Test
@@ -4582,7 +4578,7 @@ public class UserVmManagerImplTest {
 
         InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
                 userVmManagerImpl.validateCustomParameters(serviceOffering, customParameters));
-        Assert.assertTrue(ex.getMessage().startsWith("The CPU speed of this offering"));
+        Assert.assertEquals("vm.validate.serviceoffering.cpu.speed.not.dynamic", ex.getMessageKey());
     }
 
     @Test
@@ -4617,7 +4613,7 @@ public class UserVmManagerImplTest {
 
         InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
                 userVmManagerImpl.verifyVmLimits(userVmVoMock, customParameters));
-        assertEquals("CPU number, Memory and CPU speed cannot be updated for a non-dynamic offering", ex.getMessage());
+        assertEquals("vm.update.non.dynamic.cpu.memory.not.updatable", ex.getMessageKey());
     }
 
     @Test
@@ -4635,7 +4631,7 @@ public class UserVmManagerImplTest {
 
         InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
                 userVmManagerImpl.verifyVmLimits(userVmVoMock, customParameters));
-        Assert.assertTrue(ex.getMessage().startsWith("The CPU speed of this offering"));
+        Assert.assertEquals("vm.validate.serviceoffering.cpu.speed.not.dynamic", ex.getMessageKey());
     }
 
     @Test
