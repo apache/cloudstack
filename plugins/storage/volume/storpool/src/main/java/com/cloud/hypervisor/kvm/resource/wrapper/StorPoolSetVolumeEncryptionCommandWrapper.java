@@ -38,7 +38,6 @@ import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.lang3.StringUtils;
 import org.libvirt.LibvirtException;
 
-import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.StorPoolSetVolumeEncryptionAnswer;
 import com.cloud.agent.api.storage.StorPoolSetVolumeEncryptionCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
@@ -72,7 +71,9 @@ public class StorPoolSetVolumeEncryptionCommandWrapper extends
             }
             logger.debug(String.format("StorPoolSetVolumeEncryptionCommandWrapper disk=%s", disk));
         } catch (Exception e) {
-            new Answer(command, e);
+            String err = String.format("Could not encrypt volume [%s] due to: %s", volume.getPath(), e.getMessage());
+            logger.error(err, e);
+            return new StorPoolSetVolumeEncryptionAnswer(command, false, err);
         } finally {
             StorPoolStorageAdaptor.attachOrDetachVolume("detach", "volume", volume.getPath());
             volume.clearPassphrase();
@@ -83,13 +84,16 @@ public class StorPoolSetVolumeEncryptionCommandWrapper extends
     private KVMPhysicalDisk encryptRootDisk(StorPoolSetVolumeEncryptionCommand command, VolumeObjectTO volume,
             String srcVolumeName, KVMStoragePool pool, KVMPhysicalDisk disk) {
         StorPoolStorageAdaptor.attachOrDetachVolume("attach", "snapshot", srcVolumeName);
-        KVMPhysicalDisk srcVolume = pool.getPhysicalDisk(srcVolumeName);
-        disk = copyPhysicalDisk(srcVolume, disk, command.getWait() * 1000, null, volume.getPassphrase());
-        disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
-        disk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
-        volume.setEncryptFormat(disk.getQemuEncryptFormat().toString());
-        StorPoolStorageAdaptor.attachOrDetachVolume("detach", "snapshot", srcVolumeName);
-        return disk;
+        try {
+            KVMPhysicalDisk srcVolume = pool.getPhysicalDisk(srcVolumeName);
+            disk = copyPhysicalDisk(srcVolume, disk, command.getWait() * 1000, null, volume.getPassphrase());
+            disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
+            disk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
+            volume.setEncryptFormat(disk.getQemuEncryptFormat().toString());
+            return disk;
+        } finally {
+            StorPoolStorageAdaptor.attachOrDetachVolume("detach", "snapshot", srcVolumeName);
+        }
     }
 
     private void encryptDataDisk(VolumeObjectTO volume, KVMPhysicalDisk disk) throws CryptSetupException {

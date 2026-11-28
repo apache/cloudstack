@@ -77,6 +77,7 @@ class TestData():
     diskOffering2 = "diskoffering2"
     diskOfferingEncrypted = "diskOfferingEncrypted"
     diskOfferingEncrypted2 = "diskOfferingEncrypted2"
+    diskOfferingEncryptedCustom = "diskOfferingEncryptedCustom"
     cephDiskOffering = "cephDiskOffering"
     nfsDiskOffering = "nfsDiskOffering"
     diskOfferingTier1Tag = "diskOfferingTier1Tag"
@@ -278,6 +279,15 @@ class TestData():
                 "hypervisorsnapshotreserve": 200,
                 "encrypt": True,
                 TestData.tags: sp_template_2,
+                "storagetype": "shared"
+            },
+            TestData.diskOfferingEncryptedCustom: {
+                "name": "ssd-encrypted-custom",
+                "displaytext": "ssd-encrypted-custom",
+                "custom": True,
+                "hypervisorsnapshotreserve": 200,
+                "encrypt": True,
+                TestData.tags: sp_template_1,
                 "storagetype": "shared"
             },
             TestData.cephDiskOffering: {

@@ -89,7 +89,12 @@ public final class StorPoolResizeVolumeCommandWrapper extends CommandWrapper<Sto
             return new ResizeVolumeAnswer(command, false, error);
         } finally {
             if (!command.isAttached() && volPath != null) {
-                StorPoolStorageAdaptor.attachOrDetachVolume("detach", "volume", volPath);
+                // a failed detach must not replace the answer of the resize
+                try {
+                    StorPoolStorageAdaptor.attachOrDetachVolume("detach", "volume", volPath);
+                } catch (final Exception e) {
+                    logger.warn("Could not detach volume " + volPath + " after resize due to: " + e.getMessage());
+                }
             }
         }
     }
