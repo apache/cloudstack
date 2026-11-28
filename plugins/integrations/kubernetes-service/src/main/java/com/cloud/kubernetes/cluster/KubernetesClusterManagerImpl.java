@@ -1442,6 +1442,15 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
+    protected void setNodeServiceOfferingIds(KubernetesClusterVO cluster, Map<String, Long> serviceOfferingNodeTypeMap) {
+        Long defaultServiceOfferingId = cluster.getServiceOfferingId();
+        cluster.setWorkerNodeServiceOfferingId(serviceOfferingNodeTypeMap.getOrDefault(WORKER.name(), defaultServiceOfferingId));
+        cluster.setControlNodeServiceOfferingId(serviceOfferingNodeTypeMap.getOrDefault(CONTROL.name(), defaultServiceOfferingId));
+        if (cluster.getEtcdNodeCount() > 0) {
+            cluster.setEtcdNodeServiceOfferingId(serviceOfferingNodeTypeMap.getOrDefault(ETCD.name(), defaultServiceOfferingId));
+        }
+    }
+
     private Long getExistingServiceOfferingIdForNodeType(String key, KubernetesClusterVO kubernetesCluster) {
         if (key.equalsIgnoreCase(WORKER.name())) {
             return kubernetesCluster.getWorkerNodeServiceOfferingId();
@@ -1674,19 +1683,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     cniConfigDetails = cmd.getCniConfigDetails().toString();
                 }
                 newCluster.setCniConfigDetails(cniConfigDetails);
-                if (serviceOfferingNodeTypeMap.containsKey(WORKER.name())) {
-                    newCluster.setWorkerNodeServiceOfferingId(serviceOfferingNodeTypeMap.get(WORKER.name()));
-                }
-                if (serviceOfferingNodeTypeMap.containsKey(CONTROL.name())) {
-                    newCluster.setControlNodeServiceOfferingId(serviceOfferingNodeTypeMap.get(CONTROL.name()));
-                }
                 if (etcdNodes > 0) {
                     newCluster.setEtcdNodeTemplateId(etcdNodeTemplate.getId());
                     newCluster.setEtcdNodeCount(etcdNodes);
-                    if (serviceOfferingNodeTypeMap.containsKey(ETCD.name())) {
-                        newCluster.setEtcdNodeServiceOfferingId(serviceOfferingNodeTypeMap.get(ETCD.name()));
-                    }
                 }
+                setNodeServiceOfferingIds(newCluster, serviceOfferingNodeTypeMap);
                 newCluster.setWorkerNodeTemplateId(workerNodeTemplate.getId());
                 newCluster.setControlNodeTemplateId(controlNodeTemplate.getId());
                 if (zone.isSecurityGroupEnabled()) {
