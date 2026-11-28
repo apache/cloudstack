@@ -3812,6 +3812,7 @@
 "message.setting.update.delay": "The new value will take effect within 30 seconds.",
 "message.setup.physical.network.during.zone.creation": "When adding a Zone, you need to set up one or more physical networks. Each physical network can carry one or more types of traffic, with certain restrictions on how they may be combined. Add or remove one or more traffic types onto each physical network.",
 "message.setup.physical.network.during.zone.creation.basic": "When adding a basic Zone, you can set up one physical Network, which corresponds to a NIC on the hypervisor. The Network carries several types of traffic.<br/><br/>You may also <strong>add</strong> other traffic types onto the physical Network.",
+"message.network.offering.unavailable": "No enabled network offering is available for this network type. Please contact an administrator or enable a suitable network offering.",
 "message.shared.network.offering.warning": "Domain admins and regular Users can only create shared Networks from Network offering with the setting specifyvlan=false. Please contact an administrator to create a Network offering if this list is empty.",
 "message.shared.network.unsupported.for.nsx": "Shared networks aren't supported for NSX enabled Zones",
 "message.shutdown.triggered": "A shutdown has been triggered. CloudStack will not accept new jobs",

@@ -1423,6 +1423,7 @@
 "message.migrate.systemvm.confirm": "Confirmer la migration de la VM syst\u00e8me vers :",
 "message.migrate.volume": "Confirmer la migration du volume vers un autre stockage primaire.",
 "message.network.addvm.desc": "Veuillez sp\u00e9cifier le r\u00e9seau que vous souhaitez ajouter \u00e0 cette VM. Une nouvelle interface NIC sera ajout\u00e9e pour ce r\u00e9seau.",
+"message.network.offering.unavailable": "Aucune offre de r\u00e9seau activ\u00e9e n'est disponible pour ce type de r\u00e9seau. Veuillez contacter un administrateur ou activer une offre de r\u00e9seau adapt\u00e9e.",
 "message.network.removenic": "Veuillez confirmer que vous souhaitez supprimer cette carte NIC, ce qui supprimera \u00e9galement le r\u00e9seau associ\u00e9 sur la machine virtuelle.",
 "message.network.updateip": "Confirmer que vous souhaitez changer l'adresse IP pour cette NIC sur la VM.",
 "message.please.confirm.remove.ssh.key.pair": "Confirmer la suppression de cette bi-cl\u00e9 SSH",

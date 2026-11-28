@@ -96,6 +96,9 @@
                 {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>
+            <a-alert type="warning" v-if="networkOfferingWarning">
+              <template #message>{{ $t('message.network.offering.unavailable') }}</template>
+            </a-alert>
             <a-alert type="warning" v-if="!this.hasVPC">
               <template #message>
                 <span v-html="$t('message.warn.vpc.offerings')"/>
@@ -362,6 +365,7 @@ export default {
       selectedZone: {},
       networkOfferings: [],
       networkOfferingLoading: false,
+      networkOfferingWarning: false,
       selectedNetworkOffering: {},
       vpcs: [],
       vpcLoading: false,
@@ -544,6 +548,7 @@ export default {
     },
     fetchNetworkOfferingData (forVpc) {
       this.networkOfferingLoading = true
+      this.networkOfferingWarning = false
       const params = {
         zoneid: this.selectedZone.id,
         guestiptype: 'Isolated',
@@ -567,12 +572,17 @@ export default {
           this.networkOfferings = this.networkOfferings.filter(offering => offering.networkmode !== 'ROUTED')
         }
       }).catch(error => {
+        this.networkOfferings = []
         this.$notifyError(error)
       }).finally(() => {
         this.networkOfferingLoading = false
         if (this.arrayHasItems(this.networkOfferings)) {
           this.form.networkofferingid = 0
           this.handleNetworkOfferingChange(this.networkOfferings[0])
+          this.networkOfferingWarning = false
+        } else {
+          this.form.networkofferingid = null
+          this.networkOfferingWarning = true
         }
       })
     },
