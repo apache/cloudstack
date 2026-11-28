@@ -37,7 +37,7 @@ import com.cloud.utils.db.TransactionLegacy;
 public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Long> implements UsageVMSnapshotDao {
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT volume_id, zone_id, account_id, domain_id, vm_id, disk_offering_id, size, created, processed, vm_snapshot_id "
         + " FROM usage_vmsnapshot" + " WHERE account_id = ? " + " AND ( (created BETWEEN ? AND ?) OR "
-        + "      (created < ? AND processed is NULL) ) ORDER BY created asc";
+        + "      (created < ? AND (processed IS NULL OR processed >= ?)) ) ORDER BY created asc";
     protected static final String UPDATE_DELETED = "UPDATE usage_vmsnapshot SET processed = ? WHERE account_id = ? AND volume_id = ? and vm_id = ?  and created = ?";
 
     protected static final String PREVIOUS_QUERY = "SELECT volume_id, zone_id, account_id, domain_id, vm_id, disk_offering_id,size, created, processed, vm_snapshot_id "
@@ -79,6 +79,7 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
             pstmt.setLong(i++, accountId);
             pstmt.setString(i++, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), startDate));
             pstmt.setString(i++, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), endDate));
+            pstmt.setString(i++, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), startDate));
             pstmt.setString(i++, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), startDate));
 
             ResultSet rs = pstmt.executeQuery();

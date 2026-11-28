@@ -32,6 +32,7 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 
 import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventDetailsVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.usage.dao.UsageVPNUserDao;
 import com.cloud.user.AccountVO;
@@ -215,6 +216,27 @@ public class UsageManagerImplTest {
         usageManagerImpl.deleteUsageVMSnapshot(usageEventVOMock);
 
         Mockito.verify(usageVMSnapshotDaoMock, Mockito.times(3)).update(Mockito.any(UsageVMSnapshotVO.class));
+    }
+
+    @Test
+    public void deleteUsageVMSnapshotOnlyClosesTheDeletedSnapshotTest() {
+        long vmSnapshotId = 5L;
+        long volumeId = 7L;
+        UsageEventDetailsVO detail = Mockito.mock(UsageEventDetailsVO.class);
+        Mockito.doReturn(String.valueOf(vmSnapshotId)).when(detail).getValue();
+        Mockito.doReturn(detail).when(usageEventDetailsDao).findDetail(Mockito.anyLong(), Mockito.eq(UsageEventVO.DynamicParameters.vmSnapshotId.name()));
+        Mockito.doReturn(volumeId).when(usageEventVOMock).getTemplateId();
+
+        List<UsageVMSnapshotVO> vmSnapshotsMock = new ArrayList<UsageVMSnapshotVO>();
+        vmSnapshotsMock.add(vmSnapshotMock);
+        Mockito.doReturn(vmSnapshotsMock).when(usageManagerImpl).findUsageVMSnapshots(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(),
+                Mockito.eq(volumeId), Mockito.eq(vmSnapshotId));
+        Mockito.doNothing().when(usageVMSnapshotDaoMock).update(Mockito.any(UsageVMSnapshotVO.class));
+
+        usageManagerImpl.deleteUsageVMSnapshot(usageEventVOMock);
+
+        Mockito.verify(usageManagerImpl, Mockito.never()).findUsageVMSnapshots(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
+        Mockito.verify(usageVMSnapshotDaoMock, Mockito.times(1)).update(vmSnapshotMock);
     }
 
     @Test
