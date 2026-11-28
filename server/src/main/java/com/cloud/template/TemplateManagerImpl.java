@@ -23,8 +23,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -151,6 +153,10 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resourcelimit.CheckedReservation;
@@ -215,6 +221,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -223,8 +230,10 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -324,6 +333,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private HeuristicRuleHelper heuristicRuleHelper;
     @Inject
     private UserDataDao userDataDao;
+    @Inject
+    private NicDao _nicDao;
+    @Inject
+    private NetworkModel _networkModel;
+    @Inject
+    private VMInstanceDetailsDao _vmInstanceDetailsDao;
 
     private List<TemplateAdapter> _adapters;
 
@@ -728,6 +743,61 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
             profile.addDisk(disk);
         }
+    }
+
+    @Override
+    public Set<Long> getCdromDeviceIds(VirtualMachine vm) {
+        if (vm.getType() != VirtualMachine.Type.User) {
+            return getCdromDeviceIds(1);
+        }
+        return getCdromDeviceIds(vm, isConfigDriveUsed(vm));
+    }
+
+    @Override
+    public Set<Long> getCdromDeviceIds(VirtualMachine vm, boolean configDriveUsed) {
+        return getCdromDeviceIds(getCdromCount(vm, configDriveUsed));
+    }
+
+    private Set<Long> getCdromDeviceIds(int cdromCount) {
+        Set<Long> deviceIds = new HashSet<>();
+        for (int i = 0; i < cdromCount; i++) {
+            deviceIds.add((long) CDROM_PRIMARY_DEVICE_SEQ + i);
+        }
+        return deviceIds;
+    }
+
+    private int getCdromCount(VirtualMachine vm, boolean configDriveUsed) {
+        // an Instance has one CD-ROM device for its ISO
+        int cdromCount = 1;
+        // the config drive ISO is one more CD-ROM, which has the device id of ConfigDriveNetworkElement#CONFIGDRIVEDISKSEQ
+        if (vm.getType() == VirtualMachine.Type.User && configDriveUsed) {
+            cdromCount += ConfigDriveNetworkElement.CONFIGDRIVEDISKSEQ - CDROM_PRIMARY_DEVICE_SEQ;
+        }
+        return cdromCount;
+    }
+
+    /**
+     * Checks if a config drive ISO is (or will be) attached to the Instance, which is the case when any of its networks
+     * has ConfigDrive as the provider of the Dhcp, Dns or UserData service. Checking the network providers (instead of
+     * only the config drive location detail, which is added when the ISO is created) also covers Instances which have
+     * never been started.
+     */
+    boolean isConfigDriveUsed(VirtualMachine vm) {
+        if (_vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION) != null) {
+            return true;
+        }
+        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+        if (CollectionUtils.isEmpty(nics)) {
+            return false;
+        }
+        for (NicVO nic : nics) {
+            for (Service service : Arrays.asList(Service.UserData, Service.Dhcp, Service.Dns)) {
+                if (_networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), service, Provider.ConfigDrive)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void prepareTemplateInOneStoragePool(final VMTemplateVO template, final StoragePoolVO pool) {

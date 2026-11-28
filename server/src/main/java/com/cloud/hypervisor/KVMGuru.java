@@ -32,6 +32,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
@@ -54,6 +55,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -71,6 +73,8 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     VolumeDao _volumeDao;
     @Inject
     HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
+    @Inject
+    VolumeApiService volumeApiService;
 
 
     @Override
@@ -86,30 +90,29 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
      * Get next free DeviceId for a KVM Guest
      */
 
-    protected Long getNextAvailableDeviceId(List<VolumeVO> vmVolumes) {
+    protected Long getNextAvailableDeviceId(Set<Long> reservedDeviceIds, List<VolumeVO> vmVolumes) {
 
         int maxDataVolumesSupported;
-        int maxDeviceId;
-        List<String> devIds = new ArrayList<>();
+        List<Long> devIds = new ArrayList<>();
 
         try {
             maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(HypervisorType.KVM,"default");
-            int maxDevices = maxDataVolumesSupported + 2; // add 2 to consider devices root volume and cdrom
-            maxDeviceId = maxDevices - 1;
         } catch (Exception e) {
             throw new RuntimeException("Cannot find maximum number of disk devices that can be attached to the KVM Hypervisor");
         }
-        for (int i = 1; i <= maxDeviceId; i++) {
-            devIds.add(String.valueOf(i));
+        // the device ids reserved for the CD-ROM and config drive devices cannot be used by volumes
+        for (long id = 1; devIds.size() < maxDataVolumesSupported; id++) {
+            if (!reservedDeviceIds.contains(id)) {
+                devIds.add(id);
+            }
         }
-        devIds.remove("3");
         for (VolumeVO vmVolume : vmVolumes) {
-            devIds.remove(vmVolume.getDeviceId().toString().trim());
+            devIds.remove(vmVolume.getDeviceId());
         }
         if (devIds.isEmpty()) {
             throw new RuntimeException("All device Ids are in use.");
         }
-        return Long.parseLong(devIds.iterator().next());
+        return devIds.get(0);
     }
 
 
@@ -361,6 +364,8 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                 vm.setPowerState(VirtualMachine.PowerState.PowerOff);
                 _instanceDao.update(vm.getId(), vm);
             }
+           // the networks of the (possibly expunged) VM may not be available, so always keep the config drive device id free
+           Set<Long> reservedDeviceIds = volumeApiService.getReservedDeviceIds(vm, true);
            for (Backup.VolumeInfo VMVolToRestore : vm.getBackupVolumeList()) {
                VolumeVO volume = _volumeDao.findByUuidIncludingRemoved(VMVolToRestore.getUuid());
                volume.setState(Volume.State.Ready);
@@ -378,7 +383,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                    Long deviceId = VMVolToRestore.getDeviceId();
                    if (deviceId == null) {
                        // Backups taken before the device id was recorded in the backup metadata.
-                       deviceId = getNextAvailableDeviceId(_volumeDao.findByInstance(vm.getId()));
+                       deviceId = getNextAvailableDeviceId(reservedDeviceIds, _volumeDao.findByInstance(vm.getId()));
                    }
                    _volumeDao.attachVolume(volume.getId(), vm.getId(), deviceId);
                }
@@ -398,7 +403,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         VolumeVO restoredVolume = _volumeDao.findByUuid(location);
         if (restoredVolume != null) {
             try {
-                _volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
+                _volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), getNextAvailableDeviceId(volumeApiService.getReservedDeviceIds(vm), vmVolumes));
                 restoredVolume.setState(Volume.State.Ready);
                 _volumeDao.update(restoredVolume.getId(), restoredVolume);
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_ATTACH, restoredVolume.getAccountId(), restoredVolume.getDataCenterId(), restoredVolume.getId(), restoredVolume.getName(),
