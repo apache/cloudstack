@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -2049,4 +2050,85 @@ public class VirtualMachineManagerImplTest {
         }
     }
 
+    @Test
+    public void testEnsureInstanceIsStoppedOnLastKnownHost_skipsExternal() throws Exception {
+        when(vmInstanceMock.getHypervisorType()).thenReturn(HypervisorType.External);
+        virtualMachineManagerImpl.ensureInstanceIsStoppedOnLastKnownHost(vmInstanceMock);
+        verify(agentManagerMock, never()).send(anyLong(), any(StopCommand.class));
+    }
+
+    @Test
+    public void testEnsureInstanceIsStoppedOnLastKnownHost_noHostIdDoesNothing() throws Exception {
+        when(vmInstanceMock.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(vmInstanceMock.getHostId()).thenReturn(null);
+        when(vmInstanceMock.getLastHostId()).thenReturn(null);
+        virtualMachineManagerImpl.ensureInstanceIsStoppedOnLastKnownHost(vmInstanceMock);
+        verify(agentManagerMock, never()).send(anyLong(), any(StopCommand.class));
+    }
+
+    @Test
+    public void testEnsureInstanceIsStoppedOnLastKnownHost_fallsBackToLastHostId() throws Exception {
+        StopCommand stopCommand = mock(StopCommand.class);
+        when(vmInstanceMock.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(vmInstanceMock.getHostId()).thenReturn(null);
+        when(vmInstanceMock.getLastHostId()).thenReturn(7L);
+        doReturn(stopCommand).when(virtualMachineManagerImpl).buildStopCommand(any(), any(), eq(false));
+        com.cloud.agent.api.Answer answer = mock(com.cloud.agent.api.Answer.class);
+        when(answer.getResult()).thenReturn(true);
+        when(agentManagerMock.send(eq(7L), any(StopCommand.class))).thenReturn(answer);
+
+        virtualMachineManagerImpl.ensureInstanceIsStoppedOnLastKnownHost(vmInstanceMock);
+
+        verify(agentManagerMock, times(1)).send(eq(7L), any(StopCommand.class));
+    }
+
+    @Test
+    public void testEnsureInstanceIsStoppedOnLastKnownHost_agentUnavailableIsSwallowed() throws Exception {
+        StopCommand stopCommand = mock(StopCommand.class);
+        when(vmInstanceMock.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        when(vmInstanceMock.getHostId()).thenReturn(7L);
+        doReturn(stopCommand).when(virtualMachineManagerImpl).buildStopCommand(any(), any(), eq(false));
+        when(agentManagerMock.send(anyLong(), any(StopCommand.class)))
+                .thenThrow(new AgentUnavailableException("down", 7L));
+
+        // must not propagate, expunge continues
+        virtualMachineManagerImpl.ensureInstanceIsStoppedOnLastKnownHost(vmInstanceMock);
+
+        verify(agentManagerMock, times(1)).send(anyLong(), any(StopCommand.class));
+    }
+
+    /**
+     * A missing report is weak evidence, so the stop must not be forced: sendStop() answers success for an
+     * unreachable host when forced, which would free the addresses of an instance that is still running.
+     */
+    @Test
+    public void testHandlePowerOffReport_missingReportUsesUnforcedStopAndKeepsResources() {
+        when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Migrating);
+        when(vmInstanceMock.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerReportMissing);
+        doReturn(mock(VirtualMachineGuru.class)).when(virtualMachineManagerImpl).getVmGuru(any());
+        doReturn(new Pair<>(false, "host did not answer")).when(virtualMachineManagerImpl)
+                .sendStop(any(), any(), eq(false), eq(true));
+
+        virtualMachineManagerImpl.handlePowerOffReportWithNoPendingJobsOnVM(vmInstanceMock);
+
+        verify(virtualMachineManagerImpl, times(1)).sendStop(any(), any(), eq(false), eq(true));
+        verify(virtualMachineManagerImpl, never()).releaseVmResources(any(), anyBoolean());
+    }
+
+    /**
+     * A PowerOff report is the host stating the instance is down, so that path keeps its forced stop.
+     */
+    @Test
+    public void testHandlePowerOffReport_powerOffKeepsForcedStop() {
+        when(vmInstanceMock.getState()).thenReturn(VirtualMachine.State.Migrating);
+        when(vmInstanceMock.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOff);
+        doReturn(mock(VirtualMachineGuru.class)).when(virtualMachineManagerImpl).getVmGuru(any());
+        doReturn(new Pair<>(false, "host did not answer")).when(virtualMachineManagerImpl)
+                .sendStop(any(), any(), eq(true), eq(true));
+
+        virtualMachineManagerImpl.handlePowerOffReportWithNoPendingJobsOnVM(vmInstanceMock);
+
+        verify(virtualMachineManagerImpl, times(1)).sendStop(any(), any(), eq(true), eq(true));
+        verify(virtualMachineManagerImpl, never()).releaseVmResources(any(), anyBoolean());
+    }
 }
