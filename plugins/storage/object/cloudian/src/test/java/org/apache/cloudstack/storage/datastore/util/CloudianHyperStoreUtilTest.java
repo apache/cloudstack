@@ -112,34 +112,40 @@ public class CloudianHyperStoreUtilTest {
             mockStatic.when(() -> CloudianHyperStoreUtil.getAdminTimeoutSeconds()).thenReturn(1);
             mockStatic.when(() -> CloudianHyperStoreUtil.getCloudianClient(anyString(), anyString(), anyString(), anyBoolean())).thenCallRealMethod();
 
-            // Get a connection and try using it but it should timeout
+            // Get a connection and try using it but it should time out
             String url = String.format("http://localhost:%d", port);
             CloudianClient cc = CloudianHyperStoreUtil.getCloudianClient(url, "u", "p", false);
             long before = System.currentTimeMillis();
-            ServerApiException thrown = assertThrows(ServerApiException.class, () -> cc.getServerVersion());
+            ServerApiException thrown = assertThrows(ServerApiException.class, cc::getServerVersion);
             long after = System.currentTimeMillis();
             assertNotNull(thrown);
             assertEquals(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, thrown.getErrorCode());
-            assertTrue((after - before) >= 1000); // should timeout after 1 second.
+            assertTrue((after - before) >= 1000); // should time out after 1 second.
         }
+    }
+
+    @Test
+    public void testValidateS3UrlNull() {
+        CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class, () -> CloudianHyperStoreUtil.validateS3Url(null));
+        assertNotNull(thrown);
+        assertTrue(thrown.getMessage().contains("must not be blank"));
     }
 
     @Test
     public void testValidateS3UrlGood() {
         // Mock an AWS S3 invalid access key response.
-        StringBuilder ERR_XML = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        ERR_XML.append("<Error>\n");
-        ERR_XML.append("  <Code>InvalidAccessKeyId</Code>\n");
-        ERR_XML.append("  <Message>The AWS Access Key Id you provided does not exist in our records.</Message>\n");
-        ERR_XML.append("  <AWSAccessKeyId>unknown</AWSAccessKeyId>\n");
-        ERR_XML.append("  <HostId>12345=</HostId>\n");
-        ERR_XML.append("</Error>\n");
+        String ERR_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "<Error>\n" +
+                "  <Code>InvalidAccessKeyId</Code>\n" +
+                "  <Message>The AWS Access Key Id you provided does not exist in our records.</Message>\n" +
+                "  <AWSAccessKeyId>unknown</AWSAccessKeyId>\n" +
+                "  <HostId>12345=</HostId>\n" +
+                "</Error>\n";
 
         wireMockRule.stubFor(get(urlEqualTo("/"))
                 .willReturn(aResponse()
                         .withStatus(403)
                         .withHeader("content-type", "application/xml")
-                        .withBody(ERR_XML.toString())));
+                        .withBody(ERR_XML)));
 
         // Test: validates the AmazonS3 client returned by CloudianHyperStoreUtil.getS3Client()
         // which is called indirectly via the validateS3Url() method can connect to the
@@ -162,23 +168,29 @@ public class CloudianHyperStoreUtilTest {
     }
 
     @Test
+    public void testValidateIAMUrlNull() {
+        CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class, () -> CloudianHyperStoreUtil.validateIAMUrl(null));
+        assertNotNull(thrown);
+        assertTrue(thrown.getMessage().contains("must not be blank"));
+    }
+
+    @Test
     public void testValidateIAMUrlGoodInvalidClientTokenId() {
         // Mock an AWS IAM invalid access key response.
-        StringBuilder ERR_XML = new StringBuilder();
-        ERR_XML.append("<ErrorResponse xmlns=\"https://iam.amazonaws.com/doc/2010-05-08/\">\n");
-        ERR_XML.append("  <Error>\n");
-        ERR_XML.append("    <Type>Sender</Type>\n");
-        ERR_XML.append("    <Code>InvalidClientTokenId</Code>\n");
-        ERR_XML.append("    <Message>The security token included in the request is invalid.</Message>\n");
-        ERR_XML.append("  </Error>\n");
-        ERR_XML.append("  <RequestId>a2c47f7e-0196-4b45-af18-a9e99e4d9ed5</RequestId>\n");
-        ERR_XML.append("</ErrorResponse>\n");
+        String ERR_XML = "<ErrorResponse xmlns=\"https://iam.amazonaws.com/doc/2010-05-08/\">\n" +
+                "  <Error>\n" +
+                "    <Type>Sender</Type>\n" +
+                "    <Code>InvalidClientTokenId</Code>\n" +
+                "    <Message>The security token included in the request is invalid.</Message>\n" +
+                "  </Error>\n" +
+                "  <RequestId>a2c47f7e-0196-4b45-af18-a9e99e4d9ed5</RequestId>\n" +
+                "</ErrorResponse>\n";
 
         wireMockRule.stubFor(post(urlEqualTo("/"))
                 .willReturn(aResponse()
                         .withStatus(403)
                         .withHeader("content-type", "text/xml")
-                        .withBody(ERR_XML.toString())));
+                        .withBody(ERR_XML)));
 
         // Test: validates the AmazonIdentityManagement client returned by CloudianHyperStoreUtil.getIAMClient()
         // which is called indirectly via the validateIAMUrl() method can connect to the
@@ -190,20 +202,20 @@ public class CloudianHyperStoreUtilTest {
     @Test
     public void testValidateIAMUrlGoodInvalidAccessKeyId() {
         // Mock HyperStore IAM invalid access key current response.
-        StringBuilder ERR_XML = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        ERR_XML.append("<ErrorResponse xmlns=\"https://iam.amazonaws.com/doc/2010-05-08/\">\n");
-        ERR_XML.append("  <Error>\n");
-        ERR_XML.append("    <Code>InvalidAccessKeyId</Code>\n");
-        ERR_XML.append("    <Message>The Access Key Id you provided does not exist in our records.</Message>\n");
-        ERR_XML.append("  </Error>\n");
-        ERR_XML.append("  <RequestId>a2c47f7e-0196-4b45-af18-a9e99e4d9ed5</RequestId>\n");
-        ERR_XML.append("</ErrorResponse>\n");
+        String ERR_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<ErrorResponse xmlns=\"https://iam.amazonaws.com/doc/2010-05-08/\">\n" +
+                "  <Error>\n" +
+                "    <Code>InvalidAccessKeyId</Code>\n" +
+                "    <Message>The Access Key Id you provided does not exist in our records.</Message>\n" +
+                "  </Error>\n" +
+                "  <RequestId>a2c47f7e-0196-4b45-af18-a9e99e4d9ed5</RequestId>\n" +
+                "</ErrorResponse>\n";
 
         wireMockRule.stubFor(post(urlEqualTo("/"))
                 .willReturn(aResponse()
                         .withStatus(403)
                         .withHeader("content-type", "application/xml;charset=UTF-8")
-                        .withBody(ERR_XML.toString())));
+                        .withBody(ERR_XML)));
 
         // Test: validates the AmazonIdentityManagement client returned by CloudianHyperStoreUtil.getIAMClient()
         // which is called indirectly via the validateIAMUrl() method can connect to the
