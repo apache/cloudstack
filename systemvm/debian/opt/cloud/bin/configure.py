@@ -1274,7 +1274,7 @@ class CsRemoteAccessVpn(CsDataBag):
         l2tp_changed = l2tpfile.commit()
 
         secret = CsFile(vpnsecretfilte)
-        secret.empty()
+        secret.repopulate()
         secret.addeq(": PSK \"%s\"" % (psk))
         secret_changed = secret.commit()
 
