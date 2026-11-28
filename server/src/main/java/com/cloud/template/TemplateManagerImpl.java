@@ -1787,6 +1787,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (snapshotId != null) {
                 DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot, zoneId);
                 snapInfo = _snapshotFactory.getSnapshotWithRoleAndZone(snapshotId, dataStoreRole, zoneId);
+                if (snapInfo == null) {
+                    throw new CloudRuntimeException(String.format("Snapshot [%s] has no copy in zone [%s].", snapshot.getUuid(), _dcDao.findById(zoneId).getUuid()));
+                }
 
                 boolean storageSupportsSnapshotToTemplate = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo);
                 if (storageSupportsSnapshotToTemplate) {
@@ -1803,9 +1806,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                         store = dataStore;
                     }
                 } else {
-                    dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
+                    DataStoreRole snapshotRole = snapshotHelper.getDataStoreRole(snapshot);
+                    SnapshotInfo snapInfoInRole = _snapshotFactory.getSnapshotWithRoleAndZone(snapshotId, snapshotRole, zoneId);
+                    // A missing Image copy is backed up below; a missing Primary copy is in another zone, so keep the one found in this zone
+                    if (snapInfoInRole != null || DataStoreRole.Image.equals(snapshotRole)) {
+                        dataStoreRole = snapshotRole;
+                        snapInfo = snapInfoInRole;
+                    }
                     kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole);
-                    snapInfo = _snapshotFactory.getSnapshotWithRoleAndZone(snapshotId, dataStoreRole, zoneId);
                     logger.debug("Creating template from snapshot, with dataStore role {} and on primary storage: {}", dataStoreRole, kvmSnapshotOnlyInPrimaryStorage);
                     if (dataStoreRole == DataStoreRole.Image || kvmSnapshotOnlyInPrimaryStorage) {
                         snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
