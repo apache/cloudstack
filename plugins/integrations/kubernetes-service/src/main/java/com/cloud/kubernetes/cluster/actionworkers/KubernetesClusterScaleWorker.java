@@ -132,11 +132,26 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         logTransitStateToFailedIfNeededAndThrow(logLevel, message, null);
     }
 
-    private void scaleKubernetesClusterIsolatedNetworkRules(final List<Long> clusterVMIds) throws ManagementServerException {
+    /**
+     * @return the IDs of the node VMs that get an SSH port on the public IP of the cluster, in the order of
+     * their ports: the control and worker nodes deployed by CKS first, then the external nodes, as in
+     * addFirewallRulesForNodes and provisionSshPortForwardingRules
+     */
+    protected List<Long> getNodeVmIdsForSshRules() {
+        List<KubernetesClusterVmMapVO> vmMaps = getKubernetesClusterVMMaps();
+        List<Long> vmIds = vmMaps.stream().filter(vm -> !vm.isExternalNode() && !vm.isEtcdNode()).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+        vmIds.addAll(vmMaps.stream().filter(KubernetesClusterVmMapVO::isExternalNode).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList()));
+        return vmIds;
+    }
+
+    protected void scaleKubernetesClusterIsolatedNetworkRules(final List<Long> clusterVMIds) throws ManagementServerException {
         IpAddress publicIp = getNetworkSourceNatIp(network);
         if (publicIp == null) {
             throw new ManagementServerException(String.format("No source NAT IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
         }
+
+        // The SSH ports of the external nodes follow the range below, their rules are recreated after it
+        removeExternalNodeSshRules(publicIp);
 
         // Remove existing SSH firewall rules
         FirewallRule firewallRule = removeSshFirewallRule(publicIp, network.getId());
@@ -444,11 +459,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
 
         // Scale network rules to update firewall rule
         try {
-            List<Long> clusterVMIds = getKubernetesClusterVMMaps()
-                    .stream()
-                    .filter(x -> !x.isEtcdNode())
-                    .map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
-            scaleKubernetesClusterNetworkRules(clusterVMIds);
+            scaleKubernetesClusterNetworkRules(getNodeVmIdsForSshRules());
         } catch (ManagementServerException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes " +
                     "cluster %s, unable to update network rules", kubernetesCluster),
@@ -504,10 +515,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to provision node VM in the cluster", kubernetesCluster.getName()), e);
         }
         try {
-            List<Long> externalNodeIds = getKubernetesClusterVMMaps().stream().filter(KubernetesClusterVmMapVO::isExternalNode).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
-            List<Long> clusterVMIds = getKubernetesClusterVMMaps().stream().filter(vm -> !vm.isExternalNode() && !vm.isEtcdNode()).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
-            clusterVMIds.addAll(externalNodeIds);
-            scaleKubernetesClusterNetworkRules(clusterVMIds);
+            scaleKubernetesClusterNetworkRules(getNodeVmIdsForSshRules());
         } catch (ManagementServerException e) {
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to update network rules", kubernetesCluster.getName()), e);
         }

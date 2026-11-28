@@ -261,6 +261,22 @@ public class KubernetesClusterManagerImplTest {
 
     }
 
+    private KubernetesClusterVmMapVO createNodeVmMap(long vmId, boolean externalNode) {
+        KubernetesClusterVmMapVO vmMap = new KubernetesClusterVmMapVO(1L, vmId, false);
+        vmMap.setExternalNode(externalNode);
+        return vmMap;
+    }
+
+    @Test
+    public void testValidateKubernetesClusterScaleNodesToRemoveWorkerNodes() {
+        kubernetesClusterManager.validateKubernetesClusterScaleNodesToRemove(List.of(createNodeVmMap(11L, false), createNodeVmMap(12L, false)));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateKubernetesClusterScaleNodesToRemoveExternalNode() {
+        kubernetesClusterManager.validateKubernetesClusterScaleNodesToRemove(List.of(createNodeVmMap(11L, false), createNodeVmMap(12L, true)));
+    }
+
     @Before
     public void setUp() throws Exception {
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
