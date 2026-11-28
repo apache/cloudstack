@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.WORKER;
+
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientCapacityException;
@@ -86,10 +88,10 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             } catch (ManagementServerException e) {
                 throw new CloudRuntimeException(String.format("Failed to retrieve public IP for the network: %s ", network.getName()));
             }
+            String base64UserData = getNodeUserData(getControlVmPrivateIp(), mountCksIsoOnVr);
             attachCksIsoForNodesAdditionToCluster(nodeIds, kubernetesCluster.getId(), mountCksIsoOnVr);
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.AddNodeRequested);
-            String controlNodeGuestIp = getControlVmPrivateIp();
-            Ternary<Integer, Long, Long> nodesAddedAndMemory = importNodeToCluster(nodeIds, network, publicIp, controlNodeGuestIp, mountCksIsoOnVr);
+            Ternary<Integer, Long, Long> nodesAddedAndMemory = importNodeToCluster(nodeIds, network, publicIp, base64UserData);
             int nodesAdded = nodesAddedAndMemory.first();
             updateKubernetesCluster(kubernetesCluster.getId(), nodesAddedAndMemory, manualUpgrade);
             if (nodeIds.size() != nodesAdded) {
@@ -181,24 +183,27 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
         }
     }
 
-    private Ternary<Integer, Long, Long> importNodeToCluster(List<Long> nodeIds, Network network, IpAddress publicIp,
-                                                             String controlNodeGuestIp, boolean mountCksIsoOnVr) {
+    private String getNodeUserData(String controlNodeGuestIp, boolean mountCksIsoOnVr) {
+        String k8sNodeConfig = null;
+        try {
+            k8sNodeConfig = getKubernetesNodeConfig(controlNodeGuestIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()), mountCksIsoOnVr);
+        } catch (IOException e) {
+            logAndThrow(Level.ERROR, "Failed to read Kubernetes node configuration file", e);
+        }
+        if (Objects.isNull(k8sNodeConfig)) {
+            logAndThrow(Level.ERROR, "Error generating worker node configuration");
+        }
+        String base64UserData = Base64.encodeBase64String(k8sNodeConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
+        validateNodeUserDataLength(base64UserData, WORKER);
+        return base64UserData;
+    }
+
+    private Ternary<Integer, Long, Long> importNodeToCluster(List<Long> nodeIds, Network network, IpAddress publicIp, String base64UserData) {
         int nodeIndex = 0;
         Long additionalMemory = 0L;
         Long additionalCores = 0L;
         for (Long nodeId : nodeIds) {
             UserVmVO vm = userVmDao.findById(nodeId);
-            String k8sControlNodeConfig = null;
-            try {
-                k8sControlNodeConfig = getKubernetesNodeConfig(controlNodeGuestIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()), mountCksIsoOnVr);
-            } catch (IOException e) {
-                logAndThrow(Level.ERROR, "Failed to read Kubernetes control node configuration file", e);
-            }
-            if (Objects.isNull(k8sControlNodeConfig)) {
-                logAndThrow(Level.ERROR, "Error generating worker node configuration");
-            }
-            String base64UserData = Base64.encodeBase64String(k8sControlNodeConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
-
             Pair<Boolean, Integer> result = validateAndSetupNode(network, publicIp, owner, nodeId,  nodeIndex, base64UserData);
             if (Boolean.TRUE.equals(result.first())) {
                 ServiceOfferingVO offeringVO = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
