@@ -175,6 +175,12 @@ public interface AgentManager {
 
     void propagateChangeToAgents(Map<String, String> params);
 
+    /**
+     * Pushes the current KVM network labels (bridges) of the physical networks of the given zone to all
+     * the KVM agents of that zone, so they can preserve system bridges when cleaning up VMs.
+     */
+    void propagateSystemTrafficLabelsToAgents(long zoneId);
+
     boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs, boolean excludeHostsInMaintenance);
 
     int getHostSshPort(HostVO host);
