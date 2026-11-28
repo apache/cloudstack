@@ -197,6 +197,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor on which the CKS cluster is to be deployed. This is required if the zone in which the CKS cluster is being deployed has clusters with different hypervisor types.", since = "4.21.0")
     private String hypervisor;
 
+    @ACL
     @Parameter(name = ApiConstants.CNI_CONFIG_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata", since = "4.21.0")
     private Long cniConfigId;
 

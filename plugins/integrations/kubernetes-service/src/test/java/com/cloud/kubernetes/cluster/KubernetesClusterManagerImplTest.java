@@ -42,12 +42,15 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
+import com.cloud.user.UserDataVO;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.CreateKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -103,9 +106,69 @@ public class KubernetesClusterManagerImplTest {
     @Mock
     private ServiceOfferingDao serviceOfferingDao;
 
+    @Mock
+    private UserDataDao userDataDao;
+
     @Spy
     @InjectMocks
     KubernetesClusterManagerImpl kubernetesClusterManager;
+
+    @Test
+    public void testValidateCniConfigurationNotSpecified() {
+        kubernetesClusterManager.validateCniConfiguration(null);
+
+        Mockito.verifyNoInteractions(userDataDao);
+    }
+
+    @Test
+    public void testValidateCniConfigurationAccessible() {
+        UserDataVO userData = new UserDataVO();
+        userData.setAccountId(CallContext.current().getCallingAccount().getId());
+        Mockito.when(userDataDao.findById(1L)).thenReturn(userData);
+
+        kubernetesClusterManager.validateCniConfiguration(1L);
+
+        Mockito.verify(accountManager).checkAccess(CallContext.current().getCallingAccount(), null, false, userData);
+    }
+
+    @Test
+    public void testCreateManagedClusterRejectsInaccessibleCniConfiguration() {
+        CreateKubernetesClusterCmd cmd = Mockito.mock(CreateKubernetesClusterCmd.class);
+        Mockito.when(cmd.getCniConfigId()).thenReturn(1L);
+        UserDataVO userData = new UserDataVO();
+        userData.setAccountId(CallContext.current().getCallingAccount().getId() + 1);
+        Mockito.when(userDataDao.findById(1L)).thenReturn(userData);
+        PermissionDeniedException denied = new PermissionDeniedException("UserData access denied");
+        Mockito.doThrow(denied).when(accountManager).checkAccess(
+                CallContext.current().getCallingAccount(), null, false, userData);
+
+        try {
+            kubernetesClusterManager.createManagedKubernetesCluster(cmd);
+            Assert.fail("Expected UserData access denial");
+        } catch (PermissionDeniedException expected) {
+            Assert.assertSame(denied, expected);
+        }
+
+        Mockito.verifyNoInteractions(kubernetesClusterDao);
+        Mockito.verify(cmd, Mockito.never()).getZoneId();
+        Mockito.verify(cmd, Mockito.never()).getCniConfigDetails();
+    }
+
+    @Test
+    public void testCreateManagedClusterRejectsMissingCniConfiguration() {
+        CreateKubernetesClusterCmd cmd = Mockito.mock(CreateKubernetesClusterCmd.class);
+        Mockito.when(cmd.getCniConfigId()).thenReturn(1L);
+
+        try {
+            kubernetesClusterManager.createManagedKubernetesCluster(cmd);
+            Assert.fail("Expected missing UserData rejection");
+        } catch (InvalidParameterValueException expected) {
+            Assert.assertEquals("Unable to find user data with the specified ID.", expected.getMessage());
+        }
+
+        Mockito.verifyNoInteractions(kubernetesClusterDao);
+        Mockito.verify(cmd, Mockito.never()).getZoneId();
+    }
 
     @Test
     public void testValidateVpcTierAllocated() {
