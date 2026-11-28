@@ -440,6 +440,32 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
+    public void testDeleteVMSnapshotMarksSnapshotFailedWhenDeleteThrowsAfterExpungeRequested() throws Exception {
+        long vmId = 10L;
+        long vmSnapshotId = 20L;
+        long hostId = 40L;
+
+        UserVmVO userVm = mock(UserVmVO.class);
+        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+
+        when(vmSnapshot.getVmId()).thenReturn(vmId);
+        when(vmSnapshot.getId()).thenReturn(vmSnapshotId);
+        when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+        when(userVm.getState()).thenReturn(VirtualMachine.State.Running);
+        when(strategy.userVmDao.findById(vmId)).thenReturn(userVm);
+        when(vmSnapshotHelper.pickRunningHost(vmId)).thenReturn(hostId);
+        when(vmSnapshotHelper.getVolumeTOList(vmId)).thenThrow(new CloudRuntimeException("Communication failure with host, command timed out"));
+
+        try {
+            strategy.deleteVMSnapshot(vmSnapshot);
+        } finally {
+            InOrder inOrder = inOrder(vmSnapshotHelper);
+            inOrder.verify(vmSnapshotHelper).vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
+            inOrder.verify(vmSnapshotHelper).vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
+        }
+    }
+
+    @Test(expected = CloudRuntimeException.class)
     public void testTakeVmSnapshotInternalFailsWhenHostLacksUefiCapabilityForUefiVm() throws Exception {
         long vmId = 10L;
         long hostId = 40L;
