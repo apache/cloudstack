@@ -326,15 +326,17 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             }
 
             try {
-                StoragePoolVO storagePool = _storagePoolDao.findById(srcdata.getDataStore().getId());
+                StoragePoolVO srcPool = _storagePoolDao.findById(srcdata.getDataStore().getId());
+                StoragePoolVO storagePool = _storagePoolDao.findById(destdata.getDataStore().getId());
                 Map<String, String> details = _storagePoolDao.getDetails(storagePool.getId());
+                // The destination pool's adapter decides where the new volume is created
                 ProviderAdapter api = getAPI(storagePool, details);
 
                 logger.info("Copy volume {} to {}", srcdata, destdata);
 
                 ProviderVolume outVolume;
                 ProviderAdapterContext context = newManagedVolumeContext(destdata);
-                ProviderAdapterDataObject sourceIn = newManagedDataObject(srcdata, storagePool);
+                ProviderAdapterDataObject sourceIn = newManagedDataObject(srcdata, srcPool);
                 ProviderAdapterDataObject destIn = newManagedDataObject(destdata, storagePool);
 
                 // Call provider adapter copy method with destination size parameter for resize-during-copy support
