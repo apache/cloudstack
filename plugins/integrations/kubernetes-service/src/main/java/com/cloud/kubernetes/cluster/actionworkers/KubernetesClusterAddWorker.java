@@ -32,6 +32,7 @@ import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -40,6 +41,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmVO;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -47,6 +49,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.Level;
 
 import javax.inject.Inject;
@@ -54,6 +57,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -86,8 +90,12 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             } catch (ManagementServerException e) {
                 throw new CloudRuntimeException(String.format("Failed to retrieve public IP for the network: %s ", network.getName()));
             }
-            attachCksIsoForNodesAdditionToCluster(nodeIds, kubernetesCluster.getId(), mountCksIsoOnVr);
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.AddNodeRequested);
+            if (Objects.isNull(getFreeNodeSshPort(network, publicIp))) {
+                throw new CloudRuntimeException(String.format("No free port left on public IP %s for SSH to new nodes of Kubernetes cluster %s",
+                        publicIp.getAddress().addr(), kubernetesCluster.getName()));
+            }
+            attachCksIsoForNodesAdditionToCluster(nodeIds, kubernetesCluster.getId(), mountCksIsoOnVr);
             String controlNodeGuestIp = getControlVmPrivateIp();
             Ternary<Integer, Long, Long> nodesAddedAndMemory = importNodeToCluster(nodeIds, network, publicIp, controlNodeGuestIp, mountCksIsoOnVr);
             int nodesAdded = nodesAddedAndMemory.first();
@@ -114,6 +122,9 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             return true;
         } catch (Exception e) {
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            if (e instanceof CloudRuntimeException) {
+                throw (CloudRuntimeException) e;
+            }
             throw new CloudRuntimeException(e);
         }
     }
@@ -222,8 +233,12 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
 
     private Pair<Boolean, Integer> validateAndSetupNode(Network network, IpAddress publicIp, Account account,
                                    Long nodeId, int nodeIndex, String base64UserData) {
-        int startSshPortNumber = KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT + (int) kubernetesCluster.getTotalNodeCount() - kubernetesCluster.getEtcdNodeCount().intValue();
-        int sshStartPort = startSshPortNumber + nodeIndex;
+        Integer sshStartPort = getFreeNodeSshPort(network, publicIp);
+        if (Objects.isNull(sshStartPort)) {
+            logger.warn(String.format("No free port left on public IP %s for SSH to node %s of Kubernetes cluster %s",
+                    publicIp.getAddress().addr(), nodeId, kubernetesCluster.getName()));
+            return new Pair<>(false, nodeIndex);
+        }
         try {
             if (Objects.isNull(network.getVpcId())) {
                 provisionFirewallRules(publicIp, owner, sshStartPort, sshStartPort);
@@ -259,6 +274,50 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             throw new CloudRuntimeException(e);
         }
         return new Pair<>(true, ++nodeIndex);
+    }
+
+    /**
+     * Returns the lowest port after the positional ports of the control and default worker nodes (those stay
+     * reserved even without a rule, as other operations reach those nodes by position) that the node's SSH rules can
+     * take on the public IP, or null if there is none. A gap left by a removed node is reused.
+     */
+    protected Integer getFreeNodeSshPort(Network network, IpAddress publicIp) {
+        boolean vpc = Objects.nonNull(network.getVpcId());
+        long positionalNodes = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId()).stream()
+                .filter(map -> !map.isExternalNode() && !map.isEtcdNode()).count();
+        List<FirewallRuleVO> rules = firewallRulesDao.listByIp(publicIp.getId()).stream()
+                .filter(rule -> Objects.nonNull(rule.getSourcePortStart()) && Objects.nonNull(rule.getSourcePortEnd())
+                        && rule.getSourcePortEnd() >= CLUSTER_NODES_DEFAULT_START_SSH_PORT)
+                .sorted(Comparator.comparingInt(FirewallRuleVO::getSourcePortStart))
+                .collect(Collectors.toList());
+        int port = CLUSTER_NODES_DEFAULT_START_SSH_PORT + (int) positionalNodes;
+        for (FirewallRuleVO rule : rules) {
+            if (rule.getSourcePortStart() > port) {
+                break;
+            }
+            if (rule.getSourcePortEnd() < port) {
+                continue;
+            }
+            if (rule.getPurpose() == FirewallRule.Purpose.Firewall && (vpc || !isOpenTcpFirewallRule(rule))) {
+                continue;
+            }
+            port = Math.max(port, rule.getSourcePortEnd() + 1);
+        }
+        return port > NetUtils.PORT_RANGE_MAX ? null : port;
+    }
+
+    /**
+     * A firewall rule clashes with the node's tcp 0.0.0.0/0 firewall rule when it is tcp, lists 0.0.0.0/0 among its
+     * source CIDRs and has no destination CIDRs, matching FirewallManagerImpl#detectRulesConflict.
+     */
+    private boolean isOpenTcpFirewallRule(FirewallRuleVO rule) {
+        if (!NetUtils.TCP_PROTO.equalsIgnoreCase(rule.getProtocol())) {
+            return false;
+        }
+        firewallRulesDao.loadSourceCidrs(rule);
+        firewallRulesDao.loadDestinationCidrs(rule);
+        return Objects.nonNull(rule.getSourceCidrList()) && rule.getSourceCidrList().contains(NetUtils.ALL_IP4_CIDRS)
+                && CollectionUtils.isEmpty(rule.getDestinationCidrList());
     }
 
     private void updateKubernetesCluster(long clusterId, Ternary<Integer, Long, Long> additionalNodesDetails, boolean manualUpgrade) {
