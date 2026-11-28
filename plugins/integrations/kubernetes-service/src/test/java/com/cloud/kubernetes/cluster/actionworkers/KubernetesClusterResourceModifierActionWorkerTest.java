@@ -17,12 +17,31 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import java.util.List;
+
+import com.cloud.capacity.CapacityManager;
+import com.cloud.cpu.CPU;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.resource.ResourceManager;
+import com.cloud.template.VirtualMachineTemplate;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -134,5 +153,59 @@ public class KubernetesClusterResourceModifierActionWorkerTest {
 
         Mockito.when(kubernetesClusterMock.getName()).thenReturn(originalPrefix);
         Assert.assertEquals(expectedPrefix, kubernetesClusterResourceModifierActionWorker.getKubernetesClusterNodeNamePrefix());
+    }
+
+    @Test
+    public void planTestDeployDestinationShouldContainClusterOfSuitableHost() throws InsufficientServerCapacityException {
+        long zoneId = 1L;
+        long clusterId = 2L;
+        DataCenter zone = Mockito.mock(DataCenter.class);
+        Mockito.when(zone.getId()).thenReturn(zoneId);
+        ServiceOffering offering = Mockito.mock(ServiceOffering.class);
+        Mockito.when(offering.getCpu()).thenReturn(2);
+        Mockito.when(offering.getSpeed()).thenReturn(1000);
+        Mockito.when(offering.getRamSize()).thenReturn(2048);
+
+        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
+        Mockito.when(template.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        Mockito.when(template.getArch()).thenReturn(CPU.CPUArch.amd64);
+        kubernetesClusterResourceModifierActionWorker.clusterTemplate = template;
+
+        HostVO kvmHost = Mockito.mock(HostVO.class);
+        Mockito.when(kvmHost.getUuid()).thenReturn("kvm-host");
+        Mockito.when(kvmHost.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        Mockito.when(kvmHost.getArch()).thenReturn(CPU.CPUArch.amd64);
+        Mockito.when(kvmHost.getClusterId()).thenReturn(clusterId);
+        HostVO vmwareHost = Mockito.mock(HostVO.class);
+        Mockito.when(vmwareHost.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.VMware);
+
+        ClusterVO kvmCluster = Mockito.mock(ClusterVO.class);
+        Mockito.when(kvmCluster.getId()).thenReturn(clusterId);
+        ClusterDetailsVO overcommitDetail = Mockito.mock(ClusterDetailsVO.class);
+        Mockito.when(overcommitDetail.getValue()).thenReturn("1.0");
+
+        AffinityGroupDao affinityGroupDao = Mockito.mock(AffinityGroupDao.class);
+        ResourceManager resourceManager = Mockito.mock(ResourceManager.class);
+        Mockito.when(resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, zoneId)).thenReturn(List.of(vmwareHost, kvmHost));
+        ClusterDao clusterDao = Mockito.mock(ClusterDao.class);
+        Mockito.when(clusterDao.findById(clusterId)).thenReturn(kvmCluster);
+        ClusterDetailsDao clusterDetailsDao = Mockito.mock(ClusterDetailsDao.class);
+        Mockito.when(clusterDetailsDao.findDetail(Mockito.eq(clusterId), Mockito.anyString())).thenReturn(overcommitDetail);
+        CapacityManager capacityManager = Mockito.mock(CapacityManager.class);
+        Mockito.when(capacityManager.checkIfHostHasCapacity(Mockito.eq(kvmHost), Mockito.anyInt(), Mockito.anyLong(),
+                Mockito.anyBoolean(), Mockito.anyFloat(), Mockito.anyFloat(), Mockito.anyBoolean())).thenReturn(true);
+
+        kubernetesClusterResourceModifierActionWorker.affinityGroupDao = affinityGroupDao;
+        kubernetesClusterResourceModifierActionWorker.resourceManager = resourceManager;
+        kubernetesClusterResourceModifierActionWorker.clusterDao = clusterDao;
+        kubernetesClusterResourceModifierActionWorker.clusterDetailsDao = clusterDetailsDao;
+        kubernetesClusterResourceModifierActionWorker.capacityManager = capacityManager;
+        kubernetesClusterResourceModifierActionWorker.hostDao = Mockito.mock(HostDao.class);
+
+        DeployDestination dest = kubernetesClusterResourceModifierActionWorker.plan(1, zone, offering, null, null,
+                Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64);
+
+        Assert.assertEquals(kvmCluster, dest.getCluster());
+        Assert.assertNull(dest.getHost());
     }
 }
