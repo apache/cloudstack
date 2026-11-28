@@ -59,7 +59,7 @@ fixed only when it is being changed anyway.
 | Reuse the helper that exists before writing another | Two copies drift apart |
 | Deduplicate before submitting, without losing readability | Copy-pasted blocks are the most common review comment |
 | A method does one thing | Extract a block that needs a comment to explain it, and name the method for what it does |
-| Refactor only what the change needs | Unrelated cleanup is its own PR, or the diff becomes unreviewable |
+| Refactor only what the change needs, unless the refactor makes the code smaller, stays backward compatible and keeps the change easy to see | Unrelated cleanup is its own PR, or the diff becomes unreviewable |
 
 ## Java
 
@@ -95,6 +95,7 @@ fixed only when it is being changed anyway.
 | --- | --- |
 | Add a setting as a `ConfigKey`, never a new `Config` enum entry | `Config` is legacy |
 | Declare the `ConfigKey` on the service interface, not the `*Impl` | Other modules read it without depending on the implementation |
+| Touch as few interfaces as possible to add it | Each interface changed is more to review and more for plugins to follow |
 | Return it from the class's `getConfigKeys()` | An unregistered key never reaches the database or the API |
 | Pick the narrowest scope that works (account, domain, cluster, zone, global) and say whether it is dynamic | Operators can then set it per zone or account; a setting that is not dynamic needs a restart to change |
 | Validate the value where it is read, or with a validator on update | A bad value otherwise surfaces as a failure far from its cause |

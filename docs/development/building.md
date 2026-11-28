@@ -64,7 +64,7 @@ behavior can be tested without hardware. CI runs the smoke tests this way
 
 1. Deploy both databases: `mvn -P developer -pl developer -Ddeploydb`, then `mvn -P developer -pl developer -Ddeploydb-simulator`.
 2. Install Marvin from the build: `pip install --user tools/marvin/dist/[mM]arvin-*.tar.gz`.
-3. Start the server with `mvn -Dsimulator -pl :cloud-client-ui jetty:run` and wait for port 8096.
+3. Start the server with `mvn -Dsimulator -Djava.net.preferIPv4Stack=true -pl :cloud-client-ui jetty:run` and wait for port 8096.
 4. Deploy a zone: `python3 tools/marvin/marvin/deployDataCenter.py -i setup/dev/advdualzone.cfg`.
 5. Run a suite:
 

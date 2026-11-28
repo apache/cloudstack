@@ -62,6 +62,7 @@ in a commit, a PR, an issue or code.
 | Check a review comment, from a person or a bot, against the code before applying it | Reviewers are sometimes wrong; then reply with the reason instead of changing the code |
 | Confirm with the person you work for before pushing, or before posting a comment, review or issue | Posting is public and hard to undo |
 | Keep secrets, personal data and internal hostnames out of code, commits, logs and requests to outside services | They cannot be recalled once published |
+| Never type a secret into a command or tool that echoes it; to check a password, compare hashes | The output lands in logs and transcripts |
 
 ## Working efficiently
 
