@@ -2263,7 +2263,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Pair<List<ProjectInvitationJoinVO>, Integer> projectInvitations = _projectInvitationJoinDao.searchAndCount(sc, searchFilter);
         List<ProjectInvitationJoinVO> invitations = projectInvitations.first();
-        invitations = invitations.stream().filter(invite -> invite.getUserId() == null || Long.parseLong(invite.getUserId()) == callingUser.getId()).collect(Collectors.toList());
+        Project project = projectId == null ? null : _projectMgr.getProject(projectId);
+        if (project == null || !_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+            invitations = invitations.stream().filter(invite -> invite.getUserId() == null || Long.parseLong(invite.getUserId()) == callingUser.getId()).collect(Collectors.toList());
+        }
         return new Pair<>(invitations, invitations.size());
 
 
