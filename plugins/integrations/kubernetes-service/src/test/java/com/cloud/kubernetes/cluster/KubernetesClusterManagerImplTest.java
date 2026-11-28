@@ -441,4 +441,13 @@ public class KubernetesClusterManagerImplTest {
         String cksClusterPreferredArch = kubernetesClusterManager.getCksClusterPreferredArch(systemVMArch, cksIso);
         Assert.assertEquals(CPU.CPUArch.amd64.getType(), cksClusterPreferredArch);
     }
+
+    @Test
+    public void testCheckIfVmsAssociatedWithBackupOfferingSkipsMissingVms() {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getBackupOfferingId()).thenReturn(null);
+        Assert.assertFalse(KubernetesClusterManagerImpl.checkIfVmsAssociatedWithBackupOffering(Arrays.asList(null, vm)));
+        Mockito.when(vm.getBackupOfferingId()).thenReturn(1L);
+        Assert.assertTrue(KubernetesClusterManagerImpl.checkIfVmsAssociatedWithBackupOffering(Arrays.asList(null, vm)));
+    }
 }
