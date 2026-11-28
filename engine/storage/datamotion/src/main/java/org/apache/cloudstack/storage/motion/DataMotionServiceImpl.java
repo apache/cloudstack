@@ -18,10 +18,13 @@
  */
 package org.apache.cloudstack.storage.motion;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
@@ -30,6 +33,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -42,6 +46,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -122,18 +127,39 @@ public class DataMotionServiceImpl implements DataMotionService {
 
         DataMotionStrategy strategy = storageStrategyFactory.getDataMotionStrategy(volumeMap, srcHost, destHost);
         if (strategy == null) {
-            List<String> volumeIds = new LinkedList<String>();
-            for (final VolumeInfo volumeInfo : volumeMap.keySet()) {
-                volumeIds.add(volumeInfo.getUuid());
+            String errMsg;
+            if (HypervisorType.KVM.equals(srcHost.getHypervisorType())) {
+                errMsg = getKvmLiveMigrationUnsupportedMessage(volumeMap, srcHost, destHost);
+            } else {
+                List<String> volumeIds = new LinkedList<String>();
+                for (final VolumeInfo volumeInfo : volumeMap.keySet()) {
+                    volumeIds.add(volumeInfo.getUuid());
+                }
+                errMsg = "Can't find strategy to move data. " + "Source Host: " + srcHost.getName() + ", Destination Host: " + destHost.getName() +
+                        ", Volume UUIDs: " + StringUtils.join(volumeIds, ",");
             }
-
-            String errMsg = "Can't find strategy to move data. " + "Source Host: " + srcHost.getName() + ", Destination Host: " + destHost.getName() +
-                    ", Volume UUIDs: " + StringUtils.join(volumeIds, ",");
             invokeCallback(errMsg, callback);
             return;
         }
 
         strategy.copyAsync(volumeMap, vmTo, srcHost, destHost, callback);
+    }
+
+    private String getKvmLiveMigrationUnsupportedMessage(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+        List<String> volumes = new ArrayList<>();
+        for (Map.Entry<VolumeInfo, DataStore> entry : volumeMap.entrySet()) {
+            volumes.add(String.format("%s from %s to %s", entry.getKey().getUuid(), describePool(entry.getKey().getDataStore()), describePool(entry.getValue())));
+        }
+        Collections.sort(volumes);
+        return String.format("KVM cannot live migrate the volumes of this running VM from host %s to host %s between these storage pools: %s. " +
+                "Stop the VM and migrate the volumes while it is stopped.", srcHost.getName(), destHost.getName(), StringUtils.join(volumes, ", "));
+    }
+
+    private String describePool(DataStore dataStore) {
+        if (dataStore instanceof PrimaryDataStoreInfo) {
+            return String.format("%s (%s)", dataStore.getName(), Objects.toString(((PrimaryDataStoreInfo)dataStore).getPoolType(), "unknown type"));
+        }
+        return dataStore == null ? "unknown pool" : dataStore.getName();
     }
 
     private void invokeCallback(String errMsg, AsyncCompletionCallback<CopyCommandResult> callback) {
