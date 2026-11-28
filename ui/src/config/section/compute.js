@@ -630,7 +630,7 @@ export default {
           message: 'message.kubernetes.cluster.scale',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#scaling-kubernetes-cluster',
           dataView: true,
-          show: (record) => { return ['Created', 'Running', 'Stopped'].includes(record.state) && record.clustertype === 'CloudManaged' },
+          show: (record) => { return (['Created', 'Running', 'Stopped'].includes(record.state) || (record.state === 'Alert' && !record.autoscalingenabled)) && record.clustertype === 'CloudManaged' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleKubernetesCluster.vue')))
         },

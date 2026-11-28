@@ -1271,7 +1271,98 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
-    private void validateKubernetesClusterScaleParameters(ScaleKubernetesClusterCmd cmd) {
+    /**
+     * A cluster in Alert (for example with one worker VM stopped) can still change its size or have
+     * specific nodes removed, which is often what is needed to get it healthy again. A service
+     * offering or autoscaling change acts on every node and is refused until the cluster is
+     * recovered. Passing the offerings and the autoscaling setting the cluster already has is
+     * allowed, so a client that always sends them with a new size still works. The first control
+     * node VM, which scaling reaches over SSH, must be running, no control or etcd VM may be down,
+     * some worker VM must be down (see KubernetesClusterScaleWorker.isVmDown), and only worker nodes
+     * can be removed.
+     */
+    protected void validateKubernetesClusterStateForScale(final KubernetesClusterVO kubernetesCluster, final Long clusterSize, final List<Long> nodeIds,
+                                                          final Long serviceOfferingId, final Map<String, Long> serviceOfferingNodeTypeMap,
+                                                          final Boolean isAutoscalingEnabled, final Long minSize, final Long maxSize) {
+        List<KubernetesCluster.State> validClusterStates = Arrays.asList(KubernetesCluster.State.Created, KubernetesCluster.State.Running,
+                KubernetesCluster.State.Stopped, KubernetesCluster.State.Alert);
+        if (!(validClusterStates.contains(kubernetesCluster.getState()))) {
+            throw new PermissionDeniedException(String.format("Kubernetes cluster %s is in %s state and can not be scaled", kubernetesCluster.getName(), kubernetesCluster.getState().toString()));
+        }
+        if (!KubernetesCluster.State.Alert.equals(kubernetesCluster.getState())) {
+            return;
+        }
+        boolean offeringChange = serviceOfferingId != null && !serviceOfferingId.equals(kubernetesCluster.getServiceOfferingId());
+        if (MapUtils.isNotEmpty(serviceOfferingNodeTypeMap)) {
+            for (Map.Entry<String, Long> entry : serviceOfferingNodeTypeMap.entrySet()) {
+                Long existingOfferingId = getExistingServiceOfferingIdForNodeType(entry.getKey(), kubernetesCluster);
+                if (existingOfferingId == null) {
+                    existingOfferingId = kubernetesCluster.getServiceOfferingId();
+                }
+                if (entry.getValue() != null && !entry.getValue().equals(existingOfferingId)) {
+                    offeringChange = true;
+                }
+            }
+        }
+        // As KubernetesClusterScaleWorker.isAutoscalingChanged()
+        boolean autoscalingChange = isAutoscalingEnabled != null && (isAutoscalingEnabled != kubernetesCluster.getAutoscalingEnabled() ||
+                (minSize != null && !minSize.equals(kubernetesCluster.getMinSize())) || (maxSize != null && !maxSize.equals(kubernetesCluster.getMaxSize())));
+        if (offeringChange || autoscalingChange) {
+            throw new PermissionDeniedException(String.format("Kubernetes cluster %s is in %s state; only its size can be changed or nodes removed. " +
+                    "Recover the cluster before changing its service offering or autoscaling", kubernetesCluster.getName(), kubernetesCluster.getState().toString()));
+        }
+        boolean sizeChange = (clusterSize != null && clusterSize != kubernetesCluster.getNodeCount()) || CollectionUtils.isNotEmpty(nodeIds);
+        if (!sizeChange) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster %s is in %s state; only its size can be changed or nodes removed, " +
+                    "and the request does neither", kubernetesCluster.getName(), kubernetesCluster.getState().toString()));
+        }
+        List<KubernetesClusterVmMapVO> clusterVmMaps = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
+        if (clusterVmMaps.size() != kubernetesCluster.getTotalNodeCount()) {
+            // For example VMs left by a failed scale-up: scaling again would only add to them
+            throw new PermissionDeniedException(String.format("Kubernetes cluster %s is in %s state and has %d VMs for %d nodes; " +
+                    "recover the cluster before scaling it", kubernetesCluster.getName(), kubernetesCluster.getState().toString(),
+                    clusterVmMaps.size(), kubernetesCluster.getTotalNodeCount()));
+        }
+        KubernetesClusterVmMapVO firstControlVmMap = clusterVmMaps.stream().filter(KubernetesClusterVmMapVO::isControlNode).findFirst().orElse(null);
+        VMInstanceVO firstControlVm = firstControlVmMap != null ? vmInstanceDao.findById(firstControlVmMap.getVmId()) : null;
+        if (firstControlVm == null || !VirtualMachine.State.Running.equals(firstControlVm.getState())) {
+            throw new PermissionDeniedException(String.format("Kubernetes cluster %s is in %s state and its first control node VM is not running; " +
+                    "recover the cluster before scaling it", kubernetesCluster.getName(), kubernetesCluster.getState().toString()));
+        }
+        boolean controlPlaneVmDown = false;
+        boolean workerVmDown = false;
+        for (KubernetesClusterVmMapVO vmMap : clusterVmMaps) {
+            VMInstanceVO vm = vmInstanceDao.findById(vmMap.getVmId());
+            if (vm == null || !KubernetesClusterScaleWorker.isVmDown(vm.getState())) {
+                continue;
+            }
+            if (vmMap.isControlNode() || vmMap.isEtcdNode()) {
+                controlPlaneVmDown = true;
+            } else if (!vmMap.isExternalNode()) {
+                // External nodes are left alone by scaling (see removeVirtualMachinesFromKubernetesCluster)
+                workerVmDown = true;
+            }
+        }
+        if (controlPlaneVmDown) {
+            // With a control or etcd node down, etcd may have lost quorum and new nodes may not join
+            throw new PermissionDeniedException(String.format("Kubernetes cluster %s is in %s state and a control or etcd node VM is down; " +
+                    "recover the control plane before scaling the cluster", kubernetesCluster.getName(), kubernetesCluster.getState().toString()));
+        }
+        if (!workerVmDown) {
+            // Scaling in Alert works around worker VMs that are down (stopped, in error, ...). With none
+            // down, the cluster is in Alert for another reason, such as a failed start or upgrade, or a
+            // VM on a disconnected host, which scaling won't fix.
+            throw new PermissionDeniedException(String.format("Kubernetes cluster %s is in %s state but none of its worker VMs is stopped or in error, so it is in %s " +
+                    "for another reason, such as a failed start or upgrade, or a VM on a disconnected host; investigate and recover the cluster before scaling it",
+                    kubernetesCluster.getName(), kubernetesCluster.getState().toString(), kubernetesCluster.getState().toString()));
+        }
+        if (CollectionUtils.isNotEmpty(nodeIds) && clusterVmMaps.stream().anyMatch(vm -> nodeIds.contains(vm.getVmId()) && (vm.isControlNode() || vm.isEtcdNode() || vm.isExternalNode()))) {
+            throw new PermissionDeniedException(String.format("Kubernetes cluster %s is in %s state; only worker nodes can be removed from it",
+                    kubernetesCluster.getName(), kubernetesCluster.getState().toString()));
+        }
+    }
+
+    private KubernetesClusterVO validateKubernetesClusterScaleParameters(ScaleKubernetesClusterCmd cmd) {
         final Long kubernetesClusterId = cmd.getId();
         final Long clusterSize = cmd.getClusterSize();
         final List<Long> nodeIds = cmd.getNodeIds();
@@ -1310,10 +1401,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (clusterVersion == null) {
             throw new CloudRuntimeException(String.format("Invalid Kubernetes version associated with Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
-        List<KubernetesCluster.State> validClusterStates = Arrays.asList(KubernetesCluster.State.Created, KubernetesCluster.State.Running, KubernetesCluster.State.Stopped);
-        if (!(validClusterStates.contains(kubernetesCluster.getState()))) {
-            throw new PermissionDeniedException(String.format("Kubernetes cluster %s is in %s state and can not be scaled", kubernetesCluster.getName(), kubernetesCluster.getState().toString()));
-        }
+        validateKubernetesClusterStateForScale(kubernetesCluster, clusterSize, nodeIds, defaultServiceOfferingId, serviceOfferingNodeTypeMap,
+                isAutoscalingEnabled, minSize, maxSize);
 
         int maxClusterSize = KubernetesMaxClusterSize.valueIn(kubernetesCluster.getAccountId());
         if (isAutoscalingEnabled != null && isAutoscalingEnabled) {
@@ -1372,6 +1461,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         ensureResourceLimitsForScale(kubernetesCluster, serviceOfferingNodeTypeMap,
                 clusterSize != null ? clusterSize : null,
                 kubernetesCluster.getAccountId());
+        return kubernetesCluster;
     }
 
     protected void ensureResourceLimitsForScale(final KubernetesClusterVO cluster,
@@ -2190,9 +2280,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
-        validateKubernetesClusterScaleParameters(cmd);
-        KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(cmd.getId());
-        Map<String, ServiceOffering> nodeToOfferingMap = createNodeTypeToServiceOfferingMap(cmd.getServiceOfferingNodeTypeMap(), cmd.getServiceOfferingId(), kubernetesCluster);
+        // Use the state the request was validated in, not a fresh read the status scanner may have changed
+        KubernetesClusterVO kubernetesCluster = validateKubernetesClusterScaleParameters(cmd);
+        // Offering changes are refused in Alert. With no offerings, the worker only changes the size,
+        // and doesn't apply the cluster offering to node types whose VMs use another one.
+        Map<String, ServiceOffering> nodeToOfferingMap = KubernetesCluster.State.Alert.equals(kubernetesCluster.getState()) ? new HashMap<>() :
+                createNodeTypeToServiceOfferingMap(cmd.getServiceOfferingNodeTypeMap(), cmd.getServiceOfferingId(), kubernetesCluster);
 
         String[] keys = getServiceUserKeys(kubernetesCluster);
         KubernetesClusterScaleWorker scaleWorker =
