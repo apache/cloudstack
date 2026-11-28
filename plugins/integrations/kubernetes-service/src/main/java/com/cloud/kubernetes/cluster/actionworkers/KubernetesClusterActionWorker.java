@@ -394,6 +394,11 @@ public class KubernetesClusterActionWorker {
         logTransitStateAndThrow(logLevel, message, null, null, ex);
     }
 
+    protected String getAutoscalerEnableCommand(Long minSize, Long maxSize) {
+        return String.format("sudo /opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d",
+                kubernetesCluster.getUuid(), maxSize, minSize);
+    }
+
     protected File getManagementServerSshPublicKeyFile() {
         boolean devel = Boolean.parseBoolean(configurationDao.getValue("developer"));
         String keyFile = String.format("%s/.ssh/id_rsa", System.getProperty("user.home"));

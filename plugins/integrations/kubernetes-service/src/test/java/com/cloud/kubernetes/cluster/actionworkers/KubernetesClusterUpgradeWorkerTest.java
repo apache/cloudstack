@@ -22,11 +22,15 @@ import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
+import com.cloud.utils.ssh.SshHelper;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -79,5 +83,69 @@ public class KubernetesClusterUpgradeWorkerTest {
         List<Long> ids = worker.clusterVMs.stream().map(UserVm::getId).collect(Collectors.toList());
         Assert.assertTrue(ids.contains(controlNodeId) && ids.contains(workerNode1Id));
         Assert.assertFalse(ids.contains(workerNode2Id));
+    }
+
+    private MockedStatic<SshHelper> mockAutoscalerSsh(KubernetesClusterUpgradeWorker spyWorker, Pair<Boolean, String> result) {
+        Mockito.doReturn("cloud").when(spyWorker).getControlNodeLoginUser();
+        MockedStatic<SshHelper> sshHelper = Mockito.mockStatic(SshHelper.class);
+        sshHelper.when(() -> SshHelper.sshExecute(ArgumentMatchers.any(), ArgumentMatchers.anyInt(), ArgumentMatchers.anyString(),
+                ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.anyString(), ArgumentMatchers.anyInt(),
+                ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt())).thenReturn(result);
+        return sshHelper;
+    }
+
+    @Test
+    public void testUpdateAutoscalerSkippedWhenAutoscalingDisabled() {
+        Mockito.when(kubernetesCluster.getAutoscalingEnabled()).thenReturn(false);
+        try (MockedStatic<SshHelper> sshHelper = Mockito.mockStatic(SshHelper.class)) {
+            worker.updateAutoscaler();
+            sshHelper.verifyNoInteractions();
+        }
+    }
+
+    @Test
+    public void testUpdateAutoscalerSkippedWithoutMinMaxSize() {
+        Mockito.when(kubernetesCluster.getAutoscalingEnabled()).thenReturn(true);
+        Mockito.when(kubernetesCluster.getMinSize()).thenReturn(null);
+        try (MockedStatic<SshHelper> sshHelper = Mockito.mockStatic(SshHelper.class)) {
+            worker.updateAutoscaler();
+            sshHelper.verifyNoInteractions();
+        }
+    }
+
+    @Test
+    public void testUpdateAutoscalerRedeploysWithClusterSettings() {
+        Mockito.when(kubernetesCluster.getAutoscalingEnabled()).thenReturn(true);
+        Mockito.when(kubernetesCluster.getUuid()).thenReturn("cluster-uuid");
+        Mockito.when(kubernetesCluster.getMinSize()).thenReturn(1L);
+        Mockito.when(kubernetesCluster.getMaxSize()).thenReturn(5L);
+        KubernetesClusterUpgradeWorker spyWorker = Mockito.spy(worker);
+        try (MockedStatic<SshHelper> sshHelper = mockAutoscalerSsh(spyWorker, new Pair<>(true, ""))) {
+            spyWorker.updateAutoscaler();
+            sshHelper.verify(() -> SshHelper.sshExecute(ArgumentMatchers.any(), ArgumentMatchers.anyInt(), ArgumentMatchers.eq("cloud"),
+                    ArgumentMatchers.any(), ArgumentMatchers.any(),
+                    ArgumentMatchers.eq("sudo /opt/bin/autoscale-kube-cluster -i cluster-uuid -e -M 5 -m 1"),
+                    ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt()));
+        }
+    }
+
+    @Test
+    public void testUpdateAutoscalerDoesNotThrowOnFailure() {
+        Mockito.when(kubernetesCluster.getAutoscalingEnabled()).thenReturn(true);
+        Mockito.when(kubernetesCluster.getUuid()).thenReturn("cluster-uuid");
+        Mockito.when(kubernetesCluster.getMinSize()).thenReturn(1L);
+        Mockito.when(kubernetesCluster.getMaxSize()).thenReturn(5L);
+        KubernetesClusterUpgradeWorker spyWorker = Mockito.spy(worker);
+        try (MockedStatic<SshHelper> sshHelper = mockAutoscalerSsh(spyWorker, new Pair<>(false, "autoscale-kube-cluster: not found"))) {
+            spyWorker.updateAutoscaler();
+            sshHelper.when(() -> SshHelper.sshExecute(ArgumentMatchers.any(), ArgumentMatchers.anyInt(), ArgumentMatchers.anyString(),
+                    ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.anyString(), ArgumentMatchers.anyInt(),
+                    ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt())).thenThrow(new RuntimeException("ssh failed"));
+            spyWorker.updateAutoscaler();
+            sshHelper.verify(() -> SshHelper.sshExecute(ArgumentMatchers.any(), ArgumentMatchers.anyInt(), ArgumentMatchers.anyString(),
+                    ArgumentMatchers.any(), ArgumentMatchers.any(),
+                    ArgumentMatchers.eq("sudo /opt/bin/autoscale-kube-cluster -i cluster-uuid -e -M 5 -m 1"),
+                    ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt()), Mockito.times(2));
+        }
     }
 }

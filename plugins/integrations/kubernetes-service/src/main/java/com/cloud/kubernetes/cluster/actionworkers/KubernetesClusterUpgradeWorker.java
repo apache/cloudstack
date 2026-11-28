@@ -156,6 +156,32 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         }
     }
 
+    /**
+     * The autoscaler on a binaries ISO matches the ISO's Kubernetes version, and the upgrade has
+     * copied the new ISO's autoscaler manifest to the control node. Once the nodes in this upgrade
+     * have imported the new ISO's images, redeploy the autoscaler from it with the cluster's
+     * settings. A failure leaves the previous autoscaler running, so it doesn't fail the upgrade.
+     */
+    protected void updateAutoscaler() {
+        if (!kubernetesCluster.getAutoscalingEnabled()) {
+            return;
+        }
+        if (kubernetesCluster.getMinSize() == null || kubernetesCluster.getMaxSize() == null) {
+            logger.warn("Not updating the autoscaler of Kubernetes cluster {}: its minimum or maximum size is not set", kubernetesCluster);
+            return;
+        }
+        String command = getAutoscalerEnableCommand(kubernetesCluster.getMinSize(), kubernetesCluster.getMaxSize());
+        try {
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
+                    sshKeyFile, null, command, 10000, 10000, 60000);
+            if (!result.first()) {
+                logger.warn("Unable to update the autoscaler of Kubernetes cluster {}: {}", kubernetesCluster, result.second());
+            }
+        } catch (Exception e) {
+            logger.warn("Unable to update the autoscaler of Kubernetes cluster {}", kubernetesCluster, e);
+        }
+    }
+
     public boolean upgradeCluster() throws CloudRuntimeException {
         init();
         if (logger.isInfoEnabled()) {
@@ -184,6 +210,8 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         if (!updated) {
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         } else {
+            // While the cluster is still Upgrading, so autoscaling can't be changed meanwhile
+            updateAutoscaler();
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         }
         return updated;

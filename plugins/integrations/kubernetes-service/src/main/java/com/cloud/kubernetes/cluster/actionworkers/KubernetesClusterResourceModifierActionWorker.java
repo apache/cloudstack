@@ -930,8 +930,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
         try {
             if (enable) {
-                String command = String.format("sudo /opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d",
-                    kubernetesCluster.getUuid(), maxSize, minSize);
+                String command = getAutoscalerEnableCommand(minSize, maxSize);
                 Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                     pkFile, null, command, 10000, 10000, 60000);
 
