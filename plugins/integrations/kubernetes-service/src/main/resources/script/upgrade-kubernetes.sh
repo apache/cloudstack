@@ -40,7 +40,7 @@ if [ $# -gt 4 ]; then
   EXTERNAL_CNI="${5}"
 fi
 
-export PATH=$PATH:/opt/bin
+export PATH=/opt/bin:$PATH
 if [[ "$PATH" != *:/usr/sbin && "$PATH" != *:/usr/sbin:* ]]; then
   export PATH=$PATH:/usr/sbin
 fi
