@@ -37,6 +37,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -295,6 +296,45 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
 
         boolean result = vmStrategy.deleteVMSnapshot(vmSnapshot);
         assertTrue(result);
+    }
+
+    @Test
+    public void testCanHandleErrorStateWithNoDiskSnapshots() {
+        // Simulates a failed Instance Snapshot (e.g. freeze failed before any disk snapshot was taken):
+        // no vm_snapshot_details/STORAGE_SNAPSHOT rows exist, but the strategy must still claim it so
+        // delete/cleanup does not fall back to DefaultVMSnapshotStrategy (which needs a live libvirt domain).
+        VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
+        Long vmId = 1L;
+        UserVmVO userVmVO = Mockito.mock(UserVmVO.class);
+        Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
+        Mockito.when(vmSnapshot.getId()).thenReturn(1L);
+        Mockito.when(vmSnapshot.getState()).thenReturn(VMSnapshot.State.Error);
+        Mockito.when(vmSnapshot.getType()).thenReturn(VMSnapshot.Type.Disk);
+        Mockito.when(userVmDao.findById(vmId)).thenReturn(userVmVO);
+        Mockito.when(userVmVO.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        Mockito.when(vmSnapshotDetailsDao.findDetails(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString()))
+                .thenReturn(new ArrayList<>());
+
+        StrategyPriority priority = vmStrategy.canHandle(vmSnapshot);
+        assertEquals(StrategyPriority.HYPERVISOR, priority);
+    }
+
+    @Test
+    public void testCanHandleReadyStateWithNoDiskSnapshotsCantHandle() {
+        // A Ready snapshot with no persisted disk snapshots is inconsistent state, unrelated to the
+        // Error-before-any-snapshot scenario above, so the existing CANT_HANDLE behaviour is preserved.
+        VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
+        Long vmId = 1L;
+        UserVmVO userVmVO = Mockito.mock(UserVmVO.class);
+        Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
+        Mockito.when(vmSnapshot.getId()).thenReturn(1L);
+        Mockito.when(vmSnapshot.getState()).thenReturn(VMSnapshot.State.Ready);
+        Mockito.when(userVmDao.findById(vmId)).thenReturn(userVmVO);
+        Mockito.when(vmSnapshotDetailsDao.findDetails(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString()))
+                .thenReturn(new ArrayList<>());
+
+        StrategyPriority priority = vmStrategy.canHandle(vmSnapshot);
+        assertEquals(StrategyPriority.CANT_HANDLE, priority);
     }
 
     @SuppressWarnings("unchecked")
