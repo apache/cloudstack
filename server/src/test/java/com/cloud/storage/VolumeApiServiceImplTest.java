@@ -2504,4 +2504,28 @@ public class VolumeApiServiceImplTest {
                     e.getMessage() != null && e.getMessage().contains("VM should be in"));
         }
     }
+
+    @Test
+    public void checkKvmLiveMigrationFromManagedPoolRejectsMovingOffManagedPool() {
+        VolumeVO vol = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol.getName()).thenReturn("DATA-24");
+        StoragePoolVO src = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(src.isManaged()).thenReturn(true);
+        Mockito.when(src.getId()).thenReturn(5L);
+        Mockito.when(src.getName()).thenReturn("pure-fc-neg");
+        try {
+            volumeApiServiceImpl.checkKvmLiveMigrationFromManagedPool(vol, src, 3L);
+            Assert.fail("expected the migration to be rejected");
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage().contains("Detach the volume or stop the VM"));
+            Assert.assertFalse(e.getMessage().contains("migrateVirtualMachineWithVolumes"));
+        }
+    }
+
+    @Test
+    public void checkKvmLiveMigrationFromManagedPoolIgnoresUnmanagedPool() {
+        StoragePoolVO src = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(src.isManaged()).thenReturn(false);
+        volumeApiServiceImpl.checkKvmLiveMigrationFromManagedPool(Mockito.mock(VolumeVO.class), src, 3L);
+    }
 }
