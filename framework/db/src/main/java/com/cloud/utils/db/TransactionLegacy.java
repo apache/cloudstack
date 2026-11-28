@@ -1191,8 +1191,8 @@ public class TransactionLegacy implements Closeable {
             connectionUri = getPropertiesAndBuildConnectionUri(dbProps, loadBalanceStrategy, driver, useSSL, schema);
         } else {
             LOGGER.warn(String.format("db.%s.uri was set, ignoring the following properties for schema %s of db.properties: [host, port, name, driver, autoReconnect, url.params,"
-                    + " replicas, ha.loadBalanceStrategy, ha.enable, failOverReadOnly, reconnectAtTxEnd, autoReconnectForPools, secondsBeforeRetrySource, queriesBeforeRetrySource, "
-                    + "initialTimeout].", schema, schema));
+                    + " replicas, ha.loadBalanceStrategy, ha.enable, reconnectAtTxEnd, autoReconnectForPools, connectTimeout, socketTimeout, "
+                    + "loadBalanceBlocklistTimeout].", schema, schema));
 
             String[] splitUri = propertyUri.split(":");
             driver = String.format("%s:%s", splitUri[0], splitUri[1]);
@@ -1213,19 +1213,22 @@ public class TransactionLegacy implements Closeable {
         String replicas = null;
         String dbHaParams = null;
         if (s_dbHAEnabled) {
-            dbHaParams = getDBHAParams(schema, dbProps);
+            dbHaParams = getDBHAParams(schema, dbProps, loadBalanceStrategy);
             replicas = dbProps.getProperty(String.format("db.%s.replicas", schema));
             LOGGER.info(String.format("The replicas configured for %s data base are %s.", schema, replicas));
         }
 
-        return buildConnectionUri(loadBalanceStrategy, driver, useSSL, host, replicas, port, dbName, autoReconnect, urlParams, dbHaParams);
+        return buildConnectionUri(driver, useSSL, host, replicas, port, dbName, autoReconnect, urlParams, dbHaParams);
     }
 
-    protected static String buildConnectionUri(String loadBalanceStrategy, String driver, boolean useSSL, String host, String replicas, int port, String dbName, boolean autoReconnect,
+    protected static String buildConnectionUri(String driver, boolean useSSL, String host, String replicas, int port, String dbName, boolean autoReconnect,
             String urlParams, String dbHaParams) {
 
         StringBuilder connectionUri = new StringBuilder();
         connectionUri.append(driver);
+        if (s_dbHAEnabled) {
+            connectionUri.append(":loadbalance");
+        }
         connectionUri.append("://");
         connectionUri.append(host);
 
@@ -1253,8 +1256,6 @@ public class TransactionLegacy implements Closeable {
         if (s_dbHAEnabled) {
             connectionUri.append("&");
             connectionUri.append(dbHaParams);
-            connectionUri.append("&loadBalanceStrategy=");
-            connectionUri.append(loadBalanceStrategy);
         }
 
         connectionUri.append("&");
@@ -1409,14 +1410,14 @@ public class TransactionLegacy implements Closeable {
         return new PoolingDataSource(connectionPool);
     }
 
-    private static String getDBHAParams(String dbName, Properties dbProps) {
+    private static String getDBHAParams(String dbName, Properties dbProps, String loadBalanceStrategy) {
         StringBuilder sb = new StringBuilder();
-        sb.append("failOverReadOnly=" + dbProps.getProperty("db." + dbName + ".failOverReadOnly"));
+        sb.append("ha.loadBalanceStrategy=").append(loadBalanceStrategy);
         sb.append("&").append("reconnectAtTxEnd=" + dbProps.getProperty("db." + dbName + ".reconnectAtTxEnd"));
         sb.append("&").append("autoReconnectForPools=" + dbProps.getProperty("db." + dbName + ".autoReconnectForPools"));
-        sb.append("&").append("secondsBeforeRetrySource=" + dbProps.getProperty("db." + dbName + ".secondsBeforeRetrySource"));
-        sb.append("&").append("queriesBeforeRetrySource=" + dbProps.getProperty("db." + dbName + ".queriesBeforeRetrySource"));
-        sb.append("&").append("initialTimeout=" + dbProps.getProperty("db." + dbName + ".initialTimeout"));
+        sb.append("&").append("connectTimeout=" + dbProps.getProperty("db." + dbName + ".connectTimeout"));
+        sb.append("&").append("socketTimeout=" + dbProps.getProperty("db." + dbName + ".socketTimeout"));
+        sb.append("&").append("loadBalanceBlocklistTimeout=" + dbProps.getProperty("db." + dbName + ".loadBalanceBlocklistTimeout"));
         return sb.toString();
     }
 
