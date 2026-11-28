@@ -55,7 +55,7 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: (java-17-openjdk or java-21-openjdk)
+Requires: (java-17-openjdk-headless or java-21-openjdk-headless)
 Requires: (tzdata-java or timezone-java)
 Requires: python3
 Requires: bash
@@ -103,7 +103,7 @@ The Apache CloudStack files shared between agent and management server
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: (openssh-clients or openssh)
-Requires: (java-17-openjdk or java-21-openjdk)
+Requires: (java-17-openjdk-headless or java-21-openjdk-headless)
 Requires: (tzdata-java or timezone-java)
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
@@ -146,7 +146,7 @@ The CloudStack baremetal agent
 
 %package usage
 Summary: CloudStack Usage calculation server
-Requires: (java-17-openjdk or java-21-openjdk)
+Requires: (java-17-openjdk-headless or java-21-openjdk-headless)
 Requires: (tzdata-java or timezone-java)
 Group: System Environment/Libraries
 %description usage
