@@ -113,14 +113,12 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -227,8 +225,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     protected GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject
     protected DiskOfferingDao _diskOfferingDao;
-    @Inject
-    protected StoragePoolHostDao _poolHostDao;
 
     @Inject
     protected VolumeDao _volsDao;
@@ -1667,31 +1663,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     }
 
     protected boolean hostCanAccessSPool(Host host, StoragePool pool) {
-        if (!_storageMgr.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, pool)) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("StoragePool %s and host %s does not have matching storage access groups", pool, host));
-            }
-            return false;
-        }
-
-        boolean hostCanAccessSPool = false;
-
-        StoragePoolHostVO hostPoolLinkage = _poolHostDao.findByPoolHost(pool.getId(), host.getId());
-        if (hostPoolLinkage != null && _storageMgr.canHostAccessStoragePool(host, pool)) {
-            hostCanAccessSPool = true;
-        }
-
-        logger.debug("Host: {}{} access pool: {}", host, hostCanAccessSPool ? " can" : " cannot", pool);
-        if (!hostCanAccessSPool) {
-            if (_storageMgr.canHostPrepareStoragePoolAccess(host, pool)) {
-                logger.debug("Host: {} can prepare access to pool: {}", host, pool);
-                hostCanAccessSPool = true;
-            } else {
-                logger.debug("Host: {} cannot prepare access to pool: {}", host, pool);
-            }
-        }
-
-        return hostCanAccessSPool;
+        return _storageMgr.canHostAccessOrPrepareStoragePool(host, pool);
     }
 
     protected List<Host> findSuitableHosts(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {

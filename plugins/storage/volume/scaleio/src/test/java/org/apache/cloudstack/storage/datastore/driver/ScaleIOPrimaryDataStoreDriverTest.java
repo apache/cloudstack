@@ -30,7 +30,9 @@ import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -596,5 +598,19 @@ public class ScaleIOPrimaryDataStoreDriverTest {
                         16L * (1024 * 1024 * 1024),
                         16L * (1024 * 1024 * 1024),
                         true));
+    }
+
+    @Test
+    public void testCanHostPrepareStoragePoolAccessWithNullArguments() {
+        Assert.assertFalse(scaleIOPrimaryDataStoreDriver.canHostPrepareStoragePoolAccess(null, Mockito.mock(StoragePool.class)));
+        Assert.assertFalse(scaleIOPrimaryDataStoreDriver.canHostPrepareStoragePoolAccess(Mockito.mock(Host.class), null));
+    }
+
+    @Test
+    public void testCanHostPrepareStoragePoolAccessWithUnsupportedHypervisorType() {
+        Host host = Mockito.mock(Host.class);
+        when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.VMware);
+
+        Assert.assertFalse(scaleIOPrimaryDataStoreDriver.canHostPrepareStoragePoolAccess(host, Mockito.mock(StoragePool.class)));
     }
 }
