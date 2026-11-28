@@ -29,9 +29,7 @@ if os.path.exists("/usr/lib/xcp/sm"):
 
 import SR, VDI, SRCommand, util, lvutil
 from util import CommandException
-import vhdutil
 import shutil
-import lvhdutil
 import errno
 import subprocess
 import xs_errors
@@ -40,6 +38,26 @@ import stat
 import random
 import cloudstack_pluginlib as lib
 import logging
+
+try:
+    # sm >= 3.2.12-18 (e.g. XCP-ng 8.3), where lvhdutil was folded into
+    # constants/lvmcowutil and vhdutil became a class
+    from constants import VG_PREFIX, VG_LOCATION
+    from lvmcowutil import LvmCowUtil
+    from vhdutil import VhdUtil
+    _vhdutil = VhdUtil()
+    lvhdutil_extractUuid = LvmCowUtil.extractUuid
+    vhdutil_getParent = _vhdutil.getParent
+    vhdutil_getVHDInfoLVM = _vhdutil.getInfoFromLVM
+except ImportError:
+    # older sm (XenServer and XCP-ng releases prior to the 8.3 SM refactor)
+    import vhdutil
+    import lvhdutil
+    VG_PREFIX = lvhdutil.VG_PREFIX
+    VG_LOCATION = lvhdutil.VG_LOCATION
+    lvhdutil_extractUuid = lvhdutil.extractUuid
+    vhdutil_getParent = vhdutil.getParent
+    vhdutil_getVHDInfoLVM = vhdutil.getVHDInfoLVM
 
 lib.setup_logging("/var/log/cloud/cloud.log")
 
@@ -58,8 +76,8 @@ def echo(fn):
 
 def getPrimarySRPath(primaryStorageSRUuid, isISCSI):
     if isISCSI:
-        primarySRDir = lvhdutil.VG_PREFIX + primaryStorageSRUuid
-        return os.path.join(lvhdutil.VG_LOCATION, primarySRDir)
+        primarySRDir = VG_PREFIX + primaryStorageSRUuid
+        return os.path.join(VG_LOCATION, primarySRDir)
     else:
         return os.path.join(SR.MOUNT_BASE, primaryStorageSRUuid)
 
@@ -158,7 +176,7 @@ def scanParent(path):
         lvName = os.path.basename(path)
         dirname = os.path.dirname(path)
         vgName = os.path.basename(dirname)
-        vhdInfo = vhdutil.getVHDInfoLVM(lvName, lvhdutil.extractUuid, vgName)
+        vhdInfo = vhdutil_getVHDInfoLVM(lvName, lvhdutil_extractUuid, vgName)
         parentUUID = vhdInfo.parentUuid
     except:
         errMsg = "Could not get vhd parent of " + path
@@ -184,9 +202,9 @@ def getParent(path, isISCSI):
     parentUUID = ''
     try :
         if isISCSI:
-            parentUUID = vhdutil.getParent(path, lvhdutil.extractUuid)
+            parentUUID = vhdutil_getParent(path, lvhdutil_extractUuid)
         else:
-            parentUUID = vhdutil.getParent(path, cleanup.FileVDI.extractUuid)
+            parentUUID = vhdutil_getParent(path, cleanup.FileVDI.extractUuid)
     except:
         errMsg = "Could not get vhd parent of " + path
         logging.debug(errMsg)
