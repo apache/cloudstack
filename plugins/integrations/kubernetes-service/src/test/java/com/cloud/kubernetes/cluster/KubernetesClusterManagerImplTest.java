@@ -108,6 +108,36 @@ public class KubernetesClusterManagerImplTest {
     KubernetesClusterManagerImpl kubernetesClusterManager;
 
     @Test
+    public void testCheckBackupOfferingWithOnlyMissingVms() {
+        Assert.assertFalse(KubernetesClusterManagerImpl.checkIfVmsAssociatedWithBackupOffering(
+                Arrays.asList(null, null)));
+    }
+
+    @Test
+    public void testCheckBackupOfferingWithMissingAndUnassociatedVms() {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getBackupOfferingId()).thenReturn(null);
+
+        Assert.assertFalse(KubernetesClusterManagerImpl.checkIfVmsAssociatedWithBackupOffering(
+                Arrays.asList(null, vm, null)));
+    }
+
+    @Test
+    public void testCheckBackupOfferingWithMissingAndAssociatedVms() {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getBackupOfferingId()).thenReturn(1L);
+
+        Assert.assertTrue(KubernetesClusterManagerImpl.checkIfVmsAssociatedWithBackupOffering(
+                Arrays.asList(null, vm)));
+    }
+
+    @Test
+    public void testCheckBackupOfferingWithNoVms() {
+        Assert.assertFalse(KubernetesClusterManagerImpl.checkIfVmsAssociatedWithBackupOffering(
+                Collections.emptyList()));
+    }
+
+    @Test
     public void testValidateVpcTierAllocated() {
         Network network = Mockito.mock(Network.class);
         Mockito.when(network.getState()).thenReturn(Network.State.Allocated);
