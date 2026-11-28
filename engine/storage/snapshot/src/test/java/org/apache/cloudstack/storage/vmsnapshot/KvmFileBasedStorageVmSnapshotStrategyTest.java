@@ -18,10 +18,15 @@
  */
 package org.apache.cloudstack.storage.vmsnapshot;
 
+import static org.apache.cloudstack.storage.vmsnapshot.KvmFileBasedStorageVmSnapshotStrategy.KVM_FILE_BASED_STORAGE_SNAPSHOT;
+import static org.apache.cloudstack.storage.vmsnapshot.KvmFileBasedStorageVmSnapshotStrategy.KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM;
+import static org.apache.cloudstack.storage.vmsnapshot.KvmFileBasedStorageVmSnapshotStrategy.KVM_FILE_BASED_STORAGE_SNAPSHOT_STRATEGY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -30,15 +35,18 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -142,7 +150,7 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         method.setAccessible(true);
         method.invoke(strategy, vmSnapshot, Collections.emptyMap(), answer, userVm, vmSnapshotVO, 0L, null);
 
-        verify(vmSnapshotDetailsDao).addDetail(42L, "kvmFileBasedStorageSnapshotNvram", "nvram/42.fd", false);
+        verify(vmSnapshotDetailsDao).addDetail(42L, KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM, "nvram/42.fd", false);
     }
 
     @Test
@@ -158,8 +166,8 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         SnapshotDataStoreVO snapshotDataStoreVO = mock(SnapshotDataStoreVO.class);
         SnapshotInfo snapshotInfo = mock(SnapshotInfo.class);
         SnapshotObjectTO snapshotObjectTO = mock(SnapshotObjectTO.class);
-        VMSnapshotDetailsVO volumeSnapshotDetail = new VMSnapshotDetailsVO(snapshotId, "kvmFileBasedStorageSnapshot", String.valueOf(snapshotId), true);
-        VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(snapshotId, "kvmFileBasedStorageSnapshotNvram", "nvram/42.fd", false);
+        VMSnapshotDetailsVO volumeSnapshotDetail = new VMSnapshotDetailsVO(snapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT, String.valueOf(snapshotId), true);
+        VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(snapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM, "nvram/42.fd", false);
 
         when(vmSnapshot.getVmId()).thenReturn(vmId);
         when(vmSnapshot.getId()).thenReturn(snapshotId);
@@ -177,8 +185,8 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
                 .thenReturn(new DetailVO(hostId, Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString()));
         when(hostDetailsDao.findDetail(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM))
                 .thenReturn(new DetailVO(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, Boolean.TRUE.toString()));
-        when(vmSnapshotDetailsDao.findDetails(snapshotId, "kvmFileBasedStorageSnapshot")).thenReturn(List.of(volumeSnapshotDetail));
-        when(vmSnapshotDetailsDao.findDetail(snapshotId, "kvmFileBasedStorageSnapshotNvram")).thenReturn(nvramDetail);
+        when(vmSnapshotDetailsDao.findDetails(snapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT)).thenReturn(List.of(volumeSnapshotDetail));
+        when(vmSnapshotDetailsDao.findDetail(snapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM)).thenReturn(nvramDetail);
         when(snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(snapshotId, DataStoreRole.Primary)).thenReturn(snapshotDataStoreVO);
         when(snapshotDataStoreVO.getSnapshotId()).thenReturn(snapshotId);
         when(snapshotDataStoreVO.getDataStoreId()).thenReturn(dataStoreId);
@@ -273,12 +281,12 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         long hostId = 40L;
 
         VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
-        VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(20L, "kvmFileBasedStorageSnapshotNvram", "nvram/42.fd", false);
+        VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(20L, KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM, "nvram/42.fd", false);
         PrimaryDataStoreTO primaryDataStore = mock(PrimaryDataStoreTO.class);
 
         when(vmSnapshot.getId()).thenReturn(20L);
         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
-        when(vmSnapshotDetailsDao.findDetail(20L, "kvmFileBasedStorageSnapshotNvram")).thenReturn(nvramDetail);
+        when(vmSnapshotDetailsDao.findDetail(20L, KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM)).thenReturn(nvramDetail);
         when(hostDetailsDao.findDetail(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM))
                 .thenReturn(new DetailVO(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, Boolean.TRUE.toString()));
         when(agentMgr.easySend(eq(hostId), any())).thenReturn(new Answer(null, true, null));
@@ -302,11 +310,11 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         long hostId = 40L;
 
         VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
-        VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(20L, "kvmFileBasedStorageSnapshotNvram", "nvram/42.fd", false);
+        VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(20L, KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM, "nvram/42.fd", false);
 
         when(vmSnapshot.getId()).thenReturn(20L);
         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
-        when(vmSnapshotDetailsDao.findDetail(20L, "kvmFileBasedStorageSnapshotNvram")).thenReturn(nvramDetail);
+        when(vmSnapshotDetailsDao.findDetail(20L, KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM)).thenReturn(nvramDetail);
         when(hostDetailsDao.findDetail(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM)).thenReturn(null);
 
         try {
@@ -343,11 +351,11 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         SnapshotInfo rootSnapshotInfo = mock(SnapshotInfo.class);
         SnapshotObjectTO rootSnapshotObjectTo = mock(SnapshotObjectTO.class);
         VolumeObjectTO rootSnapshotVolume = mock(VolumeObjectTO.class);
-        VMSnapshotDetailsVO volumeSnapshotDetail = new VMSnapshotDetailsVO(vmSnapshotId, "kvmFileBasedStorageSnapshot", String.valueOf(rootSnapshotId), true);
+        VMSnapshotDetailsVO volumeSnapshotDetail = new VMSnapshotDetailsVO(vmSnapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT, String.valueOf(rootSnapshotId), true);
 
         when(vmSnapshot.getId()).thenReturn(vmSnapshotId);
         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
-        when(vmSnapshotDetailsDao.findDetails(vmSnapshotId, "kvmFileBasedStorageSnapshot")).thenReturn(List.of(volumeSnapshotDetail));
+        when(vmSnapshotDetailsDao.findDetails(vmSnapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT)).thenReturn(List.of(volumeSnapshotDetail));
         when(snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(rootSnapshotId, DataStoreRole.Primary)).thenReturn(rootSnapshotDataStore);
         when(rootSnapshotDataStore.getSnapshotId()).thenReturn(rootSnapshotId);
         when(rootSnapshotDataStore.getDataStoreId()).thenReturn(dataStoreId);
@@ -425,7 +433,8 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
 
         UserVmVO userVm = mock(UserVmVO.class);
         VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
-        VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(vmSnapshotId, "kvmFileBasedStorageSnapshotNvram", "nvram/42.fd", false);
+        VMSnapshotDetailsVO volumeSnapshotDetail = new VMSnapshotDetailsVO(vmSnapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT, "30", true);
+        VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(vmSnapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM, "nvram/42.fd", false);
 
         when(vmSnapshot.getVmId()).thenReturn(vmId);
         when(vmSnapshot.getId()).thenReturn(vmSnapshotId);
@@ -433,7 +442,8 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         when(userVm.getState()).thenReturn(VirtualMachine.State.Running);
         when(strategy.userVmDao.findById(vmId)).thenReturn(userVm);
         when(vmSnapshotHelper.pickRunningHost(vmId)).thenReturn(hostId);
-        when(vmSnapshotDetailsDao.findDetail(vmSnapshotId, "kvmFileBasedStorageSnapshotNvram")).thenReturn(nvramDetail);
+        when(vmSnapshotDetailsDao.findDetails(vmSnapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT)).thenReturn(List.of(volumeSnapshotDetail));
+        when(vmSnapshotDetailsDao.findDetail(vmSnapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM)).thenReturn(nvramDetail);
         when(hostDetailsDao.findDetail(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM)).thenReturn(null);
 
         strategy.deleteVMSnapshot(vmSnapshot);
@@ -460,6 +470,38 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
                 .thenReturn(new DetailVO(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, Boolean.TRUE.toString()));
 
         strategy.takeVmSnapshotInternal(vmSnapshot, Collections.emptyMap());
+    }
+
+    @Test
+    public void testTakeVmSnapshotInternalPersistsStrategyMarkerBeforeHostValidation() throws Exception {
+        long vmId = 10L;
+        long vmSnapshotId = 20L;
+        long hostId = 40L;
+
+        UserVmVO userVm = mock(UserVmVO.class);
+        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+
+        when(vmSnapshot.getId()).thenReturn(vmSnapshotId);
+        when(vmSnapshot.getVmId()).thenReturn(vmId);
+        when(userVm.getId()).thenReturn(vmId);
+        when(userVm.getUuid()).thenReturn("vm-uuid");
+        when(userVm.getState()).thenReturn(VirtualMachine.State.Running);
+        when(strategy.userVmDao.findById(vmId)).thenReturn(userVm);
+        when(vmSnapshotHelper.pickRunningHost(vmId)).thenReturn(hostId);
+        when(strategy.vmInstanceDetailsDao.findDetail(vmId, ApiConstants.BootType.UEFI.toString()))
+                .thenReturn(new VMInstanceDetailVO(vmId, ApiConstants.BootType.UEFI.toString(), "SECURE", true));
+        when(hostDetailsDao.findDetail(hostId, Host.HOST_UEFI_ENABLE)).thenReturn(null);
+
+        try {
+            strategy.takeVmSnapshotInternal(vmSnapshot, Collections.emptyMap());
+        } catch (CloudRuntimeException expected) {
+            // creation is expected to fail; the marker must already be persisted
+        }
+
+        InOrder inOrder = inOrder(vmSnapshotHelper, vmSnapshotDetailsDao);
+        inOrder.verify(vmSnapshotHelper).vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.CreateRequested);
+        inOrder.verify(vmSnapshotDetailsDao).addDetail(vmSnapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT_STRATEGY, Boolean.TRUE.toString(), false);
+        verifyNoInteractions(agentMgr);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -525,6 +567,132 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         strategy.notifyGuestRecoveryIssueIfNeeded(answer, userVm, vmSnapshot);
 
         verify(strategy.alertManager).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_VM_SNAPSHOT), eq(1L), eq(2L), anyString(), anyString());
+    }
+
+    @Test
+    public void testCanHandleReturnsHighestForSnapshotWithVolumeSnapshotDetails() {
+        VMSnapshotVO vmSnapshot = mockVmSnapshotForCanHandle(VMSnapshot.State.Error);
+        when(vmSnapshotDetailsDao.findDetails(20L, KVM_FILE_BASED_STORAGE_SNAPSHOT))
+                .thenReturn(List.of(new VMSnapshotDetailsVO(20L, KVM_FILE_BASED_STORAGE_SNAPSHOT, "30", true)));
+
+        assertEquals(StrategyPriority.HIGHEST, strategy.canHandle(vmSnapshot));
+
+        verify(strategy, never()).canHandle(anyLong(), any(), anyBoolean());
+    }
+
+    @Test
+    public void testCanHandleReturnsHighestForErrorSnapshotWithStrategyMarker() {
+        VMSnapshotVO vmSnapshot = mockVmSnapshotForCanHandle(VMSnapshot.State.Error);
+        when(vmSnapshotDetailsDao.findDetails(20L, KVM_FILE_BASED_STORAGE_SNAPSHOT)).thenReturn(List.of());
+        when(vmSnapshotDetailsDao.findDetail(20L, KVM_FILE_BASED_STORAGE_SNAPSHOT_STRATEGY))
+                .thenReturn(new VMSnapshotDetailsVO(20L, KVM_FILE_BASED_STORAGE_SNAPSHOT_STRATEGY, Boolean.TRUE.toString(), false));
+
+        assertEquals(StrategyPriority.HIGHEST, strategy.canHandle(vmSnapshot));
+
+        verify(strategy, never()).canHandle(anyLong(), any(), anyBoolean());
+    }
+
+    @Test
+    public void testCanHandleReturnsCantHandleForReadySnapshotWithoutVolumeSnapshotDetails() {
+        VMSnapshotVO vmSnapshot = mockVmSnapshotForCanHandle(VMSnapshot.State.Ready);
+        when(vmSnapshotDetailsDao.findDetails(20L, KVM_FILE_BASED_STORAGE_SNAPSHOT)).thenReturn(List.of());
+
+        assertEquals(StrategyPriority.CANT_HANDLE, strategy.canHandle(vmSnapshot));
+
+        verify(strategy, never()).canHandle(anyLong(), any(), anyBoolean());
+    }
+
+    @Test
+    public void testCanHandleReturnsCantHandleForErrorSnapshotWithoutVolumeSnapshotDetailsOrStrategyMarker() {
+        VMSnapshotVO vmSnapshot = mockVmSnapshotForCanHandle(VMSnapshot.State.Error);
+        when(vmSnapshotDetailsDao.findDetails(20L, KVM_FILE_BASED_STORAGE_SNAPSHOT)).thenReturn(List.of());
+        when(vmSnapshotDetailsDao.findDetail(20L, KVM_FILE_BASED_STORAGE_SNAPSHOT_STRATEGY)).thenReturn(null);
+
+        assertEquals(StrategyPriority.CANT_HANDLE, strategy.canHandle(vmSnapshot));
+
+        verify(strategy, never()).canHandle(anyLong(), any(), anyBoolean());
+    }
+
+    @Test
+    public void testDeleteVMSnapshotRemovesOnlyMetadataWhenSnapshotHasNoPrimaryStorageArtifacts() throws Exception {
+        long vmId = 10L;
+        long vmSnapshotId = 20L;
+
+        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+        when(vmSnapshot.getVmId()).thenReturn(vmId);
+        when(vmSnapshot.getId()).thenReturn(vmSnapshotId);
+        when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+        when(vmSnapshotDetailsDao.findDetails(vmSnapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT)).thenReturn(List.of());
+        when(vmSnapshotDetailsDao.findDetail(vmSnapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM)).thenReturn(null);
+
+        assertTrue(strategy.deleteVMSnapshot(vmSnapshot));
+
+        InOrder inOrder = inOrder(vmSnapshotHelper, vmSnapshotDetailsDao, vmSnapshot, vmSnapshotDao);
+        inOrder.verify(vmSnapshotHelper).vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
+        inOrder.verify(vmSnapshotHelper).vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationSucceeded);
+        inOrder.verify(vmSnapshotDetailsDao).removeDetails(vmSnapshotId);
+        inOrder.verify(vmSnapshot).setRemoved(any(Date.class));
+        inOrder.verify(vmSnapshotDao).update(vmSnapshotId, vmSnapshot);
+
+        verifyNoInteractions(agentMgr);
+        verify(vmSnapshotHelper, never()).pickRunningHost(anyLong());
+        verify(vmSnapshotHelper, never()).getVolumeTOList(anyLong());
+        verify(strategy, never()).publishUsageEvent(anyString(), any(VMSnapshot.class), any(UserVm.class), any(VolumeObjectTO.class));
+        verify(strategy, never()).publishUsageEvent(anyString(), any(VMSnapshot.class), any(UserVm.class), anyLong(), anyLong());
+    }
+
+    @Test
+    public void testDeleteVMSnapshotCleansUpNvramSidecarOnHostWhenSnapshotHasNoVolumeSnapshotDetails() throws Exception {
+        long vmId = 10L;
+        long vmSnapshotId = 20L;
+        long hostId = 40L;
+
+        UserVmVO userVm = mock(UserVmVO.class);
+        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+        VolumeObjectTO rootVolume = mock(VolumeObjectTO.class);
+        PrimaryDataStoreTO primaryDataStore = mock(PrimaryDataStoreTO.class);
+        VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(vmSnapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM, "nvram/42.fd", false);
+
+        when(vmSnapshot.getVmId()).thenReturn(vmId);
+        when(vmSnapshot.getId()).thenReturn(vmSnapshotId);
+        when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+        when(vmSnapshot.getState()).thenReturn(VMSnapshot.State.Error);
+        when(vmSnapshot.getCurrent()).thenReturn(false);
+        when(userVm.getState()).thenReturn(VirtualMachine.State.Running);
+        when(strategy.userVmDao.findById(vmId)).thenReturn(userVm);
+        when(vmSnapshotHelper.pickRunningHost(vmId)).thenReturn(hostId);
+        when(rootVolume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        when(rootVolume.getDataStore()).thenReturn(primaryDataStore);
+        when(vmSnapshotHelper.getVolumeTOList(vmId)).thenReturn(List.of(rootVolume));
+        when(vmSnapshotDetailsDao.findDetails(vmSnapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT)).thenReturn(List.of());
+        when(vmSnapshotDetailsDao.findDetail(vmSnapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT_STRATEGY)).thenReturn(null);
+        when(vmSnapshotDetailsDao.findDetail(vmSnapshotId, KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM)).thenReturn(nvramDetail);
+        when(hostDetailsDao.findDetail(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM))
+                .thenReturn(new DetailVO(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, Boolean.TRUE.toString()));
+        when(agentMgr.easySend(eq(hostId), any())).thenReturn(new Answer(null, true, null));
+
+        assertTrue(strategy.deleteVMSnapshot(vmSnapshot));
+
+        verify(strategy, never()).deleteVMSnapshotMetadataOnly(any(VMSnapshotVO.class));
+        verify(agentMgr).easySend(eq(hostId), argThat(command -> command instanceof DeleteDiskOnlyVmSnapshotCommand
+                && ((DeleteDiskOnlyVmSnapshotCommand) command).getSnapshots().isEmpty()
+                && "nvram/42.fd".equals(((DeleteDiskOnlyVmSnapshotCommand) command).getNvramSnapshotPath())
+                && ((DeleteDiskOnlyVmSnapshotCommand) command).getPrimaryDataStore() == null));
+        verify(agentMgr).easySend(eq(hostId), argThat(command -> command instanceof DeleteDiskOnlyVmSnapshotCommand
+                && "nvram/42.fd".equals(((DeleteDiskOnlyVmSnapshotCommand) command).getNvramSnapshotPath())
+                && ((DeleteDiskOnlyVmSnapshotCommand) command).getPrimaryDataStore() == primaryDataStore));
+        verify(vmSnapshotDetailsDao).removeDetails(vmSnapshotId);
+        verify(vmSnapshotDao).update(vmSnapshotId, vmSnapshot);
+    }
+
+    private VMSnapshotVO mockVmSnapshotForCanHandle(VMSnapshot.State state) {
+        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+        when(vmSnapshot.getId()).thenReturn(20L);
+        when(vmSnapshot.getVmId()).thenReturn(10L);
+        when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+        when(vmSnapshot.getState()).thenReturn(state);
+        when(vmSnapshot.getType()).thenReturn(VMSnapshot.Type.Disk);
+        return vmSnapshot;
     }
 
     private void mockCandidateHostScope(long vmId, long hostId) {
