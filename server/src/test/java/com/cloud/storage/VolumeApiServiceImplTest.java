@@ -2504,4 +2504,82 @@ public class VolumeApiServiceImplTest {
                     e.getMessage() != null && e.getMessage().contains("VM should be in"));
         }
     }
+
+    private void setupSameCustomDiskOfferingChange(long volumeSizeInBytes) {
+        when(volumeVoMock.getSize()).thenReturn(volumeSizeInBytes);
+        when(diskOfferingMock.getId()).thenReturn(diskOfferingMockId);
+        when(diskOfferingMock.getRemoved()).thenReturn(null);
+        when(diskOfferingMock.getDiskSize()).thenReturn(0L);
+        when(diskOfferingMock.isComputeOnly()).thenReturn(false);
+        when(diskOfferingMock.isCustomized()).thenReturn(true);
+        when(diskOfferingMock.getDiskSizeStrictness()).thenReturn(false);
+        Mockito.lenient().when(diskOfferingMock.getTagsArray()).thenReturn(new String[0]);
+        Mockito.lenient().when(volumeVoMock.getVolumeType()).thenReturn(Type.DATADISK);
+    }
+
+    @Test
+    public void validateVolumeResizeWithNewDiskOfferingRejectsSameCustomOfferingAndSize() {
+        setupSameCustomDiskOfferingChange(10L << 30);
+        Long[] newSize = {10L};
+
+        try {
+            volumeApiServiceImpl.validateVolumeResizeWithNewDiskOfferingAndLoad(volumeVoMock, diskOfferingMock, diskOfferingMock,
+                    newSize, new Long[]{null}, new Long[]{null}, new Integer[]{null});
+            fail("Expected InvalidParameterValueException for an unchanged offering and size");
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("is already having disk offering"));
+        }
+    }
+
+    @Test
+    public void validateVolumeResizeWithNewDiskOfferingAllowsSameCustomOfferingWithNewSize() {
+        setupSameCustomDiskOfferingChange(10L << 30);
+        Long[] newSize = {20L};
+
+        volumeApiServiceImpl.validateVolumeResizeWithNewDiskOfferingAndLoad(volumeVoMock, diskOfferingMock, diskOfferingMock,
+                newSize, new Long[]{null}, new Long[]{null}, new Integer[]{null});
+
+        assertEquals(Long.valueOf(20L << 30), newSize[0]);
+    }
+
+    @Test
+    public void validateVolumeResizeWithNewDiskOfferingAllowsSameCustomOfferingAndSizeWithNewIops() {
+        setupSameCustomDiskOfferingChange(10L << 30);
+        when(diskOfferingMock.isCustomizedIops()).thenReturn(true);
+        when(volumeVoMock.getMinIops()).thenReturn(100L);
+        when(volumeVoMock.getMaxIops()).thenReturn(200L);
+        Long[] newMinIops = {100L};
+        Long[] newMaxIops = {1000L};
+
+        volumeApiServiceImpl.validateVolumeResizeWithNewDiskOfferingAndLoad(volumeVoMock, diskOfferingMock, diskOfferingMock,
+                new Long[]{10L}, newMinIops, newMaxIops, new Integer[]{null});
+    }
+
+    @Test
+    public void validateVolumeResizeWithNewDiskOfferingRejectsSameCustomOfferingSizeAndIops() {
+        setupSameCustomDiskOfferingChange(10L << 30);
+        when(diskOfferingMock.isCustomizedIops()).thenReturn(true);
+        when(volumeVoMock.getMinIops()).thenReturn(100L);
+        when(volumeVoMock.getMaxIops()).thenReturn(1000L);
+
+        try {
+            volumeApiServiceImpl.validateVolumeResizeWithNewDiskOfferingAndLoad(volumeVoMock, diskOfferingMock, diskOfferingMock,
+                    new Long[]{10L}, new Long[]{100L}, new Long[]{1000L}, new Integer[]{null});
+            fail("Expected InvalidParameterValueException for an unchanged offering, size and IOPS");
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("is already having disk offering"));
+        }
+    }
+
+    @Test
+    public void validateVolumeResizeWithNewDiskOfferingAllowsSameCustomComputeOnlyOffering() {
+        setupSameCustomDiskOfferingChange(10L << 30);
+        when(diskOfferingMock.isComputeOnly()).thenReturn(true);
+        Long[] newSize = {null};
+
+        volumeApiServiceImpl.validateVolumeResizeWithNewDiskOfferingAndLoad(volumeVoMock, diskOfferingMock, diskOfferingMock,
+                newSize, new Long[]{null}, new Long[]{null}, new Integer[]{null});
+
+        assertEquals(Long.valueOf(10L << 30), newSize[0]);
+    }
 }
