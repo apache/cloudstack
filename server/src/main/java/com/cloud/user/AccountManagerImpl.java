@@ -2357,6 +2357,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             acctForUpdate.setRoleId(roleId);
             acctForUpdate.setType(role.getRoleType().getAccountType());
             checkRoleEscalation(getCurrentCallingAccount(), acctForUpdate);
+            refreshRoleCheckersCacheOnPermissionsChange(role);
         }
 
         if (networkDomain != null) {
