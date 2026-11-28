@@ -48,6 +48,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.commons.validator.routines.RegexValidator;
@@ -82,6 +83,8 @@ public class NetUtils {
     public final static String ICMP_PROTO = "icmp";
     public static final String ICMP6_PROTO = "icmp6";
     public final static int ICMP_PROTO_NUMBER = 1;
+    public final static int TCP_PROTO_NUMBER = 6;
+    public final static int UDP_PROTO_NUMBER = 17;
     public final static String ALL_PROTO = "all";
     public final static String HTTP_PROTO = "http";
     public final static String HTTPS_PROTO = "https";
@@ -1011,6 +1014,21 @@ public class NetUtils {
     public static boolean isValidSecurityGroupProto(final String p) {
         final String proto = p.toLowerCase();
         return proto.equals(TCP_PROTO) || proto.equals(UDP_PROTO) || proto.equals(ICMP_PROTO) || proto.equals(ALL_PROTO);
+    }
+
+    /**
+     * Gives a rule's protocol trimmed, with protocol number 1 as icmp, so that the rule keeps its ICMP
+     * type and code.
+     */
+    public static String icmpProtocolNumberAsName(final String protocol) {
+        if (protocol == null) {
+            return null;
+        }
+        final String p = protocol.trim();
+        if (StringUtils.isNumeric(p) && NumberUtils.toInt(p, -1) == ICMP_PROTO_NUMBER) {
+            return ICMP_PROTO;
+        }
+        return p;
     }
 
     public static boolean isValidAlgorithm(final String p) {

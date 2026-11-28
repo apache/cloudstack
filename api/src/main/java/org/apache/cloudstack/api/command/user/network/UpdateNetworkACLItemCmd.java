@@ -31,6 +31,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.user.Account;
+import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "updateNetworkACLItem", description = "Updates ACL item with specified ID", responseObject = NetworkACLItemResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
@@ -99,11 +100,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
     }
 
     public String getProtocol() {
-        if (protocol != null) {
-            return protocol.trim();
-        } else {
-            return null;
-        }
+        return NetUtils.icmpProtocolNumberAsName(protocol);
     }
 
     public List<String> getSourceCidrList() {
