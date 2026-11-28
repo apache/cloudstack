@@ -73,6 +73,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
@@ -80,6 +81,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -133,6 +135,8 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     @Inject
     private HostDao _hostDao;
     @Inject private VMTemplateDao _vmTemplateDao;
+    @Inject private DiskOfferingDao _diskOfferingDao;
+    @Inject private ResourceLimitService _resourceLimitMgr;
 
     private final Map<String, Long> volumeStatsLastUpdate = new HashMap<>();
     private final Map<String, Pair<Long, Long>> volumeStats = new HashMap<>();
@@ -352,6 +356,33 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         } else {
             logger.info(String.format("Successfully resized %s to %d kib", resourceName, dfm.getSizeKib()));
         }
+    }
+
+    /**
+     * Records the size of the volume's Linstor device as the size of the volume, if it is larger. Linstor rounds the
+     * storage of a volume up and the VM sees all of it, so copies of the volume (snapshot backups, templates,
+     * downloads) have to cover all of it too.
+     * @param adjustResourceCount whether to count the difference against the account's primary storage
+     * @return the size of the volume
+     */
+    protected long recordDeviceSize(DevelopersApi api, VolumeVO volume, String rscName, boolean adjustResourceCount) {
+        final long size = volume.getSize() != null ? volume.getSize() : 0;
+        try {
+            final long deviceSize = LinstorUtil.getVolumeDeviceSize(api, rscName);
+            if (deviceSize > size) {
+                logger.info("Linstor: the device of {} has {} bytes, recording that instead of {}", volume, deviceSize, size);
+                volume.setSize(deviceSize);
+                _volumeDao.update(volume.getId(), volume);
+                if (adjustResourceCount) {
+                    _resourceLimitMgr.incrementVolumePrimaryStorageResourceCount(volume.getAccountId(),
+                            volume.isDisplayVolume(), deviceSize - size, _diskOfferingDao.findById(volume.getDiskOfferingId()));
+                }
+                return deviceSize;
+            }
+        } catch (ApiException apiEx) {
+            logger.warn("Linstor: unable to get the device size of {}, keeping {} bytes: {}", rscName, size, apiEx.getBestMessage());
+        }
+        return size;
     }
 
     /**
@@ -614,6 +645,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                     volume.setPath(vol.getUuid());
 
                     _volumeDao.update(volume.getId(), volume);
+                    recordDeviceSize(getLinstorAPI(storagePool), volume, LinstorUtil.RSC_PREFIX + volume.getPath(), true);
                     break;
                 case SNAPSHOT:
                     logger.debug("createAsync - SNAPSHOT");
@@ -975,8 +1007,11 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         final StoragePoolVO pool = _storagePoolDao.findById(srcVolInfo.getDataStore().getId());
         final DevelopersApi api = getLinstorAPI(pool);
         final String rscName = LinstorUtil.RSC_PREFIX + srcVolInfo.getPath();
+        // volumes created before their device size was recorded
+        final long size = recordDeviceSize(api, _volumeDao.findById(srcVolInfo.getId()), rscName, true);
 
         VolumeObjectTO to = (VolumeObjectTO) srcVolInfo.getTO();
+        to.setSize(size);
         // patch source format
         // Linstor volumes are stored as RAW, but we can't set the correct format as RAW (we use QCOW2)
         // otherwise create template from snapshot won't work, because this operation
@@ -1205,12 +1240,13 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     private CreateCmdResult notifyResize(
         VolumeObject vol,
         long oldSize,
+        long newSize,
         ResizeVolumePayload resizeParameter)
     {
         StoragePool pool = (StoragePool) vol.getDataStore();
 
         ResizeVolumeCommand resizeCmd =
-            new ResizeVolumeCommand(vol.getPath(), new StorageFilerTO(pool), oldSize, resizeParameter.newSize, resizeParameter.shrinkOk,
+            new ResizeVolumeCommand(vol.getPath(), new StorageFilerTO(pool), oldSize, newSize, resizeParameter.shrinkOk,
                 resizeParameter.instanceName, null);
         CreateCmdResult result = new CreateCmdResult(null, null);
         try {
@@ -1244,6 +1280,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         final long oldSize = vol.getSize();
 
         String errMsg = null;
+        long newSize = resizeParameter.newSize;
         VolumeDefinitionModify dfm = new VolumeDefinitionModify();
         dfm.setSizeKib(resizeParameter.newSize / 1024);
         try
@@ -1257,6 +1294,8 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 volume.setMaxIops(resizeParameter.newMaxIops);
                 volume.setSize(resizeParameter.newSize);
                 _volumeDao.update(volume.getId(), volume);
+                // the resize counts the recorded size against the account's primary storage
+                newSize = recordDeviceSize(api, volume, rscName, false);
             }
         } catch (ApiException apiExc)
         {
@@ -1270,7 +1309,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             result.setResult(errMsg);
         } else {
             // notify guests
-            result = notifyResize(vol, oldSize, resizeParameter);
+            result = notifyResize(vol, oldSize, newSize, resizeParameter);
         }
 
         callback.complete(result);
@@ -1313,6 +1352,8 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         final StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
         final DevelopersApi api = getLinstorAPI(storagePool);
         final String rscName = LinstorUtil.RSC_PREFIX + volumeVO.getPath();
+        // volumes created before their device size was recorded, a backup of the snapshot covers the whole device
+        recordDeviceSize(api, volumeVO, rscName, true);
 
         Snapshot snapshot = new Snapshot();
         snapshot.setName(getSnapshotName(snapshotInfo.getUuid()));

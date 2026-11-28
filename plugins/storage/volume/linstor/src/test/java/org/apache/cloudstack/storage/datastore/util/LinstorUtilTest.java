@@ -20,14 +20,20 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.AutoSelectFilter;
+import com.linbit.linstor.api.model.DrbdVolume;
+import com.linbit.linstor.api.model.LayerType;
 import com.linbit.linstor.api.model.Node;
 import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
+import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceGroup;
 import com.linbit.linstor.api.model.ResourceState;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
+import com.linbit.linstor.api.model.StorageVolume;
 import com.linbit.linstor.api.model.Volume;
+import com.linbit.linstor.api.model.VolumeDefinition;
+import com.linbit.linstor.api.model.VolumeLayer;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,8 +44,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -198,5 +206,89 @@ public class LinstorUtilTest {
                 .map(sp -> String.format("%s::%s", sp.getNodeName(), sp.getStoragePoolName()))
                 .collect(Collectors.toList());
         Assert.assertEquals(names, Arrays.asList("nodeA::thinpool", "nodeB::thinpool", "nodeC::thinpool"));
+    }
+
+    private void mockResourceDefinition(String rscName, long sizeKib, Properties props) throws ApiException {
+        VolumeDefinition vlmDfn = new VolumeDefinition();
+        vlmDfn.setSizeKib(sizeKib);
+        ResourceDefinition rscDfn = new ResourceDefinition();
+        rscDfn.setName(rscName);
+        rscDfn.addVolumeDefinitionsItem(vlmDfn);
+        rscDfn.setProps(props);
+        when(api.resourceDefinitionList(Collections.singletonList(rscName), true, null, null, null))
+                .thenReturn(Collections.singletonList(rscDfn));
+    }
+
+    private ResourceWithVolumes mockResource(String node, boolean diskless, LayerType topLayer, long usableSizeKib) {
+        VolumeLayer layer = new VolumeLayer();
+        layer.setType(topLayer);
+        if (topLayer == LayerType.DRBD) {
+            DrbdVolume drbdVolume = new DrbdVolume();
+            drbdVolume.setUsableSizeKib(usableSizeKib);
+            layer.setData(drbdVolume);
+        } else {
+            StorageVolume storageVolume = new StorageVolume();
+            storageVolume.setUsableSizeKib(usableSizeKib);
+            layer.setData(storageVolume);
+        }
+        Volume volume = new Volume();
+        volume.addLayerDataListItem(layer);
+        ResourceWithVolumes rsc = new ResourceWithVolumes();
+        rsc.setNodeName(node);
+        rsc.setFlags(diskless ? Collections.singletonList(ApiConsts.FLAG_DISKLESS) : Collections.emptyList());
+        rsc.setVolumes(Collections.singletonList(volume));
+        return rsc;
+    }
+
+    private void mockResources(String rscName, ResourceWithVolumes... resources) throws ApiException {
+        when(api.viewResources(Collections.emptyList(), Collections.singletonList(rscName), Collections.emptyList(),
+                null, null, null)).thenReturn(Arrays.asList(resources));
+    }
+
+    @Test
+    public void testGetVolumeDeviceSizeIsTheSmallestDiskfulDrbdDevice() throws ApiException {
+        // a 512 MiB volume definition on LVM-thin, the diskless resource only reports the volume definition's size
+        mockResourceDefinition("cs-vol", 524288L, new Properties());
+        mockResources("cs-vol",
+                mockResource("nodeA", false, LayerType.DRBD, 528232L),
+                mockResource("nodeB", true, LayerType.DRBD, 524288L),
+                mockResource("nodeC", false, LayerType.DRBD, 528236L));
+
+        Assert.assertEquals(528232L * 1024, LinstorUtil.getVolumeDeviceSize(api, "cs-vol"));
+    }
+
+    @Test
+    public void testGetVolumeDeviceSizeWithoutDrbd() throws ApiException {
+        mockResourceDefinition("cs-vol", 524288L, new Properties());
+        mockResources("cs-vol", mockResource("nodeA", false, LayerType.STORAGE, 528384L));
+
+        Assert.assertEquals(528384L * 1024, LinstorUtil.getVolumeDeviceSize(api, "cs-vol"));
+    }
+
+    @Test
+    public void testGetVolumeDeviceSizeWithExactSize() throws ApiException {
+        Properties props = new Properties();
+        props.put("DrbdOptions/ExactSize", "True");
+        mockResourceDefinition("cs-vol", 524288L, props);
+
+        Assert.assertEquals(524288L * 1024, LinstorUtil.getVolumeDeviceSize(api, "cs-vol"));
+        Mockito.verify(api, Mockito.never()).viewResources(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testGetVolumeDeviceSizeFallsBackToVolumeDefinition() throws ApiException {
+        // no diskful resource reports a size, e.g. while the resources are being created
+        mockResourceDefinition("cs-vol", 524288L, new Properties());
+        mockResources("cs-vol", mockResource("nodeB", true, LayerType.DRBD, 524288L));
+
+        Assert.assertEquals(524288L * 1024, LinstorUtil.getVolumeDeviceSize(api, "cs-vol"));
+    }
+
+    @Test
+    public void testGetVolumeDeviceSizeOfMissingResourceDefinition() throws ApiException {
+        when(api.resourceDefinitionList(Collections.singletonList("cs-gone"), true, null, null, null))
+                .thenReturn(Collections.emptyList());
+
+        Assert.assertEquals(0L, LinstorUtil.getVolumeDeviceSize(api, "cs-gone"));
     }
 }
