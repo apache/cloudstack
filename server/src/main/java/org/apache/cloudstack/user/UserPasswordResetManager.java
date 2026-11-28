@@ -33,6 +33,12 @@ public interface UserPasswordResetManager {
             "TTL in minutes for the token generated to reset the ACS user's password", true,
             ConfigKey.Scope.Global);
 
+    ConfigKey<Long> UserPasswordResetEmailCooldown = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
+            "user.password.reset.email.cooldown", "300",
+            "Minimum time in seconds between password reset emails for the same user. " +
+                    "Requests within this time send no email. Set to 0 to disable.", true,
+            ConfigKey.Scope.Global);
+
     ConfigKey<String> UserPasswordResetEmailSender = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
             String.class, "user.password.reset.email.sender", null,
             "Sender for emails sent to the user to reset ACS user's password ", true,

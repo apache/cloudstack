@@ -52,6 +52,7 @@ import java.util.UUID;
 import static org.apache.cloudstack.config.ApiServiceConfiguration.ManagementServerAddresses;
 import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetToken;
 import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetTokenExpiryDate;
+import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetTokenIssuedDate;
 
 public class UserPasswordResetManagerImpl extends ManagerBase implements UserPasswordResetManager, Configurable {
 
@@ -90,6 +91,7 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
         return new ConfigKey<?>[]{
                 UserPasswordResetEnabled,
                 UserPasswordResetTtl,
+                UserPasswordResetEmailCooldown,
                 UserPasswordResetEmailSender,
                 UserPasswordResetSMTPHost,
                 UserPasswordResetSMTPPort,
@@ -136,24 +138,39 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
     }
 
 
-    protected boolean validateExistingToken(UserAccount userAccount) {
+    /**
+     * Removes every row for the detail before writing it. addDetail only replaces one row, so
+     * duplicates left by parallel requests would otherwise persist and break every later link.
+     */
+    private void replaceDetail(UserAccount userAccount, String name, String value) {
+        userDetailsDao.removeDetail(userAccount.getId(), name);
+        userDetailsDao.addDetail(userAccount.getId(), name, value, false);
+    }
 
-        Map<String, String> details = userDetailsDao.listDetailsKeyPairs(userAccount.getId());
+    protected long getEmailCooldownSeconds() {
+        return UserPasswordResetEmailCooldown.value();
+    }
 
-        String resetToken = details.get(PasswordResetToken);
-        String resetTokenExpiryTimeString = details.getOrDefault(PasswordResetTokenExpiryDate, "0");
-
-
-        if (StringUtils.isNotEmpty(resetToken) && StringUtils.isNotEmpty(resetTokenExpiryTimeString)) {
-            final Date resetTokenExpiryTime = new Date(Long.parseLong(resetTokenExpiryTimeString));
-            final Date currentTime = new Date();
-            if (currentTime.after(resetTokenExpiryTime)) {
-                return true;
-            }
-        } else if (StringUtils.isEmpty(resetToken)) {
-            return true;
+    protected boolean isWithinEmailCooldown(UserAccount userAccount) {
+        long cooldown = getEmailCooldownSeconds();
+        if (cooldown <= 0) {
+            return false;
         }
-        return false;
+        UserDetailVO issuedDate = userDetailsDao.findDetail(userAccount.getId(), PasswordResetTokenIssuedDate);
+        if (issuedDate == null || StringUtils.isEmpty(issuedDate.getValue())) {
+            return false;
+        }
+        long issuedAt;
+        try {
+            issuedAt = Long.parseLong(issuedDate.getValue());
+        } catch (NumberFormatException e) {
+            logger.warn("Ignoring invalid password reset issue time [{}] for user {}", issuedDate.getValue(), userAccount);
+            return false;
+        }
+        // A negative value means the issue time is in the future, from clock skew between
+        // management servers. Ignore it so the user is not blocked.
+        long elapsed = System.currentTimeMillis() - issuedAt;
+        return elapsed >= 0 && elapsed / 1000 < cooldown;
     }
 
     public void setResetTokenAndSend(UserAccount userAccount) {
@@ -163,20 +180,27 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
                     "Failed to reset token and send email. SMTP mail sender is not configured");
         }
 
-        if (!validateExistingToken(userAccount)) {
-            logger.debug(String.format(
-                    "Failed to reset token and send email. Password reset token is already set for user %s in " +
-                            "domain id: %s with account %s and email %s",
-                    userAccount.getUsername(), userAccount.getDomainId(),
-                    userAccount.getAccountName(), userAccount.getEmail()));
+        if (isWithinEmailCooldown(userAccount)) {
+            logger.info("Password reset email not sent for user {} account id: {} domain id: {}. " +
+                            "A reset was requested less than {} seconds ago.",
+                    userAccount, userAccount.getAccountId(), userAccount.getDomainId(),
+                    getEmailCooldownSeconds());
             return;
         }
 
-        final String resetToken = UUID.randomUUID().toString();
-        final Date resetTokenExpiryTime = new Date(System.currentTimeMillis() + UserPasswordResetTtl.value() * 60 * 1000);
+        // Claim the cooldown before sending, so a request arriving during the send is caught.
+        // Truly parallel requests can still both pass the check; the cooldown is best effort.
+        final long now = System.currentTimeMillis();
+        replaceDetail(userAccount, PasswordResetTokenIssuedDate, String.valueOf(now));
 
-        userDetailsDao.addDetail(userAccount.getId(), PasswordResetToken, resetToken, false);
-        userDetailsDao.addDetail(userAccount.getId(), PasswordResetTokenExpiryDate, String.valueOf(resetTokenExpiryTime.getTime()), false);
+        // The claim is kept even if the send fails, so a mail outage cannot be used to
+        // bypass the cooldown. The previous link still works because no new token is saved.
+        issueTokenAndSend(userAccount, now);
+    }
+
+    private void issueTokenAndSend(UserAccount userAccount, long now) {
+        final String resetToken = UUID.randomUUID().toString();
+        final Date resetTokenExpiryTime = new Date(now + UserPasswordResetTtl.value() * 60 * 1000);
 
         final String email = userAccount.getEmail();
         final String username = userAccount.getUsername();
@@ -216,7 +240,17 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
 
         mailProperties.setRecipients(addresses);
 
-        mailSender.sendMail(mailProperties);
+        // Save the token only once the email is sent. If the send fails, the previous
+        // link keeps working and the user can retry without waiting for the cooldown.
+        if (!mailSender.trySendMail(mailProperties)) {
+            logger.error("Failed to send password reset email for user {} account id: {} domain id: {}. The existing token was kept.",
+                    userAccount, userAccount.getAccountId(), userAccount.getDomainId());
+            return;
+        }
+
+        // The new token replaces any existing one, so only the latest email's link works.
+        replaceDetail(userAccount, PasswordResetToken, resetToken);
+        replaceDetail(userAccount, PasswordResetTokenExpiryDate, String.valueOf(resetTokenExpiryTime.getTime()));
         logger.debug("User password reset email for user {} account id: {} domain id: {} sent to {} with token expiry at {}",
                 userAccount, userAccount.getAccountId(), userAccount.getDomainId(), email, resetTokenExpiryTime);
     }
@@ -265,6 +299,7 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
 
         userDetailsDao.removeDetail(userAccount.getId(), PasswordResetToken);
         userDetailsDao.removeDetail(userAccount.getId(), PasswordResetTokenExpiryDate);
+        userDetailsDao.removeDetail(userAccount.getId(), PasswordResetTokenIssuedDate);
 
         userDao.persist(user);
     }
