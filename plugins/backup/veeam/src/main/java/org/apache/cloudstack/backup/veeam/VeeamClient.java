@@ -41,6 +41,7 @@ import java.util.Calendar;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 
+import com.cloud.utils.UuidUtils;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.backup.Backup;
@@ -906,7 +907,9 @@ public class VeeamClient {
         if (restoreLocation == null) {
             restoreLocation = RESTORE_VM_SUFFIX + UUID.randomUUID().toString();
         }
-        final String datastoreId = dataStoreUuid.replace("-","");
+        final String datastoreId = UuidUtils.isUuid(dataStoreUuid) ?
+                dataStoreUuid.replace("-","") :
+                dataStoreUuid;
         final List<String> cmds = Arrays.asList(
                 "$points = Get-VBRRestorePoint",
                 String.format("foreach($point in $points) { if ($point.Id -eq '%s') { $restorePoint = $point; break; } }", restorePointId),
