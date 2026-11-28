@@ -79,14 +79,14 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     protected Map<String, Map<String, String>> serviceOfferingNodeTypeMap;
 
     @Parameter(name=ApiConstants.SIZE, type = CommandType.LONG,
-        description = "Number of Kubernetes cluster nodes")
+        description = "Number of Kubernetes cluster worker nodes, including nodes added with addNodesToKubernetesCluster. Cannot be lower than the number of added nodes")
     private Long clusterSize;
 
     @Parameter(name = ApiConstants.NODE_IDS,
         type = CommandType.LIST,
         collectionType = CommandType.UUID,
         entityType = UserVmResponse.class,
-        description = "The IDs of the nodes to be removed")
+        description = "The IDs of the worker nodes to be removed. Control, etcd and nodes added with addNodesToKubernetesCluster can not be removed this way")
     private List<Long> nodeIds;
 
     @Parameter(name=ApiConstants.AUTOSCALING_ENABLED, type = CommandType.BOOLEAN,
@@ -94,7 +94,7 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     private Boolean isAutoscalingEnabled;
 
     @Parameter(name=ApiConstants.MIN_SIZE, type = CommandType.LONG,
-        description = "Minimum number of worker nodes in the cluster")
+        description = "Minimum number of worker nodes in the cluster. Cannot be lower than the number of nodes added with addNodesToKubernetesCluster")
     private Long minSize;
 
     @Parameter(name=ApiConstants.MAX_SIZE, type = CommandType.LONG,
