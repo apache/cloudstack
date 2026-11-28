@@ -951,10 +951,8 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         VolumeVO volumeVO = volumeDao.findByIdIncludingRemoved(volumeId);
 
-        long volumeStoragePoolId = (volumeVO.getPoolId() != null ? volumeVO.getPoolId() : volumeVO.getLastPoolId());
-
         if (SnapshotOperation.REVERT.equals(op)) {
-            boolean baseVolumeExists = volumeVO.getRemoved() == null;
+            boolean baseVolumeExists = volumeVO != null && volumeVO.getRemoved() == null;
 
             if (baseVolumeExists) {
                 boolean acceptableFormat = isAcceptableRevertFormat(volumeVO);
@@ -963,6 +961,8 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                     SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshot.getId(), DataStoreRole.Primary);
 
                     boolean usingBackendSnapshot = usingBackendSnapshotFor(snapshot.getId());
+
+                    Long volumeStoragePoolId = getVolumeStoragePoolId(volumeVO);
 
                     if (usingBackendSnapshot) {
                         if (snapshotStore != null) {
@@ -975,7 +975,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                                 return StrategyPriority.HIGHEST;
                             }
 
-                            storageSystemSupportsCapability = storageSystemSupportsCapability(volumeStoragePoolId,
+                            storageSystemSupportsCapability = volumeStoragePoolId != null && storageSystemSupportsCapability(volumeStoragePoolId,
                                     DataStoreCapabilities.CAN_REVERT_VOLUME_TO_SNAPSHOT.toString());
 
                             if (storageSystemSupportsCapability) {
@@ -994,10 +994,12 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                             }
                         }
 
-                        StoragePoolVO storagePoolVO = storagePoolDao.findById(volumeStoragePoolId);
+                        if (volumeStoragePoolId != null) {
+                            StoragePoolVO storagePoolVO = storagePoolDao.findById(volumeStoragePoolId);
 
-                        if (storagePoolVO.isManaged()) {
-                            return StrategyPriority.HIGHEST;
+                            if (storagePoolVO.isManaged()) {
+                                return StrategyPriority.HIGHEST;
+                            }
                         }
                     }
                 }
@@ -1006,9 +1008,15 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             return StrategyPriority.CANT_HANDLE;
         }
 
+        long volumeStoragePoolId = getVolumeStoragePoolId(volumeVO);
+
         boolean storageSystemSupportsCapability = storageSystemSupportsCapability(volumeStoragePoolId, DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
 
         return storageSystemSupportsCapability ? StrategyPriority.HIGHEST : StrategyPriority.CANT_HANDLE;
+    }
+
+    private Long getVolumeStoragePoolId(VolumeVO volumeVO) {
+        return volumeVO.getPoolId() != null ? volumeVO.getPoolId() : volumeVO.getLastPoolId();
     }
 
 }
