@@ -1018,7 +1018,7 @@ public class UnmanagedVMsManagerImplTest {
         DiskProfile diskProfile = Mockito.mock(DiskProfile.class);
         when(volumeManager.allocateRawVolume(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean()))
                         .thenReturn(diskProfile);
-        when(volumeManager.updateImportedVolume(any(), any(), any(), any(), anyLong(), anyLong(), any(), anyString(), any(), any(), any()))
+        when(volumeManager.updateImportedVolume(any(), any(), any(), any(), nullable(Long.class), anyLong(), any(), anyString(), any(), any(), any()))
                         .thenReturn(diskProfile);
         Map<Volume, StoragePool> storage = new HashMap<>();
         VolumeVO volume = Mockito.mock(VolumeVO.class);
@@ -1046,8 +1046,9 @@ public class UnmanagedVMsManagerImplTest {
                 unmanagedVMsManager.importVm(cmd);
         }
         // the imported volume must record the format the agent reported for the image on the pool,
-        // not the hypervisor default, so an RBD image is stored as RAW
-        verify(volumeManager).updateImportedVolume(any(), any(), any(), any(), anyLong(), anyLong(), Mockito.eq(poolType),
+        // not the hypervisor default, so an RBD image is stored as RAW; it is the ROOT volume and passes
+        // no device id, so the volume manager keeps the root default (0)
+        verify(volumeManager).updateImportedVolume(Mockito.eq(Volume.Type.ROOT), any(), any(), any(), Mockito.isNull(), anyLong(), Mockito.eq(poolType),
                 Mockito.eq(diskPath), Mockito.isNull(), any(), Mockito.eq(expectedFormat));
 
         // the storage driver must be told the volume is now imported, so e.g. StorPool can tag it

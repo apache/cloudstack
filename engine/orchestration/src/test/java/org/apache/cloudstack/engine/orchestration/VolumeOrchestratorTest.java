@@ -42,7 +42,10 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.DiskProfile;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.UserVmDao;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -67,6 +70,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
@@ -107,6 +111,9 @@ public class VolumeOrchestratorTest {
 
     @Mock
     private ImageStoreDao imageStoreDaoMock;
+
+    @Mock
+    private UserVmDao userVmDao;
 
 
     @Spy
@@ -253,6 +260,37 @@ public class VolumeOrchestratorTest {
         Mockito.verify(volume, Mockito.times(1)).setPath(path);
         Mockito.verify(volume, Mockito.times(1)).setChainInfo(chainInfo);
         Mockito.verify(volume, Mockito.times(1)).setState(Volume.State.Ready);
+    }
+
+    @Test
+    public void testUpdateImportedVolumeGivesRootDeviceIdZeroWhenNoneIsGiven() {
+        updateImportedVolumeAndAssertSavedDeviceId(Type.ROOT, null, 0L);
+    }
+
+    @Test
+    public void testUpdateImportedVolumeKeepsExplicitDeviceId() {
+        updateImportedVolumeAndAssertSavedDeviceId(Type.DATADISK, 2L, 2L);
+    }
+
+    private void updateImportedVolumeAndAssertSavedDeviceId(Type type, Long requestedDeviceId, long expectedDeviceId) {
+        // behaves like a real VolumeVO, but is not created through its constructor, so that the VolumeVO
+        // construction mock opened (and never closed) by testImportVolume cannot replace it
+        VolumeVO volume = Mockito.mock(VolumeVO.class, Mockito.CALLS_REAL_METHODS);
+        volume.setDeviceId(1L);
+        DiskProfile diskProfile = Mockito.mock(DiskProfile.class);
+        Mockito.when(diskProfile.getVolumeId()).thenReturn(10L);
+        Mockito.when(volumeDao.findById(10L)).thenReturn(volume);
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getId()).thenReturn(MOCK_VM_ID);
+        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(userVmDao.findById(MOCK_VM_ID)).thenReturn(Mockito.mock(UserVmVO.class));
+
+        volumeOrchestrator.updateImportedVolume(type, Mockito.mock(DiskOffering.class), vm, null, requestedDeviceId,
+                MOCK_POOL_ID, Storage.StoragePoolType.NetworkFilesystem, "/mnt/pool/disk.qcow2", null, diskProfile, Storage.ImageFormat.QCOW2);
+
+        ArgumentCaptor<VolumeVO> savedVolume = ArgumentCaptor.forClass(VolumeVO.class);
+        Mockito.verify(volumeDao).update(Mockito.anyLong(), savedVolume.capture());
+        Assert.assertEquals(Long.valueOf(expectedDeviceId), savedVolume.getValue().getDeviceId());
     }
 
     @Test
