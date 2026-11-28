@@ -28,11 +28,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -2307,7 +2307,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         KubernetesClusterVO kubernetesCluster = validateCluster(cmd.getClusterId());
         long networkId = kubernetesCluster.getNetworkId();
         NetworkVO networkVO = networkDao.findById(networkId);
-        List<Long> validNodeIds = validateNodes(cmd.getNodeIds(), networkId, networkVO.getName(), kubernetesCluster, false);
+        List<Long> validNodeIds = validateNodes(cmd.getNodeIds(), networkId, networkVO.getName(), false);
         if (validNodeIds.isEmpty()) {
             throw new CloudRuntimeException("No valid nodes found to be added to the Kubernetes cluster");
         }
@@ -2322,7 +2322,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
         KubernetesClusterVO kubernetesCluster = validateCluster(cmd.getClusterId());
-        List<Long> validNodeIds = validateNodes(cmd.getNodeIds(), null, null, kubernetesCluster, true);
+        List<Long> validNodeIds = validateNodes(cmd.getNodeIds(), null, null, true);
         if (validNodeIds.isEmpty()) {
             throw new CloudRuntimeException("No valid nodes found to be removed from the Kubernetes cluster");
         }
@@ -2341,10 +2341,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return kubernetesCluster;
     }
 
-    private List<Long> validateNodes(List<Long> nodeIds, Long networkId, String networkName, KubernetesCluster cluster,  boolean removeNodes) {
+    protected List<Long> validateNodes(List<Long> nodeIds, Long networkId, String networkName, boolean removeNodes) {
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> validNodeIds = new ArrayList<>(nodeIds);
-        for (Long id : nodeIds) {
+        List<Long> validNodeIds = new ArrayList<>(new LinkedHashSet<>(nodeIds));
+        for (Long id : new ArrayList<>(validNodeIds)) {
             VMInstanceVO node = vmInstanceDao.findById(id);
             if (Objects.isNull(node)) {
                 logger.error(String.format("Failed to find node (physical or virtual machine) with ID: %s", id));
@@ -2366,10 +2366,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     logger.error(String.format("Node: %s does not have its default NIC in the kubernetes cluster network: %s", node.getId(), networkName));
                     validNodeIds.remove(id);
                 }
-                List<KubernetesClusterVmMapVO> clusterVmMapVO = kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(cluster.getId(), Collections.singletonList(id));
-                if (Objects.nonNull(clusterVmMapVO) && !clusterVmMapVO.isEmpty()) {
-                    logger.warn(String.format("Node: %s is already part of the cluster %s", node.getId(), cluster.getName()));
-                    validNodeIds.remove(id);
+                for (KubernetesClusterVmMapVO clusterVmMapVO : kubernetesClusterVmMapDao.listByVmId(id)) {
+                    KubernetesClusterVO mappedCluster = kubernetesClusterDao.findById(clusterVmMapVO.getClusterId());
+                    if (Objects.nonNull(mappedCluster)) {
+                        logger.warn(String.format("Node: %s is already part of the Kubernetes cluster %s", node.getId(), mappedCluster.getUuid()));
+                        validNodeIds.remove(id);
+                        break;
+                    }
                 }
             }
         }
