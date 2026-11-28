@@ -986,6 +986,20 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         }
     }
 
+    protected void deleteTemporaryVolumeCopyOfSnapshot(DataObject tempVolume) {
+        try {
+            tempVolume.getDataStore().getDriver().deleteAsync(tempVolume.getDataStore(), tempVolume, null);
+        } catch (Throwable e) {
+            logger.warn("Failed to delete temporary volume created for copy", e);
+        }
+        // Without this the temporary volume stays Allocated and keeps counting against the pool
+        try {
+            _volumeDao.remove(tempVolume.getId());
+        } catch (Throwable e) {
+            logger.warn("Failed to remove the record of temporary volume {} created for copy", tempVolume, e);
+        }
+    }
+
     /**
      * Simplier logic for copy from snapshot for adaptive driver only.
      * @param snapshotInfo
@@ -1038,11 +1052,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             // delete the temporary volume if it was needed
             if (srcFinal != null && tempRequired) {
-                try {
-                    srcFinal.getDataStore().getDriver().deleteAsync(srcFinal.getDataStore(), srcFinal, null);
-                } catch (Throwable e) {
-                    logger.warn("Failed to delete temporary volume created for copy", e);
-                }
+                deleteTemporaryVolumeCopyOfSnapshot(srcFinal);
             }
 
             // check we have a reasonable result
