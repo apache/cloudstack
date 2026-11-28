@@ -370,6 +370,24 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     private Optional<StoragePool> getPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm) {
+        return getPreferredStoragePool(poolList, vm, null);
+    }
+
+    private Optional<StoragePool> getPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm, Long volumePoolId) {
+        // First priority: if volume already has a pool assigned (e.g., from a failed attach attempt),
+        // prefer that pool if it's in the validated pool list
+        if (volumePoolId != null) {
+            Optional<StoragePool> volumePool = poolList.stream()
+                    .filter(pool -> pool.getId() == volumePoolId)
+                    .findFirst();
+            if (volumePool.isPresent()) {
+                logger.info("Volume's existing storage pool [{}] is available and has passed all validations. Using it for allocation.", getReflectOnlySelectedFields(volumePool.get()));
+                return volumePool;
+            } else {
+                logger.info("Volume's existing pool ID [{}] is not in the list of suitable pools. Falling back to other pool selection logic.", volumePoolId);
+            }
+        }
+        // Second priority: account-level preferred pool
         String accountStoragePoolUuid = null;
         if (vm != null) {
             accountStoragePoolUuid = StorageManager.PreferredStoragePool.valueIn(vm.getAccountId());
@@ -381,6 +399,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             logger.debug("The storage pool [{}] was specified for this account [{}] and will be used for allocation.", storagePoolToString, vm.getAccountId());
 
         } else {
+            // Third priority: global preferred pool
             String globalStoragePoolUuid = StorageManager.PreferredStoragePool.value();
             storagePool = getMatchingStoragePool(globalStoragePoolUuid, poolList);
             storagePool.ifPresent(pool -> logger.debug("The storage pool [{}] was specified in the Global Settings and will be used for allocation.",
@@ -392,6 +411,15 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Override
     public StoragePool findStoragePool(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, final Set<StoragePool> avoid) {
         Long podId = retrievePod(pod, clusterId);
+
+        // If the volume already has a poolId, prefer it if available.
+        Long volumePoolId = null;
+        if (dskCh.getVolumeId() != 0) {
+            VolumeVO volume = _volsDao.findById(dskCh.getVolumeId());
+            if (volume != null) {
+                volumePoolId = volume.getPoolId();
+            }
+        }
 
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
@@ -406,7 +434,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (poolList != null && !poolList.isEmpty()) {
                 StorageUtil.traceLogStoragePools(poolList, logger, "pools to choose from: ");
                 // Check if the preferred storage pool can be used. If yes, use it.
-                Optional<StoragePool> storagePool = getPreferredStoragePool(poolList, vm);
+                Optional<StoragePool> storagePool = getPreferredStoragePool(poolList, vm, volumePoolId);
                 logger.trace("we have a preferred pool: {}", storagePool.isPresent());
 
                 StoragePool storage;
