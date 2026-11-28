@@ -35,6 +35,21 @@ public class SAML2UserAuthenticator extends AdapterBase implements UserAuthentic
     @Inject
     private UserDao _userDao;
 
+    // Per-thread flag set by the SAML flows (SAML2LoginAPIAuthenticatorCmd, ListAndSwitchSAMLAccountCmd)
+    // right before they call loginUser(), after they have validated the IdP assertion signature or the
+    // existing SAML session. This authenticator does not verify a password, so it must report success
+    // only when such a validated SAML flow is driving the login on this thread. It stops any other
+    // caller of the authentication chain from turning this into a fail-open credential bypass.
+    private static final ThreadLocal<Boolean> samlAssertionValidated = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    public static void markAssertionValidated() {
+        samlAssertionValidated.set(Boolean.TRUE);
+    }
+
+    public static void clearAssertionValidated() {
+        samlAssertionValidated.remove();
+    }
+
     @Override
     public Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
         if (logger.isDebugEnabled()) {
@@ -53,7 +68,11 @@ public class SAML2UserAuthenticator extends AdapterBase implements UserAuthentic
         } else {
             User user = _userDao.getUser(userAccount.getId());
             if (user != null && user.getSource() == User.Source.SAML2 && user.getExternalEntity() != null) {
-                return new Pair<Boolean, ActionOnFailedAuthentication>(true, null);
+                if (Boolean.TRUE.equals(samlAssertionValidated.get())) {
+                    return new Pair<Boolean, ActionOnFailedAuthentication>(true, null);
+                }
+                logger.warn("Rejecting SAML2 authentication for user " + username +
+                        " because it was not driven by a validated SAML assertion flow");
             }
         }
         // Deny all by default
