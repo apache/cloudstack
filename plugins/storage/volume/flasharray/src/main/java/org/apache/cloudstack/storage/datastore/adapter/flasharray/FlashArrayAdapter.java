@@ -153,11 +153,13 @@ public class FlashArrayAdapter implements ProviderAdapter {
         try {
             FlashArrayList<FlashArrayConnection> list = null;
             FlashArrayHost host = getHost(hostname);
-            if (host != null) {
-                list = POST("/connections?host_names=" + host.getName() + "&volume_names=" + volumeName, null,
-                    new TypeReference<FlashArrayList<FlashArrayConnection>>() {
-                });
+            if (host == null) {
+                throw new RuntimeException("Host [" + hostname + "] not found in FlashArray at [" + url
+                        + "]. The host object on the array must have the same name as the CloudStack host");
             }
+            list = POST("/connections?host_names=" + host.getName() + "&volume_names=" + volumeName, null,
+                new TypeReference<FlashArrayList<FlashArrayConnection>>() {
+            });
 
             if (list == null || list.getItems() == null || list.getItems().size() == 0) {
                 throw new RuntimeException("Volume attach did not return lun information");
@@ -180,7 +182,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
                 if (list != null && list.getItems() != null) {
                     for (FlashArrayConnection conn : list.getItems()) {
                         if (conn.getHost() != null && conn.getHost().getName() != null &&
-                            (conn.getHost().getName().equals(hostname) || conn.getHost().getName().equals(hostname.substring(0, hostname.indexOf('.')))) &&
+                            (conn.getHost().getName().equals(hostname) || conn.getHost().getName().equals(shortHostName(hostname))) &&
                             conn.getLun() != null) {
                             return "" + conn.getLun();
                         }
@@ -571,25 +573,31 @@ public class FlashArrayAdapter implements ProviderAdapter {
         return false;
     }
 
-    private FlashArrayHost getHost(String hostname) {
-        FlashArrayList<FlashArrayHost> list = null;
+    FlashArrayHost getHost(String hostname) {
+        FlashArrayHost host = findHost(hostname);
+        String shortName = shortHostName(hostname);
+        if (host == null && !shortName.equals(hostname)) {
+            host = findHost(shortName);
+        }
+        return host;
+    }
 
+    // The array answers 400 for an unknown host name, which is a normal "not found" here
+    FlashArrayHost findHost(String name) {
         try {
-            list = GET("/hosts?names=" + hostname,
+            FlashArrayList<FlashArrayHost> list = GET("/hosts?names=" + name,
                 new TypeReference<FlashArrayList<FlashArrayHost>>() {
                 });
+            return (FlashArrayHost) getFlashArrayItem(list);
         } catch (Exception e) {
-
+            logger.debug("Host [" + name + "] not found in FlashArray at [" + url + "]: " + e.getMessage());
+            return null;
         }
+    }
 
-        if (list == null) {
-            if (hostname.indexOf('.') > 0) {
-                list = GET("/hosts?names=" + hostname.substring(0, (hostname.indexOf('.'))),
-                    new TypeReference<FlashArrayList<FlashArrayHost>>() {
-                });
-            }
-        }
-        return (FlashArrayHost) getFlashArrayItem(list);
+    static String shortHostName(String hostname) {
+        int dot = hostname.indexOf('.');
+        return dot > 0 ? hostname.substring(0, dot) : hostname;
     }
 
     private String getAccessToken() {
@@ -941,7 +949,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
     }
 
     private Object getFlashArrayItem(FlashArrayList<?> list) {
-        if (list.getItems() != null && list.getItems().size() > 0) {
+        if (list != null && list.getItems() != null && list.getItems().size() > 0) {
             return list.getItems().get(0);
         } else {
             return null;
