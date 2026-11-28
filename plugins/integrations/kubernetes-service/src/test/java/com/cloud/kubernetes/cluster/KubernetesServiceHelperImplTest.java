@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
+import java.util.List;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -26,6 +28,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
+import com.cloud.user.UserData;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
@@ -83,5 +86,29 @@ public class KubernetesServiceHelperImplTest {
         Mockito.when(kubernetesClusterDao.findById(1L)).thenReturn(kubernetesCluster);
         Mockito.when(kubernetesCluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
         kubernetesServiceHelper.checkVmCanBeDestroyed(vm);
+    }
+
+    @Test
+    public void testCheckUserDataCanBeDeletedUnused() {
+        UserData userData = Mockito.mock(UserData.class);
+        Mockito.when(userData.getId()).thenReturn(1L);
+        Mockito.when(kubernetesClusterDao.listByCniConfigId(1L)).thenReturn(List.of());
+        kubernetesServiceHelper.checkUserDataCanBeDeleted(userData);
+    }
+
+    @Test
+    public void testCheckUserDataCanBeDeletedInUse() {
+        UserData userData = Mockito.mock(UserData.class);
+        Mockito.when(userData.getId()).thenReturn(1L);
+        Mockito.when(userData.getName()).thenReturn("calico");
+        KubernetesClusterVO first = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.when(first.getName()).thenReturn("cluster-a");
+        Mockito.when(kubernetesClusterDao.listByCniConfigId(1L)).thenReturn(List.of(first, Mockito.mock(KubernetesClusterVO.class)));
+        try {
+            kubernetesServiceHelper.checkUserDataCanBeDeleted(userData);
+            Assert.fail("Expected CloudRuntimeException");
+        } catch (CloudRuntimeException e) {
+            Assert.assertEquals("CNI configuration calico cannot be removed as it is used by Kubernetes cluster cluster-a and 1 more", e.getMessage());
+        }
     }
 }

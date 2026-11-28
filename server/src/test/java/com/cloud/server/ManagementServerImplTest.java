@@ -93,6 +93,7 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManagerImpl;
 import com.cloud.network.dao.IPAddressVO;
@@ -122,6 +123,7 @@ import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -556,6 +558,44 @@ public class ManagementServerImplTest {
 
             spy.deleteUserData(cmd);
         }
+    }
+
+    private boolean deleteUserDataWithKubernetesServiceHelper(KubernetesServiceHelper kubernetesServiceHelper) {
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class);
+             MockedStatic<ComponentContext> componentContext = Mockito.mockStatic(ComponentContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            when(CallContext.current()).thenReturn(callContextMock);
+            when(callContextMock.getCallingAccount()).thenReturn(account);
+            when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
+            componentContext.when(() -> ComponentContext.getDelegateComponentOfType(KubernetesServiceHelper.class)).thenReturn(kubernetesServiceHelper);
+
+            DeleteUserDataCmd cmd = Mockito.mock(DeleteUserDataCmd.class);
+            when(cmd.getId()).thenReturn(1L);
+            UserDataVO userData = Mockito.mock(UserDataVO.class);
+            Mockito.when(userData.getId()).thenReturn(1L);
+            when(userDataDao.findById(1L)).thenReturn(userData);
+            when(templateDao.findTemplatesLinkedToUserdata(1L)).thenReturn(new ArrayList<VMTemplateVO>());
+            Mockito.lenient().when(userVmDao.findByUserDataId(1L)).thenReturn(new ArrayList<UserVmVO>());
+            Mockito.lenient().when(userDataDao.remove(1L)).thenReturn(true);
+
+            return spy.deleteUserData(cmd);
+        }
+    }
+
+    @Test
+    public void testDeleteUserdataNotUsedByKubernetesCluster() {
+        KubernetesServiceHelper kubernetesServiceHelper = Mockito.mock(KubernetesServiceHelper.class);
+        Assert.assertTrue(deleteUserDataWithKubernetesServiceHelper(kubernetesServiceHelper));
+        Mockito.verify(kubernetesServiceHelper).checkUserDataCanBeDeleted(Mockito.any(UserData.class));
+    }
+
+    @Test
+    public void testDeleteUserdataUsedByKubernetesCluster() {
+        KubernetesServiceHelper kubernetesServiceHelper = Mockito.mock(KubernetesServiceHelper.class);
+        Mockito.doThrow(new CloudRuntimeException("in use")).when(kubernetesServiceHelper).checkUserDataCanBeDeleted(Mockito.any(UserData.class));
+        Assert.assertThrows(CloudRuntimeException.class, () -> deleteUserDataWithKubernetesServiceHelper(kubernetesServiceHelper));
+        Mockito.verify(userVmDao, Mockito.never()).findByUserDataId(Mockito.anyLong());
+        Mockito.verify(userDataDao, Mockito.never()).remove(Mockito.anyLong());
     }
 
     @Test(expected = CloudRuntimeException.class)

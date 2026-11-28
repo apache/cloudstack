@@ -31,4 +31,5 @@ public interface KubernetesClusterDao extends GenericDao<KubernetesClusterVO, Lo
     List<KubernetesClusterVO> findManagedKubernetesClustersInState(KubernetesCluster.State state);
     List<KubernetesClusterVO> listByNetworkId(long networkId);
     List<KubernetesClusterVO> listAllByKubernetesVersion(long kubernetesVersionId);
+    List<KubernetesClusterVO> listByCniConfigId(long cniConfigId);
 }

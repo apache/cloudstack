@@ -42,6 +42,8 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
+import com.cloud.user.UserDataVO;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VMInstanceVO;
@@ -49,6 +51,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
+import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.collections.MapUtils;
@@ -102,6 +105,9 @@ public class KubernetesClusterManagerImplTest {
 
     @Mock
     private ServiceOfferingDao serviceOfferingDao;
+
+    @Mock
+    private UserDataDao userDataDao;
 
     @Spy
     @InjectMocks
@@ -440,5 +446,62 @@ public class KubernetesClusterManagerImplTest {
         Mockito.when(cksIso.getArch()).thenReturn(CPU.CPUArch.amd64);
         String cksClusterPreferredArch = kubernetesClusterManager.getCksClusterPreferredArch(systemVMArch, cksIso);
         Assert.assertEquals(CPU.CPUArch.amd64.getType(), cksClusterPreferredArch);
+    }
+
+    @Test
+    public void testSetCniConfigResponseMissingConfig() {
+        KubernetesClusterResponse response = Mockito.mock(KubernetesClusterResponse.class);
+        Mockito.when(userDataDao.findByIdIncludingRemoved(5L)).thenReturn(null);
+        kubernetesClusterManager.setCniConfigResponse(response, 5L);
+        Mockito.verify(response, Mockito.never()).setCniConfigId(Mockito.any());
+        Mockito.verify(response, Mockito.never()).setCniConfigName(Mockito.any());
+    }
+
+    @Test
+    public void testSetCniConfigResponseRemovedConfig() {
+        KubernetesClusterResponse response = Mockito.mock(KubernetesClusterResponse.class);
+        UserDataVO cniConfig = Mockito.mock(UserDataVO.class);
+        Mockito.when(cniConfig.getUuid()).thenReturn("cni-uuid");
+        Mockito.when(cniConfig.getName()).thenReturn("cni-name");
+        Mockito.when(userDataDao.findByIdIncludingRemoved(5L)).thenReturn(cniConfig);
+        kubernetesClusterManager.setCniConfigResponse(response, 5L);
+        Mockito.verify(response).setCniConfigId("cni-uuid");
+        Mockito.verify(response).setCniConfigName("cni-name");
+    }
+
+    @Test
+    public void testSetCniConfigResponseNoConfig() {
+        KubernetesClusterResponse response = Mockito.mock(KubernetesClusterResponse.class);
+        kubernetesClusterManager.setCniConfigResponse(response, null);
+        Mockito.verifyNoInteractions(userDataDao, response);
+    }
+
+    @Test
+    public void testValidateCniConfigNotSpecified() {
+        kubernetesClusterManager.validateCniConfigForKubernetesCreateParameters(null);
+        Mockito.verifyNoInteractions(userDataDao);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateCniConfigMissing() {
+        Mockito.when(userDataDao.findById(5L)).thenReturn(null);
+        kubernetesClusterManager.validateCniConfigForKubernetesCreateParameters(5L);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateCniConfigNoAccess() {
+        UserDataVO cniConfig = Mockito.mock(UserDataVO.class);
+        Mockito.when(userDataDao.findById(5L)).thenReturn(cniConfig);
+        Mockito.doThrow(new PermissionDeniedException("denied")).when(accountManager).checkAccess(
+                Mockito.eq(CallContext.current().getCallingAccount()), Mockito.isNull(), Mockito.eq(false), Mockito.eq(cniConfig));
+        kubernetesClusterManager.validateCniConfigForKubernetesCreateParameters(5L);
+    }
+
+    @Test
+    public void testValidateCniConfigAccessible() {
+        UserDataVO cniConfig = Mockito.mock(UserDataVO.class);
+        Mockito.when(userDataDao.findById(5L)).thenReturn(cniConfig);
+        kubernetesClusterManager.validateCniConfigForKubernetesCreateParameters(5L);
+        Mockito.verify(accountManager).checkAccess(CallContext.current().getCallingAccount(), null, false, cniConfig);
     }
 }
