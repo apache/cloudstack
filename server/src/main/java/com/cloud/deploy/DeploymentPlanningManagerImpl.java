@@ -468,14 +468,26 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         }
     }
 
+    /**
+     * Whether to try the VM's last host before running the planner.
+     * Not for a migration plan, i.e. a VM moved off a host that is being evacuated (host maintenance, HA): each
+     * migration records its source host as the VM's last host, so preferring it sends VMs back to the hosts
+     * evacuated earlier, for example during a rolling maintenance, and skips the planner and the VM allocation
+     * algorithm.
+     */
+    protected boolean shouldConsiderLastHost(VirtualMachineProfile vmProfile, DeploymentPlan plan, VirtualMachine vm) {
+        if (vm.getLastHostId() == null || plan.isMigrationPlan()) {
+            return false;
+        }
+        String considerLastHostStr = (String)vmProfile.getParameter(VirtualMachineProfile.Param.ConsiderLastHost);
+        String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
+        return haVmTag == null && !(Boolean.FALSE.toString().equalsIgnoreCase(considerLastHostStr));
+    }
+
     private DeployDestination deployInVmLastHost(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids,
             DeploymentPlanner planner, VirtualMachine vm, DataCenter dc, ServiceOffering offering, int cpuRequested, long ramRequested,
             boolean volumesRequireEncryption) throws InsufficientServerCapacityException {
-        String considerLastHostStr = (String)vmProfile.getParameter(VirtualMachineProfile.Param.ConsiderLastHost);
-        String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
-        boolean considerLastHost = vm.getLastHostId() != null && haVmTag == null &&
-                !(Boolean.FALSE.toString().equalsIgnoreCase(considerLastHostStr));
-        if (!considerLastHost) {
+        if (!shouldConsiderLastHost(vmProfile, plan, vm)) {
             return null;
         }
 
