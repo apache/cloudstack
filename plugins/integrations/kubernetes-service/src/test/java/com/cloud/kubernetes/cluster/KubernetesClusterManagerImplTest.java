@@ -26,9 +26,13 @@ import com.cloud.dc.DataCenter;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterActionWorker;
+import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterUpgradeWorker;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
+import com.cloud.kubernetes.version.KubernetesSupportedVersionVO;
+import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
 import com.cloud.network.Network;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.rules.FirewallRule;
@@ -93,6 +97,12 @@ public class KubernetesClusterManagerImplTest {
 
     @Mock
     KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
+
+    @Mock
+    KubernetesClusterDetailsDao kubernetesClusterDetailsDao;
+
+    @Mock
+    KubernetesSupportedVersionDao kubernetesSupportedVersionDao;
 
     @Mock
     VMInstanceDao vmInstanceDao;
@@ -440,5 +450,102 @@ public class KubernetesClusterManagerImplTest {
         Mockito.when(cksIso.getArch()).thenReturn(CPU.CPUArch.amd64);
         String cksClusterPreferredArch = kubernetesClusterManager.getCksClusterPreferredArch(systemVMArch, cksIso);
         Assert.assertEquals(CPU.CPUArch.amd64.getType(), cksClusterPreferredArch);
+    }
+
+    private KubernetesCluster mockClusterForUpgradeRetry(String... nodeVersions) {
+        KubernetesCluster cluster = Mockito.mock(KubernetesCluster.class);
+        Mockito.when(cluster.getId()).thenReturn(1L);
+        Mockito.when(cluster.getKubernetesVersionId()).thenReturn(10L);
+        List<KubernetesClusterVmMapVO> vmMaps = new ArrayList<>();
+        for (String nodeVersion : nodeVersions) {
+            KubernetesClusterVmMapVO vmMap = Mockito.mock(KubernetesClusterVmMapVO.class);
+            Mockito.when(vmMap.getNodeVersion()).thenReturn(nodeVersion);
+            vmMaps.add(vmMap);
+        }
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(1L)).thenReturn(vmMaps);
+        mockClusterVersion("1.28.9");
+        return cluster;
+    }
+
+    private void mockClusterVersion(String semanticVersion) {
+        KubernetesSupportedVersionVO clusterVersion = Mockito.mock(KubernetesSupportedVersionVO.class);
+        Mockito.when(clusterVersion.getSemanticVersion()).thenReturn(semanticVersion);
+        Mockito.when(kubernetesSupportedVersionDao.findById(10L)).thenReturn(clusterVersion);
+    }
+
+    private KubernetesSupportedVersion mockUpgradeVersion(long id) {
+        KubernetesSupportedVersion version = Mockito.mock(KubernetesSupportedVersion.class);
+        Mockito.when(version.getId()).thenReturn(id);
+        Mockito.lenient().when(version.getSemanticVersion()).thenReturn("1.29.2");
+        return version;
+    }
+
+    @Test
+    public void testIsRetryOfFailedUpgradeWithNodeAtTargetVersion() {
+        KubernetesCluster cluster = mockClusterForUpgradeRetry("v1.29.2", "1.28.9", "1.28.9");
+        Assert.assertTrue(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, mockUpgradeVersion(11L)));
+    }
+
+    @Test
+    public void testIsRetryOfFailedUpgradeWithNoNodeAtTargetVersion() {
+        KubernetesCluster cluster = mockClusterForUpgradeRetry("1.28.9", "v1.28.9");
+        Assert.assertFalse(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, mockUpgradeVersion(11L)));
+    }
+
+    @Test
+    public void testIsRetryOfFailedUpgradeIgnoresManuallyUpgradedNodes() {
+        KubernetesCluster cluster = mockClusterForUpgradeRetry("1.28.9");
+        KubernetesClusterVmMapVO manualNode = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(manualNode.isManualUpgrade()).thenReturn(true);
+        Mockito.lenient().when(manualNode.getNodeVersion()).thenReturn("v1.29.2");
+        List<KubernetesClusterVmMapVO> vmMaps = new ArrayList<>(kubernetesClusterVmMapDao.listByClusterId(1L));
+        vmMaps.add(manualNode);
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterId(1L)).thenReturn(vmMaps);
+        Assert.assertFalse(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, mockUpgradeVersion(11L)));
+    }
+
+    @Test
+    public void testIsRetryOfFailedUpgradeToCurrentVersion() {
+        KubernetesCluster cluster = Mockito.mock(KubernetesCluster.class);
+        Mockito.when(cluster.getKubernetesVersionId()).thenReturn(10L);
+        KubernetesSupportedVersion version = Mockito.mock(KubernetesSupportedVersion.class);
+        Mockito.when(version.getId()).thenReturn(10L);
+        Assert.assertFalse(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, version));
+        Mockito.verifyNoInteractions(kubernetesClusterVmMapDao);
+    }
+
+    @Test
+    public void testIsRetryOfFailedUpgradeUsesRecordedUpgradeVersion() {
+        KubernetesCluster cluster = Mockito.mock(KubernetesCluster.class);
+        Mockito.when(cluster.getId()).thenReturn(1L);
+        Mockito.when(cluster.getKubernetesVersionId()).thenReturn(10L);
+        Mockito.when(kubernetesClusterDetailsDao.findDetail(1L, KubernetesClusterUpgradeWorker.UPGRADE_VERSION_DETAIL))
+                .thenReturn(new KubernetesClusterDetailsVO(1L, KubernetesClusterUpgradeWorker.UPGRADE_VERSION_DETAIL, "11", false));
+        mockClusterVersion("1.28.9");
+        KubernetesSupportedVersion sameVersion = Mockito.mock(KubernetesSupportedVersion.class);
+        Mockito.when(sameVersion.getId()).thenReturn(11L);
+        Mockito.when(sameVersion.getSemanticVersion()).thenReturn("1.29.2");
+        KubernetesSupportedVersion otherVersion = Mockito.mock(KubernetesSupportedVersion.class);
+        Mockito.when(otherVersion.getId()).thenReturn(12L);
+        Mockito.when(otherVersion.getSemanticVersion()).thenReturn("1.29.3");
+        // No node has to be at the version, for example when the first control node failed
+        KubernetesSupportedVersionVO failedVersion = Mockito.mock(KubernetesSupportedVersionVO.class);
+        Mockito.when(failedVersion.getSemanticVersion()).thenReturn("1.29.2");
+        Mockito.when(kubernetesSupportedVersionDao.findByIdIncludingRemoved(11L)).thenReturn(failedVersion);
+        KubernetesSupportedVersion equivalentVersion = Mockito.mock(KubernetesSupportedVersion.class);
+        Mockito.when(equivalentVersion.getId()).thenReturn(13L);
+        Mockito.when(equivalentVersion.getSemanticVersion()).thenReturn("1.29.2");
+        Assert.assertTrue(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, sameVersion));
+        Assert.assertTrue(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, equivalentVersion));
+        Assert.assertFalse(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, otherVersion));
+        Mockito.verifyNoInteractions(kubernetesClusterVmMapDao);
+    }
+
+    @Test
+    public void testIsRetryOfFailedUpgradeToSameSemanticVersion() {
+        // Another version row with the cluster's own semantic version, with every node recorded at it
+        KubernetesCluster cluster = mockClusterForUpgradeRetry("1.29.2", "1.29.2");
+        mockClusterVersion("1.29.2");
+        Assert.assertFalse(kubernetesClusterManager.isRetryOfFailedUpgrade(cluster, mockUpgradeVersion(11L)));
     }
 }
