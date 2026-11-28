@@ -2037,12 +2037,17 @@ export default {
     },
     updateFieldValue (name, value) {
       if (name === 'templateid') {
+        // DiskSizeSelection only re-emits the size when minrootdisksize changes, so keep it for the same template
+        const rootDiskSize = this.form.templateid === value ? this.form.rootdisksize : undefined
         this.imageType = 'templateid'
         this.form.templateid = value
         this.form.isoid = null
         this.form.volumeid = null
         this.form.snapshotid = null
         this.resetFromTemplateConfiguration()
+        if (rootDiskSize) {
+          this.form.rootdisksize = rootDiskSize
+        }
         let template = ''
         for (const entry of Object.values(this.options.templates)) {
           template = entry?.template.find(option => option.id === value) || null
