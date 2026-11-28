@@ -22,6 +22,8 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -78,6 +80,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
+import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmManager;
@@ -92,6 +95,9 @@ import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClu
 public class KubernetesClusterStartWorker extends KubernetesClusterResourceModifierActionWorker {
 
     private KubernetesSupportedVersion kubernetesClusterVersion;
+    private KeyPair clusterCaKeyPair;
+    private X509Certificate clusterCaCert;
+    private String certificateKey;
 
     public KubernetesClusterStartWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
@@ -176,24 +182,19 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String caCert = "{{ k8s_control_node.ca.crt }}";
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
         final String clusterToken = "{{ k8s_control_node.cluster.token }}";
+        final String clusterTokenTtl = "{{ k8s_control_node.cluster.token.ttl }}";
         final String clusterInitArgsKey = "{{ k8s_control_node.cluster.initargs }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         final String installWaitTime = "{{ k8s.install.wait.time }}";
         final String installReattemptsCount = "{{ k8s.install.reattempts.count }}";
         final String externalEtcdNodes = "{{ etcd.unstacked_etcd }}";
         final String etcdEndpointList = "{{ etcd.etcd_endpoint_list }}";
-        final String k8sServerIp = "{{ k8s_control.server_ip }}";
         final String k8sApiPort = "{{ k8s.api_server_port }}";
-        final String certSans = "{{ k8s_control.server_ips }}";
         final String k8sCertificate = "{{ k8s_control.certificate_key }}";
         final String externalCniPlugin = "{{ k8s.external.cni.plugin }}";
         final String setupCsiDriver = "{{ k8s.setup.csi.driver }}";
 
-        final List<String> addresses = new ArrayList<>();
-        addresses.add(controlNodeIp);
-        if (!serverIp.equals(controlNodeIp)) {
-            addresses.add(serverIp);
-        }
+        final List<String> addresses = getApiServerAddresses(controlNodeIp, serverIp);
 
         boolean externalEtcd = !etcdIps.isEmpty();
         final Certificate certificate = caManager.issueCertificate(null, Arrays.asList(hostName, "kubernetes",
@@ -220,30 +221,52 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         k8sControlNodeConfig = k8sControlNodeConfig.replace(installWaitTime, String.valueOf(waitTime));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(installReattemptsCount, String.valueOf(reattempts));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(sshPubKey, pubKey);
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterToken, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterToken, joinToken);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterTokenTtl, KubernetesClusterUtil.getJoinTokenTtl(KubernetesClusterService.KubernetesClusterStartTimeout.value()));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(externalEtcdNodes, String.valueOf(externalEtcd));
         String initArgs = "";
         if (haSupported) {
             initArgs = String.format("--control-plane-endpoint %s:%d --upload-certs --certificate-key %s ",
                     serverIp,
                     CLUSTER_API_PORT,
-                    KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
+                    certificateKey);
         }
-        initArgs += String.format("--apiserver-cert-extra-sans=%s", serverIp);
+        initArgs += String.format("--apiserver-cert-extra-sans=%s", String.join(",", addresses));
         initArgs += String.format(" --kubernetes-version=%s", getKubernetesClusterVersion().getSemanticVersion());
         k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterInitArgsKey, initArgs);
         k8sControlNodeConfig = k8sControlNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(etcdEndpointList, endpointList);
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sServerIp, serverIp);
+        k8sControlNodeConfig = setKubeadmApiServerAddresses(k8sControlNodeConfig, controlNodeIp, serverIp);
         k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sApiPort, String.valueOf(CLUSTER_API_PORT));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(certSans, String.format("- %s", serverIp));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sCertificate, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sCertificate, certificateKey);
         k8sControlNodeConfig = k8sControlNodeConfig.replace(externalCniPlugin, String.valueOf(externalCni));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(setupCsiDriver, String.valueOf(setupCsi));
 
         k8sControlNodeConfig = updateKubeConfigWithRegistryDetails(k8sControlNodeConfig);
 
         return new Pair<>(k8sControlNodeConfig, controlNodeIp);
+    }
+
+    static List<String> getApiServerAddresses(final String controlNodeIp, final String serverIp) {
+        final List<String> addresses = new ArrayList<>();
+        addresses.add(controlNodeIp);
+        if (!serverIp.equals(controlNodeIp)) {
+            addresses.add(serverIp);
+        }
+        return addresses;
+    }
+
+    /**
+     * Clients reach the API on serverIp (the public IP or load balancer), which stays the
+     * controlPlaneEndpoint. Nodes join on controlNodeIp, so the certificate covers both. With
+     * external etcd the API server advertises controlNodeIp, as kubeadm does by default in the
+     * stacked case, so the kubernetes Service does not point pods at the public IP.
+     */
+    static String setKubeadmApiServerAddresses(String config, final String controlNodeIp, final String serverIp) {
+        config = config.replace("{{ k8s_control.server_ip }}", serverIp);
+        config = config.replace("{{ k8s_control.node_ip }}", controlNodeIp);
+        return config.replace("{{ k8s_control.server_ips }}", getApiServerAddresses(controlNodeIp, serverIp).stream()
+                .map(ip -> "\"" + ip + "\"").collect(Collectors.joining(", ", "[", "]")));
     }
 
     private Pair<UserVm,String> createKubernetesControlNode(final Network network, String serverIp, List<Network.IpAddresses> etcdIps, Long domainId, Long accountId, Long asNumber) throws ManagementServerException,
@@ -334,6 +357,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
         final String clusterHACertificateKey = "{{ k8s_control_node.cluster.ha.certificate.key }}";
+        final String caCertHashKey = "{{ k8s_control_node.cluster.ca_cert_hash }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         final String installWaitTime = "{{ k8s.install.wait.time }}";
         final String installReattemptsCount = "{{ k8s.install.reattempts.count }}";
@@ -353,8 +377,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         k8sControlNodeConfig = k8sControlNodeConfig.replace(installReattemptsCount, String.valueOf(reattempts));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(sshPubKey, pubKey);
         k8sControlNodeConfig = k8sControlNodeConfig.replace(joinIpKey, joinIp);
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterHACertificateKey, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterTokenKey, joinToken);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterHACertificateKey, certificateKey);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(caCertHashKey, joinCaCertHash);
         k8sControlNodeConfig = k8sControlNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
         k8sControlNodeConfig = updateKubeConfigWithRegistryDetails(k8sControlNodeConfig);
 
@@ -768,6 +793,78 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         kubernetesClusterDao.update(kubernetesCluster.getId(), kubernetesClusterVO);
     }
 
+    /**
+     * The cluster CA is created here rather than by kubeadm init so that nodes created alongside
+     * the first control node can pin its hash. Its key is copied to the control node over SSH
+     * and never goes into userdata.
+     */
+    private void generateClusterJoinSecrets() throws Exception {
+        clusterCaKeyPair = CertUtils.generateRandomKeyPair(2048);
+        clusterCaCert = CertUtils.generateV3Certificate(null, clusterCaKeyPair, clusterCaKeyPair.getPublic(),
+                "CN=kubernetes", "SHA256WithRSA", 3650, null, null);
+        joinToken = KubernetesClusterUtil.generateBootstrapToken();
+        joinCaCertHash = KubernetesClusterUtil.getCaCertHash(clusterCaKeyPair.getPublic());
+        certificateKey = KubernetesClusterUtil.generateCertificateKey();
+    }
+
+    private boolean copyClusterCaToControlNode(final String ipAddress, final int port, final long timeoutTime) {
+        final byte[] caCert;
+        final byte[] caKey;
+        try {
+            caCert = CertUtils.x509CertificateToPem(clusterCaCert).getBytes(com.cloud.utils.StringUtils.getPreferredCharset());
+            caKey = CertUtils.privateKeyToPem(clusterCaKeyPair.getPrivate()).getBytes(com.cloud.utils.StringUtils.getPreferredCharset());
+        } catch (IOException e) {
+            logger.error("Failed to encode the CA for Kubernetes cluster {}", kubernetesCluster, e);
+            return false;
+        }
+        // kubeadm init starts once both files exist, so each is renamed into place whole
+        String command = "sudo mkdir -p /etc/kubernetes/pki && " +
+                "sudo install -m 0644 -o root -g root ca.crt /etc/kubernetes/pki/ca.crt.tmp && " +
+                "sudo install -m 0600 -o root -g root ca.key /etc/kubernetes/pki/ca.key.tmp && " +
+                "sudo mv /etc/kubernetes/pki/ca.crt.tmp /etc/kubernetes/pki/ca.crt && " +
+                "sudo mv /etc/kubernetes/pki/ca.key.tmp /etc/kubernetes/pki/ca.key; " +
+                "rc=$?; rm -f ca.crt ca.key; exit $rc";
+        while (System.currentTimeMillis() < timeoutTime) {
+            try {
+                SshHelper.scpTo(ipAddress, port, getControlNodeLoginUser(), sshKeyFile, null, ".", caCert, "ca.crt", "0600");
+                SshHelper.scpTo(ipAddress, port, getControlNodeLoginUser(), sshKeyFile, null, ".", caKey, "ca.key", "0600");
+                Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port, getControlNodeLoginUser(), sshKeyFile, null,
+                        command, 10000, 10000, 60000);
+                if (result.first()) {
+                    clusterCaKeyPair = null;
+                    return true;
+                }
+                logger.warn("Failed to install the CA on Kubernetes cluster {} control node, retrying: {}", kubernetesCluster, result.second());
+            } catch (Exception e) {
+                logger.info("Waiting for Kubernetes cluster {} control node to accept SSH: {}", kubernetesCluster, e.getMessage());
+            }
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Every node has joined. The uploaded control plane certificates can be read with the create
+     * token, which is in node userdata, so remove both rather than wait for them to expire.
+     */
+    private void deleteCreateJoinSecrets() {
+        deleteJoinToken();
+        try {
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(), sshKeyFile, null,
+                    "sudo /opt/bin/kubectl -n kube-system delete secret kubeadm-certs --ignore-not-found", 10000, 10000, 60000);
+            if (!result.first()) {
+                logger.warn("Failed to delete the kubeadm-certs secret on Kubernetes cluster {}, it expires on its own: {}", kubernetesCluster, result.second());
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to delete the kubeadm-certs secret on Kubernetes cluster {}, it expires on its own", kubernetesCluster, e);
+        }
+    }
+
     public boolean startKubernetesClusterOnCreate(Long domainId, Long accountId, Long asNumber) throws ManagementServerException, ResourceUnavailableException, InsufficientCapacityException {
         init();
         if (logger.isInfoEnabled()) {
@@ -775,6 +872,11 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StartRequested);
+        try {
+            generateClusterJoinSecrets();
+        } catch (Exception e) {
+            logTransitStateAndThrow(Level.ERROR, String.format("Failed to generate the CA for Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
+        }
         DeployDestination dest = null;
         try {
             VMTemplateVO clusterTemplate = templateDao.findById(kubernetesCluster.getTemplateId());
@@ -871,6 +973,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             }
             logTransitStateDetachIsoAndThrow(Level.ERROR, msg, kubernetesCluster, clusterVMs, KubernetesCluster.Event.CreateFailed, null);
         }
+        if (!copyClusterCaToControlNode(publicIpAddress, publicIpSshPort.second(), startTimeoutTime)) {
+            logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s, unable to copy the cluster CA to the control node", kubernetesCluster.getName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.CreateFailed, null);
+        }
         boolean k8sApiServerSetup = KubernetesClusterUtil.isKubernetesClusterServerRunning(kubernetesCluster, apiPublicIpAddress, CLUSTER_API_PORT, startTimeoutTime, 15000);
         if (!k8sApiServerSetup) {
             logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to provision API endpoint for the cluster", kubernetesCluster.getName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.CreateFailed, null);
@@ -883,6 +988,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (!readyNodesCountValid) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s as it does not have desired number of nodes in ready state", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
         }
+        deleteCreateJoinSecrets();
         if (!isKubernetesClusterKubeConfigAvailable(startTimeoutTime)) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to retrieve kube-config for the cluster", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }

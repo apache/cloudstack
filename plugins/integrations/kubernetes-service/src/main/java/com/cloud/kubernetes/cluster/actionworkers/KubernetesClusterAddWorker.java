@@ -86,10 +86,11 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             } catch (ManagementServerException e) {
                 throw new CloudRuntimeException(String.format("Failed to retrieve public IP for the network: %s ", network.getName()));
             }
+            createJoinToken(KubernetesClusterService.KubernetesClusterAddNodeTimeout.value());
             attachCksIsoForNodesAdditionToCluster(nodeIds, kubernetesCluster.getId(), mountCksIsoOnVr);
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.AddNodeRequested);
-            String controlNodeGuestIp = getControlVmPrivateIp();
-            Ternary<Integer, Long, Long> nodesAddedAndMemory = importNodeToCluster(nodeIds, network, publicIp, controlNodeGuestIp, mountCksIsoOnVr);
+            String joinIp = getNodeJoinIp();
+            Ternary<Integer, Long, Long> nodesAddedAndMemory = importNodeToCluster(nodeIds, network, publicIp, joinIp, mountCksIsoOnVr);
             int nodesAdded = nodesAddedAndMemory.first();
             updateKubernetesCluster(kubernetesCluster.getId(), nodesAddedAndMemory, manualUpgrade);
             if (nodeIds.size() != nodesAdded) {
@@ -97,6 +98,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
                 logger.info(msg);
                 detachCksIsoFromNodesAddedToCluster(nodeIds, kubernetesCluster.getId(), mountCksIsoOnVr);
                 stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                deleteUnusedJoinToken();
                 ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
                         EventVO.LEVEL_ERROR, KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_NODES_ADD,
                         msg, kubernetesCluster.getId(), ApiCommandResourceType.KubernetesCluster.toString(), 0);
@@ -105,6 +107,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
             KubernetesClusterUtil.validateKubernetesClusterReadyNodesCount(kubernetesCluster, publicIpSshPort.first(), publicIpSshPort.second(),
                     getControlNodeLoginUser(), sshKeyFile, addNodeTimeoutTime, 15000);
+            deleteJoinToken();
             detachCksIsoFromNodesAddedToCluster(nodeIds, kubernetesCluster.getId(), mountCksIsoOnVr);
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
             String description = String.format("Successfully added %s nodes to Kubernetes Cluster %s", nodesAdded, kubernetesCluster.getUuid());
@@ -114,7 +117,15 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             return true;
         } catch (Exception e) {
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+            deleteUnusedJoinToken();
             throw new CloudRuntimeException(e);
+        }
+    }
+
+    /** A node rebooted with join userdata may still be joining; otherwise the token is no longer needed */
+    private void deleteUnusedJoinToken() {
+        if (finalNodeIds.isEmpty()) {
+            deleteJoinToken();
         }
     }
 

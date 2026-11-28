@@ -236,7 +236,7 @@ write_files:
       if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
         export PATH=$PATH:/opt/bin
       fi
-      kubeadm join {{ k8s_control_node.join_ip }}:6443 --token {{ k8s_control_node.cluster.token }} --control-plane --certificate-key {{ k8s_control_node.cluster.ha.certificate.key }} --discovery-token-unsafe-skip-ca-verification
+      kubeadm join {{ k8s_control_node.join_ip }}:6443 --token {{ k8s_control_node.cluster.token }} --control-plane --certificate-key {{ k8s_control_node.cluster.ha.certificate.key }} --discovery-token-ca-cert-hash {{ k8s_control_node.cluster.ca_cert_hash }}
 
       mkdir -p /root/.kube
       cp -i /etc/kubernetes/admin.conf /root/.kube/config
