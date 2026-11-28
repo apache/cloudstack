@@ -20,6 +20,7 @@ OS=`awk -F= '/^NAME/{print $2}' /etc/os-release`
 REQUIRED_PACKAGES=(cloud-init cloud-guest-utils conntrack apt-transport-https ca-certificates curl gnupg gnupg-agent \
                     software-properties-common gnupg lsb-release python3-json-pointer python3-jsonschema cloud-init containerd.io)
 declare -a MISSING_PACKAGES
+declare -a FAILURES
 if [[ $OS == *"Ubuntu"* || $OS == *"Debian"* ]]; then
   for package in ${REQUIRED_PACKAGES[@]}; do
     dpkg -s $package >/dev/null 2>&1
@@ -36,10 +37,16 @@ else
   done
 fi
 
-echo ${#MISSING_PACKAGES[@]}
 if (( ${#MISSING_PACKAGES[@]} )); then
-  echo "Following packages are missing in the node template: ${MISSING_PACKAGES[@]}"
-  exit 1
-else
-  echo 0
+  FAILURES+=("Following packages are missing in the node template: ${MISSING_PACKAGES[*]}")
 fi
+
+if [[ $(cat /proc/sys/net/ipv4/ip_forward 2>/dev/null) != "1" ]]; then
+  FAILURES+=("net.ipv4.ip_forward is not set to 1 on the node; set it in /etc/sysctl.d/ so it survives the reboot that follows")
+fi
+
+if (( ${#FAILURES[@]} )); then
+  printf '%s\n' "${FAILURES[@]}"
+  exit 1
+fi
+echo 0
