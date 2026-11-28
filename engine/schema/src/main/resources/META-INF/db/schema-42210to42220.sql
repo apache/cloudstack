@@ -82,3 +82,7 @@ JOIN (
     GROUP BY object_store_id
 ) buckets_quota_sum_view ON `object_store`.id = buckets_quota_sum_view.object_store_id
 SET `object_store`.allocated_size = buckets_quota_sum_view.total_quota;
+
+-- Widen vm_template.url to match the url parameter of registerTemplate/registerIso and the VO (2048), like the
+-- sibling url columns. A URL of 1025 to 2048 characters, such as an S3 presigned URL, failed on insert. See #14715.
+ALTER TABLE `cloud`.`vm_template` MODIFY COLUMN `url` VARCHAR(2048) DEFAULT NULL COMMENT 'the url where the template exists externally';
