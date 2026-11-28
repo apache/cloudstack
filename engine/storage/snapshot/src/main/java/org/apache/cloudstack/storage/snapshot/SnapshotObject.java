@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.snapshot;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -128,6 +129,19 @@ public class SnapshotObject implements SnapshotInfo {
         return null;
     }
 
+    @Override
+    public List<SnapshotInfo> getParents() {
+        LinkedList<SnapshotInfo> parents = new LinkedList<>();
+        SnapshotInfo parent = getParent();
+
+        while (parent != null) {
+            parents.addFirst(parent);
+            parent = parent.getParent();
+        }
+
+        return parents;
+    }
+
     /**
      * Returns the snapshotInfo of the passed snapshot parentId. Will search for the snapshot reference which has a checkpoint path.
      * If none is found, returns the plain parent on this snapshot's store: KVM snapshots may also be chained without checkpoints,
@@ -170,7 +184,7 @@ public class SnapshotObject implements SnapshotInfo {
         if (vo == null) {
             return null;
         }
-        return snapshotFactory.getSnapshot(vo.getSnapshotId(), store);
+        return snapshotFactory.getSnapshot(vo.getSnapshotId(), vo.getDataStoreId(), vo.getRole());
     }
 
     @Override
@@ -192,6 +206,19 @@ public class SnapshotObject implements SnapshotInfo {
             }
         }
         return children;
+    }
+
+    @Override
+    public List<SnapshotInfo> getChildAndGrandchildren() {
+        LinkedList<SnapshotInfo> snapshots = new LinkedList<>();
+        SnapshotInfo child = getChild();
+
+        while (child != null) {
+            snapshots.add(child);
+            child = child.getChild();
+        }
+
+        return snapshots;
     }
 
     @Override
