@@ -4039,7 +4039,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return defaultVlan;
     }
 
-    private Pair<ManagedObjectReference, String> prepareNetworkFromNicInfo(HostMO hostMo, NicTO nicTo, boolean configureVServiceInNexus, String networkName, VirtualMachine.Type vmType)
+    Pair<ManagedObjectReference, String> prepareNetworkFromNicInfo(HostMO hostMo, NicTO nicTo, boolean configureVServiceInNexus, String networkName, VirtualMachine.Type vmType)
             throws Exception {
 
         Ternary<String, String, String> switchDetails = getTargetSwitch(nicTo);
@@ -4067,12 +4067,24 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 // plumb this network to the isolated vlan.
                 svlanId = getPvlanInfo(nicTo);
             }
+            long networkTimeoutMs = _opsTimeout;
+            if (switchType == VirtualSwitchType.VMwareDistributedVirtualSwitch && nicTo.getBroadcastType() == BroadcastDomainType.NSX && networkName != null) {
+                long nsxTimeoutMs = getNsxDvPortGroupWaitTimeout();
+                if (nsxTimeoutMs < 0) {
+                    throw new IllegalArgumentException(VmwareManager.VmwareNsxDvPortGroupWaitTimeout.key() + " must not be negative");
+                }
+                networkTimeoutMs = Math.min(_opsTimeout, nsxTimeoutMs);
+            }
             networkInfo = HypervisorHostHelper.prepareNetwork(switchName, namePrefix, hostMo, vlanId, svlanId,
-                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _opsTimeout, switchType,
+                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), networkTimeoutMs, switchType,
                     _portsPerDvPortGroup, nicTo.getGateway(), configureVServiceInNexus, nicTo.getBroadcastType(), _vsmCredentials, nicTo.getDetails(), networkName);
         }
 
         return networkInfo;
+    }
+
+    protected long getNsxDvPortGroupWaitTimeout() {
+        return VmwareManager.VmwareNsxDvPortGroupWaitTimeout.value();
     }
 
     // return Ternary <switch name, switch type, vlan tagging>

@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.function.LongSupplier;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -649,7 +651,7 @@ public class HypervisorHostHelper {
                 bWaitPortGroupReady = false;
             } else if (BroadcastDomainType.NSX == broadcastDomainType && Objects.nonNull(netName)){
                 networkName = netName;
-                bWaitPortGroupReady = false;
+                bWaitPortGroupReady = true;
             } else {
                 boolean dvSwitchSupportNewPolicies = (isFeatureSupportedInVcenterApiVersion(vcApiVersion, MINIMUM_VCENTER_API_VERSION_WITH_DVS_NEW_POLICIES_SUPPORT)
                         && isVersionEqualOrHigher(dvSwitchVersion, MINIMUM_DVS_VERSION_WITH_NEW_POLICIES_SUPPORT));
@@ -719,6 +721,9 @@ public class HypervisorHostHelper {
             morNetwork = dataCenterMo.getDvPortGroupMor(networkName);
         if (morNetwork == null) {
             String msg = "Failed to create guest network " + networkName;
+            if (vSwitchType == VirtualSwitchType.VMwareDistributedVirtualSwitch && broadcastDomainType == BroadcastDomainType.NSX && netName != null) {
+                msg = String.format("NSX DV port group %s was not visible in vCenter (polling timeout: %d ms)", networkName, timeOutMs);
+            }
             LOGGER.error(msg);
             throw new Exception(msg);
         }
@@ -1031,21 +1036,47 @@ public class HypervisorHostHelper {
     }
 
     public static ManagedObjectReference waitForDvPortGroupReady(DatacenterMO dataCenterMo, String dvPortGroupName, long timeOutMs) throws Exception {
-        ManagedObjectReference morDvPortGroup = null;
+        return waitForDvPortGroupReady(dataCenterMo, dvPortGroupName, timeOutMs, System::nanoTime, TimeUnit.NANOSECONDS::sleep);
+    }
 
-        // if DvPortGroup is just created, we may fail to retrieve it, we
-        // need to retry
-        long startTick = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTick <= timeOutMs) {
-            morDvPortGroup = dataCenterMo.getDvPortGroupMor(dvPortGroupName);
-            if (morDvPortGroup != null) {
-                break;
-            }
+    @FunctionalInterface
+    interface NanoSleeper {
+        void sleep(long nanos) throws InterruptedException;
+    }
 
-            LOGGER.info("Waiting for dvPortGroup " + dvPortGroupName + " to be ready");
-            Thread.sleep(1000);
+    static ManagedObjectReference waitForDvPortGroupReady(DatacenterMO dataCenterMo, String dvPortGroupName, long timeOutMs,
+                                                         LongSupplier nanoTime, NanoSleeper sleeper) throws Exception {
+        if (timeOutMs < 0) {
+            throw new IllegalArgumentException("DV port group readiness timeout must not be negative");
         }
-        return morDvPortGroup;
+        long timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeOutMs);
+        long startTick = nanoTime.getAsLong();
+        boolean firstLookup = true;
+        try {
+            // Always check after sleeping, even if the last sleep reaches or passes the deadline.
+            while (true) {
+                if (Thread.currentThread().isInterrupted()) {
+                    throw new InterruptedException("Interrupted while waiting for dvPortGroup " + dvPortGroupName);
+                }
+                ManagedObjectReference morDvPortGroup = dataCenterMo.getDvPortGroupMor(dvPortGroupName);
+                if (morDvPortGroup != null) {
+                    return morDvPortGroup;
+                }
+                if (firstLookup) {
+                    LOGGER.info("Waiting up to {} ms for dvPortGroup {} to be visible in vCenter", timeOutMs, dvPortGroupName);
+                    firstLookup = false;
+                }
+                long elapsedNanos = nanoTime.getAsLong() - startTick;
+                if (elapsedNanos >= timeoutNanos) {
+                    break;
+                }
+                sleeper.sleep(Math.min(TimeUnit.SECONDS.toNanos(1), timeoutNanos - elapsedNanos));
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw e;
+        }
+        return null;
     }
 
     public static boolean isSpecMatch(DVPortgroupConfigInfo configInfo, Integer vid, DVSTrafficShapingPolicy shapingPolicy) {
