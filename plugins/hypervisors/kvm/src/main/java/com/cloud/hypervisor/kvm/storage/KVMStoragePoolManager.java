@@ -387,8 +387,19 @@ public class KVMStoragePoolManager {
         return createStoragePool(name, host, port, path, userInfo, type, details, true);
     }
 
+    private KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean primaryStorage) {
+        /*
+         * Take the pool's own lock before the manager wide one. A create of a pool that is being torn
+         * down waits here for the teardown, which can sit in an umount, and must not hold up the
+         * creates of every other pool on the host while it does. See KVMStoragePoolLocks.
+         */
+        synchronized (KVMStoragePoolLocks.get(name)) {
+            return createStoragePoolSynchronized(name, host, port, path, userInfo, type, details, primaryStorage);
+        }
+    }
+
     //Note: due to bug CLOUDSTACK-4459, createStoragepool can be called in parallel, so need to be synced.
-    private synchronized KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean primaryStorage) {
+    protected synchronized KVMStoragePool createStoragePoolSynchronized(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean primaryStorage) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         KVMStoragePool pool = adaptor.createStoragePool(name, host, port, path, userInfo, type, details, primaryStorage);
         if (pool instanceof LibvirtStoragePool) {
